@@ -19,6 +19,7 @@ import 'package:bett_box/views/config/ntp.dart';
 import 'package:bett_box/views/config/sniffer.dart';
 import 'package:bett_box/views/config/tunnel.dart';
 import 'package:bett_box/views/connection/connections.dart';
+import 'package:bett_box/views/generator_view.dart';
 import 'package:bett_box/views/hotkey.dart';
 import 'package:bett_box/views/other_setting.dart';
 import 'package:bett_box/widgets/widgets.dart';
@@ -592,16 +593,6 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       _SearchItem(
         title: appLocalizations.excludeChina,
         subtitle: appLocalizations.excludeChinaDesc,
-        category: otherSettingsCategory,
-        onTap: (context, _) => _pushPage(
-          context,
-          appLocalizations.otherSettings,
-          const OtherSettingView(),
-        ),
-      ),
-      _SearchItem(
-        title: appLocalizations.notificationHighPriority,
-        subtitle: appLocalizations.notificationHighPriorityDesc,
         category: otherSettingsCategory,
         onTap: (context, _) => _pushPage(
           context,
@@ -1362,6 +1353,11 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         : _buildSearchResults(searchItems);
 
     final items = [
+      _buildModernSection(
+        context,
+        title: 'Генератор',
+        items: const [_GeneratorItem()],
+      ),
       Consumer(
         builder: (_, ref, _) {
           final state = ref.watch(moreToolsSelectorStateProvider);
@@ -1414,6 +1410,25 @@ class _ToolViewState extends ConsumerState<ToolsView> {
               (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
           top: 8,
         ),
+      ),
+    );
+  }
+}
+
+class _GeneratorItem extends StatelessWidget {
+  const _GeneratorItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.next(
+      leading: const Icon(Icons.build_circle_outlined),
+      title: const Text('Генератор BettboxR'),
+      subtitle: const Text(
+        'Сборка конфига из ссылок и WG/AWG-конфигов прямо в клиенте',
+      ),
+      delegate: NextDelegate(
+        title: 'Генератор BettboxR',
+        builder: (_) => const GeneratorView(),
       ),
     );
   }
