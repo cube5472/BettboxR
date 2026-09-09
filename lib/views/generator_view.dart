@@ -2,6 +2,7 @@
 // Вставка ссылок/AWG-конфигов → правила и пресеты → создание профиля прямо в клиенте.
 import 'dart:convert';
 
+import 'package:bett_box/common/common.dart';
 import 'package:bett_box/generator/generator_core.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/providers.dart';
