@@ -1114,6 +1114,81 @@ String _shortYamlError(Object error) {
   return s.length > 300 ? '${s.substring(0, 300)}…' : s;
 }
 
+/// Чинит текст с «жёсткими» переносами внутри длинных значений (URL,
+/// base64-ключи, списки): строка-продолжение (не ключ, не элемент списка,
+/// не комментарий, не пустая) приклеивается к предыдущей строке.
+/// Содержимое блочных скаляров (key: | / >) сохраняется как есть.
+String _repairBrokenLines(String text) {
+  final lines = text.split('\n');
+  final keyRe = RegExp(r'^(\s*)([^\s#][^:]*)(:(\s|$))');
+  final itemRe = RegExp(r'^(\s*)- ');
+  final blockScalarRe = RegExp(r':[|>][-+\d]*\s*$');
+  final out = <String>[];
+  var blockScalarIndent = -1;
+  for (final line in lines) {
+    final t = line.trim();
+    if (blockScalarIndent >= 0) {
+      final indent = line.length - line.trimLeft().length;
+      if (t.isEmpty || indent > blockScalarIndent) {
+        out.add(line);
+        continue;
+      }
+      blockScalarIndent = -1; // вышли из блочного скаляра
+    }
+    final isStructure =
+        t.isEmpty ||
+        t.startsWith('#') ||
+        t == '---' ||
+        t.startsWith('...') ||
+        itemRe.hasMatch(line) ||
+        keyRe.hasMatch(line);
+    if (isStructure) {
+      out.add(line);
+      if (blockScalarRe.hasMatch(t)) {
+        blockScalarIndent = line.length - line.trimLeft().length;
+      }
+      continue;
+    }
+    // строка-продолжение: приклеиваем к предыдущей без разделителя
+    if (out.isNotEmpty) {
+      out[out.length - 1] = out.last + t;
+    } else {
+      out.add(line);
+    }
+  }
+  return out.join('\n');
+}
+
+/// IPv6-адрес: только шестнадцатеричные группы и двоеточия (2+ группы).
+final _ipv6Re = RegExp(r'^([0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}$');
+
+bool _isIpv6String(String s) => _ipv6Re.hasMatch(s.trim());
+
+/// Убирает IPv6 из разобранного прокси: ключ ipv6 и IPv6-адреса в
+/// списках (dns и вложенные opts-карты на один уровень). Сервер не трогаем.
+void _stripIpv6FromProxy(Map<String, dynamic> proxy) {
+  proxy.remove('ipv6');
+  for (final key in proxy.keys.toList()) {
+    final value = proxy[key];
+    if (value is List) {
+      final filtered = value
+          .where((e) => !(e is String && _isIpv6String(e)))
+          .toList();
+      if (filtered.length != value.length) proxy[key] = filtered;
+    } else if (value is Map) {
+      for (final k2 in value.keys.toList()) {
+        final v2 = value[k2];
+        if (v2 is List) {
+          final filtered = v2
+              .where((e) => !(e is String && _isIpv6String(e)))
+              .toList();
+          if (filtered.length != v2.length) value[k2] = filtered;
+        }
+      }
+    }
+  }
+}
+
 /// Достаёт список прокси из разобранного YAML-документа.
 List<Map<String, dynamic>> _extractYamlProxies(dynamic doc) {
   if (doc is! YamlMap || doc['proxies'] is! YamlList) {
@@ -1127,6 +1202,7 @@ List<Map<String, dynamic>> _extractYamlProxies(dynamic doc) {
           map['type'] != null &&
           map['server'] != null) {
         map['name'] ??= 'proxy';
+        _stripIpv6FromProxy(map);
         out.add(map);
       }
     }
@@ -1215,6 +1291,7 @@ List<Map<String, dynamic>> _salvageProxyItems(String text) {
                   map['type'] != null &&
                   map['server'] != null) {
                 map['name'] ??= 'proxy';
+                _stripIpv6FromProxy(map);
                 out.add(map);
               }
             }
@@ -1237,9 +1314,17 @@ List<Map<String, dynamic>> _salvageProxyItems(String text) {
 /// помогло ничего — бросает ошибку С ДЕТАЛЯМИ package:yaml (строка/столбец).
 List<Map<String, dynamic>> parseYamlSubscription(String text) {
   final sanitized = _sanitizeYamlText(text);
+  final repaired = _repairBrokenLines(sanitized);
   final variants = <String>[sanitized];
-  final stripped = _stripZeroIndentJunk(sanitized);
-  if (stripped != sanitized) variants.add(stripped);
+  if (repaired != sanitized) variants.add(repaired);
+  final strippedRepaired = _stripZeroIndentJunk(repaired);
+  if (strippedRepaired != repaired && !variants.contains(strippedRepaired)) {
+    variants.add(strippedRepaired);
+  }
+  final strippedSanitized = _stripZeroIndentJunk(sanitized);
+  if (strippedSanitized != sanitized && !variants.contains(strippedSanitized)) {
+    variants.add(strippedSanitized);
+  }
 
   Object? firstError;
   for (final variant in variants) {
