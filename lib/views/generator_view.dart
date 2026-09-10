@@ -1,5 +1,6 @@
 // Экран «Генератор BettboxR» — нативный порт веб-генератора «РКН ОФФЛАЙН».
-// Вставка ссылок/AWG-конфигов → правила и пресеты → создание профиля прямо в клиенте.
+// Вставка ссылок/подписок/AWG-конфигов → правила и пресеты → создание профиля.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:bett_box/common/common.dart';
@@ -7,6 +8,7 @@ import 'package:bett_box/generator/generator_core.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,6 +27,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     text: 'https://www.gstatic.com/generate_204',
   );
   final _mtuController = TextEditingController();
+
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 20),
+    ),
+  );
 
   // Провайдеры правил
   final Map<String, bool> _providerSets = {
@@ -49,7 +58,11 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
 
   List<Map<String, dynamic>> _proxies = [];
   final List<List<String>> _chains = [];
-  String? _parseError;
+  bool _parsing = false;
+  List<String> _problems = const [];
+  List<String> _pendingUrls = const [];
+  String _lastParsedText = '';
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -63,20 +76,119 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _cdnPresets = {
       for (final key in kCdnRules.keys) key: false,
     };
+    _linksController.addListener(_onLinksChanged);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _linksController.removeListener(_onLinksChanged);
     _linksController.dispose();
     _customRulesController.dispose();
     _providerUrlController.dispose();
     _urlTestController.dispose();
     _mtuController.dispose();
     _providerIntervalController.dispose();
+    _dio.close();
     super.dispose();
   }
 
   // ---------------- Разбор источников ----------------
+
+  void _onLinksChanged() {
+    if (_linksController.text == _lastParsedText) return;
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 900), () {
+      if (mounted && _linksController.text != _lastParsedText) {
+        _parseSources(fetchUrls: false);
+      }
+    });
+  }
+
+  String _hostOf(String url) {
+    try {
+      return Uri.parse(url).host;
+    } on Object {
+      return url;
+    }
+  }
+
+  Future<String> _fetchText(String url) async {
+    final response = await _dio.get<String>(
+      url,
+      options: Options(
+        responseType: ResponseType.plain,
+        followRedirects: true,
+        validateStatus: (code) => code != null && code >= 200 && code < 400,
+        headers: {'User-Agent': 'clash.meta/1.19.0'},
+      ),
+    );
+    final body = response.data ?? '';
+    if (body.trim().isEmpty) {
+      throw Exception('сервер вернул пустой ответ');
+    }
+    return body;
+  }
+
+  Future<void> _parseSources({bool fetchUrls = true}) async {
+    if (_parsing) return;
+    final lines = _linksController.text
+        .split(RegExp(r'\r?\n'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final urls = <String>[];
+    final localLines = <String>[];
+    for (final line in lines) {
+      if (line.startsWith('http://') || line.startsWith('https://')) {
+        urls.add(line);
+      } else {
+        localLines.add(line);
+      }
+    }
+    _lastParsedText = _linksController.text;
+    setState(() {
+      _parsing = true;
+      _problems = const [];
+      _pendingUrls = fetchUrls ? const [] : urls;
+    });
+    final collected = <Map<String, dynamic>>[];
+    final problems = <String>[];
+    try {
+      if (localLines.isNotEmpty) {
+        try {
+          collected.addAll(parseManualInput(localLines.join('\n')));
+        } on Object catch (e) {
+          problems.add('Ошибка разбора: $e');
+        }
+        if (collected.isEmpty && problems.isEmpty) {
+          final sample = localLines.first;
+          problems.add(
+            'Локальные строки не распознаны. Пример: '
+            '${sample.length > 48 ? '${sample.substring(0, 48)}…' : sample}',
+          );
+        }
+      }
+      if (fetchUrls) {
+        for (final url in urls) {
+          try {
+            final body = await _fetchText(url);
+            collected.addAll(parseSubscriptionBody(body));
+          } on Object catch (e) {
+            problems.add('Подписка ${_hostOf(url)}: $e');
+          }
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _parsing = false;
+          _proxies = uniqueProxies(collected);
+          _problems = problems;
+        });
+      }
+    }
+  }
 
   Future<void> _importFile() async {
     try {
@@ -94,22 +206,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       setState(() {
         _linksController.text = buffer.toString();
       });
-      _parseSources();
+      await _parseSources();
     } on Object catch (e) {
       _showError('Ошибка импорта: $e');
     }
-  }
-
-  void _parseSources() {
-    setState(() {
-      _parseError = null;
-      try {
-        _proxies = uniqueProxies(parseManualInput(_linksController.text));
-      } on Object catch (e) {
-        _proxies = [];
-        _parseError = '$e';
-      }
-    });
   }
 
   // ---------------- Цепочки ----------------
@@ -204,6 +304,17 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   }
 
   Future<void> _createProfile() async {
+    if (_providerMode && _providerUrlController.text.trim().isEmpty) {
+      _showError('Укажите URL подписки в разделе 7 (режим provider).');
+      return;
+    }
+    if (!_providerMode && _proxies.isEmpty) {
+      _showError(
+        'Нет прокси: вставьте ссылки или URL подписки в раздел 1 '
+        'и нажмите «Разобрать».',
+      );
+      return;
+    }
     final loading = ref.read(loadingProvider.notifier);
     loading.value = true;
     try {
@@ -299,7 +410,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
 
   @override
   Widget build(BuildContext context) {
-    final proxyCount = _proxies.length;
     return ListView(
       padding: const EdgeInsets.only(bottom: 32, top: 4),
       children: [
@@ -310,9 +420,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             minLines: 4,
             decoration: const InputDecoration(
               hintText:
-                  'vless://… trojan://… ss://… hy2://… tuic://… anytls://… '
-                  'masque://… hysteria://… vmess://…\n'
-                  'или содержимое конфига WireGuard / AmneziaWG ([Interface]…[Peer])',
+                  'По одной в строке: vless://… trojan://… ss://… hy2://… '
+                  'tuic://… anytls://… vmess://… hysteria://… masque://…\n'
+                  'URL подписки (https://…) — будет скачана автоматически\n'
+                  'или конфиг WireGuard / AmneziaWG ([Interface]…[Peer])',
               border: OutlineInputBorder(),
             ),
           ),
@@ -326,36 +437,71 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 label: const Text('Импорт файла'),
               ),
               FilledButton.tonalIcon(
-                onPressed: _parseSources,
+                onPressed: _parsing ? null : _parseSources,
                 icon: const Icon(Icons.bolt),
                 label: const Text('Разобрать'),
               ),
             ],
           ),
-          if (_parseError != null) ...[
+          if (_parsing)
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 12),
+                  Text('Обработка источников…'),
+                ],
+              ),
+            )
+          else ...[
             const SizedBox(height: 8),
             Text(
-              _parseError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              _proxies.isEmpty
+                  ? 'Прокси не добавлены'
+                  : 'Разобрано прокси: ${_proxies.length} (дубли удалены)',
+              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
             ),
+            if (_pendingUrls.isNotEmpty)
+              Text(
+                'Подписок в списке: ${_pendingUrls.length} — '
+                'нажмите «Разобрать», чтобы скачать',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.tertiary,
+                  fontSize: 13,
+                ),
+              ),
+            for (final problem in _problems)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  problem,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
           ],
-          const SizedBox(height: 8),
-          Text(
-            proxyCount == 0
-                ? 'Прокси не добавлены'
-                : 'Разобрано прокси: $proxyCount (дубли удалены)',
-            style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-          ),
-          if (proxyCount > 0)
+          if (_proxies.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  for (final proxy in _proxies)
+                  for (final proxy in _proxies.take(24))
                     Chip(
                       label: Text('${proxy['name']}'),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (_proxies.length > 24)
+                    Chip(
+                      label: Text('+${_proxies.length - 24} ещё'),
                       visualDensity: VisualDensity.compact,
                     ),
                 ],
@@ -463,7 +609,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         _section('7. Настройки', [
           SegmentedButton<bool>(
             segments: const [
-              ButtonSegment(value: false, label: Text('Свои прокси')),
+              ButtonSegment(value: false, label: Text('Встроить в конфиг')),
               ButtonSegment(value: true, label: Text('Подписка (provider)')),
             ],
             selected: {_providerMode},
@@ -472,6 +618,15 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 _providerMode = selection.first;
               });
             },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _providerMode
+                ? 'Прокси берутся с URL подписки: ядро само скачает и будет '
+                    'обновлять их. Раздел 1 в этом режиме не используется.'
+                : 'Прокси, разобранные в разделе 1, записываются в конфиг '
+                    'напрямую (без автообновления).',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
           ),
           const SizedBox(height: 12),
           if (_providerMode) ...[
