@@ -404,8 +404,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   // ---------------- UI ----------------
 
   Widget _section(String title, List<Widget> children) {
+    final outline = Theme.of(context).colorScheme.outline;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: outline.withValues(alpha: 0.6)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
