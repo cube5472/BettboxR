@@ -4,6 +4,8 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:yaml/yaml.dart';
+
 import 'generator_data.dart';
 
 // ---------------- JSON-данные ----------------
@@ -131,6 +133,44 @@ String? _decodeFragment(String fragment) {
 
 Never _throwMissing() => throw Exception('Не хватает данных');
 
+/// Пробует декодировать base64 (стандартный и URL-safe, с паддингом или без).
+/// Возвращает null, если строка не является base64.
+String? tryDecodeBase64(String input) {
+  var s = input.trim().replaceAll(RegExp(r'\s+'), '');
+  if (s.isEmpty || s.contains(':')) return null;
+  s = s.replaceAll('-', '+').replaceAll('_', '/');
+  final pad = (4 - (s.length % 4)) % 4;
+  s += '=' * pad;
+  try {
+    return utf8.decode(base64Decode(s), allowMalformed: true);
+  } on Object {
+    return null;
+  }
+}
+
+/// Разбирает "host:port", включая IPv6 вида [::1]:443.
+Map<String, dynamic> _parseHostPort(String value) {
+  final v = value.trim();
+  if (v.startsWith('[')) {
+    final m = RegExp(r'^\[(.+)\]:(\d+)$').firstMatch(v);
+    if (m != null) {
+      return <String, dynamic>{
+        'host': m.group(1)!,
+        'port': int.parse(m.group(2)!),
+      };
+    }
+    return <String, dynamic>{'host': v, 'port': 0};
+  }
+  final idx = v.lastIndexOf(':');
+  if (idx != -1) {
+    final p = int.tryParse(v.substring(idx + 1));
+    if (p != null) {
+      return <String, dynamic>{'host': v.substring(0, idx), 'port': p};
+    }
+  }
+  return <String, dynamic>{'host': v, 'port': 0};
+}
+
 // ---------------- Парсеры ссылок ----------------
 
 Map<String, dynamic> parseVless(String url) {
@@ -182,6 +222,9 @@ Map<String, dynamic> parseVless(String url) {
     if (wsHost != null) wsOpts['headers'] = {'Host': wsHost};
     if (wsOpts.isNotEmpty) proxy['ws-opts'] = wsOpts;
     if (!params.has('alpn')) proxy['alpn'] = ['h2', 'http/1.1'];
+  }
+  if (params.get('type') == 'grpc' && params.has('path')) {
+    proxy['grpc-opts'] = {'grpc-service-name': params.get('path')};
   }
   final alpn = params.get('alpn');
   if (alpn != null) {
@@ -242,6 +285,9 @@ Map<String, dynamic> parseTrojan(String url) {
     if (wsHost != null) wsOpts['headers'] = {'Host': wsHost};
     if (wsOpts.isNotEmpty) proxy['ws-opts'] = wsOpts;
     if (!params.has('alpn')) proxy['alpn'] = ['h2', 'http/1.1'];
+  }
+  if (params.get('type') == 'grpc' && params.has('path')) {
+    proxy['grpc-opts'] = {'grpc-service-name': params.get('path')};
   }
   final alpn = params.get('alpn');
   if (alpn != null) {
@@ -327,18 +373,70 @@ Map<String, dynamic> parseHysteria2(String url) {
 }
 
 Map<String, dynamic> parseSS(String url) {
-  final parsed = Uri.parse(url);
-  final userInfo = parsed.userInfo;
-  final eq = userInfo.indexOf(':');
-  final method = eq == -1 ? userInfo : userInfo.substring(0, eq);
-  final password = eq == -1 ? '' : userInfo.substring(eq + 1);
-  final host = parsed.host;
-  final port = parsed.port;
-  final name = _decodeFragment(parsed.fragment) ?? 'SS';
+  // Форматы:
+  //  1) SIP002:      ss://base64(method:pass)@host:port#name  (или открытым текстом)
+  //  2) Legacy:      ss://base64(method:pass@host:port)#name
+  //  3) SIP003:      ?plugin=obfs-local;obfs=http;obfs-host=...
+  final hashIdx = url.indexOf('#');
+  final bodyAndQuery =
+      hashIdx == -1 ? url.substring(5) : url.substring(5, hashIdx);
+  final name = hashIdx == -1
+      ? 'SS'
+      : (_decodeFragment(url.substring(hashIdx + 1)) ?? 'SS');
+  final qIdx = bodyAndQuery.indexOf('?');
+  final body = qIdx == -1 ? bodyAndQuery : bodyAndQuery.substring(0, qIdx);
+  final query = qIdx == -1 ? '' : bodyAndQuery.substring(qIdx + 1);
+
+  var method = '';
+  var password = '';
+  var host = '';
+  var port = 0;
+
+  final at = body.lastIndexOf('@');
+  if (at != -1) {
+    // SIP002: userinfo@host:port
+    final userInfo = body.substring(0, at);
+    final hostPort = _parseHostPort(body.substring(at + 1));
+    host = hostPort['host'] as String;
+    port = hostPort['port'] as int;
+    if (userInfo.contains(':')) {
+      // открытым текстом method:password (возможно percent-encoded)
+      final colon = userInfo.indexOf(':');
+      method = _decodeFragment(userInfo.substring(0, colon)) ??
+          userInfo.substring(0, colon);
+      password = _decodeFragment(userInfo.substring(colon + 1)) ??
+          userInfo.substring(colon + 1);
+    } else {
+      final decoded = tryDecodeBase64(Uri.decodeComponent(userInfo));
+      if (decoded != null) {
+        final colon = decoded.indexOf(':');
+        if (colon != -1) {
+          method = decoded.substring(0, colon);
+          password = decoded.substring(colon + 1);
+        }
+      }
+    }
+  } else {
+    // Legacy: всё тело — base64 от method:password@host:port
+    final decoded = tryDecodeBase64(Uri.decodeComponent(body));
+    if (decoded != null) {
+      final at2 = decoded.lastIndexOf('@');
+      final colon = decoded.indexOf(':');
+      if (at2 != -1 && colon != -1 && colon < at2) {
+        method = decoded.substring(0, colon);
+        password = decoded.substring(colon + 1, at2);
+        final hostPort = _parseHostPort(decoded.substring(at2 + 1));
+        host = hostPort['host'] as String;
+        port = hostPort['port'] as int;
+      }
+    }
+  }
+
   if (method.isEmpty || password.isEmpty || host.isEmpty || port <= 0) {
     _throwMissing();
   }
-  return {
+
+  final proxy = <String, dynamic>{
     'name': name,
     'type': 'ss',
     'server': host,
@@ -347,6 +445,35 @@ Map<String, dynamic> parseSS(String url) {
     'password': password,
     'skip-cert-verify': true,
   };
+
+  // SIP003 plugin
+  final pluginRaw = QueryMap(query).get('plugin');
+  if (pluginRaw != null && pluginRaw.isNotEmpty) {
+    final parts = pluginRaw.split(';');
+    final pluginName = parts.first.trim().toLowerCase();
+    final opts = <String, String>{};
+    for (final part in parts.skip(1)) {
+      final eq = part.indexOf('=');
+      if (eq == -1) continue;
+      opts[part.substring(0, eq).trim()] = part.substring(eq + 1).trim();
+    }
+    if (pluginName.contains('obfs')) {
+      proxy['plugin'] = 'obfs';
+      proxy['plugin-opts'] = {
+        'mode': opts['obfs'] ?? 'http',
+        if (opts['obfs-host'] != null) 'host': opts['obfs-host'],
+      };
+    } else if (pluginName.contains('v2ray-plugin')) {
+      proxy['plugin'] = 'v2ray-plugin';
+      proxy['plugin-opts'] = {
+        'mode': 'websocket',
+        if (opts['host'] != null) 'host': opts['host'],
+        if (opts['path'] != null) 'path': opts['path'],
+        if (opts.containsKey('tls')) 'tls': true,
+      };
+    }
+  }
+  return proxy;
 }
 
 Map<String, dynamic> parseTUIC(String url) {
@@ -523,65 +650,64 @@ Map<String, dynamic> parseVmess(String url) {
   } on Object {
     throw Exception('Невалидный VMess URL');
   }
-  const required = [
-    'v', 'ps', 'add', 'port', 'id', 'aid', 'net', 'type', 'host', 'path',
-    'tls', 'sni',
-  ];
-  for (final key in required) {
-    if (!json.containsKey(key)) {
-      throw Exception('Отсутствует поле $key');
-    }
-  }
+  // Обязательны только адрес, порт и uuid — остальные поля опциональны.
+  final add = '${json['add'] ?? ''}';
+  final id = '${json['id'] ?? ''}';
+  final port = int.tryParse('${json['port'] ?? ''}') ?? 0;
+  if (add.isEmpty || id.isEmpty || port <= 0) _throwMissing();
+  final net = '${json['net'] ?? ''}';
+  final host = '${json['host'] ?? ''}';
+  final path = '${json['path'] ?? ''}';
+  final sni = '${json['sni'] ?? ''}';
+  final tlsRaw = '${json['tls'] ?? ''}'.toLowerCase();
+  final ps = '${json['ps'] ?? ''}';
+  final scy = '${json['scy'] ?? ''}';
   final proxy = <String, dynamic>{
-    'name': (json['ps'] as String?)?.isNotEmpty == true ? json['ps'] : 'VMess',
+    'name': ps.isNotEmpty ? ps : 'VMess',
     'type': 'vmess',
-    'server': json['add'],
-    'port': int.tryParse('${json['port']}') ?? 0,
-    'uuid': json['id'],
-    'alterId': int.tryParse('${json['aid']}') ?? 0,
-    'cipher': 'auto',
-    'network': (json['net'] as String?)?.isNotEmpty == true ? json['net'] : 'tcp',
+    'server': add,
+    'port': port,
+    'uuid': id,
+    'alterId': int.tryParse('${json['aid'] ?? 0}') ?? 0,
+    'cipher': scy.isNotEmpty ? scy : 'auto',
+    'network': net.isNotEmpty ? net : 'tcp',
     'client-fingerprint': 'chrome',
     'skip-cert-verify': true,
     'udp': true,
   };
-  if (json['tls'] == 'tls') {
+  if (tlsRaw == 'tls' || tlsRaw == 'true') {
     proxy['tls'] = true;
-    if ((json['sni'] as String?)?.isNotEmpty == true) {
-      proxy['servername'] = json['sni'];
-    } else if ((json['host'] as String?)?.isNotEmpty == true) {
-      proxy['servername'] = json['host'];
+    if (sni.isNotEmpty) {
+      proxy['servername'] = sni;
+    } else if (host.isNotEmpty) {
+      proxy['servername'] = host;
     }
   }
-  if (json['net'] == 'ws') {
-    proxy['network'] = 'ws';
+  if (net == 'ws') {
     final wsOpts = <String, dynamic>{};
-    if ((json['path'] as String?)?.isNotEmpty == true) {
-      wsOpts['path'] = json['path'];
-    }
-    if ((json['host'] as String?)?.isNotEmpty == true) {
-      wsOpts['headers'] = {'Host': json['host']};
-    }
+    if (path.isNotEmpty) wsOpts['path'] = path;
+    if (host.isNotEmpty) wsOpts['headers'] = {'Host': host};
     if (wsOpts.isNotEmpty) proxy['ws-opts'] = wsOpts;
-  }
-  if (json['net'] == 'h2' || json['net'] == 'http') {
+  } else if (net == 'h2' || net == 'http') {
     proxy['network'] = 'h2';
     final h2Opts = <String, dynamic>{};
-    if ((json['path'] as String?)?.isNotEmpty == true) {
-      h2Opts['path'] = json['path'];
-    }
-    if ((json['host'] as String?)?.isNotEmpty == true) {
-      h2Opts['host'] = json['host'];
-    }
+    if (path.isNotEmpty) h2Opts['path'] = path;
+    if (host.isNotEmpty) h2Opts['host'] = host;
     if (h2Opts.isNotEmpty) proxy['h2-opts'] = h2Opts;
-  }
-  if (json['net'] == 'grpc') {
-    proxy['network'] = 'grpc';
+  } else if (net == 'grpc') {
     final grpcOpts = <String, dynamic>{};
-    if ((json['path'] as String?)?.isNotEmpty == true) {
-      grpcOpts['grpc-service-name'] = json['path'];
-    }
+    if (path.isNotEmpty) grpcOpts['grpc-service-name'] = path;
     if (grpcOpts.isNotEmpty) proxy['grpc-opts'] = grpcOpts;
+  } else if (net == 'tcp' && '${json['type'] ?? ''}' == 'http') {
+    proxy['network'] = 'http';
+    final httpOpts = <String, dynamic>{};
+    if (path.isNotEmpty) httpOpts['path'] = [path];
+    if (host.isNotEmpty) {
+      httpOpts['headers'] = {
+        'Host': [host],
+      };
+    }
+    if (httpOpts.isNotEmpty) proxy['http-opts'] = httpOpts;
   }
   return proxy;
 }
@@ -857,6 +983,75 @@ List<Map<String, dynamic>> parseManualInput(String? text) {
   return proxies;
 }
 
+// ---------------- Подписки ----------------
+
+dynamic _yamlToPlain(dynamic node) {
+  if (node is YamlMap) {
+    final out = <String, dynamic>{};
+    node.forEach((key, value) {
+      out['$key'] = _yamlToPlain(value);
+    });
+    return out;
+  }
+  if (node is YamlList) {
+    return node.map(_yamlToPlain).toList();
+  }
+  return node;
+}
+
+/// Разбирает clash-YAML подписку: извлекает список proxies.
+List<Map<String, dynamic>> parseYamlSubscription(String text) {
+  dynamic doc;
+  try {
+    doc = loadYaml(text);
+  } on Object {
+    throw Exception('невалидный YAML');
+  }
+  if (doc is! YamlMap || doc['proxies'] is! YamlList) {
+    throw Exception('в YAML нет списка proxies');
+  }
+  final out = <Map<String, dynamic>>[];
+  for (final item in (doc['proxies'] as YamlList)) {
+    if (item is YamlMap) {
+      final map = _yamlToPlain(item) as Map<String, dynamic>;
+      if (map['type'] != null && map['server'] != null) {
+        map['name'] ??= 'proxy';
+        out.add(map);
+      }
+    }
+  }
+  if (out.isEmpty) {
+    throw Exception('в подписке нет валидных прокси');
+  }
+  return out;
+}
+
+/// Разбирает тело подписки: clash-YAML, base64 (v2ray) или список ссылок.
+List<Map<String, dynamic>> parseSubscriptionBody(String body) {
+  final trimmed = body.trim();
+  if (trimmed.isEmpty) {
+    throw Exception('сервер вернул пустой ответ');
+  }
+  // Clash YAML
+  if (RegExp(r'^proxies\s*:').hasMatch(trimmed) ||
+      RegExp(r'[\r\n]\s*proxies\s*:').hasMatch(trimmed)) {
+    return parseYamlSubscription(trimmed);
+  }
+  // Base64 (v2ray-подписка)
+  final decoded = tryDecodeBase64(trimmed);
+  if (decoded != null) {
+    if (RegExp(r'proxies\s*:').hasMatch(decoded)) {
+      return parseYamlSubscription(decoded);
+    }
+    final inner = parseManualInput(decoded);
+    if (inner.isNotEmpty) return inner;
+  }
+  // Простой список ссылок
+  final direct = parseManualInput(trimmed);
+  if (direct.isNotEmpty) return direct;
+  throw Exception('не удалось распознать содержимое (нет proxies или ссылок)');
+}
+
 // ---------------- Дедупликация ----------------
 
 String _proxyKey(Map<String, dynamic> p) {
@@ -975,7 +1170,7 @@ const Map<String, List<String>> _kRequiredFields = {
   'tuic': ['uuid', 'password'],
   'anytls': ['password'],
   'masque': ['server', 'port'],
-  'hysteria': ['auth-str'],
+  'hysteria': [],
   'vmess': ['uuid'],
 };
 
