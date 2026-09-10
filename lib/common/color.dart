@@ -120,3 +120,31 @@ extension ColorSchemeExtension on ColorScheme {
         )
       : this;
 }
+
+/// Цвет-метка «угольной» темы: тёмно-коричневый свотч в настройках темы
+/// (см. defaultPrimaryColors в common/constant.dart).
+const kCoalPrimaryColor = 0xFF5D4037;
+
+/// «Угольно-чёрная» тема с коричневой обводкой: включается выбором
+/// коричневого свотча (kCoalPrimaryColor) как основного цвета в тёмном
+/// режиме. Поверхности становятся угольно-чёрными с тёплым подтоном,
+/// обводки (outline/outlineVariant) — коричневыми.
+extension CoalColorSchemeExtension on ColorScheme {
+  ColorScheme toCoal(int? primaryColor) {
+    if (primaryColor != kCoalPrimaryColor) return this;
+    return copyWith(
+      surface: const Color(0xFF080706),
+      surfaceDim: const Color(0xFF050403),
+      surfaceBright: const Color(0xFF1B1712),
+      surfaceContainerLowest: const Color(0xFF050403),
+      surfaceContainerLow: const Color(0xFF0B0907),
+      surfaceContainer: const Color(0xFF0E0B09),
+      surfaceContainerHigh: const Color(0xFF13100C),
+      surfaceContainerHighest: const Color(0xFF181410),
+      onSurface: const Color(0xFFE8DDD6),
+      onSurfaceVariant: const Color(0xFFBCAAA4),
+      outline: const Color(0xFF8D6E63),
+      outlineVariant: const Color(0xFF4E342E),
+    );
+  }
+}
