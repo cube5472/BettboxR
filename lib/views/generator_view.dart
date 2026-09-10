@@ -156,16 +156,31 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     final problems = <String>[];
     try {
       if (localLines.isNotEmpty) {
+        final localText = localLines.join('\n');
+        // Clash-YAML (в т.ч. вставленные конфиги и импорт файлов):
+        // распознаём по ключу proxies: и вынимаем список прокси.
+        if (RegExp(r'^\s*proxies\s*:', multiLine: true).hasMatch(localText)) {
+          try {
+            collected.addAll(parseYamlSubscription(localText));
+          } on Object catch (e) {
+            problems.add('YAML: $e');
+          }
+        }
+        // Ссылки и WG/AWG-INI (строки YAML не ссылки — молча пропустятся).
         try {
-          collected.addAll(parseManualInput(localLines.join('\n')));
+          collected.addAll(parseManualInput(localText));
         } on Object catch (e) {
           problems.add('Ошибка разбора: $e');
         }
         if (collected.isEmpty && problems.isEmpty) {
           final sample = localLines.first;
           problems.add(
-            'Локальные строки не распознаны. Пример: '
-            '${sample.length > 48 ? '${sample.substring(0, 48)}…' : sample}',
+            'Локальные строки не распознаны. Поддержка: ссылки vless:// '
+            'ss:// trojan:// hy2:// tuic:// anytls:// vmess:// '
+            'hysteria:// masque://, конфиги WG/AWG ([Interface]…[Peer]), '
+            'clash-YAML с ключом proxies:. '
+            'Пример строки: '
+            '${sample.length > 40 ? '${sample.substring(0, 40)}…' : sample}',
           );
         }
       }
