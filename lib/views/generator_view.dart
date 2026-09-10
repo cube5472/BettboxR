@@ -132,16 +132,16 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
 
   Future<void> _parseSources({bool fetchUrls = true}) async {
     if (_parsing) return;
-    final lines = _linksController.text
-        .split(RegExp(r'\r?\n'))
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+    // ВАЖНО: строки локального текста сохраняются КАК ЕСТЬ (с отступами) —
+    // отступы критичны для YAML. Отделяем только чистые URL-строки.
+    final rawLines = _linksController.text.split(RegExp(r'\r?\n'));
     final urls = <String>[];
     final localLines = <String>[];
-    for (final line in lines) {
-      if (line.startsWith('http://') || line.startsWith('https://')) {
-        urls.add(line);
+    for (final line in rawLines) {
+      final t = line.trim();
+      if (t.isEmpty) continue;
+      if (t.startsWith('http://') || t.startsWith('https://')) {
+        urls.add(t);
       } else {
         localLines.add(line);
       }
