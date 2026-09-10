@@ -987,10 +987,30 @@ List<Map<String, dynamic>> parseManualInput(String? text) {
 
 dynamic _yamlToPlain(dynamic node) {
   if (node is YamlMap) {
-    final out = <String, dynamic>{};
+    // Поддержка merge-ключей "<<" (якоря вида base: &b / <<: *b):
+    // сначала базовые ключи, затем собственные (они перекрывают базу).
+    var base = <String, dynamic>{};
+    final own = <String, dynamic>{};
     node.forEach((key, value) {
-      out['$key'] = _yamlToPlain(value);
+      final k = '$key';
+      if (k == '<<') {
+        final v = _yamlToPlain(value);
+        if (v is Map<String, dynamic>) {
+          base.addAll(v);
+        } else if (v is List) {
+          // По спецификации YAML в списке merge раньше — сильнее:
+          // применяем с конца, чтобы первые элементы перекрывали последних.
+          for (final item in v.reversed) {
+            if (item is Map<String, dynamic>) base.addAll(item);
+          }
+        }
+      } else {
+        own[k] = _yamlToPlain(value);
+      }
     });
+    final out = <String, dynamic>{};
+    out.addAll(base);
+    out.addAll(own);
     return out;
   }
   if (node is YamlList) {
