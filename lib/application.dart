@@ -19,6 +19,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
 import 'pages/pages.dart';
 
+/// «Угольно-чёрная» тема с коричневой обводкой. Применяется ко ВСЕМ тёмным
+/// темам автоматически (см. _getAppColorScheme) — настройки не требуются:
+/// поверхности — угольно-чёрные с тёплым подтоном, обводки
+/// (outline/outlineVariant) — коричневые.
+extension CoalDarkColorSchemeX on ColorScheme {
+  ColorScheme toCoalDark() => copyWith(
+        surface: const Color(0xFF080706),
+        surfaceDim: const Color(0xFF050403),
+        surfaceBright: const Color(0xFF1B1712),
+        surfaceContainerLowest: const Color(0xFF050403),
+        surfaceContainerLow: const Color(0xFF0B0907),
+        surfaceContainer: const Color(0xFF0E0B09),
+        surfaceContainerHigh: const Color(0xFF13100C),
+        surfaceContainerHighest: const Color(0xFF181410),
+        onSurface: const Color(0xFFE8DDD6),
+        onSurfaceVariant: const Color(0xFFBCAAA4),
+        outline: const Color(0xFF8D6E63),
+        outlineVariant: const Color(0xFF4E342E),
+      );
+}
+
 class Application extends ConsumerStatefulWidget {
   const Application({super.key});
 
@@ -45,9 +66,10 @@ class ApplicationState extends ConsumerState<Application>
     int? primaryColor,
   }) {
     var scheme = ref.read(genColorSchemeProvider(brightness));
+    // Угольно-чёрная тема с коричневой обводкой — автоматически в тёмном режиме.
     if (brightness == Brightness.dark) {
       final props = ref.read(themeSettingProvider);
-      scheme = scheme.toPureBlack(props.pureBlack).toCoal(props.primaryColor);
+      scheme = scheme.toPureBlack(props.pureBlack).toCoalDark();
     }
     return scheme;
   }
