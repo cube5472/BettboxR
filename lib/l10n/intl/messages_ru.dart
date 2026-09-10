@@ -57,11 +57,21 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m14(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
+  static String mHiddenUnavailableCount(count) =>
+      "Скрыто недоступных: ${count} — нажмите, чтобы показать";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "about": MessageLookupByLibrary.simpleMessage("О программе"),
     "accessControl": MessageLookupByLibrary.simpleMessage(
       "Маршрутизация приложений",
+    ),
+    "hiddenUnavailableCount": mHiddenUnavailableCount,
+    "hideUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Скрыть недоступные",
+    ),
+    "showUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Показать недоступные",
     ),
     "accessControlAllowDesc": MessageLookupByLibrary.simpleMessage(
       "Только выбранные приложения используют VPN",
