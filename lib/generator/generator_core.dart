@@ -1019,31 +1019,265 @@ dynamic _yamlToPlain(dynamic node) {
   return node;
 }
 
-/// Разбирает clash-YAML подписку: извлекает список proxies.
-List<Map<String, dynamic>> parseYamlSubscription(String text) {
-  dynamic doc;
-  try {
-    doc = loadYaml(text);
-  } on Object {
-    throw Exception('невалидный YAML');
+/// Ошибка «YAML разобран, но прокси в нём нет» — не лечится фолбэками.
+class _YamlNoProxiesException implements Exception {
+  final String message;
+  _YamlNoProxiesException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// Готовит YAML-текст к разбору: BOM, неразрывные пробелы (NBSP с телефонов),
+/// CRLF, «умные» кавычки, ведущие табы → пробелы.
+String _sanitizeYamlText(String text) {
+  var t = text;
+  if (t.startsWith('\uFEFF')) t = t.substring(1);
+  t = t
+      .replaceAll('\r\n', '\n')
+      .replaceAll('\r', '\n')
+      .replaceAll('\u00A0', ' ')
+      .replaceAll('\u2028', ' ')
+      .replaceAll('\u2029', ' ')
+      .replaceAll('\u201C', '"')
+      .replaceAll('\u201D', '"')
+      .replaceAll('\u2018', "'")
+      .replaceAll('\u2019', "'");
+  final buf = <String>[];
+  final leadingTabs = RegExp(r'^(\t+)');
+  for (final line in t.split('\n')) {
+    final m = leadingTabs.firstMatch(line);
+    buf.add(
+      m != null
+          ? '  ' * m.group(1)!.length + line.substring(m.end)
+          : line,
+    );
   }
+  return buf.join('\n');
+}
+
+/// Убирает «мусорные» строки нулевого отступа (обрывки прошлых вставок вида
+/// `msq:&msq` перед YAML — не ключ, не элемент списка, не комментарий).
+String _stripZeroIndentJunk(String text) {
+  final colonKey = RegExp(r':(\s|$)');
+  final out = <String>[];
+  for (final line in text.split('\n')) {
+    final trimmed = line.trim();
+    final atZero = line.isNotEmpty && !line.startsWith(' ') && !line.startsWith('\t');
+    if (atZero &&
+        !trimmed.startsWith('#') &&
+        !trimmed.startsWith('-') &&
+        !trimmed.startsWith('&') &&
+        !trimmed.startsWith('!') &&
+        trimmed != '---' &&
+        !trimmed.startsWith('...') &&
+        !colonKey.hasMatch(trimmed)) {
+      continue; // строка без ключа — мусор, пропускаем
+    }
+    out.add(line);
+  }
+  return out.join('\n');
+}
+
+/// При ошибке «Duplicate mapping key» удаляет РАННЮЮ строку-дубликат
+/// (последнее вхождение остаётся — так делают все генераторы конфигов).
+String? _removeEarlierDuplicateLine(String text, Object error) {
+  final m = RegExp(
+    r'Error on line (\d+), column \d+: [^\n]*Duplicate mapping key',
+  ).firstMatch(error.toString());
+  if (m == null) return null;
+  final lineNo = int.parse(m.group(1)!) - 1;
+  final lines = text.split('\n');
+  if (lineNo <= 0 || lineNo >= lines.length) return null;
+  final dupLine = lines[lineNo];
+  final dupIndent = dupLine.length - dupLine.trimLeft().length;
+  final dupBody = dupLine.trimLeft();
+  final dupColon = dupBody.indexOf(':');
+  if (dupColon <= 0) return null;
+  final dupKey = dupBody.substring(0, dupColon).trim();
+  for (var i = lineNo - 1; i >= 0; i--) {
+    final l = lines[i];
+    final t = l.trimLeft();
+    if (t.isEmpty) continue;
+    final indent = l.length - t.length;
+    if (indent < dupIndent) break;
+    if (indent == dupIndent && t.startsWith('$dupKey:')) {
+      final out = [...lines]..removeAt(i);
+      return out.join('\n');
+    }
+  }
+  return null;
+}
+
+/// Краткое описание ошибки YAML для сообщения пользователю.
+String _shortYamlError(Object error) {
+  final s = error.toString().split('\n').first.trim();
+  return s.length > 300 ? '${s.substring(0, 300)}…' : s;
+}
+
+/// Достаёт список прокси из разобранного YAML-документа.
+List<Map<String, dynamic>> _extractYamlProxies(dynamic doc) {
   if (doc is! YamlMap || doc['proxies'] is! YamlList) {
-    throw Exception('в YAML нет списка proxies');
+    throw _YamlNoProxiesException('в YAML нет списка proxies');
   }
   final out = <Map<String, dynamic>>[];
   for (final item in (doc['proxies'] as YamlList)) {
     if (item is YamlMap) {
-      final map = _yamlToPlain(item) as Map<String, dynamic>;
-      if (map['type'] != null && map['server'] != null) {
+      final map = _yamlToPlain(item);
+      if (map is Map<String, dynamic> &&
+          map['type'] != null &&
+          map['server'] != null) {
         map['name'] ??= 'proxy';
         out.add(map);
       }
     }
   }
   if (out.isEmpty) {
-    throw Exception('в подписке нет валидных прокси');
+    throw _YamlNoProxiesException('в подписке нет валидных прокси');
   }
   return out;
+}
+
+/// «Спасательный» разбор: вынимает элементы всех блоков proxies: и парсит
+/// каждый ОТДЕЛЬНО (с якорной преамбулой). Спасает конфиги с дубликатами
+/// ключей (два блока proxies после склейки/апдейта), где package:yaml
+/// отказывается парсить документ целиком.
+List<Map<String, dynamic>> _salvageProxyItems(String text) {
+  final lines = text.split('\n');
+  final keyProxies = RegExp(r'^proxies\s*:\s*(#.*)?$');
+  final anchorDef = RegExp(r'^[^\s#-][^:]*:\s*&\S+');
+  final itemStartRe = RegExp(r'^(\s*)- ');
+
+  // 1) якорные определения верхнего уровня (key: &anchor + его блок)
+  final preamble = <String>[];
+  for (var i = 0; i < lines.length; i++) {
+    if (anchorDef.hasMatch(lines[i])) {
+      preamble.add(lines[i]);
+      var j = i + 1;
+      while (j < lines.length) {
+        final t = lines[j];
+        if (t.trim().isEmpty || t.startsWith(' ') || t.startsWith('\t')) {
+          preamble.add(t);
+          j++;
+        } else {
+          break;
+        }
+      }
+      i = j - 1;
+    }
+  }
+  final pre = preamble.isEmpty ? '' : "${preamble.join('\n')}\n";
+
+  // 2) блоки proxies: → элементы → отдельный разбор каждого
+  final out = <Map<String, dynamic>>[];
+  for (var i = 0; i < lines.length; i++) {
+    if (!keyProxies.hasMatch(lines[i])) continue;
+    var j = i + 1;
+    final block = <String>[];
+    while (j < lines.length) {
+      final t = lines[j];
+      // элементы списка могут быть на отступе 0 (- name: ...) — тоже часть блока
+      if (t.trim().isEmpty ||
+          t.startsWith(' ') ||
+          t.startsWith('\t') ||
+          itemStartRe.hasMatch(t)) {
+        block.add(t);
+        j++;
+      } else {
+        break;
+      }
+    }
+    // режем блок на элементы по '- ' на уровне первого элемента
+    var itemStart = -1;
+    var itemIndent = -1;
+    final items = <String>[];
+    for (var k = 0; k < block.length; k++) {
+      final m = itemStartRe.firstMatch(block[k]);
+      if (m != null) {
+        final indent = m.group(1)!.length;
+        if (itemStart < 0) {
+          itemStart = k;
+          itemIndent = indent;
+        } else if (indent == itemIndent) {
+          items.add(block.sublist(itemStart, k).join('\n'));
+          itemStart = k;
+        }
+      }
+    }
+    if (itemStart >= 0) items.add(block.sublist(itemStart).join('\n'));
+    for (final item in items) {
+      try {
+        final doc = loadYaml('${pre}__salvage__:\n$item');
+        if (doc is YamlMap && doc['__salvage__'] is YamlList) {
+          for (final node in (doc['__salvage__'] as YamlList)) {
+            if (node is YamlMap) {
+              final map = _yamlToPlain(node);
+              if (map is Map<String, dynamic> &&
+                  map['type'] != null &&
+                  map['server'] != null) {
+                map['name'] ??= 'proxy';
+                out.add(map);
+              }
+            }
+          }
+        }
+      } on Object {
+        // битый элемент — пропускаем
+      }
+    }
+    i = j - 1;
+  }
+  return out;
+}
+
+/// Разбирает clash-YAML подписку: извлекает список proxies.
+///
+/// Устойчив к типичным «битым» вставкам: сначала санитизация (BOM, NBSP,
+/// табы, умные кавычки), затем удаление мусорных строк перед YAML, затем
+/// хирургия дубликатов ключей, затем мультидокументный разбор. Если не
+/// помогло ничего — бросает ошибку С ДЕТАЛЯМИ package:yaml (строка/столбец).
+List<Map<String, dynamic>> parseYamlSubscription(String text) {
+  final sanitized = _sanitizeYamlText(text);
+  final variants = <String>[sanitized];
+  final stripped = _stripZeroIndentJunk(sanitized);
+  if (stripped != sanitized) variants.add(stripped);
+
+  Object? firstError;
+  for (final variant in variants) {
+    var current = variant;
+    for (var attempt = 0; attempt < 10; attempt++) {
+      try {
+        return _extractYamlProxies(loadYaml(current));
+      } on _YamlNoProxiesException {
+        rethrow;
+      } on Object catch (e) {
+        firstError ??= e;
+        // Дубликаты ключей и мультидокументные вставки: сначала
+        // спасение по-элементно, затем хирургия (удаление раннего дубля).
+        if (e.toString().contains('Duplicate mapping key') ||
+            e.toString().contains('Only expected one document')) {
+          final salvaged = _salvageProxyItems(current);
+          if (salvaged.isNotEmpty) return salvaged;
+        }
+        final patched = _removeEarlierDuplicateLine(current, e);
+        if (patched == null || patched == current) break;
+        current = patched;
+      }
+    }
+    // Мультидокументный YAML (несколько блоков через ---).
+    try {
+      final merged = <Map<String, dynamic>>[];
+      for (final doc in loadYamlStream(current)) {
+        merged.addAll(_extractYamlProxies(doc));
+      }
+      if (merged.isNotEmpty) return merged;
+    } on Object {
+      // остаёмся с первой ошибкой
+    }
+  }
+  if (firstError != null) {
+    throw Exception('невалидный YAML — ${_shortYamlError(firstError)}');
+  }
+  throw Exception('в YAML не найдено прокси');
 }
 
 /// Разбирает тело подписки: clash-YAML, base64 (v2ray) или список ссылок.
@@ -1052,9 +1286,15 @@ List<Map<String, dynamic>> parseSubscriptionBody(String body) {
   if (trimmed.isEmpty) {
     throw Exception('сервер вернул пустой ответ');
   }
-  // Clash YAML
-  if (RegExp(r'^proxies\s*:').hasMatch(trimmed) ||
-      RegExp(r'[\r\n]\s*proxies\s*:').hasMatch(trimmed)) {
+  // HTML-страница вместо подписки (истёкшая ссылка, капча, ошибка сервера).
+  if (RegExp(r'^<!DOCTYPE|^<html|^[\s\r\n]*<(html|body|div|head|script)',
+          caseSensitive: false)
+      .hasMatch(trimmed)) {
+    throw Exception(
+        'сервер вернул HTML-страницу вместо подписки — проверьте срок действия ссылки');
+  }
+  // Clash YAML (в т.ч. с мусором до/после — parseYamlSubscription сам справится)
+  if (RegExp(r'^\s*proxies\s*:', multiLine: true).hasMatch(trimmed)) {
     return parseYamlSubscription(trimmed);
   }
   // Base64 (v2ray-подписка)
