@@ -150,6 +150,7 @@ const defaultPrimaryColors = [
   0xFF7B1FA2,
   0xFFD97706,
   0xFF334155,
+  0xFF5D4037, // угольно-чёрная тема с коричневой обводкой (toCoal в color.dart)
 ];
 
 const scriptTemplate = '''
