@@ -44,7 +44,12 @@ class ApplicationState extends ConsumerState<Application>
     required Brightness brightness,
     int? primaryColor,
   }) {
-    return ref.read(genColorSchemeProvider(brightness));
+    var scheme = ref.read(genColorSchemeProvider(brightness));
+    if (brightness == Brightness.dark) {
+      final props = ref.read(themeSettingProvider);
+      scheme = scheme.toPureBlack(props.pureBlack).toCoal(props.primaryColor);
+    }
+    return scheme;
   }
 
   @override
@@ -330,7 +335,7 @@ class ApplicationState extends ConsumerState<Application>
                 colorScheme: _getAppColorScheme(
                   brightness: Brightness.dark,
                   primaryColor: themeProps.primaryColor,
-                ).toPureBlack(themeProps.pureBlack),
+                ),
                 fontFamily: fontFamily,
                 floatingActionButtonTheme: const FloatingActionButtonThemeData(
                   shape: RoundedRectangleBorder(
