@@ -84,8 +84,59 @@ class _RowItem extends _FlatItem {
   double getHeight(double headerHeight, double itemHeight) => itemHeight + 8.0;
 }
 
+class _HiddenInfoItem extends _FlatItem {
+  final String groupName;
+  final int count;
+  _HiddenInfoItem(this.groupName, this.count);
+
+  @override
+  double getHeight(double headerHeight, double itemHeight) => 44.0;
+}
+
 class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _hideDeadGroups = {};
+
+  bool _isDeadDelay(int? delay) => delay != null && delay < 0;
+
+  List<Proxy> _getVisibleProxies(Group group, List<Proxy> sortedProxies) {
+    if (!_hideDeadGroups.contains(group.name)) {
+      return sortedProxies;
+    }
+    final selectedName = ref
+        .read(getSelectedProxyNameProvider(group.name))
+        .getSafeValue('');
+    return sortedProxies.where((proxy) {
+      if (proxy.name == selectedName) {
+        return true;
+      }
+      final delay = ref.read(
+        getDelayProvider(proxyName: proxy.name, testUrl: group.testUrl),
+      );
+      return !_isDeadDelay(delay);
+    }).toList();
+  }
+
+  Future<void> _handleToggleHideDead(Group group) async {
+    final groupName = group.name;
+    if (!_hideDeadGroups.remove(groupName)) {
+      _hideDeadGroups.add(groupName);
+      if (mounted) {
+        setState(() {});
+      }
+      if (!delayTestCoordinator.isTesting) {
+        await delayTest(
+          group.all,
+          testUrl: group.testUrl,
+          groupName: groupName,
+        );
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   void _handleToggle(String groupName) {
     final tempUnfoldSet = Set<String>.from(widget.currentUnfoldSet);
@@ -138,7 +189,8 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
       sortType: widget.sortType,
       testUrl: group.testUrl,
     );
-    final proxyIndex = sortedProxies.indexWhere((p) => p.name == selectedName);
+    final visibleProxies = _getVisibleProxies(group, sortedProxies);
+    final proxyIndex = visibleProxies.indexWhere((p) => p.name == selectedName);
     if (proxyIndex >= 0) {
       final rowIndex = proxyIndex ~/ widget.columns;
       targetOffset += headerHeight + 8.0;
@@ -165,12 +217,17 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
           sortType: widget.sortType,
           testUrl: group.testUrl,
         );
+        final visibleProxies = _getVisibleProxies(group, sortedProxies);
+        final hiddenCount = sortedProxies.length - visibleProxies.length;
+        if (hiddenCount > 0) {
+          flatItems.add(_HiddenInfoItem(group.name, hiddenCount));
+        }
 
-        for (var i = 0; i < sortedProxies.length; i += widget.columns) {
-          final end = (i + widget.columns < sortedProxies.length)
+        for (var i = 0; i < visibleProxies.length; i += widget.columns) {
+          final end = (i + widget.columns < visibleProxies.length)
               ? i + widget.columns
-              : sortedProxies.length;
-          final chunk = sortedProxies.sublist(i, end);
+              : visibleProxies.length;
+          final chunk = visibleProxies.sublist(i, end);
           flatItems.add(_RowItem(group, chunk));
         }
       }
@@ -217,9 +274,21 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
               cardType: widget.cardType,
               columns: widget.columns,
               onScrollToSelected: () => _scrollToSelected(item.group.name),
+              isHideDead: _hideDeadGroups.contains(item.group.name),
+              onToggleHideDead: () => _handleToggleHideDead(item.group),
             );
           } else if (item is _SpacingItem) {
             return SizedBox(height: item.height);
+          } else if (item is _HiddenInfoItem) {
+            return _HiddenInfoRow(
+              count: item.count,
+              onShow: () {
+                _hideDeadGroups.remove(item.groupName);
+                if (mounted) {
+                  setState(() {});
+                }
+              },
+            );
           } else if (item is _RowItem) {
             final cardWidgets = <Widget>[];
             for (var i = 0; i < widget.columns; i++) {
@@ -265,6 +334,43 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   }
 }
 
+class _HiddenInfoRow extends StatelessWidget {
+  final int count;
+  final VoidCallback onShow;
+
+  const _HiddenInfoRow({required this.count, required this.onShow});
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonCard(
+      radius: 16,
+      type: CommonCardType.filled,
+      onPressed: onShow,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.visibility,
+              size: 18,
+              color: context.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                appLocalizations.hiddenUnavailableCount(count),
+                style: context.textTheme.labelMedium?.toLight,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _GroupHeader extends ConsumerWidget {
   final Group group;
   final bool isExpand;
@@ -272,6 +378,8 @@ class _GroupHeader extends ConsumerWidget {
   final ProxyCardType cardType;
   final int columns;
   final VoidCallback? onScrollToSelected;
+  final bool isHideDead;
+  final VoidCallback? onToggleHideDead;
 
   const _GroupHeader({
     super.key,
@@ -281,6 +389,8 @@ class _GroupHeader extends ConsumerWidget {
     required this.cardType,
     required this.columns,
     this.onScrollToSelected,
+    this.isHideDead = false,
+    this.onToggleHideDead,
   });
 
   @override
@@ -350,6 +460,16 @@ class _GroupHeader extends ConsumerWidget {
                 icon: const Icon(Icons.adjust),
                 onPressed: onScrollToSelected,
                 tooltip: appLocalizations.locate,
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: Icon(
+                  isHideDead ? Icons.visibility : Icons.visibility_off,
+                ),
+                onPressed: onToggleHideDead,
+                tooltip: isHideDead
+                    ? appLocalizations.showUnavailable
+                    : appLocalizations.hideUnavailable,
               ),
               AnimatedBuilder(
                 animation: delayTestCoordinator,
