@@ -163,7 +163,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           try {
             collected.addAll(parseYamlSubscription(localText));
           } on Object catch (e) {
-            problems.add('YAML: $e');
+            // Убираем технический префикс "Exception: ", оставляем суть.
+            final msg = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+            problems.add('YAML: $msg');
           }
         }
         // Ссылки и WG/AWG-INI (строки YAML не ссылки — молча пропустятся).
