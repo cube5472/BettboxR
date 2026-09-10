@@ -56,10 +56,16 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m14(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
+  static String mHiddenUnavailableCount(count) =>
+      "Hidden unavailable: ${count} — tap to show";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "about": MessageLookupByLibrary.simpleMessage("About"),
     "accessControl": MessageLookupByLibrary.simpleMessage("Access Control"),
+    "hiddenUnavailableCount": mHiddenUnavailableCount,
+    "hideUnavailable": MessageLookupByLibrary.simpleMessage("Hide unavailable"),
+    "showUnavailable": MessageLookupByLibrary.simpleMessage("Show unavailable"),
     "accessControlAllowDesc": MessageLookupByLibrary.simpleMessage(
       "Only route selected apps through VPN",
     ),
