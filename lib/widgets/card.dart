@@ -1,5 +1,6 @@
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
+import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/fade_box.dart';
 import 'package:flutter/material.dart';
 
@@ -144,6 +145,19 @@ class CommonCard extends StatelessWidget {
     if (type == CommonCardType.filled) {
       return BorderSide.none;
     }
+    // «Угольная тема»: бирюзовая окантовка всех карточек.
+    if (colorScheme.brightness == Brightness.dark &&
+        globalState.config.themeProps.coalTheme) {
+      const turquoise = Color(kCoalTurquoise);
+      if (states.contains(WidgetState.hovered) ||
+          states.contains(WidgetState.focused) ||
+          states.contains(WidgetState.pressed)) {
+        return BorderSide(color: turquoise.withValues(alpha: 0.9));
+      }
+      return BorderSide(
+        color: isSelected ? turquoise : turquoise.withValues(alpha: 0.55),
+      );
+    }
     final hoverColor = isSelected
         ? colorScheme.primary.opacity80
         : colorScheme.primary.opacity60;
@@ -156,9 +170,7 @@ class CommonCard extends StatelessWidget {
     return BorderSide(
       color: isSelected
           ? colorScheme.primary
-          : colorScheme.outlineVariant.withValues(
-              alpha: isLight ? 0.45 : 0.25,
-            ),
+          : colorScheme.outlineVariant.withValues(alpha: isLight ? 0.45 : 0.25),
     );
   }
 
@@ -266,6 +278,19 @@ class SettingsBlock extends StatelessWidget {
           Card(
             color: context.colorScheme.surfaceContainer,
             clipBehavior: Clip.antiAlias,
+            // «Угольная тема»: бирюзовая окантовка карточек настроек.
+            shape:
+                Theme.of(context).colorScheme.brightness == Brightness.dark &&
+                    globalState.config.themeProps.coalTheme
+                ? SmoothRoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: const Color(
+                        kCoalTurquoise,
+                      ).withValues(alpha: 0.45),
+                    ),
+                  )
+                : null,
             child: Column(children: settings),
           ),
         ],
