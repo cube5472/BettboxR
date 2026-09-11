@@ -226,6 +226,21 @@ Map<String, dynamic> parseVless(String url) {
   if (params.get('type') == 'grpc' && params.has('path')) {
     proxy['grpc-opts'] = {'grpc-service-name': params.get('path')};
   }
+  // XHTTP / splithttp: ядро знает только network 'xhttp' и ждёт опции в
+  // xhttp-opts (path/host/mode). Без них path теряется, ядро стучится
+  // на '/' и сервер отбивает запросы (transport/xhttp/config.go).
+  final linkType = params.get('type');
+  if (linkType == 'xhttp' || linkType == 'splithttp') {
+    proxy['network'] = 'xhttp';
+    final xhttpOpts = <String, dynamic>{};
+    final xPath = params.get('path');
+    final xHost = params.get('host');
+    final xMode = params.get('mode');
+    if (xPath != null && xPath.isNotEmpty) xhttpOpts['path'] = xPath;
+    if (xHost != null && xHost.isNotEmpty) xhttpOpts['host'] = xHost;
+    if (xMode != null && xMode.isNotEmpty) xhttpOpts['mode'] = xMode;
+    if (xhttpOpts.isNotEmpty) proxy['xhttp-opts'] = xhttpOpts;
+  }
   final alpn = params.get('alpn');
   if (alpn != null) {
     final alpnArr = alpn
@@ -505,10 +520,13 @@ Map<String, dynamic> parseTUIC(String url) {
     'sni': cleanSni(params.get('sni') ?? ''),
     'skip-cert-verify': skipCert,
   };
+  // TUIC v5 (uuid:password в userinfo): поле token заполнять НЕЛЬЗЯ —
+  // ядро при непустом token создаёт клиента TUIC v4 (NewPoolClientV4),
+  // и v5-сервер отвечает молчаливым таймаутом. token — только для
+  // ссылок v4, где в userinfo нет ':' (см. protocol.md / tuic.go:271).
   if (uuidPart.isNotEmpty && password.isNotEmpty) {
     proxy['uuid'] = uuidPart;
     proxy['password'] = password;
-    proxy['token'] = '$uuidPart:$password';
   } else if (uuidPart.isNotEmpty) {
     proxy['token'] = uuidPart;
   }
