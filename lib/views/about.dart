@@ -225,6 +225,39 @@ class AboutView extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 12),
+      ListTile(
+        title: Row(
+          children: [
+            const SizedBox(
+              width: 44,
+              height: 44,
+              child: CircleAvatar(
+                foregroundImage: AssetImage('assets/images/avatars/mod.png'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '/mod - ext_point',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '/ для RKN-OFF-LINE',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
       ..._buildContributorsSection(),
       ..._buildMoreSection(context),
     ];
