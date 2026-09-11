@@ -310,6 +310,8 @@
   "onlyStatisticsProxy": "آمار ترافیک پروکسی",
   "onlyStatisticsProxyDesc": "محاسبه ترافیک فقط برای پروکسی‌ها",
   "pureBlackMode": "حالت مشکی خالص",
+  "coalThemeMode": "تم مشکی ذغالی",
+  "coalThemeModeDesc": "سطوح مشکی ذغالی با حاشیه فیروزه‌ای کارت‌ها",
   "keepAliveIntervalDesc": "فاصله زمانی TCP Keep-Alive",
   "entries": "مورد",
   "local": "محلی",
