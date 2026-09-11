@@ -310,6 +310,8 @@
   "onlyStatisticsProxy": "Только прокси-трафик",
   "onlyStatisticsProxyDesc": "Считать только трафик через прокси",
   "pureBlackMode": "Чистый чёрный",
+  "coalThemeMode": "Угольная тема",
+  "coalThemeModeDesc": "Угольно-чёрный фон и бирюзовая окантовка карточек",
   "keepAliveIntervalDesc": "Интервал TCP keep-alive",
   "entries": " записей",
   "local": "Локальное хранилище",
@@ -698,5 +700,15 @@
   "installTime": "Время установки",
   "updateTime": "Время обновления",
   "lightIcon": "Светлая иконка",
-  "lightIconDesc": "Вручную переключить на светлую иконку приложения"
+  "lightIconDesc": "Вручную переключить на светлую иконку приложения",
+  "hideUnavailable": "Скрыть недоступные",
+  "showUnavailable": "Показать недоступные",
+  "hiddenUnavailableCount": "Скрыто недоступных: {count} — нажмите, чтобы показать",
+  "@hiddenUnavailableCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  }
 }
