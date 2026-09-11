@@ -57,6 +57,7 @@ class ThemeView extends ConsumerWidget {
       _ThemeModeItem(),
       _PrimaryColorItem(),
       if (brightness == Brightness.dark) _PrueBlackItem(),
+      _CoalThemeItem(),
       if (toggleItems.isNotEmpty) ...generateSection(items: toggleItems),
     ];
     return generateListView(items);
@@ -439,6 +440,41 @@ class _PrueBlackItem extends ConsumerWidget {
   }
 }
 
+class _CoalThemeItem extends ConsumerWidget {
+  const _CoalThemeItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final coalTheme = ref.watch(
+      themeSettingProvider.select((state) => state.coalTheme),
+    );
+    return ListItem.switchItem(
+      leading: Icon(Icons.diamond_outlined),
+      horizontalTitleGap: 12,
+      title: Text(
+        appLocalizations.coalThemeMode,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: context.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      subtitle: Text(
+        appLocalizations.coalThemeModeDesc,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: context.colorScheme.onSurfaceVariant.withOpacity(0.7),
+        ),
+      ),
+      delegate: SwitchDelegate(
+        value: coalTheme,
+        onChanged: (value) {
+          ref
+              .read(themeSettingProvider.notifier)
+              .updateState((state) => state.copyWith(coalTheme: value));
+        },
+      ),
+    );
+  }
+}
+
 class _HarmonyFontItem extends ConsumerWidget {
   const _HarmonyFontItem();
 
@@ -473,7 +509,6 @@ class _HarmonyFontItem extends ConsumerWidget {
     );
   }
 }
-
 
 class _DarkIconItem extends ConsumerWidget {
   const _DarkIconItem();
