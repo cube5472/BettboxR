@@ -310,6 +310,8 @@
   "onlyStatisticsProxy": "プロキシ通信のみ統計",
   "onlyStatisticsProxyDesc": "プロキシ経由の通信量のみカウント",
   "pureBlackMode": "ピュアブラックモード",
+  "coalThemeMode": "炭黒テーマ",
+  "coalThemeModeDesc": "炭黒のサーフェスとターコイズのカード枠",
   "keepAliveIntervalDesc": "TCP Keep-Alive間隔",
   "entries": "件",
   "local": "ローカル",
