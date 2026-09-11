@@ -1,7 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'intl/messages_all.dart';
 
 // **************************************************************************
@@ -2235,36 +2234,6 @@ class AppLocalizations {
     return Intl.message('Delay Test', name: 'startTest', desc: '', args: []);
   }
 
-  /// `Hide unavailable`
-  String get hideUnavailable {
-    return Intl.message(
-      'Hide unavailable',
-      name: 'hideUnavailable',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Show unavailable`
-  String get showUnavailable {
-    return Intl.message(
-      'Show unavailable',
-      name: 'showUnavailable',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Hidden unavailable: {count} — tap to show`
-  String hiddenUnavailableCount(num count) {
-    return Intl.message(
-      'Hidden unavailable: $count — tap to show',
-      name: 'hiddenUnavailableCount',
-      desc: '',
-      args: [count],
-    );
-  }
-
   /// `Add Profile`
   String get addProfile {
     return Intl.message('Add Profile', name: 'addProfile', desc: '', args: []);
@@ -2555,6 +2524,26 @@ class AppLocalizations {
     return Intl.message(
       'Pure Black Mode',
       name: 'pureBlackMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Coal Black Theme`
+  String get coalThemeMode {
+    return Intl.message(
+      'Coal Black Theme',
+      name: 'coalThemeMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Coal-black surfaces with turquoise card outlines`
+  String get coalThemeModeDesc {
+    return Intl.message(
+      'Coal-black surfaces with turquoise card outlines',
+      name: 'coalThemeModeDesc',
       desc: '',
       args: [],
     );
@@ -5693,6 +5682,36 @@ class AppLocalizations {
   /// `Update Time`
   String get updateTime {
     return Intl.message('Update Time', name: 'updateTime', desc: '', args: []);
+  }
+
+  /// `Hide unavailable`
+  String get hideUnavailable {
+    return Intl.message(
+      'Hide unavailable',
+      name: 'hideUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show unavailable`
+  String get showUnavailable {
+    return Intl.message(
+      'Show unavailable',
+      name: 'showUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hidden unavailable: {count} — tap to show`
+  String hiddenUnavailableCount(num count) {
+    return Intl.message(
+      'Hidden unavailable: $count — tap to show',
+      name: 'hiddenUnavailableCount',
+      desc: '',
+      args: [count],
+    );
   }
 }
 
