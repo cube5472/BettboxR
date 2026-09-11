@@ -310,6 +310,8 @@
   "onlyStatisticsProxy": "Proxy Traffic Only",
   "onlyStatisticsProxyDesc": "Only record proxy traffic",
   "pureBlackMode": "Pure Black Mode",
+  "coalThemeMode": "Coal Black Theme",
+  "coalThemeModeDesc": "Coal-black surfaces with turquoise card outlines",
   "keepAliveIntervalDesc": "TCP keep-alive interval",
   "entries": " entries",
   "local": "Local",
@@ -464,7 +466,7 @@
   "fallbackConcurrentDesc": "Query default DNS and Fallback synchronously",
   "geoipCode": "GeoIP Code",
   "ipcidr": "IP/CIDR",
-  "domain": "Domain",
+  "domain": "Organization / Domain",
   "reset": "Reset",
   "action_view": "Show/Hide",
   "action_start": "Start/Stop",
@@ -680,7 +682,6 @@
   "clear": "Clear",
   "back": "Back",
   "closeAll": "Close All",
-  "script": "Script",
   "moreIpInfo": "More IP Information",
   "viewDetailedIpData": "View Detailed IP Data",
   "ipAddress": "IP Address",
@@ -688,12 +689,21 @@
   "provinceAndCity": "Province / City",
   "operatorOrAsn": "Organization / ASN",
   "continent": "Continent",
-  "domain": "Organization / Domain",
   "copiedToClipboard": "Copied to clipboard",
   "privateIp": "Private / LAN IP Address",
   "isp": "ISP",
   "networkErrorRetryLater": "Network error, please try again later",
   "tunVirtualAddress": "TUN Virtual Network Adapter",
   "installTime": "Install Time",
-  "updateTime": "Update Time"
+  "updateTime": "Update Time",
+  "hideUnavailable": "Hide unavailable",
+  "showUnavailable": "Show unavailable",
+  "hiddenUnavailableCount": "Hidden unavailable: {count} — tap to show",
+  "@hiddenUnavailableCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  }
 }
