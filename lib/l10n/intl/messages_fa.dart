@@ -30,27 +30,27 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(label) => "${label} از قبل وجود دارد";
 
-  static String m5(count) => "${Intl.plural(count, other: '# ساعت')}";
+  static String m6(count) => "${Intl.plural(count, other: '# ساعت')}";
 
-  static String m6(count) => "${Intl.plural(count, other: '# دقیقه')}";
+  static String m7(count) => "${Intl.plural(count, other: '# دقیقه')}";
 
-  static String m7(count) => "${Intl.plural(count, other: '# ماه')}";
+  static String m8(count) => "${Intl.plural(count, other: '# ماه')}";
 
-  static String m8(label) => "هیچ مورد ${label} یافت نشد";
+  static String m9(label) => "هیچ مورد ${label} یافت نشد";
 
-  static String m9(label) => "${label} باید عدد باشد";
+  static String m10(label) => "${label} باید عدد باشد";
 
-  static String m10(label) =>
+  static String m11(label) =>
       "${label} باید بین ۱۰۲۴ تا ۴۹۱۵۱ باشد (۰ برای غیرفعال)";
 
-  static String m11(statusCode) =>
+  static String m12(statusCode) =>
       "خطا در دریافت پروفایل. لطفاً شبکه خود را بررسی کرده یا لینک را ریست کنید ( کد خطا: ${statusCode} )";
 
-  static String m12(count) => "${count} مورد انتخاب شده";
+  static String m13(count) => "${count} مورد انتخاب شده";
 
-  static String m13(label) => "${label} باید یک URL معتبر باشد";
+  static String m14(label) => "${label} باید یک URL معتبر باشد";
 
-  static String m14(count) => "${Intl.plural(count, other: '# سال')}";
+  static String m15(count) => "${Intl.plural(count, other: '# سال')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -255,6 +255,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "close": MessageLookupByLibrary.simpleMessage("بستن"),
     "closeAll": MessageLookupByLibrary.simpleMessage("بستن همه"),
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("تم مشکی ذغالی"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
+      "سطوح مشکی ذغالی با حاشیه فیروزه‌ای کارت‌ها",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("رنگ"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("پالت‌های رنگی"),
     "columns": MessageLookupByLibrary.simpleMessage("تعداد ستون‌ها"),
@@ -565,7 +569,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "کنترل برنامه با صفحه کلید",
     ),
-    "hours": m5,
+    "hours": m6,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("اسنیف پورت HTTP"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("هدایت ICMP"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -670,11 +674,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "تغییر رفتار پیش‌فرض بستن окно",
     ),
-    "minutes": m6,
+    "minutes": m7,
     "mixedPort": MessageLookupByLibrary.simpleMessage("پورت ترکیبی (Mixed)"),
     "mode": MessageLookupByLibrary.simpleMessage("حالت"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("تک‌رنگ"),
-    "months": m7,
+    "months": m8,
     "more": MessageLookupByLibrary.simpleMessage("بیشتر"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("اطلاعات بیشتر IP"),
     "name": MessageLookupByLibrary.simpleMessage("نام"),
@@ -774,8 +778,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "هیچ پروفایلی یافت نشد. لطفاً یکی اضافه کنید",
     ),
-    "nullTip": m8,
-    "numberTip": m9,
+    "nullTip": m9,
+    "numberTip": m10,
     "oneColumn": MessageLookupByLibrary.simpleMessage("۱ ستون"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("پنل آنلاین"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("فقط آیکون"),
@@ -883,7 +887,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "لطفاً پورت غیرتکراری وارد کنید",
     ),
-    "portTip": m10,
+    "portTip": m11,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("کلید روشن/خاموش"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage(
       "اولویت استفاده از HTTP/3 در DoH",
@@ -905,7 +909,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "پروفایل تغییر یافته است. آیا بروزرسانی خودکار غیرفعال شود؟",
     ),
-    "profileImportFailed": m11,
+    "profileImportFailed": m12,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "لطفاً نام پروفایل را وارد کنید",
     ),
@@ -1066,7 +1070,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "selectAll": MessageLookupByLibrary.simpleMessage("انتخاب همه"),
     "selected": MessageLookupByLibrary.simpleMessage("انتخاب شده"),
-    "selectedCountTitle": m12,
+    "selectedCountTitle": m13,
     "serviceReady": MessageLookupByLibrary.simpleMessage("سرویس آماده است"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage(
       "سرویس در حال اجرا است",
@@ -1261,7 +1265,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlDesc": MessageLookupByLibrary.simpleMessage(
       "دریافت پروفایل از طریق آدرس URL",
     ),
-    "urlTip": m13,
+    "urlTip": m14,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "استفاده از اسکریپت اورراید سراسری",
     ),
@@ -1302,6 +1306,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "نیازمند دسترسی مدیریت (Admin)",
     ),
-    "years": m14,
+    "years": m15,
   };
 }
