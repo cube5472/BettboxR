@@ -310,6 +310,8 @@
   "onlyStatisticsProxy": "代理流量統計",
   "onlyStatisticsProxyDesc": "開啟後將只統計代理流量",
   "pureBlackMode": "純黑模式",
+  "coalThemeMode": "煤黑主題",
+  "coalThemeModeDesc": "煤黑表面與青綠色卡片描邊",
   "keepAliveIntervalDesc": "TCP 保持活動間隔",
   "entries": "個項目",
   "local": "本機",
