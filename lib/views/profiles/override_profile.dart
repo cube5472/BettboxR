@@ -5,6 +5,7 @@ import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class OverrideProfileView extends StatefulWidget {
@@ -406,10 +407,18 @@ class RuleContent extends ConsumerWidget {
 
   const RuleContent({super.key, required this.maxWidth});
 
+  Future<void> _handleCopy(BuildContext context, String value) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (context.mounted) {
+      context.showNotifier(appLocalizations.copySuccess);
+    }
+  }
+
   Widget _buildItem({
     required Rule rule,
     required bool isSelected,
     required VoidCallback onTab,
+    required VoidCallback onCopy,
     required BuildContext context,
   }) {
     return Material(
@@ -438,16 +447,36 @@ class RuleContent extends ConsumerWidget {
               horizontal: 16,
               vertical: 16,
             ),
-            trailing: SizedBox(
-              width: 24,
-              height: 24,
-              child: CommonCheckBox(
-                value: isSelected,
-                isCircle: true,
-                onChanged: (_) {
-                  onTab();
-                },
-              ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: 8,
+              children: [
+                if (isSelected)
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      iconSize: 20,
+                      style: const ButtonStyle(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: onCopy,
+                      icon: const Icon(Icons.copy),
+                    ),
+                  ),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CommonCheckBox(
+                    value: isSelected,
+                    isCircle: true,
+                    onChanged: (_) {
+                      onTab();
+                    },
+                  ),
+                ),
+              ],
             ),
             title: EmojiText(rule.value),
           ),
@@ -524,6 +553,9 @@ class RuleContent extends ConsumerWidget {
             onTab: () {
               _handleSelect(ref, rule.id);
             },
+            onCopy: () {
+              _handleCopy(context, rule.value);
+            },
             context: context,
           ),
         );
@@ -550,6 +582,7 @@ class RuleContent extends ConsumerWidget {
       },
       itemExtentBuilder: (index) {
         final rule = rules[index];
+        final isSelected = selectedRules.contains(rule.id);
         return 40 +
             globalState.measure
                 .computeTextSize(
@@ -557,7 +590,7 @@ class RuleContent extends ConsumerWidget {
                     rule.value,
                     style: context.textTheme.bodyMedium?.toJetBrainsMono,
                   ),
-                  maxWidth: maxWidth,
+                  maxWidth: isSelected ? maxWidth - 32 : maxWidth,
                 )
                 .height;
       },
