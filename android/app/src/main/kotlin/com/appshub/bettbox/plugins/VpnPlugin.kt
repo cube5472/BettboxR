@@ -11,6 +11,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import android.widget.Toast
 import androidx.core.content.getSystemService
 import com.appshub.bettbox.BettboxApplication
@@ -68,6 +69,9 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var quickResponseJob: Job? = null
     private var lastNetworkType: Int? = null
     private var lastDns = ""
+
+    @Volatile
+    private var lastNotificationResumeAt = 0L
 
     val networks: MutableSet<Network> = Collections.newSetFromMap(ConcurrentHashMap())
 
@@ -775,6 +779,20 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             ServicePlugin.notifyNetworkChanged()
         }
         return true
+    }
+
+    fun resumeFromNotification() {
+        val now = SystemClock.elapsedRealtime()
+        synchronized(this) {
+            if (now - lastNotificationResumeAt < 1000L) return
+            lastNotificationResumeAt = now
+        }
+        val storedOptions = options
+        if (GlobalState.isSmartStopped && storedOptions != null) {
+            handleSmartResume(storedOptions)
+        } else {
+            GlobalState.handleStart()
+        }
     }
 
     private fun bindService() {
