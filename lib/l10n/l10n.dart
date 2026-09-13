@@ -5713,6 +5713,271 @@ class AppLocalizations {
       args: [count],
     );
   }
+
+  /// `Security`
+  String get security {
+    return Intl.message('Security', name: 'security', desc: '', args: []);
+  }
+
+  /// `Stealth check`
+  String get stealthCheck {
+    return Intl.message('Stealth check', name: 'stealthCheck', desc: '', args: []);
+  }
+
+  /// `What VPN-detecting apps can see about you`
+  String get stealthCheckDesc {
+    return Intl.message(
+      'What VPN-detecting apps can see about you',
+      name: 'stealthCheckDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Turn on the VPN — there is nothing to check without the tunnel`
+  String get stealthCheckNeedVpn {
+    return Intl.message(
+      'Turn on the VPN — there is nothing to check without the tunnel',
+      name: 'stealthCheckNeedVpn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enable VPN`
+  String get stealthCheckEnableVpn {
+    return Intl.message(
+      'Enable VPN',
+      name: 'stealthCheckEnableVpn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Run check`
+  String get stealthCheckRun {
+    return Intl.message('Run check', name: 'stealthCheckRun', desc: '', args: []);
+  }
+
+  /// `Rerun`
+  String get stealthCheckRerun {
+    return Intl.message('Rerun', name: 'stealthCheckRerun', desc: '', args: []);
+  }
+
+  /// `Copy report`
+  String get stealthCheckCopyReport {
+    return Intl.message(
+      'Copy report',
+      name: 'stealthCheckCopyReport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking…`
+  String get stealthCheckChecking {
+    return Intl.message(
+      'Checking…',
+      name: 'stealthCheckChecking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checked at $time`
+  String stealthCheckedAt(Object time) {
+    return Intl.message(
+      'Checked at $time',
+      name: 'stealthCheckedAt',
+      desc: '',
+      args: [time],
+    );
+  }
+
+  /// `$closed of $total closed`
+  String stealthCheckScore(Object closed, Object total) {
+    return Intl.message(
+      '$closed of $total closed',
+      name: 'stealthCheckScore',
+      desc: '',
+      args: [closed, total],
+    );
+  }
+
+  /// `Local ports`
+  String get stealthPortsTitle {
+    return Intl.message(
+      'Local ports',
+      name: 'stealthPortsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ports are silent — detectors will not spot the proxy`
+  String get stealthPortsOk {
+    return Intl.message(
+      'Ports are silent — detectors will not spot the proxy',
+      name: 'stealthPortsOk',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Answering ports: $ports`
+  String stealthPortsBad(Object ports) {
+    return Intl.message(
+      'Answering ports: $ports',
+      name: 'stealthPortsBad',
+      desc: '',
+      args: [ports],
+    );
+  }
+
+  /// `VPN interface`
+  String get stealthTunTitle {
+    return Intl.message(
+      'VPN interface',
+      name: 'stealthTunTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The tun interface is visible to all apps, it cannot be hidden without root`
+  String get stealthTunWarn {
+    return Intl.message(
+      'The tun interface is visible to all apps, it cannot be hidden without root',
+      name: 'stealthTunWarn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `VPN network in the system`
+  String get stealthVpnNetTitle {
+    return Intl.message(
+      'VPN network in the system',
+      name: 'stealthVpnNetTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apps can see the active VPN network (TRANSPORT_VPN)`
+  String get stealthVpnNetWarn {
+    return Intl.message(
+      'Apps can see the active VPN network (TRANSPORT_VPN)',
+      name: 'stealthVpnNetWarn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DNS queries`
+  String get stealthDnsTitle {
+    return Intl.message(
+      'DNS queries',
+      name: 'stealthDnsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Resolver does not match the ISP DNS`
+  String get stealthDnsOk {
+    return Intl.message(
+      'Resolver does not match the ISP DNS',
+      name: 'stealthDnsOk',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Queries go to the ISP DNS — a leak`
+  String get stealthDnsLeak {
+    return Intl.message(
+      'Queries go to the ISP DNS — a leak',
+      name: 'stealthDnsLeak',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not check`
+  String get stealthDnsFail {
+    return Intl.message(
+      'Could not check',
+      name: 'stealthDnsFail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No IPv6 in the network — nothing to leak`
+  String get stealthIpv6OkNoV6 {
+    return Intl.message(
+      'No IPv6 in the network — nothing to leak',
+      name: 'stealthIpv6OkNoV6',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `IPv6 is covered by the tunnel`
+  String get stealthIpv6OkCovered {
+    return Intl.message(
+      'IPv6 is covered by the tunnel',
+      name: 'stealthIpv6OkCovered',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `IPv6 bypasses the tunnel`
+  String get stealthIpv6Bad {
+    return Intl.message(
+      'IPv6 bypasses the tunnel',
+      name: 'stealthIpv6Bad',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exit IP`
+  String get stealthExitTitle {
+    return Intl.message(
+      'Exit IP',
+      name: 'stealthExitTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Traffic exits through the node`
+  String get stealthExitOk {
+    return Intl.message(
+      'Traffic exits through the node',
+      name: 'stealthExitOk',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not fetch`
+  String get stealthExitFail {
+    return Intl.message(
+      'Could not fetch',
+      name: 'stealthExitFail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fix`
+  String get stealthFix {
+    return Intl.message('Fix', name: 'stealthFix', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
