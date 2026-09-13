@@ -4,4 +4,7 @@
     <string name="service_running">Сервис запущен</string>
     <string name="core_suspended">Приостановлено</string>
     <string name="smart_auto_stop_service_running">Автостоп запущен</string>
+    <string name="notification_action_start">Старт</string>
+    <string name="notification_action_stop">Стоп</string>
+    <string name="notification_action_restart">Перезапуск</string>
 </resources>
