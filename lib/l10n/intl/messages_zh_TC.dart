@@ -958,6 +958,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
       "應用能看到活躍的 VPN 網路（TRANSPORT_VPN）",
     ),
+    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("無法檢測"),
     "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS 查詢"),
     "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
       "解析器與電信商 DNS 不一致",

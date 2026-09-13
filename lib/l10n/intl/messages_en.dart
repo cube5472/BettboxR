@@ -1312,6 +1312,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
       "Apps can see the active VPN network (TRANSPORT_VPN)",
     ),
+    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Could not check"),
     "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
     "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
       "Resolver does not match the ISP DNS",

@@ -5874,6 +5874,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Could not check`
+  String get stealthCheckFail {
+    return Intl.message(
+      'Could not check',
+      name: 'stealthCheckFail',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `DNS queries`
   String get stealthDnsTitle {
     return Intl.message(

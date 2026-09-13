@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/plugins/vpn.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/views/config/general.dart';
@@ -47,6 +46,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   String _exitInfo = '';
   bool _ipv6NoV6 = false;
   bool _hasGlobalIpv6 = false;
+  bool _systemOk = false;
   List<String> _physicalDns = const [];
 
   Future<void> _handleEnableVpn() async {
@@ -119,11 +119,36 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   }
 
   /// tun-интерфейс, TRANSPORT_VPN и DNS физической сети — через Kotlin-движок.
+  /// Экран живёт в UI-процессе, где глобальный `vpn` равен null (геттер
+  /// выдаёт объект только в сервисном движке), поэтому зовём канал 'vpn'
+  /// напрямую: VpnPlugin прицепляется и к движку активити
+  /// (configureFlutterEngine в MainActivity), а handleStealthCheck
+  /// использует лишь системные API — привязка к VPN-сервису ему не нужна.
   Future<void> _checkSystem() async {
     Map<String, dynamic>? data;
     try {
-      data = await vpn?.stealthCheck();
-    } catch (_) {}
+      data = await const MethodChannel('vpn').invokeMapMethod<String, dynamic>(
+        'stealthCheck',
+      );
+    } catch (e) {
+      commonPrint.log('stealth check: system channel failed: $e');
+    }
+    // Страховка: если канал недоступен, сам tun-интерфейс всё равно виден
+    // средствами Dart — таблица интерфейсов ядра общая для всех процессов.
+    var dartTuns = const <String>[];
+    if (data == null) {
+      try {
+        dartTuns = (await NetworkInterface.list())
+            .map((item) => item.name)
+            .where(
+              (name) => name.startsWith('tun') || name.startsWith('ppp'),
+            )
+            .toSet()
+            .toList();
+      } catch (e) {
+        commonPrint.log('stealth check: dart tun lookup failed: $e');
+      }
+    }
     final tunList = data?['tunInterfaces'];
     final tunNames = tunList is List
         ? tunList
@@ -142,11 +167,12 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
         : <String>[];
     _physicalDns = physicalDns;
     _hasGlobalIpv6 = hasGlobalIpv6;
+    _systemOk = data != null;
     if (!mounted) return;
     setState(() {
-      _tunNames = tunNames;
-      _vTun = data == null ? _fail : _warn;
-      _vVpnNet = isVpnNetwork ? _warn : _ok;
+      _tunNames = tunNames.isNotEmpty ? tunNames : dartTuns.join(', ');
+      _vTun = data != null || dartTuns.isNotEmpty ? _warn : _fail;
+      _vVpnNet = data == null ? _fail : (isVpnNetwork ? _warn : _ok);
     });
   }
 
@@ -209,7 +235,10 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     final cfg = ref.read(patchClashConfigProvider);
     if (!mounted) return;
     setState(() {
-      if (!_hasGlobalIpv6) {
+      if (!_systemOk) {
+        _ipv6NoV6 = false;
+        _vIpv6 = _fail;
+      } else if (!_hasGlobalIpv6) {
         _ipv6NoV6 = true;
         _vIpv6 = _ok;
       } else if (cfg.ipv6) {
@@ -291,6 +320,8 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
         return _tunNames.isNotEmpty
             ? '${appLocalizations.stealthTunWarn} · $_tunNames'
             : appLocalizations.stealthTunWarn;
+      case _fail:
+        return appLocalizations.stealthCheckFail;
     }
     return '';
   }
@@ -301,6 +332,8 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
         return appLocalizations.stealthCheckChecking;
       case _warn:
         return appLocalizations.stealthVpnNetWarn;
+      case _fail:
+        return appLocalizations.stealthCheckFail;
     }
     return '';
   }
@@ -331,6 +364,8 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
             : appLocalizations.stealthIpv6OkCovered;
       case _bad:
         return appLocalizations.stealthIpv6Bad;
+      case _fail:
+        return appLocalizations.stealthCheckFail;
     }
     return '';
   }
@@ -687,8 +722,9 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     }
     final verdicts = [_vPorts, _vTun, _vVpnNet, _vDns, _vIpv6, _vExit];
     final closed = verdicts.where((v) => v == _ok).length;
-    final failed = verdicts.where((v) => v == _fail).length;
-    final total = verdicts.length - failed;
+    // Считаем честно: непроверенные пункты остаются в знаменателе,
+    // иначе счётчик рискует показать «3 из 3» при трёх сбоях.
+    final total = verdicts.length;
     return ListView(
       padding: const EdgeInsets.only(bottom: 32, top: 4),
       children: [
