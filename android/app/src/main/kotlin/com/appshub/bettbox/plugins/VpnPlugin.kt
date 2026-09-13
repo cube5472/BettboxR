@@ -42,7 +42,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.net.Inet6Address
 import java.net.InetSocketAddress
+import java.net.NetworkInterface
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -233,6 +235,10 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(GlobalState.currentRunState == RunState.START)
             }
 
+            "stealthCheck" -> {
+                result.success(handleStealthCheck())
+            }
+
             else -> {
                 result.notImplemented()
             }
@@ -241,6 +247,64 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     
     fun setQuickResponse(enabled: Boolean) {
         quickResponseEnabled = enabled
+    }
+
+    /// Системная часть стелс-проверки (экран живёт в UI-процессе, где
+    /// Dart-геттер `vpn` равен null, поэтому вызов идёт прямо в канал).
+    /// Только публичные API: ConnectivityManager + java.net.NetworkInterface.
+    fun handleStealthCheck(): Map<String, Any> {
+        var isVpnNetwork = false
+        var hasGlobalIpv6 = false
+        val physicalDns = mutableListOf<String>()
+        runCatching {
+            val cm = connectivity
+            for (network in cm?.allNetworks ?: emptyArray<Network>()) {
+                val caps = cm?.getNetworkCapabilities(network) ?: continue
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+                    isVpnNetwork = true
+                    continue
+                }
+                val lp = cm?.getLinkProperties(network) ?: continue
+                for (linkAddress in lp.linkAddresses) {
+                    val addr = linkAddress.address
+                    if (addr is Inet6Address &&
+                        !addr.isAnyLocalAddress &&
+                        !addr.isLoopbackAddress &&
+                        !addr.isLinkLocalAddress &&
+                        !addr.isMulticastAddress &&
+                        !addr.isSiteLocalAddress
+                    ) {
+                        val first = addr.address[0].toInt() and 0xFF
+                        if (first != 0xfc && first != 0xfd) {
+                            hasGlobalIpv6 = true
+                        }
+                    }
+                }
+                for (server in lp.dnsServers) {
+                    val host = server.hostAddress
+                    if (!host.isNullOrBlank() && !physicalDns.contains(host)) {
+                        physicalDns.add(host)
+                    }
+                }
+            }
+        }
+        val tuns = mutableListOf<String>()
+        runCatching {
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            while (interfaces != null && interfaces.hasMoreElements()) {
+                val ni = interfaces.nextElement()
+                val name = ni?.name
+                if (name != null && (name.startsWith("tun") || name.startsWith("ppp"))) {
+                    if (!tuns.contains(name)) tuns.add(name)
+                }
+            }
+        }
+        return mapOf(
+            "tunInterfaces" to tuns,
+            "isVpnNetwork" to isVpnNetwork,
+            "hasGlobalIpv6" to hasGlobalIpv6,
+            "physicalDns" to physicalDns
+        )
     }
 
     private fun getActivePhysicalNetworks(): Set<Network> {
