@@ -22,11 +22,44 @@ import android.content.ComponentName
 import android.content.Intent
 
 import android.graphics.BitmapFactory
+import com.appshub.bettbox.plugins.VpnPlugin
 
 interface BaseServiceInterface {
     suspend fun start(options: VpnOptions): Int
     fun stop()
     suspend fun startForeground()
+}
+
+fun buildNotificationActionPendingIntent(
+    service: Service,
+    action: String,
+    requestCode: Int
+): PendingIntent {
+    val intent = Intent(service, service.javaClass).apply { this.action = action }
+    val flags = if (Build.VERSION.SDK_INT >= 31) {
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    } else {
+        PendingIntent.FLAG_UPDATE_CURRENT
+    }
+    return PendingIntent.getService(service, requestCode, intent, flags)
+}
+
+fun Service.handleNotificationControlAction(intent: Intent?): Boolean {
+    return when (intent?.action) {
+        GlobalState.NOTIFICATION_ACTION_STOP -> {
+            GlobalState.handleStop()
+            true
+        }
+        GlobalState.NOTIFICATION_ACTION_RESTART -> {
+            GlobalState.handleRestart()
+            true
+        }
+        GlobalState.NOTIFICATION_ACTION_START -> {
+            VpnPlugin.resumeFromNotification()
+            true
+        }
+        else -> false
+    }
 }
 
 suspend fun Service.createBettboxNotificationBuilder(
@@ -91,6 +124,36 @@ suspend fun Service.createBettboxNotificationBuilder(
             setShowWhen(true)
             setOnlyAlertOnce(true)
             setPriority(priority)
+            if (isSuspended) {
+                addAction(
+                    R.drawable.ic_notif_start,
+                    getString(R.string.notification_action_start),
+                    buildNotificationActionPendingIntent(
+                        this@createBettboxNotificationBuilder,
+                        GlobalState.NOTIFICATION_ACTION_START,
+                        13
+                    )
+                )
+            } else {
+                addAction(
+                    R.drawable.ic_notif_stop,
+                    getString(R.string.notification_action_stop),
+                    buildNotificationActionPendingIntent(
+                        this@createBettboxNotificationBuilder,
+                        GlobalState.NOTIFICATION_ACTION_STOP,
+                        11
+                    )
+                )
+                addAction(
+                    R.drawable.ic_notif_restart,
+                    getString(R.string.notification_action_restart),
+                    buildNotificationActionPendingIntent(
+                        this@createBettboxNotificationBuilder,
+                        GlobalState.NOTIFICATION_ACTION_RESTART,
+                        12
+                    )
+                )
+            }
         }
     }
 
