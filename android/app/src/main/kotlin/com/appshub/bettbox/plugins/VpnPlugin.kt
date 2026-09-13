@@ -36,8 +36,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import java.net.Inet6Address
-import java.net.NetworkInterface
 import java.util.Collections
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -198,10 +196,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(getLocalGateways())
             }
 
-            "stealthCheck" -> {
-                result.success(handleStealthCheck())
-            }
-
             "setSmartStopped" -> {
                 val value = call.argument<Boolean>("value") ?: false
                 GlobalState.isSmartStopped = value
@@ -294,76 +288,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }.getOrElse {
         android.util.Log.e("VpnPlugin", "getLocalGateways error: ${it.message}")
         emptyList()
-    }
-
-    /**
-     * Системные данные для стелс-проверки: какие следы VPN видны
-     * обычному приложению через стандартные API.
-     */
-    fun handleStealthCheck(): Map<String, Any> {
-        val tunInterfaces = mutableListOf<String>()
-        var isVpnNetwork = false
-        var hasGlobalIpv6 = false
-        val physicalDns = mutableListOf<String>()
-        runCatching {
-            val interfaces = NetworkInterface.getNetworkInterfaces()
-            while (interfaces != null && interfaces.hasMoreElements()) {
-                val ni = interfaces.nextElement()
-                val name = ni?.name
-                if (name != null && (name.startsWith("tun") || name.startsWith("ppp"))) {
-                    if (!tunInterfaces.contains(name)) tunInterfaces.add(name)
-                }
-            }
-        }
-        runCatching {
-            val cm = connectivity ?: return@runCatching
-            for (network in cm.allNetworks) {
-                val caps = cm.getNetworkCapabilities(network) ?: continue
-                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
-                    isVpnNetwork = true
-                    continue
-                }
-                val lp = cm.getLinkProperties(network) ?: continue
-                if (hasGlobalIpv6(lp)) hasGlobalIpv6 = true
-                for (server in lp.dnsServers) {
-                    val host = server.hostAddress
-                    if (!host.isNullOrBlank() && !physicalDns.contains(host)) {
-                        physicalDns.add(host)
-                    }
-                }
-            }
-        }
-        return mapOf(
-            "tunInterfaces" to tunInterfaces,
-            "isVpnNetwork" to isVpnNetwork,
-            "hasGlobalIpv6" to hasGlobalIpv6,
-            "physicalDns" to physicalDns
-        )
-    }
-
-    /**
-     * Есть ли на линке глобальный IPv6. Публичный аналог
-     * LinkProperties.hasGlobalIpv6Address(), который скрыт (@hide)
-     * в SDK и не компилируется. Отбрасываем link-local (fe80::/10),
-     * ULA (fc00::/7), site-local (fec0::/10), loopback и multicast.
-     */
-    private fun hasGlobalIpv6(lp: LinkProperties): Boolean {
-        for (linkAddress in lp.linkAddresses) {
-            val addr = linkAddress.address
-            if (addr is Inet6Address &&
-                !addr.isAnyLocalAddress &&
-                !addr.isLoopbackAddress &&
-                !addr.isLinkLocalAddress &&
-                !addr.isMulticastAddress &&
-                !addr.isSiteLocalAddress
-            ) {
-                val first = addr.address[0].toInt() and 0xFF
-                if (first != 0xfc && first != 0xfd) {
-                    return true
-                }
-            }
-        }
-        return false
     }
 
     fun handleStart(options: VpnOptions): Boolean {
