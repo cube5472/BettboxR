@@ -161,6 +161,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (handleNotificationControlAction(intent)) return START_STICKY
         if (intent?.action == "UPDATE_NOTIFICATION_SPEED") {
             val profileName = intent.getStringExtra("profileName") ?: ""
             val speedInfo = intent.getStringExtra("speedInfo") ?: ""
