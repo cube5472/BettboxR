@@ -77,6 +77,12 @@ class Vpn {
         const [];
   }
 
+  Future<Map<String, dynamic>?> stealthCheck() async {
+    return await methodChannel.invokeMapMethod<String, dynamic>(
+      'stealthCheck',
+    );
+  }
+
   Future<void> setSmartStopped(bool value) async {
     await methodChannel.invokeMethod<bool>('setSmartStopped', {'value': value});
   }
