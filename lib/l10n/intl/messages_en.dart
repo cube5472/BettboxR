@@ -58,6 +58,12 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m15(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
+  static String st0(time) => "Checked at ${time}";
+
+  static String st1(closed, total) => "${closed} of ${total} closed";
+
+  static String st2(ports) => "Answering ports: ${ports}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "about": MessageLookupByLibrary.simpleMessage("About"),
@@ -1276,5 +1282,56 @@ class MessageLookup extends MessageLookupByLibrary {
       "Requires administrator privileges",
     ),
     "years": m15,
+    "security": MessageLookupByLibrary.simpleMessage("Security"),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("Stealth check"),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "What VPN-detecting apps can see about you",
+    ),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "Turn on the VPN — there is nothing to check without the tunnel",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Enable VPN"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Run check"),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Rerun"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("Copy report"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
+    "stealthCheckedAt": st0,
+    "stealthCheckScore": st1,
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Local ports"),
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "Ports are silent — detectors will not spot the proxy",
+    ),
+    "stealthPortsBad": st2,
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN interface"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "The tun interface is visible to all apps, it cannot be hidden without root",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage(
+      "VPN network in the system",
+    ),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "Apps can see the active VPN network (TRANSPORT_VPN)",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "Resolver does not match the ISP DNS",
+    ),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "Queries go to the ISP DNS — a leak",
+    ),
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "No IPv6 in the network — nothing to leak",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 is covered by the tunnel",
+    ),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 bypasses the tunnel"),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Exit IP"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage(
+      "Traffic exits through the node",
+    ),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Could not fetch"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("Fix"),
   };
 }
