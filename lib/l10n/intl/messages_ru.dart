@@ -60,6 +60,12 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m15(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
+  static String st0(time) => "Проверено в ${time}";
+
+  static String st1(closed, total) => "Закрыто ${closed} из ${total}";
+
+  static String st2(ports) => "Отвечают порты: ${ports}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "about": MessageLookupByLibrary.simpleMessage("О программе"),
@@ -1336,5 +1342,52 @@ class MessageLookup extends MessageLookupByLibrary {
       "Требуются права администратора",
     ),
     "years": m15,
+    "security": MessageLookupByLibrary.simpleMessage("Безопасность"),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("Стелс-проверка"),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "Что о вашем VPN увидят приложения-детекторы",
+    ),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "Включите VPN — без туннеля проверять нечего",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Включить VPN"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Запустить проверку"),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Повторить"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("Скопировать отчёт"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Проверка…"),
+    "stealthCheckedAt": st0,
+    "stealthCheckScore": st1,
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Локальные порты"),
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "Порты молчат — детектор не увидит прокси",
+    ),
+    "stealthPortsBad": st2,
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN-интерфейс"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "Интерфейс tun виден всем приложениям — без root его не скрыть",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage("VPN-сеть в системе"),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "Приложения видят активную VPN-сеть (TRANSPORT_VPN)",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS-запросы"),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "Резолвер не совпадает с DNS провайдера",
+    ),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "Запросы уходят к DNS провайдера — утечка",
+    ),
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Не удалось проверить"),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "IPv6 в сети отсутствует — нечему утекать",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 покрыт туннелем",
+    ),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 уходит мимо туннеля"),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Выходной IP"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage("Трафик выходит через ноду"),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Не удалось получить"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("Исправить"),
   };
 }
