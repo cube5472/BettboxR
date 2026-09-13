@@ -68,6 +68,14 @@ class ProxyCard extends StatelessWidget {
         proxy.type.toUpperCase() == 'REMATCH';
   }
 
+  /// Метка типа ноды с транспортом из конфига: «Vless grpc», «Vless xhttp» и т.п.
+  /// Если транспорт неизвестен (нода не из текущего конфига) — только тип, как раньше.
+  String get _proxyTypeLabel {
+    final network = globalState.proxyNetworkMap[proxy.name] ?? '';
+    if (network.isEmpty) return proxy.type;
+    return '${proxy.type} $network';
+  }
+
   void _handleTestCurrentDelay() {
     if (_isNonTestableProxy) return;
     proxyDelayTest(proxy, testUrl);
@@ -318,7 +326,7 @@ class ProxyCard extends StatelessWidget {
                                   Expanded(
                                     child: Align(
                                       alignment: Alignment.centerLeft,
-                                      child: _ProxyMetaTag(proxy.type),
+                                      child: _ProxyMetaTag(_proxyTypeLabel),
                                     ),
                                   ),
                                   delayText,
@@ -339,7 +347,7 @@ class ProxyCard extends StatelessWidget {
                               flex: 1,
                               child: TooltipText(
                                 text: Text(
-                                  proxy.type,
+                                  _proxyTypeLabel,
                                   style: context.textTheme.bodySmall
                                       ?.copyWith(
                                         overflow: TextOverflow.ellipsis,
