@@ -34,6 +34,9 @@ class GlobalState {
   bool isService = false;
   bool isExiting = false;
   bool isScreenOn = true;
+  /// Карта «имя ноды → транспорт» (ws/grpc/xhttp/tcp/...), строится в patchRawConfig
+  /// и используется в списке прокси для отображения типа ноды (vless grpc и т.п.).
+  Map<String, String> proxyNetworkMap = {};
   Timer? timer;
   Timer? groupsUpdateTimer;
   late Config config;
@@ -960,8 +963,15 @@ class GlobalState {
     final globalClientFingerprint = rawConfig['global-client-fingerprint'];
     if (rawConfig['proxies'] is List) {
       final proxiesList = rawConfig['proxies'] as List;
+      final transportMap = <String, String>{};
       for (final proxy in proxiesList) {
         if (proxy is! Map) continue;
+
+        final proxyName = proxy['name']?.toString();
+        if (proxyName != null && proxyName.isNotEmpty) {
+          transportMap[proxyName] =
+              proxy['network']?.toString().toLowerCase() ?? '';
+        }
 
         final type = proxy['type']?.toString().toLowerCase();
         final isTls = proxy['tls'] == true;
@@ -988,6 +998,7 @@ class GlobalState {
           }
         }
       }
+      proxyNetworkMap = transportMap;
     }
 
     if (targetProfile.groupSwitches.isNotEmpty &&
