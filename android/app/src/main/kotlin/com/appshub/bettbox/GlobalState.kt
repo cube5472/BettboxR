@@ -43,9 +43,14 @@ object GlobalState {
     const val NOTIFICATION_CHANNEL_SUSPENDED = "Bettbox_Suspended"
     const val NOTIFICATION_ID = 1
 
+    const val NOTIFICATION_ACTION_STOP = "com.appshub.bettbox.action.NOTIFICATION_STOP"
+    const val NOTIFICATION_ACTION_RESTART = "com.appshub.bettbox.action.NOTIFICATION_RESTART"
+    const val NOTIFICATION_ACTION_START = "com.appshub.bettbox.action.NOTIFICATION_START"
+
     private const val TOGGLE_DEBOUNCE_MS = 1000L
     private const val PENDING_TIMEOUT_MS = 5000L
     private const val STOP_LOCK_TIMEOUT_MS = 5000L
+    private const val RESTART_WAIT_TIMEOUT_MS = 15000L
 
     @Volatile
     private var lastToggleAt = 0L
@@ -227,6 +232,42 @@ object GlobalState {
         }
     }
 
+    private var restartJob: Job? = null
+
+    @Volatile
+    private var isRestartInProgress = false
+
+    fun handleRestart() {
+        if (!acquireToggleSlot()) return
+        val restartToken = lastToggleAt
+        restartJob?.cancel()
+        isRestartInProgress = true
+        var myJob: Job? = null
+        val newJob = scope.launch {
+            try {
+                handleStop(skipDebounce = true)
+                val deadline = SystemClock.elapsedRealtime() + RESTART_WAIT_TIMEOUT_MS
+                while (SystemClock.elapsedRealtime() < deadline) {
+                    if (lastToggleAt != restartToken) return@launch
+                    if (currentRunState == RunState.STOP && !isCurrentlyStopping()) break
+                    delay(150L)
+                }
+                delay(120L)
+                if (lastToggleAt != restartToken) return@launch
+                if (currentRunState == RunState.STOP) {
+                    handleStart(skipDebounce = true)
+                    delay(2000L)
+                }
+            } finally {
+                if (restartJob === myJob) {
+                    isRestartInProgress = false
+                }
+            }
+        }
+        myJob = newJob
+        restartJob = newJob
+    }
+
     private fun acquireToggleSlot(): Boolean {
         val now = SystemClock.elapsedRealtime()
         synchronized(this) {
@@ -237,6 +278,7 @@ object GlobalState {
     }
 
     fun handleTryDestroy() {
+        if (isRestartInProgress) return
         if (flutterEngine == null) destroyServiceEngine()
     }
 
