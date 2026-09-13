@@ -22,6 +22,7 @@ import 'package:bett_box/views/connection/connections.dart';
 import 'package:bett_box/views/generator_view.dart';
 import 'package:bett_box/views/hotkey.dart';
 import 'package:bett_box/views/other_setting.dart';
+import 'package:bett_box/views/stealth_check.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -281,6 +282,18 @@ class _ToolViewState extends ConsumerState<ToolsView> {
             context,
             appLocalizations.appAccessControl,
             const AccessView(),
+          ),
+        ),
+      if (system.isAndroid)
+        _SearchItem(
+          title: appLocalizations.stealthCheck,
+          subtitle: appLocalizations.stealthCheckDesc,
+          category: settingsCategory,
+          leading: const Icon(Icons.shield_outlined),
+          onTap: (context, _) => _pushPage(
+            context,
+            appLocalizations.stealthCheck,
+            const StealthCheckView(),
           ),
         ),
       _SearchItem(
@@ -1368,6 +1381,12 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         title: 'Генератор',
         items: const [_GeneratorItem()],
       ),
+      if (system.isAndroid)
+        _buildModernSection(
+          context,
+          title: appLocalizations.security,
+          items: const [_StealthCheckItem()],
+        ),
       Consumer(
         builder: (_, ref, _) {
           final state = ref.watch(moreToolsSelectorStateProvider);
@@ -1439,6 +1458,23 @@ class _GeneratorItem extends StatelessWidget {
       delegate: NextDelegate(
         title: 'Генератор BettboxR',
         builder: (_) => const GeneratorView(),
+      ),
+    );
+  }
+}
+
+class _StealthCheckItem extends StatelessWidget {
+  const _StealthCheckItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.next(
+      leading: const Icon(Icons.shield_outlined),
+      title: Text(appLocalizations.stealthCheck),
+      subtitle: Text(appLocalizations.stealthCheckDesc),
+      delegate: NextDelegate(
+        title: appLocalizations.stealthCheck,
+        builder: (_) => const StealthCheckView(),
       ),
     );
   }
