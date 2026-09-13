@@ -39,6 +39,11 @@ class BettboxService : Service(), BaseServiceInterface {
 
     override suspend fun start(options: VpnOptions) = 0
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        handleNotificationControlAction(intent)
+        return START_STICKY
+    }
+
     override fun stop() {
         hasStartedForeground = false
 
