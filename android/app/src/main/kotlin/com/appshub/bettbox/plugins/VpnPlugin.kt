@@ -36,6 +36,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import java.net.Inet6Address
 import java.net.NetworkInterface
 import java.util.Collections
 import kotlinx.coroutines.delay
@@ -323,7 +324,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     continue
                 }
                 val lp = cm.getLinkProperties(network) ?: continue
-                if (lp.hasGlobalIpv6Address()) hasGlobalIpv6 = true
+                if (hasGlobalIpv6(lp)) hasGlobalIpv6 = true
                 for (server in lp.dnsServers) {
                     val host = server.hostAddress
                     if (!host.isNullOrBlank() && !physicalDns.contains(host)) {
@@ -338,6 +339,31 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "hasGlobalIpv6" to hasGlobalIpv6,
             "physicalDns" to physicalDns
         )
+    }
+
+    /**
+     * Есть ли на линке глобальный IPv6. Публичный аналог
+     * LinkProperties.hasGlobalIpv6Address(), который скрыт (@hide)
+     * в SDK и не компилируется. Отбрасываем link-local (fe80::/10),
+     * ULA (fc00::/7), site-local (fec0::/10), loopback и multicast.
+     */
+    private fun hasGlobalIpv6(lp: LinkProperties): Boolean {
+        for (linkAddress in lp.linkAddresses) {
+            val addr = linkAddress.address
+            if (addr is Inet6Address &&
+                !addr.isAnyLocalAddress &&
+                !addr.isLoopbackAddress &&
+                !addr.isLinkLocalAddress &&
+                !addr.isMulticastAddress &&
+                !addr.isSiteLocalAddress
+            ) {
+                val first = addr.address[0].toInt() and 0xFF
+                if (first != 0xfc && first != 0xfd) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     fun handleStart(options: VpnOptions): Boolean {
