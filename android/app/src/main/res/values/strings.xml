@@ -4,4 +4,7 @@
     <string name="service_running">Service is running</string>
     <string name="core_suspended">Suspended</string>
     <string name="smart_auto_stop_service_running">Auto-stop is running</string>
+    <string name="notification_action_start">Start</string>
+    <string name="notification_action_stop">Stop</string>
+    <string name="notification_action_restart">Restart</string>
 </resources>
