@@ -51,6 +51,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m15(count) => "${Intl.plural(count, other: '年')}";
 
+  static String st0(time) => "检测时间：${time}";
+
+  static String st1(closed, total) => "已封堵 ${closed}/${total} 项";
+
+  static String st2(ports) => "有响应的端口：${ports}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "about": MessageLookupByLibrary.simpleMessage("关于"),
@@ -910,5 +916,52 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("写入系统"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理员权限"),
     "years": m15,
+    "security": MessageLookupByLibrary.simpleMessage("安全"),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("隐身检测"),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "检测类应用能看到哪些 VPN 痕迹",
+    ),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "请先开启 VPN，没有隧道就无法检测",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("开启 VPN"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("开始检测"),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("重新检测"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("复制报告"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("检测中…"),
+    "stealthCheckedAt": st0,
+    "stealthCheckScore": st1,
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("本地端口"),
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "端口静默，检测器发现不了代理",
+    ),
+    "stealthPortsBad": st2,
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN 接口"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "tun 接口对所有应用可见，无 root 无法隐藏",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage("系统中的 VPN 网络"),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "应用能看到活跃的 VPN 网络（TRANSPORT_VPN）",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS 查询"),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "解析器与运营商 DNS 不一致",
+    ),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "查询流向运营商 DNS —— 存在泄露",
+    ),
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("无法检测"),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "网络没有 IPv6 —— 无从泄露",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 已被隧道覆盖",
+    ),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 绕过了隧道"),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("出口 IP"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage("流量经节点出去"),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("无法获取"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("修复"),
   };
 }
