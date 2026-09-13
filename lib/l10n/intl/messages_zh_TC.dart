@@ -51,6 +51,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m15(count) => "${Intl.plural(count, other: '年')}";
 
+  static String st0(time) => "檢測時間：${time}";
+
+  static String st1(closed, total) => "已封堵 ${closed}/${total} 項";
+
+  static String st2(ports) => "有回應的埠：${ports}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "about": MessageLookupByLibrary.simpleMessage("關於"),
@@ -924,5 +930,52 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
     "years": m15,
+    "security": MessageLookupByLibrary.simpleMessage("安全"),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("隱身檢測"),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "檢測類應用能看到哪些 VPN 痕跡",
+    ),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "請先開啟 VPN，沒有隧道就無法檢測",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("開啟 VPN"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("開始檢測"),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("重新檢測"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("複製報告"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("檢測中…"),
+    "stealthCheckedAt": st0,
+    "stealthCheckScore": st1,
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("本地埠"),
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "埠靜默，檢測器發現不了代理",
+    ),
+    "stealthPortsBad": st2,
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN 介面"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "tun 介面對所有應用可見，無 root 無法隱藏",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage("系統中的 VPN 網路"),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "應用能看到活躍的 VPN 網路（TRANSPORT_VPN）",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS 查詢"),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "解析器與電信商 DNS 不一致",
+    ),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "查詢流向電信商 DNS —— 存在洩漏",
+    ),
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("無法檢測"),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "網路沒有 IPv6 —— 無從洩漏",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 已被隧道覆蓋",
+    ),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 繞過了隧道"),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("出口 IP"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage("流量經節點出去"),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("無法取得"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("修復"),
   };
 }
