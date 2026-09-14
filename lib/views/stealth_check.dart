@@ -48,6 +48,8 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   bool _hasGlobalIpv6 = false;
   bool _systemOk = false;
   List<String> _physicalDns = const [];
+  String _dnsError = '';
+  String _exitError = '';
 
   Future<void> _handleEnableVpn() async {
     try {
@@ -72,6 +74,8 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     if (_isRunning) return;
     setState(() {
       _isRunning = true;
+      _dnsError = '';
+      _exitError = '';
       _vPorts = _running;
       _vTun = _running;
       _vVpnNet = _running;
@@ -176,57 +180,108 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     });
   }
 
+  /// GET с таймаутами; [proxyPort] — локальный микс-порт mihomo: через CONNECT
+  /// запрос идёт мимо tun-слоя (fake-ip, v6, системный DNS) прямо в ядро.
+  Future<String> _fetchUrl(
+    String url, {
+    int? proxyPort,
+    bool dnsJson = false,
+  }) async {
+    final client = HttpClient();
+    client.connectionTimeout = const Duration(seconds: 8);
+    if (proxyPort != null && proxyPort > 0) {
+      client.findProxy = (_) => 'PROXY 127.0.0.1:$proxyPort';
+    }
+    try {
+      final request = await client.getUrl(Uri.parse(url));
+      if (dnsJson) {
+        request.headers.set(HttpHeaders.acceptHeader, 'application/dns-json');
+      }
+      final response = await request.close().timeout(
+        const Duration(seconds: 15),
+      );
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode >= 400) {
+        throw HttpException('http ${response.statusCode}', uri: Uri.parse(url));
+      }
+      return body;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Сначала в микс-порт ядра (если слушает), затем обычный путь через tun —
+  /// каждая неудача пишется в журнал с настоящей ошибкой.
+  Future<String?> _fetchViaTunnel(String url, {bool dnsJson = false}) async {
+    final port = ref.read(patchClashConfigProvider).mixedPort;
+    if (port > 0) {
+      try {
+        return await _fetchUrl(url, proxyPort: port, dnsJson: dnsJson);
+      } catch (e) {
+        commonPrint.log('stealth check: proxy 127.0.0.1:$port failed: $e');
+      }
+    }
+    try {
+      return await _fetchUrl(url, dnsJson: dnsJson);
+    } catch (e) {
+      commonPrint.log('stealth check: direct failed: $e');
+      return null;
+    }
+  }
+
   /// Резолвер-эхо через туннель: если виден DNS физической сети — утечка.
   Future<void> _checkDns() async {
-    try {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 6);
-      final request = await client.getUrl(
-        Uri.parse(
-          'https://cloudflare-dns.com/dns-query?name=whoami.cloudflare&type=TXT',
-        ),
-      );
-      request.headers.set(HttpHeaders.acceptHeader, 'application/dns-json');
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      client.close();
-      final map = json.decode(body) as Map<String, dynamic>;
-      final answers = map['Answer'] as List?;
-      final resolverIps = <String>[];
-      if (answers != null) {
-        final reg = RegExp(r'ip=([0-9a-fA-F:.]+)');
-        for (final answer in answers) {
-          final dataStr = answer is Map
-              ? answer['data']?.toString() ?? ''
-              : '';
-          for (final match in reg.allMatches(dataStr)) {
-            final ip = match.group(1);
-            if (ip != null && !resolverIps.contains(ip)) {
-              resolverIps.add(ip);
+    final errors = <String>[];
+    const endpoints = [
+      'https://cloudflare-dns.com/dns-query?name=whoami.cloudflare&type=TXT',
+      'https://dns.google/resolve?name=whoami.cloudflare&type=TXT',
+    ];
+    for (final endpoint in endpoints) {
+      final body = await _fetchViaTunnel(endpoint, dnsJson: true);
+      if (body == null || body.isEmpty) {
+        errors.add('${Uri.parse(endpoint).host}: no response');
+        continue;
+      }
+      try {
+        final map = json.decode(body) as Map<String, dynamic>;
+        final answers = map['Answer'] as List?;
+        final resolverIps = <String>[];
+        if (answers != null) {
+          final reg = RegExp(r'ip=([0-9a-fA-F:.]+)');
+          for (final answer in answers) {
+            final dataStr = answer is Map
+                ? answer['data']?.toString() ?? ''
+                : '';
+            for (final match in reg.allMatches(dataStr)) {
+              final ip = match.group(1);
+              if (ip != null && !resolverIps.contains(ip)) {
+                resolverIps.add(ip);
+              }
             }
           }
         }
-      }
-      if (!mounted) return;
-      if (resolverIps.isEmpty) {
+        if (resolverIps.isEmpty) {
+          errors.add('${Uri.parse(endpoint).host}: no txt answer');
+          continue;
+        }
+        final leaked = _physicalDns.any(resolverIps.contains);
+        if (!mounted) return;
         setState(() {
-          _vDns = _fail;
-          _dnsIp = '';
+          _vDns = leaked ? _bad : _ok;
+          _dnsIp = resolverIps.take(2).join(', ');
+          _dnsError = '';
         });
         return;
+      } catch (e) {
+        errors.add('${Uri.parse(endpoint).host}: $e');
       }
-      final leaked = _physicalDns.any(resolverIps.contains);
-      setState(() {
-        _vDns = leaked ? _bad : _ok;
-        _dnsIp = resolverIps.take(2).join(', ');
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _vDns = _fail;
-        _dnsIp = '';
-      });
     }
+    if (!mounted) return;
+    setState(() {
+      _vDns = _fail;
+      _dnsIp = '';
+      _dnsError = errors.join(' | ');
+    });
   }
 
   /// IPv6: если в физической сети есть глобальный v6, а туннель его не
@@ -255,24 +310,40 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   Future<void> _checkExit() async {
     var ok = false;
     var info = '';
-    Future<String> fetchText(String url) async {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 6);
-      final request = await client.getUrl(Uri.parse(url));
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      client.close();
-      return body;
-    }
-
-    try {
-      final body = await fetchText('https://ipinfo.io/json');
-      final map = json.decode(body) as Map<String, dynamic>;
-      final ip = map['ip']?.toString() ?? '';
-      final country = map['country']?.toString() ?? '';
-      final city = map['city']?.toString() ?? '';
-      final org = map['org']?.toString() ?? '';
-      if (ip.isNotEmpty) {
+    final errors = <String>[];
+    const endpoints = [
+      'https://ipinfo.io/json',
+      'https://api.ip.sb/geoip',
+      'https://api.ipify.org',
+    ];
+    for (final endpoint in endpoints) {
+      final body = await _fetchViaTunnel(endpoint);
+      if (body == null || body.isEmpty) {
+        errors.add('${Uri.parse(endpoint).host}: no response');
+        continue;
+      }
+      try {
+        final trimmed = body.trim();
+        var ip = '';
+        var country = '';
+        var city = '';
+        var org = '';
+        if (trimmed.startsWith('{')) {
+          final map = json.decode(trimmed) as Map<String, dynamic>;
+          ip = map['ip']?.toString() ?? '';
+          country = map['country']?.toString() ?? '';
+          city = map['city']?.toString() ?? '';
+          org = map['org']?.toString() ?? '';
+          if (org.isEmpty) {
+            org = map['organization']?.toString() ?? '';
+          }
+        } else {
+          ip = trimmed;
+        }
+        if (ip.isEmpty) {
+          errors.add('${Uri.parse(endpoint).host}: no ip in answer');
+          continue;
+        }
         ok = true;
         final geo = [city, country].where((item) => item.isNotEmpty).join(', ');
         final parts = <String>[ip];
@@ -283,20 +354,16 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
           parts.add(org);
         }
         info = parts.join(' · ');
+        break;
+      } catch (e) {
+        errors.add('${Uri.parse(endpoint).host}: $e');
       }
-    } catch (_) {
-      try {
-        final ip = (await fetchText('https://api.ipify.org')).trim();
-        if (ip.isNotEmpty) {
-          ok = true;
-          info = ip;
-        }
-      } catch (_) {}
     }
     if (!mounted) return;
     setState(() {
       _vExit = ok ? _ok : _fail;
       _exitInfo = info;
+      _exitError = ok ? '' : errors.join(' | ');
     });
   }
 
@@ -417,7 +484,23 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     addRow(appLocalizations.stealthDnsTitle, _dnsSubtitle(), _vDns);
     addRow('IPv6', _ipv6Subtitle(), _vIpv6);
     addRow(appLocalizations.stealthExitTitle, _exitSubtitle(), _vExit);
+    final techNotes = <String>[];
+    if (_dnsError.isNotEmpty) {
+      techNotes.add('dns: ${_cropTech(_dnsError)}');
+    }
+    if (_exitError.isNotEmpty) {
+      techNotes.add('exit: ${_cropTech(_exitError)}');
+    }
+    if (techNotes.isNotEmpty) {
+      buffer.write('\n');
+      buffer.write(techNotes.join('\n'));
+    }
     return buffer.toString();
+  }
+
+  String _cropTech(String text, [int max = 220]) {
+    final clean = text.replaceAll('\n', ' ').trim();
+    return clean.length <= max ? clean : clean.substring(0, max);
   }
 
   Future<void> _copyReport() async {
