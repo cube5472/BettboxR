@@ -194,6 +194,12 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     client.connectionTimeout = const Duration(seconds: 8);
     if (proxyPort != null && proxyPort > 0) {
       client.findProxy = (_) => 'PROXY 127.0.0.1:$proxyPort';
+    } else {
+      // BettboxHttpOverrides (main.dart) навязывает всем HttpClient приложения
+      // 'PROXY localhost:<mixedPort>' — при порте 0 это коннект к :0 и
+      // «Connection refused localhost:<эфемерный>» в отчёте. Прямой маршрут
+      // должен быть прямым: отключаем навязанный прокси явно.
+      client.findProxy = (_) => 'DIRECT';
     }
     try {
       final request = await client.getUrl(Uri.parse(url));
@@ -283,41 +289,65 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   }
 
   /// Резолвер-эхо через туннель: если виден DNS физической сети — утечка.
+  /// whoami.cloudflare публичный DoH-JSON отвечает NXDOMAIN (Status 3, зона
+  /// не входит в глобальное дерево), поэтому три эхо-имени: A-запись
+  /// whoami.akamai.net (data = IP резолвера), TXT whoami.ds.akahelp.net
+  /// («ip» «x.x.x.x») и классический whoami.cloudflare TXT (ip=x.x.x.x).
   Future<void> _checkDns() async {
     final errors = <String>[];
     const endpoints = [
-      'https://cloudflare-dns.com/dns-query?name=whoami.cloudflare&type=TXT',
-      'https://dns.google/resolve?name=whoami.cloudflare&type=TXT',
+      ('https://cloudflare-dns.com/dns-query', 'cloudflare-dns.com'),
+      ('https://dns.google/resolve', 'dns.google'),
     ];
-    for (final endpoint in endpoints) {
-      final (body, routeInfo) = await _fetchViaTunnel(
-        endpoint,
-        dnsJson: true,
-      );
-      if (body == null || body.isEmpty) {
-        errors.add('${Uri.parse(endpoint).host}: $routeInfo');
-        continue;
-      }
-      try {
-        final map = json.decode(body) as Map<String, dynamic>;
-        final answers = map['Answer'] as List?;
+    const probes = [
+      ('whoami.akamai.net', 'A'),
+      ('whoami.ds.akahelp.net', 'TXT'),
+      ('whoami.cloudflare', 'TXT'),
+    ];
+    final regPlain = RegExp(r'ip=([0-9a-fA-F:.]+)');
+    final regQuoted = RegExp(r'"ip"\s+"([0-9a-fA-F:.]+)"');
+    for (final (base, host) in endpoints) {
+      for (final (name, type) in probes) {
+        final (body, routeInfo) = await _fetchViaTunnel(
+          '$base?name=$name&type=$type',
+          dnsJson: true,
+        );
+        if (body == null || body.isEmpty) {
+          errors.add('$host $name/$type: $routeInfo');
+          continue;
+        }
         final resolverIps = <String>[];
-        if (answers != null) {
-          final reg = RegExp(r'ip=([0-9a-fA-F:.]+)');
-          for (final answer in answers) {
-            final dataStr = answer is Map
-                ? answer['data']?.toString() ?? ''
-                : '';
-            for (final match in reg.allMatches(dataStr)) {
-              final ip = match.group(1);
-              if (ip != null && !resolverIps.contains(ip)) {
-                resolverIps.add(ip);
+        var status = -1;
+        try {
+          final map = json.decode(body) as Map<String, dynamic>;
+          status = (map['Status'] as num?)?.toInt() ?? -1;
+          final answers = map['Answer'] as List?;
+          if (answers != null) {
+            for (final answer in answers) {
+              if (answer is! Map) continue;
+              final dataStr = answer['data']?.toString() ?? '';
+              final candidates = [
+                ...regPlain.allMatches(dataStr).map((m) => m.group(1)),
+                ...regQuoted.allMatches(dataStr).map((m) => m.group(1)),
+              ];
+              // A/AAAA-ответ: data — сам IP-литерал резолвера.
+              final recordType = (answer['type'] as num?)?.toInt() ?? 0;
+              if (recordType == 1 || recordType == 28) {
+                candidates.add(dataStr.replaceAll('"', '').trim());
+              }
+              for (final ip in candidates) {
+                if (ip == null) continue;
+                if (InternetAddress.tryParse(ip) == null) continue;
+                if (!resolverIps.contains(ip)) resolverIps.add(ip);
               }
             }
           }
+        } catch (e) {
+          errors.add('$host $name/$type: ${_shortError(e.toString())}');
+          continue;
         }
         if (resolverIps.isEmpty) {
-          errors.add('${Uri.parse(endpoint).host}: no txt answer');
+          errors.add('$host $name/$type: no answer (status $status)');
           continue;
         }
         final leaked = _physicalDns.any(resolverIps.contains);
@@ -328,8 +358,6 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
           _dnsError = '';
         });
         return;
-      } catch (e) {
-        errors.add('${Uri.parse(endpoint).host}: $e');
       }
     }
     if (!mounted) return;
