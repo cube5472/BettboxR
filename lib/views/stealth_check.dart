@@ -50,6 +50,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   List<String> _physicalDns = const [];
   String _dnsError = '';
   String _exitError = '';
+  String _netError = '';
 
   Future<void> _handleEnableVpn() async {
     try {
@@ -76,6 +77,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
       _isRunning = true;
       _dnsError = '';
       _exitError = '';
+      _netError = '';
       _vPorts = _running;
       _vTun = _running;
       _vVpnNet = _running;
@@ -85,6 +87,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     });
     await _checkPorts();
     await _checkSystem();
+    await _probeBaseline();
     await _checkDns();
     _checkIpv6();
     await _checkExit();
@@ -210,23 +213,73 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     }
   }
 
-  /// Сначала в микс-порт ядра (если слушает), затем обычный путь через tun —
-  /// каждая неудача пишется в журнал с настоящей ошибкой.
-  Future<String?> _fetchViaTunnel(String url, {bool dnsJson = false}) async {
+  /// Сначала в микс-порт ядра (если слушает), затем обычный путь через tun.
+  /// Возвращает (тело, сводка маршрутов) — сводка идёт в отчёт при неудаче.
+  Future<(String?, String)> _fetchViaTunnel(
+    String url, {
+    bool dnsJson = false,
+  }) async {
     final port = ref.read(patchClashConfigProvider).mixedPort;
+    final notes = <String>[];
     if (port > 0) {
       try {
-        return await _fetchUrl(url, proxyPort: port, dnsJson: dnsJson);
+        return (
+          await _fetchUrl(url, proxyPort: port, dnsJson: dnsJson),
+          'proxy:$port ok',
+        );
       } catch (e) {
         commonPrint.log('stealth check: proxy 127.0.0.1:$port failed: $e');
+        notes.add('proxy:$port ${_shortError(e.toString())}');
       }
+    } else {
+      notes.add('proxy off');
     }
     try {
-      return await _fetchUrl(url, dnsJson: dnsJson);
+      return (await _fetchUrl(url, dnsJson: dnsJson), 'direct ok');
     } catch (e) {
       commonPrint.log('stealth check: direct failed: $e');
-      return null;
+      notes.add('direct: ${_shortError(e.toString())}');
+      return (null, notes.join(' | '));
     }
+  }
+
+  String _shortError(String text, [int max = 110]) {
+    final clean = text
+        .replaceFirst(RegExp(r'^[A-Za-z]+Exception:\s*'), '')
+        .replaceAll('\n', ' ')
+        .trim();
+    return clean.length <= max ? clean : clean.substring(0, max);
+  }
+
+  /// Базовая проба сети: TCP на IP-литерал отделяет «нет маршрута/сети»
+  /// от «сломан DNS» — без имён и без участия туннельного стека имён.
+  Future<void> _probeBaseline() async {
+    final parts = <String>[];
+    try {
+      final socket = await Socket.connect(
+        InternetAddress('1.1.1.1'),
+        443,
+        timeout: const Duration(seconds: 4),
+      );
+      socket.destroy();
+      parts.add('tcp 1.1.1.1:443 ok');
+    } catch (e) {
+      parts.add('tcp 1.1.1.1:443 fail: ${_shortError(e.toString())}');
+    }
+    try {
+      final list = await InternetAddress.lookup(
+        'ipinfo.io',
+        type: InternetAddressType.IPv4,
+      );
+      final ips = list.map((item) => item.address).take(2).join(',');
+      parts.add('dns lookup ok: $ips');
+    } catch (e) {
+      parts.add('dns lookup fail: ${_shortError(e.toString())}');
+    }
+    if (!mounted) return;
+    setState(() {
+      _netError = parts.join(' | ');
+    });
   }
 
   /// Резолвер-эхо через туннель: если виден DNS физической сети — утечка.
@@ -237,9 +290,12 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
       'https://dns.google/resolve?name=whoami.cloudflare&type=TXT',
     ];
     for (final endpoint in endpoints) {
-      final body = await _fetchViaTunnel(endpoint, dnsJson: true);
+      final (body, routeInfo) = await _fetchViaTunnel(
+        endpoint,
+        dnsJson: true,
+      );
       if (body == null || body.isEmpty) {
-        errors.add('${Uri.parse(endpoint).host}: no response');
+        errors.add('${Uri.parse(endpoint).host}: $routeInfo');
         continue;
       }
       try {
@@ -317,9 +373,9 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
       'https://api.ipify.org',
     ];
     for (final endpoint in endpoints) {
-      final body = await _fetchViaTunnel(endpoint);
+      final (body, routeInfo) = await _fetchViaTunnel(endpoint);
       if (body == null || body.isEmpty) {
-        errors.add('${Uri.parse(endpoint).host}: no response');
+        errors.add('${Uri.parse(endpoint).host}: $routeInfo');
         continue;
       }
       try {
@@ -485,6 +541,9 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     addRow('IPv6', _ipv6Subtitle(), _vIpv6);
     addRow(appLocalizations.stealthExitTitle, _exitSubtitle(), _vExit);
     final techNotes = <String>[];
+    if (_dnsError.isNotEmpty || _exitError.isNotEmpty) {
+      techNotes.add('net: ${_cropTech(_netError)}');
+    }
     if (_dnsError.isNotEmpty) {
       techNotes.add('dns: ${_cropTech(_dnsError)}');
     }
