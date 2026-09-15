@@ -311,7 +311,8 @@ class LeakWatchdog(private val context: Context) {
     private fun extractIp(body: String): String? {
         val value = IP_REGEX.find(body)?.groupValues?.get(1) ?: return null
         val isV4 = value.count { it == '.' } == 3 && value.all { it.isDigit() || it == '.' }
-        val isV6 = value.contains(':') && value.all { it.isHexDigit() || it == ':' }
+        val isV6 = value.contains(':') &&
+            value.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' || it == ':' }
         return if (isV4 || isV6) value else null
     }
 
