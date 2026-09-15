@@ -34,6 +34,7 @@ class GlobalState {
   bool isService = false;
   bool isExiting = false;
   bool isScreenOn = true;
+
   /// Карта «имя ноды → транспорт» (ws/grpc/xhttp/tcp/...), строится в patchRawConfig
   /// и используется в списке прокси для отображения типа ноды (vless grpc и т.п.).
   Map<String, String> proxyNetworkMap = {};
@@ -144,6 +145,7 @@ class GlobalState {
           ),
         );
     await globalState.migrateOldData(config);
+    _seedBuiltinScript();
     final locale =
         utils.getLocaleForString(config.appSetting.locale) ??
         utils.getSystemLocale();
@@ -549,6 +551,32 @@ class GlobalState {
       preferences.saveConfig(config);
       this.config = config;
     }
+  }
+
+  /// Встраивает предустановленный скрипт «s-ru» (правила маршрутизации +
+  /// фильтр RU-нод) в список скриптов. Скрипт не включается автоматически —
+  /// его нужно включить тумблером на карточке. Если скрипт с таким именем
+  /// уже есть (в том числе добавленный вручную и отредактированный) — не
+  /// трогаем его. Удалённый встроенный скрипт появится снова при следующем
+  /// запуске — это осознанно: он встроенный.
+  void _seedBuiltinScript() {
+    final scripts = config.scriptProps.scripts;
+    final exists = scripts.any(
+      (script) => script.label == kBuiltinSRuScriptLabel,
+    );
+    if (exists) return;
+    config = config.copyWith(
+      scriptProps: config.scriptProps.copyWith(
+        scripts: [
+          ...scripts,
+          Script.create(
+            label: kBuiltinSRuScriptLabel,
+            content: builtinSRuScript,
+          ),
+        ],
+      ),
+    );
+    preferences.saveConfig(config);
   }
 
   CoreState getCoreState() {
@@ -1233,10 +1261,7 @@ class DetectionState {
     if (!appState.isInit) return;
 
     if (showLoading || state.value.ipInfo == null) {
-      state.value = state.value.copyWith(
-        isLoading: true,
-        errorMessage: null,
-      );
+      state.value = state.value.copyWith(isLoading: true, errorMessage: null);
     }
 
     final delay = immediate
@@ -1294,8 +1319,8 @@ class DetectionState {
       errorMessage: _rawIpInfo != null
           ? null
           : (state.value.ipInfo == null
-              ? appLocalizations.tryManualRefresh
-              : null),
+                ? appLocalizations.tryManualRefresh
+                : null),
     );
   }
 
