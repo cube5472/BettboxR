@@ -52,9 +52,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   late Map<String, bool> _cdnPresets;
   bool _ruUnblock = true;
   bool _providerMode = false;
-  final _providerIntervalController = TextEditingController(
-    text: '86400',
-  );
+  final _providerIntervalController = TextEditingController(text: '86400');
 
   List<Map<String, dynamic>> _proxies = [];
   final List<List<String>> _chains = [];
@@ -67,15 +65,11 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   @override
   void initState() {
     super.initState();
-    _servicePresets = {
-      for (final key in kServiceRules.keys) key: false,
-    };
+    _servicePresets = {for (final key in kServiceRules.keys) key: false};
     _servicePresets['telegram'] = true;
     _servicePresets['discord'] = true;
     _servicePresets['youtube'] = true;
-    _cdnPresets = {
-      for (final key in kCdnRules.keys) key: false,
-    };
+    _cdnPresets = {for (final key in kCdnRules.keys) key: false};
     _linksController.addListener(_onLinksChanged);
   }
 
@@ -164,7 +158,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             collected.addAll(parseYamlSubscription(localText));
           } on Object catch (e) {
             // Убираем технический префикс "Exception: ", оставляем суть.
-            final msg = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+            final msg = e.toString().replaceFirst(
+              RegExp(r'^Exception:\s*'),
+              '',
+            );
             problems.add('YAML: $msg');
           }
         }
@@ -227,6 +224,21 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     } on Object catch (e) {
       _showError('Ошибка импорта: $e');
     }
+  }
+
+  // ---------------- Удаление разобранных нод ----------------
+
+  // Удаляем ноду из разобранных: имя вычищаем из цепочек (цепочка с менее
+  // чем 2 узлами удаляется), чтобы не осталось битых ссылок dialer-proxy.
+  void _deleteProxy(int index) {
+    final name = '${_proxies[index]['name']}';
+    setState(() {
+      _proxies.removeAt(index);
+      _chains.removeWhere((chain) {
+        chain.remove(name);
+        return chain.length < 2;
+      });
+    });
   }
 
   // ---------------- Цепочки ----------------
@@ -371,14 +383,16 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           '${now.month.toString().padLeft(2, '0')} '
           '${now.hour.toString().padLeft(2, '0')}:'
           '${now.minute.toString().padLeft(2, '0')}';
-      final profile = await Profile.normal(label: label)
-          .saveFileWithString(yaml);
+      final profile = await Profile.normal(
+        label: label,
+      ).saveFileWithString(yaml);
       await globalState.appController.addProfile(profile);
       if (!mounted) return;
       await globalState.showMessage(
         title: 'Генератор BettboxR',
         message: TextSpan(
-          text: 'Профиль «$label» создан и добавлен. '
+          text:
+              'Профиль «$label» создан и добавлен. '
               'Проверьте список профилей — конфиг прошёл валидацию ядра.',
         ),
         cancelable: false,
@@ -516,15 +530,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  for (final proxy in _proxies.take(24))
-                    Chip(
-                      label: Text('${proxy['name']}'),
+                  // Показываем все ноды без ограничения: у каждой чипа
+                  // крестик — ноду можно удалить до создания профиля.
+                  for (var i = 0; i < _proxies.length; i++)
+                    InputChip(
+                      label: Text('${_proxies[i]['name']}'),
                       visualDensity: VisualDensity.compact,
-                    ),
-                  if (_proxies.length > 24)
-                    Chip(
-                      label: Text('+${_proxies.length - 24} ещё'),
-                      visualDensity: VisualDensity.compact,
+                      onDeleted: () => _deleteProxy(i),
                     ),
                 ],
               ),
@@ -645,9 +657,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           Text(
             _providerMode
                 ? 'Прокси берутся с URL подписки: ядро само скачает и будет '
-                    'обновлять их. Раздел 1 в этом режиме не используется.'
+                      'обновлять их. Раздел 1 в этом режиме не используется.'
                 : 'Прокси, разобранные в разделе 1, записываются в конфиг '
-                    'напрямую (без автообновления).',
+                      'напрямую (без автообновления).',
             style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
           ),
           const SizedBox(height: 12),

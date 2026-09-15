@@ -13,13 +13,16 @@ import 'generator_data.dart';
 Map<String, dynamic> _m(String key) =>
     jsonDecode(kGeneratorJson[key]!) as Map<String, dynamic>;
 
-List<dynamic> _l(String key) => jsonDecode(kGeneratorJson[key]!) as List<dynamic>;
+List<dynamic> _l(String key) =>
+    jsonDecode(kGeneratorJson[key]!) as List<dynamic>;
 
 final Map<String, dynamic> kDefaultDnsValues = _m('defaultDnsValues');
 final Map<String, dynamic> kStaticObj = _m('staticObj');
 final Map<String, dynamic> kRuleProvidersDavoyan = _m('ruleProvidersDavoyan');
 final Map<String, dynamic> kRuleProvidersLegiz = _m('ruleProvidersLegiz');
-final Map<String, dynamic> kRuleProvidersRoscomvpn = _m('ruleProvidersRoscomvpn');
+final Map<String, dynamic> kRuleProvidersRoscomvpn = _m(
+  'ruleProvidersRoscomvpn',
+);
 final List<dynamic> kProxyGroups = _l('proxyGroups');
 final List<dynamic> kRulesBase = _l('rulesBase');
 final List<dynamic> kUnblockRules = _l('unblockRules');
@@ -393,8 +396,9 @@ Map<String, dynamic> parseSS(String url) {
   //  2) Legacy:      ss://base64(method:pass@host:port)#name
   //  3) SIP003:      ?plugin=obfs-local;obfs=http;obfs-host=...
   final hashIdx = url.indexOf('#');
-  final bodyAndQuery =
-      hashIdx == -1 ? url.substring(5) : url.substring(5, hashIdx);
+  final bodyAndQuery = hashIdx == -1
+      ? url.substring(5)
+      : url.substring(5, hashIdx);
   final name = hashIdx == -1
       ? 'SS'
       : (_decodeFragment(url.substring(hashIdx + 1)) ?? 'SS');
@@ -417,9 +421,11 @@ Map<String, dynamic> parseSS(String url) {
     if (userInfo.contains(':')) {
       // открытым текстом method:password (возможно percent-encoded)
       final colon = userInfo.indexOf(':');
-      method = _decodeFragment(userInfo.substring(0, colon)) ??
+      method =
+          _decodeFragment(userInfo.substring(0, colon)) ??
           userInfo.substring(0, colon);
-      password = _decodeFragment(userInfo.substring(colon + 1)) ??
+      password =
+          _decodeFragment(userInfo.substring(colon + 1)) ??
           userInfo.substring(colon + 1);
     } else {
       final decoded = tryDecodeBase64(Uri.decodeComponent(userInfo));
@@ -510,8 +516,8 @@ Map<String, dynamic> parseTUIC(String url) {
   final params = QueryMap(parsed.query);
   final skipCert =
       (params.get('insecure') == '0' || params.get('allowInsecure') == '0')
-          ? false
-          : true;
+      ? false
+      : true;
   final proxy = <String, dynamic>{
     'name': name,
     'type': 'tuic',
@@ -608,8 +614,11 @@ Map<String, dynamic> parseMasque(String url) {
   }
   final dns = params.get('dns');
   if (dns != null) {
-    proxy['dns'] =
-        dns.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    proxy['dns'] = dns
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
   } else {
     proxy['dns'] = ['1.1.1.1', '1.0.0.1'];
   }
@@ -629,14 +638,27 @@ Map<String, dynamic> parseHysteria(String url) {
   final name = _decodeFragment(parsed.fragment) ?? 'Hysteria';
   if (host.isEmpty || port <= 0) _throwMissing();
   final params = QueryMap(parsed.query);
+  // Скорости: в ссылках hysteria1 — upmbps/downmbps, ядро ждёт up/down
+  // (целое = Mbps). При 0/пустом ядро отвечает «invalid upload speed: 0»
+  // и валидация ВСЕГО конфига падает, поэтому 0 заменяем дефолтом 100.
+  var up = int.tryParse(params.get('up') ?? '') ?? 0;
+  if (up <= 0) up = int.tryParse(params.get('upmbps') ?? '') ?? 0;
+  if (up <= 0) up = 100;
+  var down = int.tryParse(params.get('down') ?? '') ?? 0;
+  if (down <= 0) down = int.tryParse(params.get('downmbps') ?? '') ?? 0;
+  if (down <= 0) down = 100;
+  // В ссылке auth — открытая строка; у ядра auth-str — открытый текст,
+  // а auth — base64. Кладём в auth-str, иначе сервер отклонит авторизацию.
+  var authStr = params.get('auth-str') ?? '';
+  if (authStr.isEmpty) authStr = params.get('auth') ?? '';
   final proxy = <String, dynamic>{
     'name': name,
     'type': 'hysteria',
     'server': host,
     'port': port,
-    'auth-str': params.get('auth-str') ?? '',
-    'up': int.tryParse(params.get('up') ?? '') ?? 0,
-    'down': int.tryParse(params.get('down') ?? '') ?? 0,
+    'auth-str': authStr,
+    'up': up,
+    'down': down,
     'skip-cert-verify': true,
   };
   if (params.get('insecure') == '0' || params.get('allowInsecure') == '0') {
@@ -645,10 +667,10 @@ Map<String, dynamic> parseHysteria(String url) {
   final obfs = params.get('obfs');
   if (obfs != null) {
     proxy['obfs'] = obfs;
-    final obfsPassword = params.get('obfs-password');
+    final obfsPassword = params.get('obfs-password') ?? params.get('obfsParam');
     if (obfsPassword != null) proxy['obfs-password'] = obfsPassword;
   }
-  final sni = params.get('sni');
+  final sni = params.get('sni') ?? params.get('peer');
   if (sni != null) {
     proxy['sni'] = sni;
     proxy['servername'] = sni;
@@ -782,9 +804,9 @@ Map<String, dynamic> createWgProxy(Map<String, dynamic> data) {
     'udp': true,
     'dns': data['dns'] is String
         ? (data['dns'] as String)
-            .split(RegExp(r'[\s,]+'))
-            .where((s) => s.isNotEmpty)
-            .toList()
+              .split(RegExp(r'[\s,]+'))
+              .where((s) => s.isNotEmpty)
+              .toList()
         : (data['dns'] ?? ['1.1.1.1', '1.0.0.1']),
     'allowed-ips': allowedIps,
     'persistent-keepalive': data['keepalive'] ?? 25,
@@ -970,18 +992,16 @@ List<Map<String, dynamic>> parseManualInput(String? text) {
             final lastColon = value.lastIndexOf(':');
             if (lastColon != -1) {
               data['server'] = value.substring(0, lastColon);
-              data['port'] =
-                  int.tryParse(value.substring(lastColon + 1)) ?? 0;
+              data['port'] = int.tryParse(value.substring(lastColon + 1)) ?? 0;
             }
           }
         } else if (lk == 'allowedips') {
           data['allowedIPs'] = value;
         } else if (lk == 'persistentkeepalive') {
           final rangeMatch = RegExp(r'^(\d+)').firstMatch(value);
-          data['keepalive'] =
-              rangeMatch != null
-                  ? int.tryParse(rangeMatch.group(1) ?? '')
-                  : int.tryParse(value);
+          data['keepalive'] = rangeMatch != null
+              ? int.tryParse(rangeMatch.group(1) ?? '')
+              : int.tryParse(value);
         } else if (lk == 'presharedkey') {
           data['psk'] = value;
         }
@@ -1065,9 +1085,7 @@ String _sanitizeYamlText(String text) {
   for (final line in t.split('\n')) {
     final m = leadingTabs.firstMatch(line);
     buf.add(
-      m != null
-          ? '  ' * m.group(1)!.length + line.substring(m.end)
-          : line,
+      m != null ? '  ' * m.group(1)!.length + line.substring(m.end) : line,
     );
   }
   return buf.join('\n');
@@ -1080,7 +1098,8 @@ String _stripZeroIndentJunk(String text) {
   final out = <String>[];
   for (final line in text.split('\n')) {
     final trimmed = line.trim();
-    final atZero = line.isNotEmpty && !line.startsWith(' ') && !line.startsWith('\t');
+    final atZero =
+        line.isNotEmpty && !line.startsWith(' ') && !line.startsWith('\t');
     if (atZero &&
         !trimmed.startsWith('#') &&
         !trimmed.startsWith('-') &&
@@ -1390,11 +1409,13 @@ List<Map<String, dynamic>> parseSubscriptionBody(String body) {
     throw Exception('сервер вернул пустой ответ');
   }
   // HTML-страница вместо подписки (истёкшая ссылка, капча, ошибка сервера).
-  if (RegExp(r'^<!DOCTYPE|^<html|^[\s\r\n]*<(html|body|div|head|script)',
-          caseSensitive: false)
-      .hasMatch(trimmed)) {
+  if (RegExp(
+    r'^<!DOCTYPE|^<html|^[\s\r\n]*<(html|body|div|head|script)',
+    caseSensitive: false,
+  ).hasMatch(trimmed)) {
     throw Exception(
-        'сервер вернул HTML-страницу вместо подписки — проверьте срок действия ссылки');
+      'сервер вернул HTML-страницу вместо подписки — проверьте срок действия ссылки',
+    );
   }
   // Clash YAML (в т.ч. с мусором до/после — parseYamlSubscription сам справится)
   if (RegExp(r'^\s*proxies\s*:', multiLine: true).hasMatch(trimmed)) {
@@ -1750,8 +1771,13 @@ String buildConfig(GeneratorParams p) {
       continue;
     }
     const known = [
-      'PROCESS-NAME', 'DOMAIN-SUFFIX', 'DOMAIN', 'IP-CIDR', 'GEOIP',
-      'GEOSITE', 'DOMAIN-KEYWORD',
+      'PROCESS-NAME',
+      'DOMAIN-SUFFIX',
+      'DOMAIN',
+      'IP-CIDR',
+      'GEOIP',
+      'GEOSITE',
+      'DOMAIN-KEYWORD',
     ];
     if (known.contains(type)) {
       final line = '$type,$value,$action';
@@ -1789,10 +1815,23 @@ String buildConfig(GeneratorParams p) {
 
   // --- сборка ---
   final routeExcludes = [
-    '0.0.0.0/8', '10.0.0.0/8', '100.64.0.0/10', '127.0.0.0/8',
-    '169.254.0.0/16', '172.16.0.0/12', '192.0.0.0/24', '192.0.2.0/24',
-    '192.88.99.0/24', '192.168.0.0/16', '198.18.0.0/15', '198.51.100.0/24',
-    '203.0.113.0/24', '224.0.0.0/3', '::/127', 'fc00::/7', 'fe80::/10',
+    '0.0.0.0/8',
+    '10.0.0.0/8',
+    '100.64.0.0/10',
+    '127.0.0.0/8',
+    '169.254.0.0/16',
+    '172.16.0.0/12',
+    '192.0.0.0/24',
+    '192.0.2.0/24',
+    '192.88.99.0/24',
+    '192.168.0.0/16',
+    '198.18.0.0/15',
+    '198.51.100.0/24',
+    '203.0.113.0/24',
+    '224.0.0.0/3',
+    '::/127',
+    'fc00::/7',
+    'fe80::/10',
     'ff00::/8',
   ];
 
@@ -1822,8 +1861,13 @@ String buildConfig(GeneratorParams p) {
       'parse-pure-ip': true,
       'skip-dst-address': routeExcludes,
       'sniff': {
-        'HTTP': {'override-destination': true, 'ports': [80, '8080-8880']},
-        'TLS': {'ports': [443, 8443]},
+        'HTTP': {
+          'override-destination': true,
+          'ports': [80, '8080-8880'],
+        },
+        'TLS': {
+          'ports': [443, 8443],
+        },
       },
     },
   };
@@ -1838,11 +1882,12 @@ String buildConfig(GeneratorParams p) {
         'url': p.providerUrl.trim(),
         'interval': p.providerInterval,
         'path': './provider/proxies.yaml',
-        'health-check': {
-          'enable': true,
-          'url': urlTest,
-          'interval': 600,
-        },
+        // Панели часто отдают share-ссылки с self-signed сертификатами,
+        // а конвертер ядра мапит insecure → skip-cert-verify не для всех
+        // протоколов (например, для tuic не мапит вовсе). Явный override
+        // выравнивает поведение с статическим режимом.
+        'override': {'skip-cert-verify': true},
+        'health-check': {'enable': true, 'url': urlTest, 'interval': 600},
       },
     };
   } else {
@@ -1860,7 +1905,12 @@ String buildConfig(GeneratorParams p) {
 bool _needsQuoting(String s) {
   if (s.isEmpty) return true;
   if (RegExp(r'^[\s]|[\s]$').hasMatch(s)) return true;
-  if (RegExp(r'^[-?:,\[\]{}#&*!|>"''%@`]').hasMatch(s)) return true;
+  if (RegExp(
+    r'^[-?:,\[\]{}#&*!|>"'
+    '%@`]',
+  ).hasMatch(s)) {
+    return true;
+  }
   if (s.contains(': ') || s.contains(' #')) return true;
   if (s.contains('\n') || s.contains('\t')) return true;
   if (RegExp(r'^[0-9+\-.]+$').hasMatch(s) && double.tryParse(s) != null) {
