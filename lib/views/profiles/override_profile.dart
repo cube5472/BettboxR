@@ -83,6 +83,22 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
         .updateState((state) => state.copyWith(selectedRules: {}));
   }
 
+  Future<void> _handleCopySelected(WidgetRef ref, BuildContext context) async {
+    final state = ref.read(profileOverrideStateProvider);
+    final selectedRules = state.selectedRules;
+    final text = (state.overrideData?.rule.rules ?? [])
+        .where((item) => selectedRules.contains(item.id))
+        .map((item) => item.value)
+        .join('\n');
+    if (text.isEmpty) {
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      context.showNotifier(appLocalizations.copySuccess);
+    }
+  }
+
   Widget _buildContent() {
     return Consumer(
       builder: (_, ref, child) {
@@ -173,7 +189,7 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
           return child!;
         },
         child: Consumer(
-          builder: (_, ref, _) {
+          builder: (context, ref, _) {
             final editCount = ref.watch(
               profileOverrideStateProvider.select(
                 (state) => state.selectedRules.length,
@@ -242,6 +258,13 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                   if (editCount > 0)
                     IconButton(
                       onPressed: () {
+                        _handleCopySelected(ref, context);
+                      },
+                      icon: Icon(Icons.copy),
+                    ),
+                  if (editCount > 0)
+                    IconButton(
+                      onPressed: () {
                         _handleDelete(ref);
                       },
                       icon: Icon(Icons.delete),
@@ -250,7 +273,9 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                 editState: AppBarEditState(
                   editCount: editCount,
                   onExit: () {
-                    ref.read(profileOverrideStateProvider.notifier).updateState(
+                    ref
+                        .read(profileOverrideStateProvider.notifier)
+                        .updateState(
                           (state) => state.copyWith(selectedRules: {}),
                         );
                   },
@@ -313,6 +338,23 @@ class RuleTitle extends ConsumerWidget {
         );
   }
 
+  Future<void> _handleCopyAll(BuildContext context, WidgetRef ref) async {
+    final rules = ref.read(
+      profileOverrideStateProvider.select(
+        (state) => state.overrideData?.rule.rules ?? [],
+      ),
+    );
+    if (rules.isEmpty) {
+      return;
+    }
+    await Clipboard.setData(
+      ClipboardData(text: rules.map((item) => item.value).join('\n')),
+    );
+    if (context.mounted) {
+      context.showNotifier(appLocalizations.copySuccess);
+    }
+  }
+
   @override
   Widget build(BuildContext context, ref) {
     final vm3 = ref.watch(
@@ -330,6 +372,11 @@ class RuleTitle extends ConsumerWidget {
     final isEdit = vm3.a;
     final isSelectAll = vm3.b;
     final isOverrideRule = vm3.c;
+    final hasRules = ref.watch(
+      profileOverrideStateProvider.select(
+        (state) => state.overrideData?.rule.rules.isNotEmpty ?? false,
+      ),
+    );
     return FilledButtonTheme(
       data: FilledButtonThemeData(
         style: ButtonStyle(
@@ -352,6 +399,13 @@ class RuleTitle extends ConsumerWidget {
               : appLocalizations.addedOriginRules,
           space: 8,
           actions: [
+            if (!isEdit && hasRules)
+              IconButton.filledTonal(
+                icon: Icon(Icons.copy_all),
+                onPressed: () {
+                  _handleCopyAll(context, ref);
+                },
+              ),
             if (!isEdit)
               IconButton.filledTonal(
                 icon: Icon(
@@ -763,11 +817,10 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                                   ),
                                 ),
                                 onPressed: () async {
-                                  final selected =
-                                      await globalState.showCommonDialog<String>(
+                                  final selected = await globalState
+                                      .showCommonDialog<String>(
                                         child: OptionsDialog<String>(
-                                          title:
-                                              appLocalizations.ruleProviders,
+                                          title: appLocalizations.ruleProviders,
                                           options: _ruleProviderItems
                                               .map((e) => e.value)
                                               .toList(),
@@ -851,8 +904,8 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                                   ),
                                 ),
                                 onPressed: () async {
-                                  final selected =
-                                      await globalState.showCommonDialog<String>(
+                                  final selected = await globalState
+                                      .showCommonDialog<String>(
                                         child: OptionsDialog<String>(
                                           title: appLocalizations.subRule,
                                           options: _subRuleItems
@@ -916,8 +969,8 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                                   ),
                                 ),
                                 onPressed: () async {
-                                  final selected =
-                                      await globalState.showCommonDialog<String>(
+                                  final selected = await globalState
+                                      .showCommonDialog<String>(
                                         child: OptionsDialog<String>(
                                           title: appLocalizations.ruleTarget,
                                           options: _targetItems
