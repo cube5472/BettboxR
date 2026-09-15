@@ -14,6 +14,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../models/common.dart';
 import 'card.dart';
 import 'common.dart';
+import 'reorder.dart';
 
 typedef ProxyGroupViewKeyMap =
     Map<String, GlobalObjectKey<_ProxyGroupViewState>>;
@@ -211,18 +212,21 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
   @override
   Widget build(BuildContext context) {
     ref.watch(themeSettingProvider.select((state) => state.textScale));
-    final groups =
-        ref.watch(proxiesTabStateProvider.select((state) => state.groups));
-    final columns =
-        ref.watch(proxiesTabStateProvider.select((state) => state.columns));
+    final groups = ref.watch(
+      proxiesTabStateProvider.select((state) => state.groups),
+    );
+    final columns = ref.watch(
+      proxiesTabStateProvider.select((state) => state.columns),
+    );
     final cardType = ref.watch(
       proxiesTabStateProvider.select((state) => state.proxyCardType),
     );
     final sortType = ref.watch(
       proxiesTabStateProvider.select((state) => state.proxiesSortType),
     );
-    final sortNum =
-        ref.watch(proxiesTabStateProvider.select((state) => state.sortNum));
+    final sortNum = ref.watch(
+      proxiesTabStateProvider.select((state) => state.sortNum),
+    );
 
     if (groups.isEmpty) {
       return NullStatus(
@@ -276,9 +280,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                     controller: _tabController,
                     padding: EdgeInsets.only(
                       left: 16,
-                      right: globalState.isAndroidTV
-                          ? 48
-                          : (value ? 48 : 0),
+                      right: globalState.isAndroidTV ? 48 : (value ? 48 : 0),
                     ),
                     dividerColor: Colors.transparent,
                     isScrollable: true,
@@ -319,10 +321,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                       right: 0,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildDelayTestButton(),
-                          if (value) child!,
-                        ],
+                        children: [_buildDelayTestButton(), if (value) child!],
                       ),
                     )
                   else if (value)
@@ -376,6 +375,8 @@ class ProxyGroupView extends ConsumerStatefulWidget {
 
 class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   late final ScrollController _controller;
+  final GlobalKey _viewportKey = GlobalKey();
+  late final DragAutoScroller _autoScroller;
 
   List<Proxy> proxies = [];
   String? testUrl;
@@ -384,6 +385,22 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   List<Proxy>? _lastProxies;
   String? _lastTestUrl;
   num? _lastSortNum;
+
+  bool get _dragEnabled => widget.sortType == ProxiesSortType.custom;
+
+  /// Переносит ноду [fromName] на позицию ноды [toName] и сохраняет
+  /// ручной порядок группы.
+  void _handleReorder(String fromName, String toName) {
+    final names = proxies.map((proxy) => proxy.name).toList();
+    final from = names.indexOf(fromName);
+    final to = names.indexOf(toName);
+    if (from == -1 || to == -1 || from == to) {
+      return;
+    }
+    names.removeAt(from);
+    names.insert(to, fromName);
+    globalState.appController.saveProxyOrder(widget.group.name, names);
+  }
 
   List<Proxy> _getSortedProxies() {
     final group = widget.group;
@@ -406,6 +423,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
       proxies: proxies,
       sortType: sortType,
       testUrl: testUrl,
+      groupName: widget.group.name,
     );
     return _cachedSortedProxies!;
   }
@@ -414,6 +432,10 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   void initState() {
     super.initState();
     _controller = ScrollController();
+    _autoScroller = DragAutoScroller(
+      scrollController: _controller,
+      viewportKey: _viewportKey,
+    );
   }
 
   PageStorageKey _getPageStorageKey() {
@@ -428,6 +450,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
 
   @override
   void dispose() {
+    _autoScroller.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -469,33 +492,45 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
       alignment: Alignment.topCenter,
       child: CommonScrollBar(
         controller: _controller,
-        child: GridView.builder(
-          key: _getPageStorageKey(),
-          controller: _controller,
-          scrollCacheExtent: const ScrollCacheExtent.viewport(1.0),
-          padding: EdgeInsets.only(
-            top: 16,
-            left: 16,
-            right: 16,
-            bottom: baseBottom + extra,
+        child: KeyedSubtree(
+          key: _viewportKey,
+          child: GridView.builder(
+            key: _getPageStorageKey(),
+            controller: _controller,
+            scrollCacheExtent: const ScrollCacheExtent.viewport(1.0),
+            padding: EdgeInsets.only(
+              top: 16,
+              left: 16,
+              right: 16,
+              bottom: baseBottom + extra,
+            ),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: widget.columns,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              mainAxisExtent: getItemHeight(widget.cardType),
+            ),
+            itemCount: sortedProxies.length,
+            itemBuilder: (_, index) {
+              final proxy = sortedProxies[index];
+              return ProxyDragTile(
+                key: ValueKey('drag_${widget.group.name}.${proxy.name}'),
+                proxyName: proxy.name,
+                enabled: _dragEnabled,
+                onReorder: _handleReorder,
+                onDragStart: () => _autoScroller.start(),
+                onDragUpdate: _autoScroller.update,
+                onDragEnd: () => _autoScroller.stop(),
+                child: ProxyCard(
+                  testUrl: widget.group.testUrl,
+                  groupType: widget.group.type,
+                  type: widget.cardType,
+                  proxy: proxy,
+                  groupName: widget.group.name,
+                ),
+              );
+            },
           ),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: widget.columns,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            mainAxisExtent: getItemHeight(widget.cardType),
-          ),
-          itemCount: sortedProxies.length,
-          itemBuilder: (_, index) {
-            final proxy = sortedProxies[index];
-            return ProxyCard(
-              testUrl: widget.group.testUrl,
-              groupType: widget.group.type,
-              type: widget.cardType,
-              proxy: proxy,
-              groupName: widget.group.name,
-            );
-          },
         ),
       ),
     );

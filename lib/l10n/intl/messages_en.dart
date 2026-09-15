@@ -1334,5 +1334,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "stealthExitFail": MessageLookupByLibrary.simpleMessage("Could not fetch"),
     "stealthFix": MessageLookupByLibrary.simpleMessage("Fix"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("Manual"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("Reset manual sort"),
   };
 }

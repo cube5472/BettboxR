@@ -705,5 +705,7 @@
         "type": "num"
       }
     }
-  }
+  },
+  "manualSort": "Manual",
+  "resetManualSort": "Reset manual sort"
 }

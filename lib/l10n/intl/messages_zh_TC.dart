@@ -978,5 +978,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "stealthExitOk": MessageLookupByLibrary.simpleMessage("流量經節點出去"),
     "stealthExitFail": MessageLookupByLibrary.simpleMessage("無法取得"),
     "stealthFix": MessageLookupByLibrary.simpleMessage("修復"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("手動"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("重置手動排序"),
   };
 }

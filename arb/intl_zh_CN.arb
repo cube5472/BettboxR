@@ -698,5 +698,7 @@
   "networkErrorRetryLater": "网络异常，请稍后再试",
   "tunVirtualAddress": "TUN 虚拟网卡地址",
   "installTime": "安装时间",
-  "updateTime": "更新时间"
+  "updateTime": "更新时间",
+  "manualSort": "手动",
+  "resetManualSort": "重置手动排序"
 }

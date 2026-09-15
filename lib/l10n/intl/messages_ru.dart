@@ -1390,5 +1390,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "stealthExitOk": MessageLookupByLibrary.simpleMessage("Трафик выходит через ноду"),
     "stealthExitFail": MessageLookupByLibrary.simpleMessage("Не удалось получить"),
     "stealthFix": MessageLookupByLibrary.simpleMessage("Исправить"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("Вручную"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("Сбросить ручную сортировку"),
   };
 }

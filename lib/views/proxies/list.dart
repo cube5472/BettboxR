@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
 import 'common.dart';
+import 'reorder.dart';
 
 class ProxiesListView extends ConsumerWidget {
   const ProxiesListView({super.key});
@@ -95,9 +96,43 @@ class _HiddenInfoItem extends _FlatItem {
 
 class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _viewportKey = GlobalKey();
+  late final DragAutoScroller _autoScroller;
   final Set<String> _hideDeadGroups = {};
 
+  @override
+  void initState() {
+    super.initState();
+    _autoScroller = DragAutoScroller(
+      scrollController: _scrollController,
+      viewportKey: _viewportKey,
+    );
+  }
+
   bool _isDeadDelay(int? delay) => delay != null && delay < 0;
+
+  bool get _dragEnabled => widget.sortType == ProxiesSortType.custom;
+
+  /// Переносит ноду [fromName] на позицию ноды [toName] в группе [group]
+  /// и сохраняет ручной порядок (по текущему видимому списку).
+  void _handleReorder(Group group, String fromName, String toName) {
+    final sortedProxies = globalState.appController.getSortProxies(
+      proxies: group.all,
+      sortType: widget.sortType,
+      testUrl: group.testUrl,
+      groupName: group.name,
+    );
+    final visibleProxies = _getVisibleProxies(group, sortedProxies);
+    final names = visibleProxies.map((proxy) => proxy.name).toList();
+    final from = names.indexOf(fromName);
+    final to = names.indexOf(toName);
+    if (from == -1 || to == -1 || from == to) {
+      return;
+    }
+    names.removeAt(from);
+    names.insert(to, fromName);
+    globalState.appController.saveProxyOrder(group.name, names);
+  }
 
   List<Proxy> _getVisibleProxies(Group group, List<Proxy> sortedProxies) {
     if (!_hideDeadGroups.contains(group.name)) {
@@ -188,6 +223,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
       proxies: group.all,
       sortType: widget.sortType,
       testUrl: group.testUrl,
+      groupName: group.name,
     );
     final visibleProxies = _getVisibleProxies(group, sortedProxies);
     final proxyIndex = visibleProxies.indexWhere((p) => p.name == selectedName);
@@ -216,6 +252,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
           proxies: group.all,
           sortType: widget.sortType,
           testUrl: group.testUrl,
+          groupName: group.name,
         );
         final visibleProxies = _getVisibleProxies(group, sortedProxies);
         final hiddenCount = sortedProxies.length - visibleProxies.length;
@@ -237,6 +274,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
 
   @override
   void dispose() {
+    _autoScroller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -250,85 +288,99 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
 
     return CommonScrollBar(
       controller: _scrollController,
-      child: ListView.builder(
-        key: const PageStorageKey<String>('proxies_list'),
-        controller: _scrollController,
-        padding: EdgeInsets.all(16).copyWith(
-          bottom:
-              (globalState.isAndroidTV ? 48.0 : 16.0) +
-              (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
-        ),
-        itemCount: flatItems.length,
-        itemExtentBuilder: (index, _) {
-          return flatItems[index].getHeight(headerHeight, itemHeight);
-        },
-        itemBuilder: (context, index) {
-          final item = flatItems[index];
-          if (item is _HeaderItem) {
-            final isExpand = widget.currentUnfoldSet.contains(item.group.name);
-            return _GroupHeader(
-              key: ValueKey('header_${item.group.name}'),
-              group: item.group,
-              isExpand: isExpand,
-              onToggle: () => _handleToggle(item.group.name),
-              cardType: widget.cardType,
-              columns: widget.columns,
-              onScrollToSelected: () => _scrollToSelected(item.group.name),
-              isHideDead: _hideDeadGroups.contains(item.group.name),
-              onToggleHideDead: () => _handleToggleHideDead(item.group),
-            );
-          } else if (item is _SpacingItem) {
-            return SizedBox(height: item.height);
-          } else if (item is _HiddenInfoItem) {
-            return _HiddenInfoRow(
-              count: item.count,
-              onShow: () {
-                _hideDeadGroups.remove(item.groupName);
-                if (mounted) {
-                  setState(() {});
-                }
-              },
-            );
-          } else if (item is _RowItem) {
-            final cardWidgets = <Widget>[];
-            for (var i = 0; i < widget.columns; i++) {
-              if (i < item.proxies.length) {
-                final proxy = item.proxies[i];
-                cardWidgets.add(
-                  Expanded(
-                    child: ProxyCard(
-                      key: ValueKey('${item.group.name}.${proxy.name}'),
-                      proxy: proxy,
-                      groupName: item.group.name,
-                      type: widget.cardType,
-                      groupType: item.group.type,
-                      testUrl: item.group.testUrl,
+      child: KeyedSubtree(
+        key: _viewportKey,
+        child: ListView.builder(
+          key: const PageStorageKey<String>('proxies_list'),
+          controller: _scrollController,
+          padding: EdgeInsets.all(16).copyWith(
+            bottom:
+                (globalState.isAndroidTV ? 48.0 : 16.0) +
+                (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
+          ),
+          itemCount: flatItems.length,
+          itemExtentBuilder: (index, _) {
+            return flatItems[index].getHeight(headerHeight, itemHeight);
+          },
+          itemBuilder: (context, index) {
+            final item = flatItems[index];
+            if (item is _HeaderItem) {
+              final isExpand = widget.currentUnfoldSet.contains(
+                item.group.name,
+              );
+              return _GroupHeader(
+                key: ValueKey('header_${item.group.name}'),
+                group: item.group,
+                isExpand: isExpand,
+                onToggle: () => _handleToggle(item.group.name),
+                cardType: widget.cardType,
+                columns: widget.columns,
+                onScrollToSelected: () => _scrollToSelected(item.group.name),
+                isHideDead: _hideDeadGroups.contains(item.group.name),
+                onToggleHideDead: () => _handleToggleHideDead(item.group),
+              );
+            } else if (item is _SpacingItem) {
+              return SizedBox(height: item.height);
+            } else if (item is _HiddenInfoItem) {
+              return _HiddenInfoRow(
+                count: item.count,
+                onShow: () {
+                  _hideDeadGroups.remove(item.groupName);
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+              );
+            } else if (item is _RowItem) {
+              final cardWidgets = <Widget>[];
+              for (var i = 0; i < widget.columns; i++) {
+                if (i < item.proxies.length) {
+                  final proxy = item.proxies[i];
+                  cardWidgets.add(
+                    Expanded(
+                      child: ProxyDragTile(
+                        proxyName: proxy.name,
+                        enabled: _dragEnabled,
+                        onReorder: (fromName, toName) =>
+                            _handleReorder(item.group, fromName, toName),
+                        onDragStart: () => _autoScroller.start(),
+                        onDragUpdate: _autoScroller.update,
+                        onDragEnd: () => _autoScroller.stop(),
+                        child: ProxyCard(
+                          key: ValueKey('${item.group.name}.${proxy.name}'),
+                          proxy: proxy,
+                          groupName: item.group.name,
+                          type: widget.cardType,
+                          groupType: item.group.type,
+                          testUrl: item.group.testUrl,
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              } else {
-                cardWidgets.add(const Expanded(child: SizedBox()));
+                  );
+                } else {
+                  cardWidgets.add(const Expanded(child: SizedBox()));
+                }
               }
-            }
 
-            final rowChildren = <Widget>[];
-            for (var i = 0; i < cardWidgets.length; i++) {
-              rowChildren.add(cardWidgets[i]);
-              if (i < cardWidgets.length - 1) {
-                rowChildren.add(const SizedBox(width: 8));
+              final rowChildren = <Widget>[];
+              for (var i = 0; i < cardWidgets.length; i++) {
+                rowChildren.add(cardWidgets[i]);
+                if (i < cardWidgets.length - 1) {
+                  rowChildren.add(const SizedBox(width: 8));
+                }
               }
-            }
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: SizedBox(
-                height: itemHeight,
-                child: Row(children: rowChildren),
-              ),
-            );
-          }
-          return const SizedBox();
-        },
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: SizedBox(
+                  height: itemHeight,
+                  child: Row(children: rowChildren),
+                ),
+              );
+            }
+            return const SizedBox();
+          },
+        ),
       ),
     );
   }
@@ -403,9 +455,7 @@ class _GroupHeader extends ConsumerWidget {
         .watch(getSelectedProxyNameProvider(group.name))
         .getSafeValue('');
 
-    final selectedProxyIcon = ref.watch(
-      proxyIconProvider(selectedProxyName),
-    );
+    final selectedProxyIcon = ref.watch(proxyIconProvider(selectedProxyName));
 
     return CommonCard(
       radius: 16,

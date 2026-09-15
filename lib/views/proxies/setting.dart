@@ -2,6 +2,7 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/providers/app.dart';
 import 'package:bett_box/providers/config.dart';
+import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +23,7 @@ class ProxiesSetting extends StatelessWidget {
       ProxiesSortType.none => Icons.sort,
       ProxiesSortType.delay => Icons.network_ping,
       ProxiesSortType.name => Icons.sort_by_alpha,
+      ProxiesSortType.custom => Icons.swipe,
     };
   }
 
@@ -30,6 +32,7 @@ class ProxiesSetting extends StatelessWidget {
       ProxiesSortType.none => appLocalizations.defaultText,
       ProxiesSortType.delay => appLocalizations.delay,
       ProxiesSortType.name => appLocalizations.name,
+      ProxiesSortType.custom => appLocalizations.manualSort,
     };
   }
 
@@ -122,6 +125,13 @@ class ProxiesSetting extends StatelessWidget {
                               return state.copyWith(sortType: item);
                             });
                         ref.read(sortNumProvider.notifier).add();
+                      },
+                    ),
+                  if (sortType == ProxiesSortType.custom)
+                    SettingTextCard(
+                      appLocalizations.resetManualSort,
+                      onPressed: () {
+                        globalState.appController.clearProxyOrders();
                       },
                     ),
                 ],

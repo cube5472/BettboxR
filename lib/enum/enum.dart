@@ -112,7 +112,7 @@ enum NavigationItemMode { mobile, desktop, more }
 
 enum Network { tcp, udp }
 
-enum ProxiesSortType { none, delay, name }
+enum ProxiesSortType { none, delay, name, custom }
 
 enum TunStack { gvisor, system, mixed }
 
@@ -122,7 +122,12 @@ enum AccessSortType { none, installTime, updateTime }
 
 enum ProfileType { file, url }
 
-enum ConnectionsSortType { defaultSort, realTimeSpeed, totalTraffic, creationTime }
+enum ConnectionsSortType {
+  defaultSort,
+  realTimeSpeed,
+  totalTraffic,
+  creationTime,
+}
 
 enum ResultType {
   @JsonValue(0)
@@ -387,7 +392,6 @@ extension PageLabelExtension on PageLabel {
     }
   }
 }
-
 
 enum RuleAction {
   DOMAIN('DOMAIN'),

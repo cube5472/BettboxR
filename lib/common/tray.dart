@@ -192,6 +192,7 @@ class Tray {
           proxies: group.all,
           sortType: globalState.config.proxiesStyle.sortType,
           testUrl: group.testUrl,
+          groupName: group.name,
         );
         for (final proxy in proxies) {
           final delay = globalState.appController.getTrayProxyDelay(

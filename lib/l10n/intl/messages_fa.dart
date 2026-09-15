@@ -1307,5 +1307,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "نیازمند دسترسی مدیریت (Admin)",
     ),
     "years": m15,
+    "manualSort": MessageLookupByLibrary.simpleMessage("دستی"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("بازنشانی مرتب‌سازی دستی"),
   };
 }

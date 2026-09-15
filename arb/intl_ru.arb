@@ -710,5 +710,7 @@
         "type": "num"
       }
     }
-  }
+  },
+  "manualSort": "Вручную",
+  "resetManualSort": "Сбросить ручную сортировку"
 }

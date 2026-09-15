@@ -1030,5 +1030,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("시스템 적용"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("관리자 권한이 필요합니다"),
     "years": m15,
+    "manualSort": MessageLookupByLibrary.simpleMessage("수동"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("수동 정렬 초기화"),
   };
 }

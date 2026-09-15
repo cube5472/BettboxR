@@ -1020,5 +1020,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("システムへ適用"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("管理者権限が必要です"),
     "years": m15,
+    "manualSort": MessageLookupByLibrary.simpleMessage("手動"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("手動並べ替えをリセット"),
   };
 }

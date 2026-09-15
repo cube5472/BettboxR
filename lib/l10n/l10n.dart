@@ -2434,6 +2434,21 @@ class AppLocalizations {
     return Intl.message('Sort', name: 'sort', desc: '', args: []);
   }
 
+  /// `Manual`
+  String get manualSort {
+    return Intl.message('Manual', name: 'manualSort', desc: '', args: []);
+  }
+
+  /// `Reset manual sort`
+  String get resetManualSort {
+    return Intl.message(
+      'Reset manual sort',
+      name: 'resetManualSort',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Columns`
   String get columns {
     return Intl.message('Columns', name: 'columns', desc: '', args: []);

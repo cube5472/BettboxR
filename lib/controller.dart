@@ -388,8 +388,9 @@ class AppController {
 
   Future<bool> _shouldUpdateDashboardTick() async {
     if (system.isDesktop) {
-      final isPinned =
-          _ref.read(windowSettingProvider.select((s) => s.isPinned));
+      final isPinned = _ref.read(
+        windowSettingProvider.select((s) => s.isPinned),
+      );
       if (isPinned) return true;
       if (await window?.isVisible == false) return false;
       if (await window?.isMinimized == true) return false;
@@ -489,9 +490,9 @@ class AppController {
     _updatingProfileIds.add(profile.id);
     try {
       final newProfile = await profile.update(validate: validate);
-      _ref.read(profilesProvider.notifier).setProfile(
-            newProfile.copyWith(isUpdating: false),
-          );
+      _ref
+          .read(profilesProvider.notifier)
+          .setProfile(newProfile.copyWith(isUpdating: false));
       if (profile.id == _ref.read(currentProfileIdProvider)) {
         applyProfileDebounce(silence: true);
       }
@@ -1074,9 +1075,7 @@ class AppController {
     commonPrint.log('clear preferences');
     globalState.config = Config(
       themeProps: defaultThemeProps,
-      networkProps: defaultNetworkProps.copyWith(
-        systemProxy: system.isDesktop,
-      ),
+      networkProps: defaultNetworkProps.copyWith(systemProxy: system.isDesktop),
     );
   }
 
@@ -1494,8 +1493,9 @@ class AppController {
         ageSecretKey: ageSecretKey,
       ).update();
       if (globalState.navigatorKey.currentState?.canPop() ?? false) {
-        globalState.navigatorKey.currentState
-            ?.popUntil((route) => route.isFirst);
+        globalState.navigatorKey.currentState?.popUntil(
+          (route) => route.isFirst,
+        );
       }
       toProfiles();
       await addProfile(profile);
@@ -1603,16 +1603,73 @@ class AppController {
     });
   }
 
+  /// Ручной порядок: ноды из сохранённого списка идут в заданном порядке,
+  /// остальные (новые/переименованные) добавляются в конец в исходном порядке.
+  List<Proxy> _sortOfCustom({required List<Proxy> proxies, String? groupName}) {
+    if (groupName == null || groupName.isEmpty) {
+      return proxies;
+    }
+    final order = _ref.read(
+      proxiesStyleSettingProvider.select(
+        (state) => state.proxyOrders[groupName] ?? const <String>[],
+      ),
+    );
+    if (order.isEmpty) {
+      return proxies;
+    }
+    final orderIndex = <String, int>{
+      for (var i = 0; i < order.length; i++) order[i]: i,
+    };
+    final sorted = <Proxy>[];
+    final unsorted = <Proxy>[];
+    for (final proxy in proxies) {
+      if (orderIndex.containsKey(proxy.name)) {
+        sorted.add(proxy);
+      } else {
+        unsorted.add(proxy);
+      }
+    }
+    sorted.sort((a, b) => orderIndex[a.name]!.compareTo(orderIndex[b.name]!));
+    return [...sorted, ...unsorted];
+  }
+
   List<Proxy> getSortProxies({
     required List<Proxy> proxies,
     required ProxiesSortType sortType,
     String? testUrl,
+    String? groupName,
   }) {
     return switch (sortType) {
       ProxiesSortType.none => proxies,
       ProxiesSortType.delay => _sortOfDelay(proxies: proxies, testUrl: testUrl),
       ProxiesSortType.name => _sortOfName(proxies),
+      ProxiesSortType.custom => _sortOfCustom(
+        proxies: proxies,
+        groupName: groupName,
+      ),
     };
+  }
+
+  /// Сохраняет ручной порядок нод группы (список имён в новом порядке).
+  void saveProxyOrder(String groupName, List<String> order) {
+    _ref.read(proxiesStyleSettingProvider.notifier).updateState((state) {
+      final newOrders = Map<String, List<String>>.from(state.proxyOrders);
+      if (order.isEmpty) {
+        newOrders.remove(groupName);
+      } else {
+        newOrders[groupName] = order;
+      }
+      return state.copyWith(proxyOrders: newOrders);
+    });
+    _ref.read(sortNumProvider.notifier).add();
+  }
+
+  /// Сбрасывает ручной порядок во всех группах.
+  void clearProxyOrders() {
+    _ref.read(proxiesStyleSettingProvider.notifier).updateState((state) {
+      return state.copyWith(proxyOrders: const {});
+    });
+    _ref.read(sortNumProvider.notifier).add();
   }
 
   Future<void> clearEffect(String profileId) async {
@@ -2369,8 +2426,6 @@ class AppController {
     // Ensure current profile exists
     _ensureCurrentProfile(profiles);
   }
-
-
 
   Future<T?> safeRun<T>(
     FutureOr<T> Function() futureFunction, {

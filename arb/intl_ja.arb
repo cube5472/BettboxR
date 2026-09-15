@@ -698,5 +698,7 @@
   "networkErrorRetryLater": "ネットワークエラーが発生しました。後でもう一度お試しください",
   "tunVirtualAddress": "TUN 仮想ネットワークアダプター",
   "installTime": "インストール日時",
-  "updateTime": "更新日時"
+  "updateTime": "更新日時",
+  "manualSort": "手動",
+  "resetManualSort": "手動並べ替えをリセット"
 }

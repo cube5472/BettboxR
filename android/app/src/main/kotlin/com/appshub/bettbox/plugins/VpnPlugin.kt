@@ -27,6 +27,7 @@ import com.appshub.bettbox.modules.SuspendModule
 import com.appshub.bettbox.services.BaseServiceInterface
 import com.appshub.bettbox.services.BettboxService
 import com.appshub.bettbox.services.BettboxVpnService
+import com.appshub.bettbox.services.LeakWatchdog
 import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.BinaryMessenger
@@ -65,6 +66,9 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var lastStartForegroundParams: StartForegroundParams? = null
     private val uidPageNameMap = ConcurrentHashMap<Int, String>()
     private var suspendModule: SuspendModule? = null
+
+    /// Сторож утечек: живёт в сервисном процессе, пока поднят VPN
+    private var leakWatchdog: LeakWatchdog? = null
 
     @Volatile
     private var quickResponseEnabled = false
@@ -386,6 +390,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     fun notifyScreenStateChanged(isOn: Boolean) {
         invokeDart("screenStateChanged", isOn)
+        leakWatchdog?.onScreenStateChanged(isOn)
     }
 
     private fun getCurrentDns(): String {
@@ -418,6 +423,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             networks.add(network)
             handleNetworkChange()
             invokeDart("networkChanged")
+            leakWatchdog?.onNetworkChanged()
         }
 
         override fun onLost(network: Network) {
@@ -426,6 +432,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             onUpdateNetwork()
             handleNetworkChange()
             invokeDart("networkChanged")
+            leakWatchdog?.onNetworkChanged()
         }
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
@@ -698,6 +705,15 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 suspendModule?.install()
             }
         }
+
+        // Сторож утечек — только в режиме VPN (когда tun реально поднят).
+        // При перезапуске ядра start() просто переназначит стартовый раунд.
+        if (currentOptions.enable) {
+            if (leakWatchdog == null) {
+                leakWatchdog = LeakWatchdog(BettboxApplication.getAppContext())
+            }
+            leakWatchdog?.start()
+        }
         onUpdateNetwork()
     }
 
@@ -758,6 +774,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         suspendModule?.uninstall()
         suspendModule = null
+        leakWatchdog?.stop()
+        leakWatchdog = null
         Core.stopTun()
         serviceRef?.stop()
 
@@ -802,6 +820,8 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
         suspendModule?.uninstall()
         suspendModule = null
+        leakWatchdog?.stop()
+        leakWatchdog = null
         Core.stopTun()
         Core.suspended(true)
         (bettBoxService as? BettboxService)?.resetNotificationBuilder()
