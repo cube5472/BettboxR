@@ -553,28 +553,31 @@ class GlobalState {
     }
   }
 
-  /// Встраивает предустановленный скрипт «s-ru» (правила маршрутизации +
-  /// фильтр RU-нод) в список скриптов. Скрипт не включается автоматически —
-  /// его нужно включить тумблером на карточке. Если скрипт с таким именем
-  /// уже есть (в том числе добавленный вручную и отредактированный) — не
-  /// трогаем его. Удалённый встроенный скрипт появится снова при следующем
-  /// запуске — это осознанно: он встроенный.
+  /// Встраивает предустановленные скрипты: «s-ru» (правила маршрутизации +
+  /// фильтр RU-нод) и «Bag-rules-paranoid» (DNS-карантин). Скрипты не
+  /// включаются автоматически — их нужно включить тумблером на карточке.
+  /// Если скрипт с таким именем уже есть (в том числе добавленный вручную
+  /// и отредактированный) — не трогаем его. Удалённый встроенный скрипт
+  /// появится снова при следующем запуске — это осознанно: он встроенный.
   void _seedBuiltinScript() {
-    final scripts = config.scriptProps.scripts;
-    final exists = scripts.any(
-      (script) => script.label == kBuiltinSRuScriptLabel,
-    );
-    if (exists) return;
+    const builtins = <(String, String)>[
+      (kBuiltinSRuScriptLabel, builtinSRuScript),
+      (kBuiltinBagRulesParanoidLabel, builtinBagRulesParanoidScript),
+    ];
+    var next = config.scriptProps.scripts;
+    var changed = false;
+    for (final (label, content) in builtins) {
+      final exists = next.any((script) => script.label == label);
+      if (exists) continue;
+      next = [
+        ...next,
+        Script.create(label: label, content: content),
+      ];
+      changed = true;
+    }
+    if (!changed) return;
     config = config.copyWith(
-      scriptProps: config.scriptProps.copyWith(
-        scripts: [
-          ...scripts,
-          Script.create(
-            label: kBuiltinSRuScriptLabel,
-            content: builtinSRuScript,
-          ),
-        ],
-      ),
+      scriptProps: config.scriptProps.copyWith(scripts: next),
     );
     preferences.saveConfig(config);
   }
