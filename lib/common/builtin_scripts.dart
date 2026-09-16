@@ -227,6 +227,7 @@ const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
 //     всем, кроме Quad9), DoH публичных сервисов по доменам, публичные
 //     резолверы по IP (Google, Cloudflare, AdGuard, OpenDNS, Yandex,
 //     Mullvad, ControlD, NextDNS — v4+v6; ловит raw-IP DoH в обход имён).
+//     Проверка внешнего IP (api.ipify.org) принудительно через туннель.
 //     Правила ставятся В НАЧАЛО списка правил профиля — собственные
 //     правила маршрутизации профиля продолжают работать как раньше.
 //  2) «Блокировать QUIC (UDP 443)» — запрещает HTTP/3: весь HTTPS идёт
@@ -352,6 +353,9 @@ var BLOCK_QUIC = "AND,((NETWORK,udp),(DST-PORT,443)),REJECT";
 // Собирает набор правил карантинa. quicBlock — включать ли запрет QUIC.
 function _bagRuleList(quicBlock) {
   var rules = [];
+  // Проверка внешнего IP — всегда через туннель. Ставим самым первым:
+  // правило срабатывает раньше любых блокировок (в т.ч. раньше запрета QUIC).
+  rules.push("DOMAIN,api.ipify.org,PROXY");
   var i;
   for (i = 0; i < QUAD9_DOMAINS.length; i++) {
     rules.push("DOMAIN," + QUAD9_DOMAINS[i] + ",PROXY");
