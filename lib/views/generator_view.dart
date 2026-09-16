@@ -55,6 +55,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   final _providerIntervalController = TextEditingController(text: '86400');
 
   List<Map<String, dynamic>> _proxies = [];
+  // Кэш разобранных подписок (URL -> прокси): правки локального текста и
+  // неудачные обновления не должны «стирать» уже скачанные ноды.
+  final Map<String, List<Map<String, dynamic>>> _fetchedProxies = {};
   final List<List<String>> _chains = [];
   bool _parsing = false;
   List<String> _problems = const [];
@@ -147,10 +150,17 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       }
     }
     _lastParsedText = _linksController.text;
+    // Подписки, удалённые из текста, вычищаем из кэша; одинаковые URL
+    // не скачиваем дважды.
+    _fetchedProxies.removeWhere((url, _) => !urls.contains(url));
+    final uniqueUrls = urls.toSet().toList();
     setState(() {
       _parsing = true;
       _problems = const [];
-      _pendingUrls = fetchUrls ? const [] : urls;
+      // Жёлтая подсказка — только про ещё не скачанные подписки.
+      _pendingUrls = fetchUrls
+          ? const []
+          : uniqueUrls.where((u) => !_fetchedProxies.containsKey(u)).toList();
     });
     final collected = <Map<String, dynamic>>[];
     final problems = <String>[];
@@ -191,13 +201,37 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         }
       }
       if (fetchUrls) {
-        for (final url in urls) {
+        for (final url in uniqueUrls) {
           try {
             final body = await _fetchText(url);
-            collected.addAll(parseSubscriptionBody(body));
+            final parsed = parseSubscriptionBody(body);
+            if (parsed.isEmpty) {
+              problems.add('Подписка ${_hostOf(url)}: прокси не найдены');
+              continue;
+            }
+            _fetchedProxies[url] = parsed;
+            collected.addAll(parsed);
           } on Object catch (e) {
-            problems.add('Подписка ${_hostOf(url)}: $e');
+            // Сеть или парсинг упали — отдаём ранее скачанные прокси,
+            // чтобы неудачное обновление не «стирало» подписку.
+            final cached = _fetchedProxies[url];
+            if (cached != null && cached.isNotEmpty) {
+              collected.addAll(cached);
+              problems.add(
+                'Подписка ${_hostOf(url)}: $e — показаны ранее '
+                'загруженные прокси',
+              );
+            } else {
+              problems.add('Подписка ${_hostOf(url)}: $e');
+            }
           }
+        }
+      } else {
+        // Правка текста без перезагрузки: подписки берём из кэша, чтобы
+        // локальные добавления (конфиг AWG/WARP, ссылки) не затирали их.
+        for (final url in uniqueUrls) {
+          final cached = _fetchedProxies[url];
+          if (cached != null) collected.addAll(cached);
         }
       }
     } finally {
@@ -513,7 +547,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             ),
             if (_pendingUrls.isNotEmpty)
               Text(
-                'Подписок в списке: ${_pendingUrls.length} — '
+                'Не скачано подписок: ${_pendingUrls.length} — '
                 'нажмите «Разобрать», чтобы скачать',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.tertiary,

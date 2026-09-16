@@ -1288,6 +1288,9 @@ Map<String, dynamic> createWgProxy(Map<String, dynamic> data) {
   return newProxy;
 }
 
+/// Строка-ссылка на прокси (scheme://...): vless://, warp://, awg:// и т.д.
+final RegExp _proxyLinkSchemeRe = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*://');
+
 /// Парсит вставленный текст: INI-конфиг WG/AWG или список ссылок (по строке на
 /// прокси). Возвращает список прокси-карт.
 List<Map<String, dynamic>> parseManualInput(String? text) {
@@ -1310,6 +1313,11 @@ List<Map<String, dynamic>> parseManualInput(String? text) {
     for (var line in lines) {
       line = line.trim();
       if (line.isEmpty || line.startsWith('#') || line.startsWith('//')) {
+        continue;
+      }
+      // Ссылки на прокси (scheme://) внутри или рядом с INI не должны
+      // попадать в key=value-разбор — их берёт общий проход ссылок ниже.
+      if (_proxyLinkSchemeRe.hasMatch(line)) {
         continue;
       }
       if (line.startsWith('[') && line.endsWith(']')) {
@@ -1412,13 +1420,17 @@ List<Map<String, dynamic>> parseManualInput(String? text) {
     if (data['privateKey'] != null && data['publicKey'] != null) {
       proxies.add(createWgProxy(data));
     }
-  } else {
-    for (final line in lines) {
-      try {
-        final proxy = parseProxyLink(line);
-        if (proxy['name'] != null) proxies.add(proxy);
-      } on Object {}
-    }
+  }
+
+  // Ссылки разбираются ВСЕГДА, даже когда в тексте есть WG/AWG-INI.
+  // Раньше здесь была ветка if/else: при наличии [Interface] все ссылки
+  // из того же текста молча выбрасывались — конфиг «затирал» ноды,
+  // добавленные ссылками/подпиской, а ссылки после конфига «не виделись».
+  for (final line in lines) {
+    try {
+      final proxy = parseProxyLink(line);
+      if (proxy['name'] != null) proxies.add(proxy);
+    } on Object {}
   }
   return proxies;
 }
