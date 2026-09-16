@@ -39,6 +39,42 @@ class _ScriptOptionsCache {
 }
 
 class JavaScriptRuntimeManager {
+  /// Постоянный JS-движок. Раньше на каждый запуск скрипта создавался новый
+  /// IsolateQjs — это заметно удлиняло каждый старт туннеля (спавн изолята +
+  /// инициализация QuickJS). Теперь движок переиспользуется, а простаивая,
+  /// закрывается по таймеру. Скрипты выполняются внутри IIFE — верхнеуровневые
+  /// var/const/function не переживают вызов и не конфликтуют при повторе.
+  static IsolateQjs? _engine;
+  static Timer? _idleTimer;
+  static const Duration _idleTtl = Duration(minutes: 2);
+
+  static Future<IsolateQjs> _acquireEngine() async {
+    _idleTimer?.cancel();
+    _idleTimer = Timer(_idleTtl, () {
+      _idleTimer = null;
+      final engine = _engine;
+      _engine = null;
+      if (engine != null) {
+        engine.close().then((_) {}, onError: (_) {});
+      }
+    });
+    final existing = _engine;
+    if (existing != null) return existing;
+    final fresh = IsolateQjs();
+    _engine = fresh;
+    return fresh;
+  }
+
+  static Future<void> _discardEngine() async {
+    _idleTimer?.cancel();
+    _idleTimer = null;
+    final engine = _engine;
+    _engine = null;
+    try {
+      await engine?.close();
+    } catch (_) {}
+  }
+
   static Future<Map<String, dynamic>> evaluateScript(
     String scriptContent,
     Map<String, dynamic> config, {
@@ -49,6 +85,17 @@ class JavaScriptRuntimeManager {
       config,
       customOptions: customOptions,
     );
+    // Быстрый путь: main() возвращает JSON.stringify(config) — одна строка
+    // через FFI вместо поэлементной конвертации большого объекта.
+    if (result is String) {
+      try {
+        final decoded = json.decode(result);
+        if (decoded is Map) return _deepCastMap(decoded);
+      } on Object catch (e) {
+        commonPrint.log('evaluateScript: decode failed: $e');
+      }
+      return config;
+    }
     if (result is Map) {
       return _deepCastMap(result);
     }
@@ -68,7 +115,7 @@ class JavaScriptRuntimeManager {
       final recached = _ScriptOptionsCache.get(scriptContent);
       if (recached != null) return recached;
 
-      final engine = IsolateQjs();
+      final engine = await _acquireEngine();
       try {
         final res = await engine.evaluate('''
           var console = {
@@ -105,13 +152,9 @@ class JavaScriptRuntimeManager {
         return result;
       } catch (e) {
         commonPrint.log('extractScriptOptions error: $e');
+        // Движок мог остаться в плохом состоянии — пересоздадим при след. запуске.
+        await _discardEngine();
         return {};
-      } finally {
-        try {
-          await engine.close();
-        } catch (e) {
-          commonPrint.log('engine.close error: $e');
-        }
       }
     });
   }
@@ -136,7 +179,7 @@ class JavaScriptRuntimeManager {
   }) async {
     var attempt = 0;
     while (true) {
-      final engine = IsolateQjs();
+      final engine = await _acquireEngine();
       try {
         final configJs = json.encode(config);
         final customJs = customOptions != null && customOptions.isNotEmpty
@@ -146,6 +189,9 @@ class JavaScriptRuntimeManager {
             ? 'if (typeof ruleOptionsEnable !== "undefined") { Object.assign(ruleOptionsEnable, $customJs); }'
             : '';
 
+        // Возврат через JSON.stringify: конфиг передаётся одной строкой,
+        // а не конвертируется поэлементно через FFI (это было заметной
+        // частью стоимости запуска на больших профилях).
         return await engine.evaluate('''
           var console = {
             log: function(...args) { if (typeof print !== 'undefined') print(...args); },
@@ -157,20 +203,19 @@ class JavaScriptRuntimeManager {
           (function() {
             $scriptContent
             $overrideSnippet
-            return main($configJs);
+            var __patchedConfig = main($configJs);
+            return (typeof __patchedConfig === "object" && __patchedConfig !== null)
+              ? JSON.stringify(__patchedConfig)
+              : null;
           })();
         ''');
       } catch (e) {
+        // Движок мог остаться в плохом состоянии — пересоздаём и повторяем.
+        await _discardEngine();
         if (attempt >= maxRetries) {
           throw 'JS Script Error: $e';
         }
         attempt++;
-      } finally {
-        try {
-          await engine.close();
-        } catch (e) {
-          commonPrint.log('engine.close error: $e');
-        }
       }
     }
   }
