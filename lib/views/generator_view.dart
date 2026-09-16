@@ -135,7 +135,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       final t = line.trim();
       if (t.isEmpty) continue;
       if (t.startsWith('http://') || t.startsWith('https://')) {
-        urls.add(t);
+        // http(s)://user:pass@host:port — это ссылка на HTTP/SOCKS5-прокси
+        // (userinfo в URL), а не подписка.
+        if (RegExp(r'^https?://[^/@]+@').hasMatch(t)) {
+          localLines.add(line);
+        } else {
+          urls.add(t);
+        }
       } else {
         localLines.add(line);
       }
@@ -175,9 +181,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           final sample = localLines.first;
           problems.add(
             'Локальные строки не распознаны. Поддержка: ссылки vless:// '
-            'ss:// trojan:// hy2:// tuic:// anytls:// vmess:// '
-            'hysteria:// masque://, конфиги WG/AWG ([Interface]…[Peer]), '
-            'clash-YAML с ключом proxies:. '
+            'ss:// ssr:// trojan:// hy2:// tuic:// anytls:// vmess:// '
+            'hysteria:// warp:// masque:// awg:// wg:// socks5:// '
+            'http(s)://user:pass@host:port, конфиги WG/AWG '
+            '([Interface]…[Peer]), clash-YAML с ключом proxies:. '
             'Пример строки: '
             '${sample.length > 40 ? '${sample.substring(0, 40)}…' : sample}',
           );
@@ -456,8 +463,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             minLines: 4,
             decoration: const InputDecoration(
               hintText:
-                  'По одной в строке: vless://… trojan://… ss://… hy2://… '
-                  'tuic://… anytls://… vmess://… hysteria://… masque://…\n'
+                  'По одной в строке: vless://… trojan://… ss://… ssr://… '
+                  'hy2://… tuic://… anytls://… vmess://… hysteria://…\n'
+                  'warp://… masque://… awg://… wg://… socks5://… '
+                  'http(s)://user:pass@host:port…\n'
                   'URL подписки (https://…) — будет скачана автоматически\n'
                   'или конфиг WireGuard / AmneziaWG ([Interface]…[Peer])',
               border: OutlineInputBorder(),

@@ -334,7 +334,8 @@ Map<String, dynamic> parseHysteria2(String url) {
     'server': host,
     'port': port,
     'password': password,
-    'sni': cleanSni(params.get('sni') ?? ''),
+    // realm — вариант ссылок hy2+realm: подмена SNI (зеркало конвертера ядра).
+    'sni': cleanSni(params.get('sni') ?? params.get('realm') ?? ''),
     'skip-cert-verify': true,
     'up': '',
     'down': '',
@@ -585,19 +586,20 @@ Map<String, dynamic> parseAnytls(String url) {
   return proxy;
 }
 
-Map<String, dynamic> parseMasque(String url) {
-  final parsed = Uri.parse(url);
-  final host = parsed.host;
-  final port = parsed.port;
-  final name = _decodeFragment(parsed.fragment) ?? 'MASQUE';
-  if (host.isEmpty || port <= 0) _throwMissing();
-  final params = QueryMap(parsed.query);
+/// Сборка карты MASQUE-прокси (общая для masque:// и warp:// ссылок).
+Map<String, dynamic> _masqueMap({
+  required String host,
+  required int port,
+  required String name,
+  required QueryMap params,
+  String? privateKey,
+}) {
   final proxy = <String, dynamic>{
     'name': name,
     'type': 'masque',
     'server': host,
     'port': port,
-    'private-key': params.get('private-key') ?? '',
+    'private-key': privateKey ?? params.get('private-key') ?? '',
     'public-key': params.get('public-key') ?? '',
     'ip': params.get('ip') ?? '',
     'ipv6': params.get('ipv6') ?? '',
@@ -628,6 +630,389 @@ Map<String, dynamic> parseMasque(String url) {
       proxy.remove(key);
     }
   }
+  return proxy;
+}
+
+Map<String, dynamic> parseMasque(String url) {
+  final parsed = Uri.parse(url);
+  final host = parsed.host;
+  final port = parsed.port;
+  final name = _decodeFragment(parsed.fragment) ?? 'MASQUE';
+  if (host.isEmpty || port <= 0) _throwMissing();
+  final params = QueryMap(parsed.query);
+  return _masqueMap(
+    host: host,
+    port: port,
+    name: name,
+    params: params,
+    privateKey: parsed.userInfo.isNotEmpty ? parsed.userInfo : null,
+  );
+}
+
+/// Первое непустое значение среди алиасов ключа query.
+String? _q(QueryMap params, List<String> names) {
+  for (final n in names) {
+    final v = params.get(n);
+    if (v != null && v.isNotEmpty) return v;
+  }
+  return null;
+}
+
+/// reserved из ссылки: "1,2,3" / "[1,2,3]" / base64-строка из 3 байт.
+List<int>? _parseReserved(String? raw) {
+  if (raw == null) return null;
+  var t = raw.trim();
+  if (t.isEmpty) return null;
+  if (t.startsWith('[') && t.endsWith(']')) {
+    t = t.substring(1, t.length - 1);
+  }
+  if (t.contains(',')) {
+    final list = <int>[];
+    for (final part in t.split(',')) {
+      final v = int.tryParse(part.trim());
+      if (v == null || v < 0 || v > 255) return null;
+      list.add(v);
+    }
+    return list.length == 3 ? list : null;
+  }
+  var s = t.replaceAll('-', '+').replaceAll('_', '/');
+  final pad = (4 - (s.length % 4)) % 4;
+  s += '=' * pad;
+  try {
+    final bytes = base64Decode(s);
+    if (bytes.length == 3) return bytes;
+  } on Object {
+    // Не base64 — reserved просто отсутствует.
+  }
+  return null;
+}
+
+/// Известный публичный ключ WireGuard-пира Cloudflare WARP.
+const String kWarpPeerPublicKey =
+    'bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=';
+
+/// warp:// — Cloudflare WARP. Приватный ключ — в userinfo либо query
+/// (private-key/privatekey/key). Два варианта:
+///  • по умолчанию — WARP over MASQUE (type: masque, порт по умолчанию 443);
+///  • network=wireguard|wg или наличие reserved — WireGuard
+///    (type: wireguard, порт по умолчанию 2408, reserved из ссылки).
+Map<String, dynamic> parseWarp(String url) {
+  final parsed = Uri.parse(url);
+  final params = QueryMap(parsed.query);
+  final privateKey = parsed.userInfo.isNotEmpty
+      ? parsed.userInfo
+      : (_q(params, const [
+              'private-key',
+              'privatekey',
+              'private_key',
+              'key',
+            ]) ??
+            '');
+  final name = _decodeFragment(parsed.fragment) ?? 'WARP';
+  var host = parsed.host;
+  var port = parsed.port;
+  final endpoint = _q(params, const ['endpoint', 'server']);
+  if (endpoint != null) {
+    final hp = _parseHostPort(endpoint);
+    final h = hp['host'] as String?;
+    if (h != null && h.isNotEmpty) host = h;
+    final p = hp['port'] as int?;
+    if (p != null && p > 0) port = p;
+  }
+  final reserved = _parseReserved(
+    _q(params, const ['reserved', 'reserved-bytes']),
+  );
+  final networkHint = (_q(params, const ['network', 'mode']) ?? '')
+      .toLowerCase();
+  final useWireguard =
+      networkHint == 'wireguard' || networkHint == 'wg' || reserved != null;
+  if (useWireguard) {
+    if (privateKey.isEmpty) _throwMissing();
+    final address =
+        _q(params, const ['address', 'addr', 'ip']) ?? '172.16.0.2/32';
+    var ip = '';
+    for (final a in address.split(',')) {
+      final v = a.trim().split('/')[0].trim();
+      if (v.isNotEmpty && !v.contains(':')) {
+        ip = v;
+        break;
+      }
+    }
+    final data = <String, dynamic>{
+      'privateKey': privateKey,
+      'publicKey':
+          _q(params, const [
+            'public-key',
+            'publickey',
+            'public_key',
+            'peer',
+            'peer-key',
+          ]) ??
+          kWarpPeerPublicKey,
+      'ip': ip.isEmpty ? '172.16.0.2' : ip,
+      'dns': _q(params, const ['dns']) ?? '1.1.1.1,1.0.0.1',
+      'keepalive':
+          int.tryParse(
+            _q(params, const ['keepalive', 'persistent-keepalive']) ?? '',
+          ) ??
+          25,
+      'mtu': int.tryParse(_q(params, const ['mtu']) ?? '') ?? 1280,
+      'server': host.isEmpty ? 'engage.cloudflareclient.com' : host,
+      'port': port > 0 ? port : 2408,
+    };
+    final proxy = createWgProxy(data);
+    proxy['name'] = name;
+    if (reserved != null) proxy['reserved'] = reserved;
+    return proxy;
+  }
+  if (host.isEmpty) host = 'engage.cloudflareclient.com';
+  if (port <= 0) port = 443;
+  if (privateKey.isEmpty) _throwMissing();
+  return _masqueMap(
+    host: host,
+    port: port,
+    name: name,
+    params: params,
+    privateKey: privateKey,
+  );
+}
+
+/// awg:// / wg:// / amnezia:// — ссылка на WireGuard/AmneziaWG-нод:
+/// scheme://[private-key@]host:port?params#name (приватный ключ может быть
+/// и в query: private-key/privkey). Amnezia-параметры (jc/jmin/jmax/s1-s4/
+/// h1-h4/i1-i5, v3-поля) уходят в amnezia-wg-option.
+Map<String, dynamic> parseAwg(String url) {
+  final parsed = Uri.parse(url);
+  final params = QueryMap(parsed.query);
+  final privateKey = parsed.userInfo.isNotEmpty
+      ? parsed.userInfo
+      : (_q(params, const [
+              'private-key',
+              'privatekey',
+              'privkey',
+              'private_key',
+            ]) ??
+            '');
+  if (privateKey.isEmpty) _throwMissing();
+  var host = parsed.host;
+  var port = parsed.port;
+  final endpoint = _q(params, const ['endpoint', 'server']);
+  if (endpoint != null) {
+    final hp = _parseHostPort(endpoint);
+    final h = hp['host'] as String?;
+    if (h != null && h.isNotEmpty) host = h;
+    final p = hp['port'] as int?;
+    if (p != null && p > 0) port = p;
+  }
+  if (host.isEmpty || port <= 0) _throwMissing();
+  final publicKey = _q(params, const [
+    'public-key',
+    'publickey',
+    'public_key',
+    'peer',
+    'peer-key',
+    'peerkey',
+    'server-key',
+    'serverkey',
+    'pk',
+  ]);
+  if (publicKey == null || publicKey.isEmpty) _throwMissing();
+  final data = <String, dynamic>{
+    'privateKey': privateKey,
+    'publicKey': publicKey,
+  };
+  data['server'] = host;
+  data['port'] = port;
+  final psk = _q(params, const [
+    'pre-shared-key',
+    'presharedkey',
+    'preshared-key',
+    'psk',
+  ]);
+  if (psk != null) data['psk'] = psk;
+  final address = _q(params, const [
+    'address',
+    'addresses',
+    'addr',
+    'ip',
+    'local-address',
+  ]);
+  if (address != null) {
+    for (final a in address.split(',')) {
+      final ip = a.trim().split('/')[0].trim();
+      if (ip.isNotEmpty && !ip.contains(':')) {
+        data['ip'] = ip;
+        break;
+      }
+    }
+  }
+  final dns = _q(params, const ['dns']);
+  if (dns != null) data['dns'] = dns;
+  final mtu = int.tryParse(_q(params, const ['mtu']) ?? '');
+  if (mtu != null) data['mtu'] = mtu;
+  final keepalive = int.tryParse(
+    _q(params, const [
+          'keepalive',
+          'persistent-keepalive',
+          'persistentkeepalive',
+        ]) ??
+        '',
+  );
+  if (keepalive != null) data['keepalive'] = keepalive;
+  final allowed = _q(params, const ['allowed-ips', 'allowedips']);
+  if (allowed != null) data['allowedIPs'] = allowed;
+  // Целочисленные параметры обфускации AmneziaWG.
+  for (final key in const ['jc', 'jmin', 'jmax', 's1', 's2', 's3', 's4']) {
+    final v = int.tryParse(_q(params, [key, key.toUpperCase()]) ?? '');
+    if (v != null) data[key] = v;
+  }
+  // H1-H4 — строки (ядро v2+ принимает и диапазоны), I1-I5 — строки.
+  for (final key in const [
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'i1',
+    'i2',
+    'i3',
+    'i4',
+    'i5',
+  ]) {
+    final v = _q(params, [key, key.toUpperCase()]);
+    if (v != null) data[key] = v;
+  }
+  // Поля AmneziaWG v3 — те же имена, что в секции [Interface] конфига.
+  const v3Map = {
+    'header-protection-key': 'headerProtectionKey',
+    'headerprotectionkey': 'headerProtectionKey',
+    'content-padding-addition': 'contentPaddingAddition',
+    'contentpaddingaddition': 'contentPaddingAddition',
+    'rekey-after-time': 'rekeyAfterTime',
+    'rekeyaftertime': 'rekeyAfterTime',
+    'rekey-timeout': 'rekeyTimeout',
+    'rekeytimeout': 'rekeyTimeout',
+    'reject-after-time': 'rejectAfterTime',
+    'rejectaftertime': 'rejectAfterTime',
+    'keepalive-timeout': 'keepaliveTimeout',
+    'keepalivetimeout': 'keepaliveTimeout',
+    'max-handshake-attempts': 'maxHandshakeAttempts',
+    'maxhandshakeattempts': 'maxHandshakeAttempts',
+    'random-trailers': 'randomTrailers',
+    'randomtrailers': 'randomTrailers',
+    'disable-cookies': 'disableCookies',
+    'disablecookies': 'disableCookies',
+  };
+  v3Map.forEach((param, field) {
+    final v = params.get(param);
+    if (v != null && v.isNotEmpty) data[field] = v;
+  });
+  final proxy = createWgProxy(data);
+  final name = _decodeFragment(parsed.fragment);
+  if (name != null && name.isNotEmpty) proxy['name'] = name;
+  final reserved = _parseReserved(
+    _q(params, const ['reserved', 'reserved-bytes']),
+  );
+  if (reserved != null) proxy['reserved'] = reserved;
+  return proxy;
+}
+
+/// ssr:// — ShadowsocksR. После base64-декода тела:
+/// host:port:protocol:method:obfs:base64pass/?obfsparam=…&protoparam=…&remarks=…
+/// (параметры — urlsafe-base64). Зеркало конвертера ядра (converter.go).
+Map<String, dynamic> parseSsr(String url) {
+  final body = url.substring('ssr://'.length).trim();
+  final decoded = tryDecodeBase64(body);
+  if (decoded == null) {
+    throw Exception('ssr: не удалось декодировать base64');
+  }
+  final slash = decoded.indexOf('/?');
+  if (slash == -1) {
+    throw Exception('ssr: отсутствует блок параметров /?');
+  }
+  var parts = decoded.substring(0, slash).split(':');
+  if (parts.length < 6) {
+    throw Exception('ssr: неверный формат до /?');
+  }
+  if (parts.length > 6) {
+    // IPv6-хост содержит ':' — хостом считаем всё до последних пяти полей.
+    parts = [
+      parts.sublist(0, parts.length - 5).join(':'),
+      ...parts.sublist(parts.length - 5),
+    ];
+  }
+  final host = parts[0];
+  final port = int.tryParse(parts[1]);
+  if (host.isEmpty || port == null || port <= 0) _throwMissing();
+  String? paramB64(String? v) {
+    if (v == null || v.isEmpty) return null;
+    return tryDecodeBase64(v) ?? v;
+  }
+
+  final params = QueryMap(decoded.substring(slash + 2));
+  final proxy = <String, dynamic>{
+    'name': paramB64(params.get('remarks')) ?? 'SSR',
+    'type': 'ssr',
+    'server': host,
+    'port': port,
+    'cipher': parts[3],
+    'password': tryDecodeBase64(parts[5]) ?? parts[5],
+    'obfs': parts[4],
+    'protocol': parts[2],
+    'udp': true,
+  };
+  final obfsParam = paramB64(params.get('obfsparam'));
+  if (obfsParam != null) proxy['obfs-param'] = obfsParam;
+  final protoParam = paramB64(params.get('protoparam'));
+  if (protoParam != null) proxy['protocol-param'] = protoParam;
+  return proxy;
+}
+
+/// socks:// socks5:// socks5h:// http:// https:// — ссылки на SOCKS5/HTTP
+/// прокси (зеркало конвертера ядра). Userinfo — «user:pass» либо base64
+/// от него. Для https добавляется tls.
+Map<String, dynamic> parseSocksHttp(String url) {
+  final parsed = Uri.parse(url);
+  final scheme = parsed.scheme.toLowerCase();
+  final host = parsed.host;
+  final port = parsed.port;
+  if (host.isEmpty || port <= 0) _throwMissing();
+  final name = _decodeFragment(parsed.fragment) ?? '$host:$port';
+  var username = '';
+  var password = '';
+  if (parsed.userInfo.isNotEmpty) {
+    final raw = parsed.userInfo;
+    if (raw.contains(':')) {
+      final idx = raw.indexOf(':');
+      username = Uri.decodeComponent(raw.substring(0, idx));
+      password = Uri.decodeComponent(raw.substring(idx + 1));
+    } else {
+      final dec = tryDecodeBase64(raw);
+      if (dec != null && dec.contains(':')) {
+        final idx = dec.indexOf(':');
+        username = dec.substring(0, idx);
+        password = dec.substring(idx + 1);
+      } else {
+        username = Uri.decodeComponent(raw);
+      }
+    }
+  }
+  final params = QueryMap(parsed.query);
+  final isSocks =
+      scheme == 'socks' || scheme == 'socks5' || scheme == 'socks5h';
+  final proxy = <String, dynamic>{
+    'name': name,
+    'type': isSocks ? 'socks5' : 'http',
+    'server': host,
+    'port': port,
+    'username': username,
+    'password': password,
+    'skip-cert-verify': true,
+  };
+  if (scheme == 'https') proxy['tls'] = true;
+  if (params.get('udp') == '1' || params.get('udp') == 'true') {
+    proxy['udp'] = true;
+  }
+  if (params.get('insecure') == '0') proxy['skip-cert-verify'] = false;
   return proxy;
 }
 
@@ -765,6 +1150,23 @@ Map<String, dynamic> parseProxyLink(String line) {
   if (l.startsWith('masque://')) return parseMasque(l);
   if (l.startsWith('hysteria://')) return parseHysteria(l);
   if (l.startsWith('vmess://')) return parseVmess(l);
+  if (l.startsWith('warp://')) return parseWarp(l);
+  if (l.startsWith('awg://') ||
+      l.startsWith('amnezia://') ||
+      l.startsWith('wg://')) {
+    return parseAwg(l);
+  }
+  if (l.startsWith('ssr://')) return parseSsr(l);
+  if (l.startsWith('socks5://') ||
+      l.startsWith('socks://') ||
+      l.startsWith('socks5h://') ||
+      l.startsWith('https://') ||
+      l.startsWith('http://')) {
+    return parseSocksHttp(l);
+  }
+  if (l.startsWith('hy2+realm://') || l.startsWith('hysteria2+realm://')) {
+    return parseHysteria2(l);
+  }
   throw Exception('Неизвестный тип: ${l.substring(0, l.length.clamp(0, 20))}');
 }
 
@@ -1468,6 +1870,13 @@ String _proxyKey(Map<String, dynamic> p) {
       final pub = p['public-key'] ?? '';
       id = '${p['server']}:${p['port']}:$sni:$network:$pk:$pub';
       break;
+    case 'ssr':
+      id = '${p['cipher']}:${p['password']}:${p['protocol']}';
+      break;
+    case 'socks5':
+    case 'http':
+      id = '${p['username'] ?? ''}:${p['password'] ?? ''}';
+      break;
   }
   return '$type|${p['server']}|${p['port']}|$id';
 }
@@ -1553,9 +1962,13 @@ const Map<String, List<String>> _kRequiredFields = {
   'hysteria2': ['password'],
   'tuic': ['uuid', 'password'],
   'anytls': ['password'],
-  'masque': ['server', 'port'],
+  'masque': ['server', 'port', 'private-key'],
   'hysteria': [],
   'vmess': ['uuid'],
+  'ssr': ['cipher', 'password', 'obfs', 'protocol'],
+  'socks5': [],
+  'http': [],
+  'wireguard': ['private-key'],
 };
 
 List<Map<String, dynamic>> _buildProxyList(List<Map<String, dynamic>> parsed) {
