@@ -386,7 +386,9 @@ Map<String, dynamic> parseHysteria2(String url) {
           }
         }
       }
-    } on Object {}
+    } on Object {
+      // fm — необязательное поле: некорректный JSON просто игнорируем.
+    }
   }
   return proxy;
 }
@@ -1430,7 +1432,9 @@ List<Map<String, dynamic>> parseManualInput(String? text) {
     try {
       final proxy = parseProxyLink(line);
       if (proxy['name'] != null) proxies.add(proxy);
-    } on Object {}
+    } on Object {
+      // Строка не является ссылкой на прокси — пропускаем её.
+    }
   }
   return proxies;
 }

@@ -798,6 +798,9 @@ class GlobalState {
         originalDns: originalDns,
         originalHosts: originalHosts,
       );
+      // ТСПУ режет UDP-53 к дефолтному 1.1.1.1: в белых списках DIRECT-трафик
+      // (весь RU) остаётся без резолва. Гарантируем РФ-доступные резолверы.
+      ensureRfReachableDns(rawConfig['dns']);
     }
 
     if (rawConfig['dns'] != null &&

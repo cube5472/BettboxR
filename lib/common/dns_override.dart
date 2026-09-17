@@ -244,3 +244,32 @@ void applyDnsNodeOverride(
     dns['fake-ip-filter'] = [...existingFilter, ...proxyFakeIpFilter];
   }
 }
+
+/// Резолверы, доступные из РФ без VPN. ТСПУ режет UDP-53 к 1.1.1.1 / 8.8.8.8,
+/// поэтому дефолтный nameserver оверрайда («1.1.1.1») в белых списках умирает:
+/// DIRECT-соединения (весь RU-трафик) перестают резолвиться. DoT до Яндекса
+/// (853/tcp) не режется — добавляем его как страховку.
+const List<String> kRfReachableDoTDns = [
+  'tls://77.88.8.8',
+  'tls://77.88.8.1',
+];
+const List<String> kRfReachablePlainDns = ['77.88.8.8', '77.88.8.1'];
+
+/// Гарантирует наличие РФ-доступных резолверов в [dns] (без дублей).
+/// Списки только ДОПОЛНЯЮТСЯ: пользовательские серверы сохраняются, ядро
+/// опрашивает nameserver параллельно и берёт первый ответивший.
+/// default-nameserver (bootstrap для DoT) дополняется голыми IP —
+/// tls://-строки там запрещены.
+void ensureRfReachableDns(Map<String, dynamic> dns) {
+  void ensure(String key, List<String> values) {
+    final list =
+        ((dns[key] as List?) ?? const []).map((e) => e.toString()).toList();
+    for (final v in values) {
+      if (!list.contains(v)) list.add(v);
+    }
+    dns[key] = list;
+  }
+
+  ensure('nameserver', kRfReachableDoTDns);
+  ensure('default-nameserver', kRfReachablePlainDns);
+}
