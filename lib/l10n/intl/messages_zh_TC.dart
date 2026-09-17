@@ -56,6 +56,7 @@ class MessageLookup extends MessageLookupByLibrary {
   static String st1(closed, total) => "已封堵 ${closed}/${total} 項";
 
   static String st2(ports) => "有回應的埠：${ports}";
+  static String pm1(minutes) => "暫停 ${minutes} 分鐘";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -959,6 +960,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "應用能看到活躍的 VPN 網路（TRANSPORT_VPN）",
     ),
     "stealthCheckFail": MessageLookupByLibrary.simpleMessage("無法檢測"),
+    "pause": MessageLookupByLibrary.simpleMessage("暫停"),
+    "pauseForMinutes": pm1,
+    "resume": MessageLookupByLibrary.simpleMessage("恢復"),
     "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS 查詢"),
     "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
       "解析器與電信商 DNS 不一致",

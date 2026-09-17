@@ -24,6 +24,7 @@ import com.appshub.bettbox.extensions.resolveDns
 import com.appshub.bettbox.models.StartForegroundParams
 import com.appshub.bettbox.models.VpnOptions
 import com.appshub.bettbox.modules.SuspendModule
+import com.appshub.bettbox.receivers.PauseResumeReceiver
 import com.appshub.bettbox.services.BaseServiceInterface
 import com.appshub.bettbox.services.BettboxService
 import com.appshub.bettbox.services.BettboxVpnService
@@ -69,6 +70,10 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     /// Сторож утечек: живёт в сервисном процессе, пока поднят VPN
     private var leakWatchdog: LeakWatchdog? = null
+
+    /// Таймер автовозобновления после паузы (основной механизм;
+    /// AlarmManager — резерв на случай смерти процесса)
+    private var pauseJob: Job? = null
 
     @Volatile
     private var quickResponseEnabled = false
@@ -134,6 +139,15 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         if (isFirstAttach) {
             scope.launch { registerNetworkCallback() }
+        }
+
+        // Пауза переживает пересоздание движка (но не смерть процесса —
+        // будильник PauseResumeReceiver подхватит её сам).
+        if (isFirstAttach) {
+            GlobalState.restorePauseFromPrefs()
+            if (GlobalState.isPaused()) {
+                invokeDart("pauseStateChanged", GlobalState.pauseUntilWallClock)
+            }
         }
 
         scope.launch {
@@ -220,6 +234,19 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "smartResume" -> {
                 val data = call.argument<String>("data")
                 result.success(handleSmartResume(Gson().fromJson(data, VpnOptions::class.java)))
+            }
+
+            "pause" -> {
+                val minutes = call.argument<Int>("minutes") ?: 15
+                result.success(handlePause(minutes))
+            }
+
+            "resumeNow" -> {
+                result.success(resumeNow())
+            }
+
+            "getPauseState" -> {
+                result.success(mapOf("until" to GlobalState.pauseUntilWallClock))
             }
             
             "setQuickResponse" -> {
@@ -359,6 +386,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     fun handleStart(options: VpnOptions): Boolean {
+        cancelPauseSilently()
         onUpdateNetwork()
         if (options.enable != this.options?.enable) {
             this.bettBoxService = null
@@ -759,6 +787,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     fun handleStop(force: Boolean = false) {
+        cancelPauseSilently()
         val serviceRef: BaseServiceInterface?
         val wasBound: Boolean
         val shouldForceStop: Boolean
@@ -877,6 +906,79 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         } else {
             GlobalState.handleStart()
         }
+    }
+
+    /// Пауза VPN на [minutes] минут: туннель останавливается (smart-stop —
+    /// сервис и уведомление живут, показывая время возобновления), затем
+    /// VPN автоматически поднимается с теми же опциями.
+    fun handlePause(minutes: Int): Boolean {
+        if (GlobalState.currentRunState != RunState.START) return false
+        if (options == null) return false
+        val clamped = minutes.coerceIn(1, 24 * 60)
+        val until = System.currentTimeMillis() + clamped * 60_000L
+        pauseJob?.cancel()
+        GlobalState.setLastPauseMinutes(clamped)
+        GlobalState.setPauseUntil(until)
+        PauseResumeReceiver.scheduleResumption(BettboxApplication.getAppContext(), until)
+        handleSmartStop()
+        invokeDart("pauseStateChanged", until)
+        pauseJob = scope.launch {
+            delay(clamped * 60_000L)
+            resumeIfPausedDue()
+        }
+        return true
+    }
+
+    /// Автовозобновление по истечении паузы. Ранний вызов (спящий тайминг,
+    /// будильник) перепланирует таймер на остаток.
+    fun resumeIfPausedDue(): Boolean {
+        val until = GlobalState.pauseUntilWallClock
+        if (until == 0L) return false
+        if (!GlobalState.isSmartStopped || GlobalState.currentRunState != RunState.STOP) {
+            // Пауза уже снята внешним действием (старт/стоп) — прибрать состояние.
+            cancelPauseSilently()
+            return false
+        }
+        val remaining = until - System.currentTimeMillis()
+        if (remaining > 0L) {
+            pauseJob?.cancel()
+            pauseJob = scope.launch {
+                delay(remaining)
+                resumeIfPausedDue()
+            }
+            return false
+        }
+        return resumeNow()
+    }
+
+    /// Немедленное возобновление после паузы (таймер, будильник, кнопка).
+    fun resumeNow(): Boolean {
+        if (GlobalState.pauseUntilWallClock == 0L) {
+            // Не в паузе — поведение как у кнопки «Старт» в уведомлении.
+            resumeFromNotification()
+            return true
+        }
+        pauseJob?.cancel()
+        pauseJob = null
+        PauseResumeReceiver.cancelResumption(BettboxApplication.getAppContext())
+        GlobalState.clearPause()
+        val storedOptions = options
+        invokeDart("pauseStateChanged", 0L)
+        return if (GlobalState.isSmartStopped && storedOptions != null) {
+            handleSmartResume(storedOptions)
+            true
+        } else {
+            GlobalState.handleStart()
+        }
+    }
+
+    private fun cancelPauseSilently() {
+        if (GlobalState.pauseUntilWallClock == 0L && pauseJob == null) return
+        pauseJob?.cancel()
+        pauseJob = null
+        PauseResumeReceiver.cancelResumption(BettboxApplication.getAppContext())
+        GlobalState.clearPause()
+        invokeDart("pauseStateChanged", 0L)
     }
 
     private fun bindService() {

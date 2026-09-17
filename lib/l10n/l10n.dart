@@ -5899,6 +5899,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Pause`
+  String get pause {
+    return Intl.message('Pause', name: 'pause', desc: '', args: []);
+  }
+
+  /// `Pause for {minutes} min`
+  String pauseForMinutes(Object minutes) {
+    return Intl.message(
+      'Pause for $minutes min',
+      name: 'pauseForMinutes',
+      desc: '',
+      args: [minutes],
+    );
+  }
+
+  /// `Resume`
+  String get resume {
+    return Intl.message('Resume', name: 'resume', desc: '', args: []);
+  }
+
   /// `DNS queries`
   String get stealthDnsTitle {
     return Intl.message(

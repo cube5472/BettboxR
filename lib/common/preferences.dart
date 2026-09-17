@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,13 +26,24 @@ class Preferences {
     return _instance!;
   }
 
+  /// Однократная миграция уровня логирования: старый дефолт 'error' 
+  /// заменяется на новый 'silent'. Явно выбранные info/debug/warning 
+  /// не трогаются.
+  static const _logLevelSilentMigratedKey = 'logLevelSilentMigrated';
+
   Future<ClashConfig?> getClashConfig() async {
     final preferences = await sharedPreferencesCompleter.future;
     final clashConfigString = preferences?.getString(clashConfigKey);
     if (clashConfigString == null) return null;
     try {
       final clashConfigMap = json.decode(clashConfigString);
-      return ClashConfig.fromJson(clashConfigMap);
+      var clashConfig = ClashConfig.fromJson(clashConfigMap);
+      final migrated = await preferences?.getBool(_logLevelSilentMigratedKey) ?? false;
+      if (!migrated && clashConfig.logLevel == LogLevel.error) {
+        clashConfig = clashConfig.copyWith(logLevel: LogLevel.silent);
+        await preferences?.setBool(_logLevelSilentMigratedKey, true);
+      }
+      return clashConfig;
     } catch (e, stackTrace) {
       commonPrint.log('Failed to parse clash config from preferences: $e\n$stackTrace');
       return null;

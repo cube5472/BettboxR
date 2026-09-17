@@ -75,15 +75,7 @@ class BettboxService : Service(), BaseServiceInterface {
         val isSuspended = GlobalState.isSmartStopped
         val isHighPriority = GlobalState.isNotificationHighPriority
         ensureNotificationChannel(isSuspended, isHighPriority)
-        val title: String
-        val content: String
-        if (isSuspended) {
-            title = getString(R.string.core_suspended)
-            content = getString(R.string.smart_auto_stop_service_running)
-        } else {
-            title = getString(R.string.core_connected)
-            content = getString(R.string.service_running)
-        }
+        val (title, content) = notificationTitleAndContent(isSuspended)
 
         val builder = createBettboxNotificationBuilder(isSuspended, isHighPriority)
         val notification = builder

@@ -7,4 +7,8 @@
     <string name="notification_action_start">Старт</string>
     <string name="notification_action_stop">Стоп</string>
     <string name="notification_action_restart">Перезапуск</string>
+    <string name="notification_action_pause">Пауза %1$d мин</string>
+    <string name="notification_action_resume">Продолжить</string>
+    <string name="notification_paused_title">Bettbox — пауза</string>
+    <string name="notification_resumes_at">Возобновится в %1$s</string>
 </resources>

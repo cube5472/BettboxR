@@ -58,7 +58,33 @@ fun Service.handleNotificationControlAction(intent: Intent?): Boolean {
             VpnPlugin.resumeFromNotification()
             true
         }
+        GlobalState.NOTIFICATION_ACTION_PAUSE -> {
+            val minutes = intent
+                ?.getIntExtra("pauseMinutes", GlobalState.getLastPauseMinutes())
+                ?: GlobalState.getLastPauseMinutes()
+            VpnPlugin.handlePause(minutes)
+            true
+        }
         else -> false
+    }
+}
+
+/// Заголовок и текст уведомления с учётом паузы: в паузе показываем,
+/// во сколько VPN поднимется автоматически.
+fun Service.notificationTitleAndContent(isSuspended: Boolean): Pair<String, String> {
+    return when {
+        isSuspended && GlobalState.isPaused() -> {
+            val resumesAt = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                .format(java.util.Date(GlobalState.pauseUntilWallClock))
+            getString(R.string.notification_paused_title) to
+                getString(R.string.notification_resumes_at, resumesAt)
+        }
+        isSuspended ->
+            getString(R.string.core_suspended) to
+                getString(R.string.smart_auto_stop_service_running)
+        else ->
+            getString(R.string.core_connected) to
+                getString(R.string.service_running)
     }
 }
 
@@ -127,14 +153,38 @@ suspend fun Service.createBettboxNotificationBuilder(
             if (isSuspended) {
                 addAction(
                     R.drawable.ic_notif_start,
-                    getString(R.string.notification_action_start),
+                    getString(
+                        if (GlobalState.isPaused()) R.string.notification_action_resume
+                        else R.string.notification_action_start
+                    ),
                     buildNotificationActionPendingIntent(
                         this@createBettboxNotificationBuilder,
                         GlobalState.NOTIFICATION_ACTION_START,
                         13
                     )
                 )
+                if (GlobalState.isPaused()) {
+                    // В паузе кнопку «Стоп» оставляем — отменить паузу и выключиться.
+                    addAction(
+                        R.drawable.ic_notif_stop,
+                        getString(R.string.notification_action_stop),
+                        buildNotificationActionPendingIntent(
+                            this@createBettboxNotificationBuilder,
+                            GlobalState.NOTIFICATION_ACTION_STOP,
+                            11
+                        )
+                    )
+                }
             } else {
+                addAction(
+                    R.drawable.ic_notif_pause,
+                    getString(R.string.notification_action_pause, GlobalState.getLastPauseMinutes()),
+                    buildNotificationActionPendingIntent(
+                        this@createBettboxNotificationBuilder,
+                        GlobalState.NOTIFICATION_ACTION_PAUSE,
+                        14
+                    )
+                )
                 addAction(
                     R.drawable.ic_notif_stop,
                     getString(R.string.notification_action_stop),

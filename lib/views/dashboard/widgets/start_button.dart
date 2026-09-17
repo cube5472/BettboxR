@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/models/models.dart';
+import 'package:bett_box/plugins/vpn.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
@@ -19,6 +20,58 @@ class StartButton extends ConsumerStatefulWidget {
 class _StartButtonState extends ConsumerState<StartButton> {
   bool _isDisabled = false;
   bool? _optimisticStart;
+
+  @override
+  void initState() {
+    super.initState();
+    // Пауза: подписка на пуш-обновления канала + стартовый sync.
+    VpnPauseState.ensureInitialized();
+    VpnPauseState.untilTs.addListener(_onPauseChanged);
+  }
+
+  @override
+  void dispose() {
+    VpnPauseState.untilTs.removeListener(_onPauseChanged);
+    super.dispose();
+  }
+
+  void _onPauseChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _handleResumeNow() async {
+    await VpnPauseState.resumeNow();
+  }
+
+  void _showPauseMenu() {
+    showSheet(
+      context: context,
+      builder: (_, type) {
+        return AdaptiveSheetScaffold(
+          type: type,
+          title: appLocalizations.pause,
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final minutes in const [5, 15, 30])
+                ListTile(
+                  leading: Icon(
+                    Icons.pause_circle_outline,
+                    color: context.colorScheme.primary,
+                  ),
+                  title: Text(appLocalizations.pauseForMinutes(minutes)),
+                  onTap: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    VpnPauseState.pause(minutes);
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void _handleStart() async {
     if (_isDisabled) return;
@@ -93,10 +146,6 @@ class _StartButtonState extends ConsumerState<StartButton> {
   Widget build(BuildContext context) {
     final state = ref.watch(startButtonSelectorStateProvider);
     final isSmartStopped = ref.watch(isSmartStoppedProvider);
-    final canPress =
-        state.isInit && state.hasProfile && !_isDisabled && !isSmartStopped;
-    final hasNoProfile =
-        state.isInit && !state.hasProfile && !_isDisabled && !isSmartStopped;
     final isRestarting = ref.watch(isRestartingCoreProvider);
 
     return ValueListenableBuilder<int>(
@@ -104,13 +153,17 @@ class _StartButtonState extends ConsumerState<StartButton> {
       builder: (_, _, _) {
         final runTime = ref.read(runTimeProvider);
         final isStart = runTime != null;
+        final pauseUntilTs = VpnPauseState.untilTs.value;
+        final isPausedNow = pauseUntilTs > DateTime.now().millisecondsSinceEpoch;
         final displayStart =
             isSmartStopped ? false : (_optimisticStart ?? isStart);
         return SizedBox(
           height: getWidgetHeight(1),
           child: CommonCard(
             info: Info(
-              label: isSmartStopped
+              label: isPausedNow
+                  ? appLocalizations.pause
+                  : isSmartStopped
                   ? appLocalizations.coreSuspended
                   : isRestarting
                   ? appLocalizations.restartCoreTitle
@@ -119,12 +172,18 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   : appLocalizations.powerSwitch,
               iconData: Icons.power_settings_new,
             ),
-            onPressed: canPress
-                ? _handleStart
-                : hasNoProfile
+            onPressed: state.isInit &&
+                    state.hasProfile &&
+                    !_isDisabled &&
+                    (!isSmartStopped || isPausedNow)
+                ? (isPausedNow ? _handleResumeNow : _handleStart)
+                : state.isInit && !state.hasProfile && !_isDisabled && !isSmartStopped
                     ? _handleShowAddProfile
                     : null,
-            onLongPress: canPress ? _handleLongPress : null,
+            onLongPress:
+                state.isInit && state.hasProfile && !_isDisabled && !isSmartStopped
+                    ? _handleLongPress
+                    : null,
             child: Container(
               padding: baseInfoEdgeInsets.copyWith(top: 0),
               child: Column(
@@ -143,6 +202,8 @@ class _StartButtonState extends ConsumerState<StartButton> {
                         isRestarting,
                         _isDisabled,
                         isSmartStopped,
+                        isPausedNow,
+                        pauseUntilTs,
                       ),
                     ),
                   ),
@@ -164,7 +225,35 @@ class _StartButtonState extends ConsumerState<StartButton> {
     bool isRestarting,
     bool isDisabled,
     bool isSmartStopped,
+    bool isPausedNow,
+    int pauseUntilTs,
   ) {
+    if (isPausedNow) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.pause_circle,
+            size: 20,
+            color: context.colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _formatRemaining(
+                pauseUntilTs - DateTime.now().millisecondsSinceEpoch,
+              ),
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.colorScheme.primary,
+              ).adjustSize(1),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+
     if (isSmartStopped) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -250,14 +339,19 @@ class _StartButtonState extends ConsumerState<StartButton> {
       );
     }
 
-    // Started state: show pause icon + run time
+    // Started state: tappable pause icon (5/15/30 min) + run time
     final timeText = _formatRunTime(runTime);
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Icon(Icons.pause, size: 16, color: context.colorScheme.primary),
-        SizedBox(width: 4),
-        Text('  ', style: context.textTheme.bodyMedium?.toLight.adjustSize(1)),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _showPauseMenu,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: Icon(Icons.pause, size: 16, color: context.colorScheme.primary),
+          ),
+        ),
         Expanded(
           child: Text(
             timeText,
@@ -268,6 +362,16 @@ class _StartButtonState extends ConsumerState<StartButton> {
         ),
       ],
     );
+  }
+
+  String _formatRemaining(int ms) {
+    if (ms < 0) ms = 0;
+    final totalSeconds = (ms / 1000).ceil();
+    final h = totalSeconds ~/ 3600;
+    final m = (totalSeconds % 3600) ~/ 60;
+    final s = totalSeconds % 60;
+    String two(int v) => v.toString().padLeft(2, '0');
+    return h > 0 ? '$h:${two(m)}:${two(s)}' : '${two(m)}:${two(s)}';
   }
 
   String _formatRunTime(int? timeStamp) {

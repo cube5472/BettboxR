@@ -65,6 +65,7 @@ class MessageLookup extends MessageLookupByLibrary {
   static String st1(closed, total) => "Закрыто ${closed} из ${total}";
 
   static String st2(ports) => "Отвечают порты: ${ports}";
+  static String pm1(minutes) => "Пауза на ${minutes} мин";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1371,6 +1372,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Приложения видят активную VPN-сеть (TRANSPORT_VPN)",
     ),
     "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Не удалось проверить"),
+    "pause": MessageLookupByLibrary.simpleMessage("Пауза"),
+    "pauseForMinutes": pm1,
+    "resume": MessageLookupByLibrary.simpleMessage("Продолжить"),
     "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS-запросы"),
     "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
       "Резолвер не совпадает с DNS провайдера",

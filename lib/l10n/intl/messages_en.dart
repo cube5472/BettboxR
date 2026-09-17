@@ -63,6 +63,7 @@ class MessageLookup extends MessageLookupByLibrary {
   static String st1(closed, total) => "${closed} of ${total} closed";
 
   static String st2(ports) => "Answering ports: ${ports}";
+  static String pm1(minutes) => "Pause for ${minutes} min";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1313,6 +1314,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Apps can see the active VPN network (TRANSPORT_VPN)",
     ),
     "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "pause": MessageLookupByLibrary.simpleMessage("Pause"),
+    "pauseForMinutes": pm1,
+    "resume": MessageLookupByLibrary.simpleMessage("Resume"),
     "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
     "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
       "Resolver does not match the ISP DNS",

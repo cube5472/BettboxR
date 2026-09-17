@@ -119,3 +119,64 @@ class Vpn {
 }
 
 Vpn? get vpn => globalState.isService ? Vpn() : null;
+
+/// Состояние паузы VPN для UI-движка.
+///
+/// Геттер `vpn` в UI-движке равен null (он живёт только в сервисном
+/// движке), поэтому дашборд зовёт канал 'vpn' напрямую — VpnPlugin
+/// прицеплен и к движку активити (см. комментарий в stealth_check.dart).
+/// Kotlin пушит `pauseStateChanged` во все свои каналы; этот синглтон
+/// принимает пуши и отдаёт состояние через [untilTs].
+class VpnPauseState {
+  static final ValueNotifier<int> untilTs = ValueNotifier<int>(0);
+  static bool _initialized = false;
+
+  static void ensureInitialized() {
+    if (_initialized) return;
+    _initialized = true;
+    const MethodChannel('vpn').setMethodCallHandler(_handleCall);
+    _syncFromPlatform();
+  }
+
+  static Future<void> _handleCall(MethodCall call) async {
+    switch (call.method) {
+      case 'pauseStateChanged':
+        untilTs.value = (call.arguments as int?) ?? 0;
+        break;
+      default:
+    }
+  }
+
+  static Future<void> _syncFromPlatform() async {
+    try {
+      final data = await const MethodChannel('vpn')
+          .invokeMapMethod<String, dynamic>('getPauseState');
+      untilTs.value = (data?['until'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      // Канал недоступен (десктоп/ранняя инициализация) — паузы нет.
+    }
+  }
+
+  static bool get isPaused {
+    final until = untilTs.value;
+    return until > DateTime.now().millisecondsSinceEpoch;
+  }
+
+  /// Поставить VPN на паузу на [minutes] минут.
+  static Future<bool> pause(int minutes) async {
+    try {
+      final res = await const MethodChannel('vpn')
+          .invokeMethod<bool>('pause', {'minutes': minutes});
+      return res ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Прекратить паузу и поднять VPN немедленно.
+  static Future<void> resumeNow() async {
+    try {
+      await const MethodChannel('vpn').invokeMethod('resumeNow');
+    } catch (_) {}
+  }
+}

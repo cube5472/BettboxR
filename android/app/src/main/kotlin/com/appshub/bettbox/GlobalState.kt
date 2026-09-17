@@ -46,6 +46,10 @@ object GlobalState {
     const val NOTIFICATION_ACTION_STOP = "com.appshub.bettbox.action.NOTIFICATION_STOP"
     const val NOTIFICATION_ACTION_RESTART = "com.appshub.bettbox.action.NOTIFICATION_RESTART"
     const val NOTIFICATION_ACTION_START = "com.appshub.bettbox.action.NOTIFICATION_START"
+    const val NOTIFICATION_ACTION_PAUSE = "com.appshub.bettbox.action.NOTIFICATION_PAUSE"
+
+    private const val PAUSE_PREFS_KEY = "pause_until_ts"
+    private const val PAUSE_LAST_MINUTES_KEY = "pause_last_minutes"
 
     private const val TOGGLE_DEBOUNCE_MS = 1000L
     private const val PENDING_TIMEOUT_MS = 5000L
@@ -93,6 +97,71 @@ object GlobalState {
 
     @Volatile
     var isNotificationHighPriority: Boolean = false
+
+    /// Активная пауза VPN: epoch-ms момента автовозобновления (0 — паузы нет).
+    /// Дублируется в SharedPreferences, чтобы будильник/перезапуск процесса
+    /// не потеряли состояние.
+    @Volatile
+    var pauseUntilWallClock: Long = 0L
+        private set
+
+    fun isPaused(): Boolean =
+        pauseUntilWallClock > System.currentTimeMillis()
+
+    fun setPauseUntil(timestampMs: Long) {
+        pauseUntilWallClock = timestampMs
+        runCatching {
+            BettboxApplication.getAppContext()
+                .getSharedPreferences("vpn_state", android.content.Context.MODE_PRIVATE)
+                .edit()
+                .putLong(PAUSE_PREFS_KEY, timestampMs)
+                .apply()
+        }
+    }
+
+    fun clearPause() {
+        pauseUntilWallClock = 0L
+        runCatching {
+            BettboxApplication.getAppContext()
+                .getSharedPreferences("vpn_state", android.content.Context.MODE_PRIVATE)
+                .edit()
+                .remove(PAUSE_PREFS_KEY)
+                .apply()
+        }
+    }
+
+    /// Восстановить паузу после пересоздания движка (процесс жив, состояние слетело).
+    fun restorePauseFromPrefs() {
+        if (pauseUntilWallClock != 0L) return
+        runCatching {
+            val ts = BettboxApplication.getAppContext()
+                .getSharedPreferences("vpn_state", android.content.Context.MODE_PRIVATE)
+                .getLong(PAUSE_PREFS_KEY, 0L)
+            if (ts > System.currentTimeMillis()) {
+                pauseUntilWallClock = ts
+            } else if (ts != 0L) {
+                clearPause()
+            }
+        }
+    }
+
+    fun getLastPauseMinutes(): Int {
+        return runCatching {
+            BettboxApplication.getAppContext()
+                .getSharedPreferences("vpn_state", android.content.Context.MODE_PRIVATE)
+                .getInt(PAUSE_LAST_MINUTES_KEY, 15)
+        }.getOrDefault(15).coerceIn(1, 24 * 60)
+    }
+
+    fun setLastPauseMinutes(minutes: Int) {
+        runCatching {
+            BettboxApplication.getAppContext()
+                .getSharedPreferences("vpn_state", android.content.Context.MODE_PRIVATE)
+                .edit()
+                .putInt(PAUSE_LAST_MINUTES_KEY, minutes)
+                .apply()
+        }
+    }
 
     fun updateRunState(newState: RunState) {
         if (currentRunState == newState) return
