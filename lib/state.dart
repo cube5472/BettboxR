@@ -554,7 +554,8 @@ class GlobalState {
   }
 
   /// Встраивает предустановленные скрипты: «s-ru» (правила маршрутизации +
-  /// фильтр RU-нод) и «Bag-rules-paranoid» (DNS-карантин). Скрипты не
+  /// фильтр RU-нод), «Bag-rules-paranoid» (DNS-карантин) и «РФ-БС» (схема
+  /// белых списков: правила + провайдеры + DNS-фолбэки). Скрипты не
   /// включаются автоматически — их нужно включить тумблером на карточке.
   /// Если скрипт с таким именем уже есть (в том числе добавленный вручную
   /// и отредактированный) — не трогаем его. Удалённый встроенный скрипт
@@ -563,16 +564,14 @@ class GlobalState {
     const builtins = <(String, String)>[
       (kBuiltinSRuScriptLabel, builtinSRuScript),
       (kBuiltinBagRulesParanoidLabel, builtinBagRulesParanoidScript),
+      (kBuiltinRFBSScriptLabel, builtinRFBSScript),
     ];
     var next = config.scriptProps.scripts;
     var changed = false;
     for (final (label, content) in builtins) {
       final exists = next.any((script) => script.label == label);
       if (exists) continue;
-      next = [
-        ...next,
-        Script.create(label: label, content: content),
-      ];
+      next = [...next, Script.create(label: label, content: content)];
       changed = true;
     }
     if (!changed) return;
