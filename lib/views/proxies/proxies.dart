@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../profiles/scripts.dart'
     show showGroupSwitchOptions, showScriptCustomOptions;
 import 'advanced_settings.dart';
+import 'profile_switcher.dart';
 import 'setting.dart';
 import 'tab.dart';
 
@@ -240,13 +241,20 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
       actions: _buildActions(),
       title: appLocalizations.proxies,
       searchState: AppBarSearchState(onSearch: _onSearch),
-      body: switch (hasGroups) {
-        false => NullStatus(label: appLocalizations.noProxy),
-        true => switch (proxiesType) {
-          ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
-          ProxiesType.list => const ProxiesListView(),
-        },
-      },
+      body: Column(
+        children: [
+          const ProxiesProfileSwitcher(),
+          Expanded(
+            child: switch (hasGroups) {
+              false => NullStatus(label: appLocalizations.noProxy),
+              true => switch (proxiesType) {
+                ProxiesType.tab => ProxiesTabView(key: _proxiesTabKey),
+                ProxiesType.list => const ProxiesListView(),
+              },
+            },
+          ),
+        ],
+      ),
     );
   }
 }
