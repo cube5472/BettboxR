@@ -9,8 +9,9 @@ import 'text.dart';
 class Info {
   final String label;
   final IconData? iconData;
+  final TextStyle? style;
 
-  const Info({required this.label, this.iconData});
+  const Info({required this.label, this.iconData, this.style});
 }
 
 class InfoHeader extends StatelessWidget {
@@ -52,9 +53,13 @@ class InfoHeader extends StatelessWidget {
                       info.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: context.colorScheme.onSurfaceVariant,
-                      ),
+                      style:
+                          (info.style ?? Theme.of(context).textTheme.titleSmall)
+                              ?.copyWith(
+                                color:
+                                    info.style?.color ??
+                                    context.colorScheme.onSurfaceVariant,
+                              ),
                     ),
                   ),
                 ),

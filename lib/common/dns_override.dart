@@ -258,6 +258,9 @@ const List<String> kRfReachablePlainDns = ['77.88.8.8', '77.88.8.1'];
 /// Гарантирует наличие РФ-доступных резолверов в [dns] (без дублей).
 /// Списки только ДОПОЛНЯЮТСЯ: пользовательские серверы сохраняются, ядро
 /// опрашивает nameserver параллельно и берёт первый ответивший.
+/// proxy-server-nameserver дополняется тоже: если резолв доменов самих
+/// прокси-нод лежит (зарубежные DoT порезаны), VPN умирает целиком,
+/// даже когда основной DNS отвечает.
 /// default-nameserver (bootstrap для DoT) дополняется голыми IP —
 /// tls://-строки там запрещены.
 void ensureRfReachableDns(Map<String, dynamic> dns) {
@@ -271,5 +274,6 @@ void ensureRfReachableDns(Map<String, dynamic> dns) {
   }
 
   ensure('nameserver', kRfReachableDoTDns);
+  ensure('proxy-server-nameserver', kRfReachableDoTDns);
   ensure('default-nameserver', kRfReachablePlainDns);
 }

@@ -30,7 +30,9 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(label) => "${label}目前已存在";
 
-  static String m6(count) => "${Intl.plural(count, other: '小時')}";
+  static String m5(count) => "${Intl.plural(count, other: '小時')}";
+
+  static String m6(count) => "${count}";
 
   static String m7(count) => "${Intl.plural(count, other: '分鐘')}";
 
@@ -51,12 +53,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m15(count) => "${Intl.plural(count, other: '年')}";
 
-  static String st0(time) => "檢測時間：${time}";
-
-  static String st1(closed, total) => "已封堵 ${closed}/${total} 項";
-
   static String st2(ports) => "有回應的埠：${ports}";
   static String pm1(minutes) => "暫停 ${minutes} 分鐘";
+  static String st1(closed, total) => "已封堵 ${closed}/${total} 項";
+  static String st0(time) => "檢測時間：${time}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -76,6 +76,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "action_start": MessageLookupByLibrary.simpleMessage("啟動 / 停止"),
     "action_tun": MessageLookupByLibrary.simpleMessage("虛擬網卡"),
     "action_view": MessageLookupByLibrary.simpleMessage("顯示 / 隱藏"),
+    "activeGoroutines": MessageLookupByLibrary.simpleMessage("Goroutines"),
     "add": MessageLookupByLibrary.simpleMessage("新增"),
     "addProfile": MessageLookupByLibrary.simpleMessage("新增配置"),
     "addRule": MessageLookupByLibrary.simpleMessage("新增規則"),
@@ -105,6 +106,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ago": MessageLookupByLibrary.simpleMessage("前"),
     "agree": MessageLookupByLibrary.simpleMessage("同意"),
     "allApps": MessageLookupByLibrary.simpleMessage("所有應用程式"),
+    "allocatedMemory": MessageLookupByLibrary.simpleMessage("已分配"),
     "allowBypass": MessageLookupByLibrary.simpleMessage("允許繞過 VPN"),
     "allowBypassDesc": MessageLookupByLibrary.simpleMessage("開啟後部分應用可繞過 VPN"),
     "allowLan": MessageLookupByLibrary.simpleMessage("區域網路代理"),
@@ -167,7 +169,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "cancel": MessageLookupByLibrary.simpleMessage("取消"),
     "cancelFilterSystemApp": MessageLookupByLibrary.simpleMessage("取消過濾系統應用程式"),
     "cancelSelectAll": MessageLookupByLibrary.simpleMessage("取消全選"),
+    "categoryAi": MessageLookupByLibrary.simpleMessage("AI"),
+    "categoryAll": MessageLookupByLibrary.simpleMessage("全部"),
+    "categoryChina": MessageLookupByLibrary.simpleMessage("國內直連"),
+    "categoryCrypto": MessageLookupByLibrary.simpleMessage("加密貨幣"),
+    "categoryDeveloper": MessageLookupByLibrary.simpleMessage("開發者"),
+    "categoryGaming": MessageLookupByLibrary.simpleMessage("遊戲中心"),
+    "categorySocial": MessageLookupByLibrary.simpleMessage("社群平台"),
+    "categoryStreaming": MessageLookupByLibrary.simpleMessage("串流媒體"),
     "checkError": MessageLookupByLibrary.simpleMessage("檢測失敗"),
+    "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),
     "checkOrAddProfile": MessageLookupByLibrary.simpleMessage("請先新增配置"),
     "checkUpdate": MessageLookupByLibrary.simpleMessage("檢查更新"),
     "checkUpdateError": MessageLookupByLibrary.simpleMessage("目前的應用程式已經是最新版了"),
@@ -189,8 +200,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "clipboardImport": MessageLookupByLibrary.simpleMessage("剪貼簿匯入"),
     "close": MessageLookupByLibrary.simpleMessage("關閉"),
     "closeAll": MessageLookupByLibrary.simpleMessage("關閉全部"),
-    "coalThemeMode": MessageLookupByLibrary.simpleMessage("煤黑主題"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面與青綠色卡片描邊"),
     "color": MessageLookupByLibrary.simpleMessage("顏色"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("配色方案"),
     "columns": MessageLookupByLibrary.simpleMessage("列數"),
@@ -223,6 +232,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "core": MessageLookupByLibrary.simpleMessage("內核"),
     "coreConnected": MessageLookupByLibrary.simpleMessage("已連線"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("內核資訊"),
+    "coreStatus": MessageLookupByLibrary.simpleMessage("核心負載詳情"),
     "coreSuspended": MessageLookupByLibrary.simpleMessage("已掛起"),
     "country": MessageLookupByLibrary.simpleMessage("區域"),
     "countryOrRegion": MessageLookupByLibrary.simpleMessage("國家 / 地區"),
@@ -254,7 +264,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteTip": m2,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage("刪除轉發"),
     "desc": MessageLookupByLibrary.simpleMessage(
-      "Bettbox 基於強大靈活的 Mihomo (Clash.Meta) 代理核心，致力於更好的體驗，我們的願景: Connecting AI, Accelerating Innovation - 連接AI，為創新加速",
+      "Bettbox 基於強大靈活的 Mihomo (Clash.Meta) 代理核心，致力於更好的體驗，我們的願景: Connecting Open Source and AI，Accelerating Innovation",
     ),
     "destination": MessageLookupByLibrary.simpleMessage("目標地址"),
     "destinationGeoIP": MessageLookupByLibrary.simpleMessage("目標地理定位"),
@@ -372,6 +382,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "findProcessModeDesc": MessageLookupByLibrary.simpleMessage(
       "開啟後可以匹配尋找處理程序",
     ),
+    "flagged": MessageLookupByLibrary.simpleMessage("已標記"),
     "fontFamily": MessageLookupByLibrary.simpleMessage("字體"),
     "forceDnsMapping": MessageLookupByLibrary.simpleMessage("強制 DNS 映射"),
     "forceDnsMappingDesc": MessageLookupByLibrary.simpleMessage(
@@ -394,6 +405,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "geoData": MessageLookupByLibrary.simpleMessage("地理資料"),
     "geodataLoader": MessageLookupByLibrary.simpleMessage("GEO 節能"),
     "geodataLoaderDesc": MessageLookupByLibrary.simpleMessage("使用 GEO 低記憶體載入器"),
+    "geodataUse": MessageLookupByLibrary.simpleMessage("GEO載入"),
     "geoipCode": MessageLookupByLibrary.simpleMessage("GeoIP 代碼"),
     "getOriginRules": MessageLookupByLibrary.simpleMessage("獲取原始規則"),
     "global": MessageLookupByLibrary.simpleMessage("全域"),
@@ -406,6 +418,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "healthCheckTimeoutDesc": MessageLookupByLibrary.simpleMessage(
       "節點健康檢查超時時間",
     ),
+    "heapObjects": MessageLookupByLibrary.simpleMessage("Objects"),
     "highPriority": MessageLookupByLibrary.simpleMessage("高優先級"),
     "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "提升主程式和核心處理程序的優先級",
@@ -419,7 +432,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyConflict": MessageLookupByLibrary.simpleMessage("快捷鍵衝突"),
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage("快捷鍵管理"),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage("使用鍵盤控制應用程式"),
-    "hours": m6,
+    "hours": m5,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("HTTP 連接埠嗅探"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP 轉發"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -450,6 +463,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("開啟後將可以接收 IPv6 流量"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("允許 IPv6 入站"),
     "isp": MessageLookupByLibrary.simpleMessage("電信業者"),
+    "itemsCount": m6,
     "just": MessageLookupByLibrary.simpleMessage("剛剛"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage("TCP 保持活動間隔"),
     "key": MessageLookupByLibrary.simpleMessage("鍵"),
@@ -458,6 +472,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "layout": MessageLookupByLibrary.simpleMessage("版面配置"),
     "leftClickBehavior": MessageLookupByLibrary.simpleMessage("左鍵點擊"),
     "light": MessageLookupByLibrary.simpleMessage("淺色"),
+    "limitedUnlock": MessageLookupByLibrary.simpleMessage("僅自製"),
     "lineWrap": MessageLookupByLibrary.simpleMessage("自動換行"),
     "list": MessageLookupByLibrary.simpleMessage("清單"),
     "listen": MessageLookupByLibrary.simpleMessage("監聽"),
@@ -478,6 +493,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "loose": MessageLookupByLibrary.simpleMessage("寬鬆"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("重新取得 IP"),
     "maximize": MessageLookupByLibrary.simpleMessage("最大化"),
+    "mediaUnlock": MessageLookupByLibrary.simpleMessage("連通性測試"),
+    "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
+      "預設顯示彩色 ICON 圖示",
+    ),
+    "mediaUnlockDetails": MessageLookupByLibrary.simpleMessage("連通性測試詳情"),
+    "mediaUnlockDisplaySettings": MessageLookupByLibrary.simpleMessage("顯示設定"),
+    "mediaUnlockExtraDetails": MessageLookupByLibrary.simpleMessage(
+      "返回更多 IP 詳細資訊",
+    ),
+    "mediaUnlockMiscSettings": MessageLookupByLibrary.simpleMessage("雜項設定"),
+    "mediaUnlockPinnedSettingsDesc": MessageLookupByLibrary.simpleMessage(
+      "可選 4 個在小組件常駐展示的項目",
+    ),
+    "mediaUnlockRefreshByCategory": MessageLookupByLibrary.simpleMessage(
+      "根據當前分組狀態局部重新整理",
+    ),
+    "mediaUnlockRefreshOnNodeChange": MessageLookupByLibrary.simpleMessage(
+      "節點變化時自動重新整理檢測",
+    ),
+    "mediaUnlockSelectLimit": MessageLookupByLibrary.simpleMessage(
+      "最多只能選擇 4 個項目",
+    ),
+    "mediaUnlocked": MessageLookupByLibrary.simpleMessage("已解鎖"),
+    "memoryAndRuntime": MessageLookupByLibrary.simpleMessage("記憶體與執行時"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("記憶體資訊"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
       "目前記憶體資訊數值顯示為核心運作時的動態堆疊記憶體佔用，非完整 App 記憶體統計，僅供參考。",
@@ -549,6 +588,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "none": MessageLookupByLibrary.simpleMessage("無"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("不推薦"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage("目前的代理群組無法選取"),
+    "notUnlocked": MessageLookupByLibrary.simpleMessage("未解鎖"),
     "notificationHighPriority": MessageLookupByLibrary.simpleMessage("高優先級"),
     "notificationHighPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "調整目前通知欄為前台高優先級",
@@ -648,6 +688,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "preview": MessageLookupByLibrary.simpleMessage("預覽"),
     "privateIp": MessageLookupByLibrary.simpleMessage("私有 / 區域網路 IP 位址"),
     "profile": MessageLookupByLibrary.simpleMessage("配置"),
+    "profileAndRules": MessageLookupByLibrary.simpleMessage("設定檔規則"),
     "profileAutoUpdateIntervalInvalidValidationDesc":
         MessageLookupByLibrary.simpleMessage("請輸入有效間隔時間格式"),
     "profileAutoUpdateIntervalNullValidationDesc":
@@ -673,14 +714,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "providers": MessageLookupByLibrary.simpleMessage("提供者"),
     "provinceAndCity": MessageLookupByLibrary.simpleMessage("省份 / 城市"),
     "proxies": MessageLookupByLibrary.simpleMessage("代理"),
+    "proxiesCount": MessageLookupByLibrary.simpleMessage("代理節點"),
     "proxiesSetting": MessageLookupByLibrary.simpleMessage("代理設定"),
     "proxyChains": MessageLookupByLibrary.simpleMessage("代理鏈"),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("代理群組"),
+    "proxyGroupsCount": MessageLookupByLibrary.simpleMessage("代理組"),
     "proxyNameserver": MessageLookupByLibrary.simpleMessage("代理網域名稱伺服器"),
     "proxyNameserverDesc": MessageLookupByLibrary.simpleMessage("用於解析代理節點的網域"),
     "proxyPort": MessageLookupByLibrary.simpleMessage("代理連接埠"),
     "proxyPortDesc": MessageLookupByLibrary.simpleMessage("設定 Clash 監聽埠"),
     "proxyProviders": MessageLookupByLibrary.simpleMessage("代理提供者"),
+    "proxyProvidersCount": MessageLookupByLibrary.simpleMessage("代理集"),
     "pulse": MessageLookupByLibrary.simpleMessage("脈衝律動"),
     "pureBlackMode": MessageLookupByLibrary.simpleMessage("純黑模式"),
     "qrcode": MessageLookupByLibrary.simpleMessage("二維碼"),
@@ -698,6 +742,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "quickResponseDesc": MessageLookupByLibrary.simpleMessage("網路發生變化時主動斷開連接"),
     "rainbowScheme": MessageLookupByLibrary.simpleMessage("彩虹"),
     "realTimeSpeed": MessageLookupByLibrary.simpleMessage("實時速度"),
+    "reclaimableMemory": MessageLookupByLibrary.simpleMessage("可回收"),
     "recovery": MessageLookupByLibrary.simpleMessage("還原"),
     "recoveryAll": MessageLookupByLibrary.simpleMessage("還原所有資料"),
     "recoveryProfiles": MessageLookupByLibrary.simpleMessage("僅還原設定檔"),
@@ -743,7 +788,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rule": MessageLookupByLibrary.simpleMessage("規則"),
     "ruleName": MessageLookupByLibrary.simpleMessage("規則名稱"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("規則提供者"),
+    "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("規則集"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("規則目標"),
+    "rulesCount": MessageLookupByLibrary.simpleMessage("路由規則"),
     "runTime": MessageLookupByLibrary.simpleMessage("啟動時間"),
     "runtimeConfig": MessageLookupByLibrary.simpleMessage("執行時配置"),
     "save": MessageLookupByLibrary.simpleMessage("儲存"),
@@ -832,6 +879,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tcpConcurrent": MessageLookupByLibrary.simpleMessage("TCP 並發"),
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage("開啟後允許 TCP 併發連接"),
     "testUrl": MessageLookupByLibrary.simpleMessage("測試連結"),
+    "testing": MessageLookupByLibrary.simpleMessage("檢測中"),
     "textScale": MessageLookupByLibrary.simpleMessage("文字縮放"),
     "theme": MessageLookupByLibrary.simpleMessage("主題"),
     "themeColor": MessageLookupByLibrary.simpleMessage("主題色彩"),
@@ -892,6 +940,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "unifiedDelay": MessageLookupByLibrary.simpleMessage("統一延遲"),
     "unifiedDelayDesc": MessageLookupByLibrary.simpleMessage("去除交握解析等額外延遲"),
     "unknown": MessageLookupByLibrary.simpleMessage("未知"),
+    "unlocked": MessageLookupByLibrary.simpleMessage("已完成"),
     "unnamed": MessageLookupByLibrary.simpleMessage("未命名"),
     "unpin": MessageLookupByLibrary.simpleMessage("取消置頂"),
     "update": MessageLookupByLibrary.simpleMessage("更新"),
@@ -931,6 +980,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("寫入系統"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理員權限"),
     "years": m15,
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("煤黑主題"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面與青綠色卡片描邊"),
     "security": MessageLookupByLibrary.simpleMessage("安全"),
     "stealthCheck": MessageLookupByLibrary.simpleMessage("隱身檢測"),
     "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(

@@ -30,7 +30,9 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(label) => "${label} はすでに存在します";
 
-  static String m6(count) => "${Intl.plural(count, other: '時間')}";
+  static String m5(count) => "${Intl.plural(count, other: '時間')}";
+
+  static String m6(count) => "${count}";
 
   static String m7(count) => "${Intl.plural(count, other: '分')}";
 
@@ -71,6 +73,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "action_start": MessageLookupByLibrary.simpleMessage("開始 / 停止"),
     "action_tun": MessageLookupByLibrary.simpleMessage("仮想NIC (TUN)"),
     "action_view": MessageLookupByLibrary.simpleMessage("表示 / 非表示"),
+    "activeGoroutines": MessageLookupByLibrary.simpleMessage("Goroutines"),
     "add": MessageLookupByLibrary.simpleMessage("追加"),
     "addProfile": MessageLookupByLibrary.simpleMessage("プロファイル追加"),
     "addRule": MessageLookupByLibrary.simpleMessage("ルール追加"),
@@ -102,6 +105,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ago": MessageLookupByLibrary.simpleMessage("前"),
     "agree": MessageLookupByLibrary.simpleMessage("同意する"),
     "allApps": MessageLookupByLibrary.simpleMessage("すべてのアプリ"),
+    "allocatedMemory": MessageLookupByLibrary.simpleMessage("割当済"),
     "allowBypass": MessageLookupByLibrary.simpleMessage("VPN迂回を許可"),
     "allowBypassDesc": MessageLookupByLibrary.simpleMessage("特定アプリのVPN迂回接続を許可"),
     "allowLan": MessageLookupByLibrary.simpleMessage("LAN共有"),
@@ -176,7 +180,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "システムアプリ除外を解除",
     ),
     "cancelSelectAll": MessageLookupByLibrary.simpleMessage("全選択解除"),
+    "categoryAi": MessageLookupByLibrary.simpleMessage("AI"),
+    "categoryAll": MessageLookupByLibrary.simpleMessage("すべて"),
+    "categoryChina": MessageLookupByLibrary.simpleMessage("中国直通"),
+    "categoryCrypto": MessageLookupByLibrary.simpleMessage("暗号資産"),
+    "categoryDeveloper": MessageLookupByLibrary.simpleMessage("開発者"),
+    "categoryGaming": MessageLookupByLibrary.simpleMessage("ゲームセンター"),
+    "categorySocial": MessageLookupByLibrary.simpleMessage("コミュニティ"),
+    "categoryStreaming": MessageLookupByLibrary.simpleMessage("動画配信"),
     "checkError": MessageLookupByLibrary.simpleMessage("確認失敗"),
+    "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),
     "checkOrAddProfile": MessageLookupByLibrary.simpleMessage(
       "最初にプロファイルを追加してください",
     ),
@@ -200,10 +213,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "clipboardImport": MessageLookupByLibrary.simpleMessage("クリップボードから取り込み"),
     "close": MessageLookupByLibrary.simpleMessage("閉じる"),
     "closeAll": MessageLookupByLibrary.simpleMessage("すべて閉じる"),
-    "coalThemeMode": MessageLookupByLibrary.simpleMessage("炭黒テーマ"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "炭黒のサーフェスとターコイズのカード枠",
-    ),
     "color": MessageLookupByLibrary.simpleMessage("カラー"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("カラーパレット"),
     "columns": MessageLookupByLibrary.simpleMessage("列数"),
@@ -240,6 +249,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "core": MessageLookupByLibrary.simpleMessage("カーネル"),
     "coreConnected": MessageLookupByLibrary.simpleMessage("接続済み"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("カーネル情報"),
+    "coreStatus": MessageLookupByLibrary.simpleMessage("コア負荷詳細"),
     "coreSuspended": MessageLookupByLibrary.simpleMessage("一時停止中"),
     "country": MessageLookupByLibrary.simpleMessage("地域"),
     "countryOrRegion": MessageLookupByLibrary.simpleMessage("国 / 地域"),
@@ -273,7 +283,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteTip": m2,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage("転送削除"),
     "desc": MessageLookupByLibrary.simpleMessage(
-      "Bettboxは柔軟で強力なMihomo(Clash.Meta)カーネルを搭載した、快適性を追求したプロキシクライアントです。私たちのビジョン：Connecting AI, Accelerating Innovation - AIを繋ぎ、イノベーションを加速する",
+      "Bettboxは柔軟で強力なMihomo(Clash.Meta)カーネルを搭載した、快適性を追求したプロキシクライアントです。私たちのビジョン：Connecting Open Source and AI, Accelerating Innovation",
     ),
     "destination": MessageLookupByLibrary.simpleMessage("宛先アドレス"),
     "destinationGeoIP": MessageLookupByLibrary.simpleMessage("宛先GeoIP"),
@@ -405,6 +415,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "findProcessModeDesc": MessageLookupByLibrary.simpleMessage(
       "プロセス名をマッチングして検索",
     ),
+    "flagged": MessageLookupByLibrary.simpleMessage("フラグ付き"),
     "fontFamily": MessageLookupByLibrary.simpleMessage("フォント"),
     "forceDnsMapping": MessageLookupByLibrary.simpleMessage("強制DNSマッピング"),
     "forceDnsMappingDesc": MessageLookupByLibrary.simpleMessage(
@@ -427,6 +438,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "geodataLoaderDesc": MessageLookupByLibrary.simpleMessage(
       "メモリ消費を抑えたGEOローダーを使用",
     ),
+    "geodataUse": MessageLookupByLibrary.simpleMessage("GEO読込"),
     "geoipCode": MessageLookupByLibrary.simpleMessage("GeoIPコード"),
     "getOriginRules": MessageLookupByLibrary.simpleMessage("元のルールを取得"),
     "global": MessageLookupByLibrary.simpleMessage("グローバル"),
@@ -441,6 +453,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "healthCheckTimeoutDesc": MessageLookupByLibrary.simpleMessage(
       "ヘルスチェックのタイムアウト時間",
     ),
+    "heapObjects": MessageLookupByLibrary.simpleMessage("Objects"),
     "highPriority": MessageLookupByLibrary.simpleMessage("高優先度"),
     "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "メインプロセスとカーネルプロセスの優先度を付与",
@@ -456,7 +469,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "キーボードでアプリを操作",
     ),
-    "hours": m6,
+    "hours": m5,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("HTTPポート解析"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP転送"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -489,6 +502,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("IPv6トラフィックの受信を有効化"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("IPv6インバウンド通信を許可"),
     "isp": MessageLookupByLibrary.simpleMessage("プロバイダ"),
+    "itemsCount": m6,
     "just": MessageLookupByLibrary.simpleMessage("たった今"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP Keep-Alive間隔",
@@ -499,6 +513,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "layout": MessageLookupByLibrary.simpleMessage("レイアウト"),
     "leftClickBehavior": MessageLookupByLibrary.simpleMessage("左クリック"),
     "light": MessageLookupByLibrary.simpleMessage("ライト"),
+    "limitedUnlock": MessageLookupByLibrary.simpleMessage("自作のみ"),
     "lineWrap": MessageLookupByLibrary.simpleMessage("折り返し"),
     "list": MessageLookupByLibrary.simpleMessage("リスト"),
     "listen": MessageLookupByLibrary.simpleMessage("リスニング"),
@@ -519,6 +534,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "loose": MessageLookupByLibrary.simpleMessage("ルーズ"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("IPを再取得"),
     "maximize": MessageLookupByLibrary.simpleMessage("最大化"),
+    "mediaUnlock": MessageLookupByLibrary.simpleMessage("接続性テスト"),
+    "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
+      "既定でカラーアイコンを表示",
+    ),
+    "mediaUnlockDetails": MessageLookupByLibrary.simpleMessage("接続性テスト詳細"),
+    "mediaUnlockDisplaySettings": MessageLookupByLibrary.simpleMessage("表示設定"),
+    "mediaUnlockExtraDetails": MessageLookupByLibrary.simpleMessage(
+      "IP の詳細情報を表示",
+    ),
+    "mediaUnlockMiscSettings": MessageLookupByLibrary.simpleMessage("その他の設定"),
+    "mediaUnlockPinnedSettingsDesc": MessageLookupByLibrary.simpleMessage(
+      "ウィジェットに常駐表示する最大4項目を選択できます",
+    ),
+    "mediaUnlockRefreshByCategory": MessageLookupByLibrary.simpleMessage(
+      "現在のカテゴリに基づいて部分更新",
+    ),
+    "mediaUnlockRefreshOnNodeChange": MessageLookupByLibrary.simpleMessage(
+      "ノード変更時に自動更新",
+    ),
+    "mediaUnlockSelectLimit": MessageLookupByLibrary.simpleMessage(
+      "最大4項目まで選択できます",
+    ),
+    "mediaUnlocked": MessageLookupByLibrary.simpleMessage("ロック解除済み"),
+    "memoryAndRuntime": MessageLookupByLibrary.simpleMessage("メモリとランタイム"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("メモリ情報"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
       "表示されているメモリ値はカーネル動的ヒープの占有量であり、アプリ全体のメモリ統計ではありません（参考値）。",
@@ -598,6 +637,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "none": MessageLookupByLibrary.simpleMessage("なし"),
     "notRecommended": MessageLookupByLibrary.simpleMessage("非推奨"),
     "notSelectedTip": MessageLookupByLibrary.simpleMessage("選択できないプロキシグループです"),
+    "notUnlocked": MessageLookupByLibrary.simpleMessage("未解除"),
     "notificationHighPriority": MessageLookupByLibrary.simpleMessage("高優先度"),
     "notificationHighPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "現在の通知バーをフォアグラウンド高優先度に調整",
@@ -709,6 +749,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "preview": MessageLookupByLibrary.simpleMessage("プレビュー"),
     "privateIp": MessageLookupByLibrary.simpleMessage("プライベート / LAN IP アドレス"),
     "profile": MessageLookupByLibrary.simpleMessage("プロファイル"),
+    "profileAndRules": MessageLookupByLibrary.simpleMessage("プロファイルとルール"),
     "profileAutoUpdateIntervalInvalidValidationDesc":
         MessageLookupByLibrary.simpleMessage("有効な時間を指定してください"),
     "profileAutoUpdateIntervalNullValidationDesc":
@@ -736,9 +777,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "providers": MessageLookupByLibrary.simpleMessage("プロバイダー"),
     "provinceAndCity": MessageLookupByLibrary.simpleMessage("都道府県 / 都市"),
     "proxies": MessageLookupByLibrary.simpleMessage("プロキシ"),
+    "proxiesCount": MessageLookupByLibrary.simpleMessage("プロキシノード"),
     "proxiesSetting": MessageLookupByLibrary.simpleMessage("プロキシ設定"),
     "proxyChains": MessageLookupByLibrary.simpleMessage("プロキシチェーン"),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("プロキシグループ"),
+    "proxyGroupsCount": MessageLookupByLibrary.simpleMessage("プロキシグループ"),
     "proxyNameserver": MessageLookupByLibrary.simpleMessage("プロキシ用DNS"),
     "proxyNameserverDesc": MessageLookupByLibrary.simpleMessage(
       "プロキシノードのドメイン解決に使用",
@@ -746,6 +789,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxyPort": MessageLookupByLibrary.simpleMessage("プロキシポート"),
     "proxyPortDesc": MessageLookupByLibrary.simpleMessage("Clashのリスニングポート設定"),
     "proxyProviders": MessageLookupByLibrary.simpleMessage("プロキシプロバイダー"),
+    "proxyProvidersCount": MessageLookupByLibrary.simpleMessage("プロキシセット"),
     "pulse": MessageLookupByLibrary.simpleMessage("パルス"),
     "pureBlackMode": MessageLookupByLibrary.simpleMessage("ピュアブラックモード"),
     "qrcode": MessageLookupByLibrary.simpleMessage("QRコード"),
@@ -765,6 +809,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "rainbowScheme": MessageLookupByLibrary.simpleMessage("レインボー"),
     "realTimeSpeed": MessageLookupByLibrary.simpleMessage("リアルタイム速度"),
+    "reclaimableMemory": MessageLookupByLibrary.simpleMessage("回収可能"),
     "recovery": MessageLookupByLibrary.simpleMessage("復元"),
     "recoveryAll": MessageLookupByLibrary.simpleMessage("すべてのデータを復元"),
     "recoveryProfiles": MessageLookupByLibrary.simpleMessage("プロファイルのみ復元"),
@@ -814,7 +859,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "rule": MessageLookupByLibrary.simpleMessage("ルール"),
     "ruleName": MessageLookupByLibrary.simpleMessage("ルール名"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("ルールプロバイダー"),
+    "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("ルールセット"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("ルールターゲット"),
+    "rulesCount": MessageLookupByLibrary.simpleMessage("ルーティング規則"),
     "runTime": MessageLookupByLibrary.simpleMessage("稼働時間"),
     "runtimeConfig": MessageLookupByLibrary.simpleMessage("ランタイム設定"),
     "save": MessageLookupByLibrary.simpleMessage("保存"),
@@ -915,6 +962,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tcpConcurrent": MessageLookupByLibrary.simpleMessage("TCP並列接続"),
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage("TCPの同時並列接続を許可"),
     "testUrl": MessageLookupByLibrary.simpleMessage("テストURL"),
+    "testing": MessageLookupByLibrary.simpleMessage("検出中"),
     "textScale": MessageLookupByLibrary.simpleMessage("テキスト倍率"),
     "theme": MessageLookupByLibrary.simpleMessage("テーマ"),
     "themeColor": MessageLookupByLibrary.simpleMessage("テーマカラー"),
@@ -981,6 +1029,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "ハンドシェイク等の追加レイテンシを除外",
     ),
     "unknown": MessageLookupByLibrary.simpleMessage("不明"),
+    "unlocked": MessageLookupByLibrary.simpleMessage("完了"),
     "unnamed": MessageLookupByLibrary.simpleMessage("無題"),
     "unpin": MessageLookupByLibrary.simpleMessage("固定解除"),
     "update": MessageLookupByLibrary.simpleMessage("更新"),
@@ -1020,6 +1069,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("システムへ適用"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("管理者権限が必要です"),
     "years": m15,
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("炭黒テーマ"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
+      "炭黒のサーフェスとターコイズのカード枠",
+    ),
     "manualSort": MessageLookupByLibrary.simpleMessage("手動"),
     "resetManualSort": MessageLookupByLibrary.simpleMessage("手動並べ替えをリセット"),
   };
