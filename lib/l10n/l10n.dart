@@ -5983,38 +5983,6 @@ class AppLocalizations {
   String get flagged {
     return Intl.message('Flagged', name: 'flagged', desc: '', args: []);
   }
-}
-
-class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
-  const AppLocalizationDelegate();
-
-  List<Locale> get supportedLocales {
-    return const <Locale>[
-      Locale.fromSubtags(languageCode: 'en'),
-      Locale.fromSubtags(languageCode: 'fa'),
-      Locale.fromSubtags(languageCode: 'ja'),
-      Locale.fromSubtags(languageCode: 'ko'),
-      Locale.fromSubtags(languageCode: 'ru'),
-      Locale.fromSubtags(languageCode: 'zh', countryCode: 'CN'),
-      Locale.fromSubtags(languageCode: 'zh', countryCode: 'TC'),
-    ];
-  }
-
-  @override
-  bool isSupported(Locale locale) => _isSupported(locale);
-  @override
-  Future<AppLocalizations> load(Locale locale) => AppLocalizations.load(locale);
-  @override
-  bool shouldReload(AppLocalizationDelegate old) => false;
-
-  bool _isSupported(Locale locale) {
-    for (var supportedLocale in supportedLocales) {
-      if (supportedLocale.languageCode == locale.languageCode) {
-        return true;
-      }
-    }
-    return false;
-  }
   /// `Manual`
   String get manualSort {
     return Intl.message('Manual', name: 'manualSort', desc: '', args: []);
@@ -6375,4 +6343,36 @@ class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
     return Intl.message('Fix', name: 'stealthFix', desc: '', args: []);
   }
 
+}
+
+class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const AppLocalizationDelegate();
+
+  List<Locale> get supportedLocales {
+    return const <Locale>[
+      Locale.fromSubtags(languageCode: 'en'),
+      Locale.fromSubtags(languageCode: 'fa'),
+      Locale.fromSubtags(languageCode: 'ja'),
+      Locale.fromSubtags(languageCode: 'ko'),
+      Locale.fromSubtags(languageCode: 'ru'),
+      Locale.fromSubtags(languageCode: 'zh', countryCode: 'CN'),
+      Locale.fromSubtags(languageCode: 'zh', countryCode: 'TC'),
+    ];
+  }
+
+  @override
+  bool isSupported(Locale locale) => _isSupported(locale);
+  @override
+  Future<AppLocalizations> load(Locale locale) => AppLocalizations.load(locale);
+  @override
+  bool shouldReload(AppLocalizationDelegate old) => false;
+
+  bool _isSupported(Locale locale) {
+    for (var supportedLocale in supportedLocales) {
+      if (supportedLocale.languageCode == locale.languageCode) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
