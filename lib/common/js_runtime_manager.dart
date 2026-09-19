@@ -171,6 +171,30 @@ class JavaScriptRuntimeManager {
     return _ScriptOptionsCache.get(scriptContent);
   }
 
+  /// Вывод console.* из скрипта (причины пропуска правил, предупреждения)
+  /// собирается в globalThis.__bbLogs и после выполнения забирается в журнал
+  /// приложения. Без этого пропуски встроенных скриптов полностью незаметны:
+  /// скрипт молча возвращает конфиг без изменений.
+  static Future<void> _drainScriptLogs(IsolateQjs engine) async {
+    try {
+      final logsJson = await engine.evaluate(
+        "JSON.stringify(typeof globalThis === 'object' && globalThis.__bbLogs"
+        ' ? globalThis.__bbLogs.slice(0, 50) : [])',
+      );
+      if (logsJson is String && logsJson.isNotEmpty) {
+        final decoded = json.decode(logsJson);
+        if (decoded is List) {
+          for (final line in decoded) {
+            commonPrint.log('[script] $line');
+          }
+        }
+      }
+    } catch (_) {
+      // Журнал — вспомогательный канал: любая ошибка здесь не должна
+      // влиять на результат выполнения скрипта.
+    }
+  }
+
   static Future<dynamic> _evaluateWithRetry(
     String scriptContent,
     Map<String, dynamic> config, {
@@ -192,12 +216,13 @@ class JavaScriptRuntimeManager {
         // Возврат через JSON.stringify: конфиг передаётся одной строкой,
         // а не конвертируется поэлементно через FFI (это было заметной
         // частью стоимости запуска на больших профилях).
-        return await engine.evaluate('''
+        final res = await engine.evaluate('''
+          globalThis.__bbLogs = [];
           var console = {
-            log: function(...args) { if (typeof print !== 'undefined') print(...args); },
-            warn: function(...args) { if (typeof print !== 'undefined') print('WARN:', ...args); },
-            error: function(...args) { if (typeof print !== 'undefined') print('ERROR:', ...args); },
-            info: function(...args) { if (typeof print !== 'undefined') print('INFO:', ...args); },
+            log: function(...args) { globalThis.__bbLogs.push(args.join(' ')); if (typeof print !== 'undefined') print(...args); },
+            warn: function(...args) { globalThis.__bbLogs.push('WARN: ' + args.join(' ')); if (typeof print !== 'undefined') print('WARN:', ...args); },
+            error: function(...args) { globalThis.__bbLogs.push('ERROR: ' + args.join(' ')); if (typeof print !== 'undefined') print('ERROR:', ...args); },
+            info: function(...args) { globalThis.__bbLogs.push('INFO: ' + args.join(' ')); if (typeof print !== 'undefined') print('INFO:', ...args); },
             debug: function(...args) { if (typeof print !== 'undefined') print('DEBUG:', ...args); }
           };
           (function() {
@@ -209,8 +234,11 @@ class JavaScriptRuntimeManager {
               : null;
           })();
         ''');
+        await _drainScriptLogs(engine);
+        return res;
       } catch (e) {
         // Движок мог остаться в плохом состоянии — пересоздаём и повторяем.
+        await _drainScriptLogs(engine);
         await _discardEngine();
         if (attempt >= maxRetries) {
           throw 'JS Script Error: $e';
