@@ -12,6 +12,82 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// ---------------- Пресеты DNS (порт «Шаг 1: DNS» веб-генератора) ----------------
+// Значения пресетов 1:1 из https://github.com/cube5472/RKN-gen-mihomo
+// (index.html, select.dns-preset). Отличие: Яндекс-варианты вынесены первыми
+// и помечены как РФ-доступные — зарубежные DoH/DoT (AdGuard, Google,
+// Cloudflare) в РФ регулярно режутся на 853/443 порту.
+
+const String _kDnsPresetDefault = 'default';
+const String _kDnsPresetCustom = 'custom';
+
+const String _kFieldDefaultNs = 'defaultNameserver';
+const String _kFieldNameserver = 'nameserver';
+const String _kFieldProxyNs = 'proxyServerNameserver';
+
+class _DnsPreset {
+  final String key;
+  final String label;
+  final String value;
+  const _DnsPreset(this.key, this.label, this.value);
+}
+
+const List<_DnsPreset> _kDnsPresets = [
+  _DnsPreset(
+    'rf-dot',
+    '🇷🇺 Яндекс (DoT) — работает в РФ',
+    'tls://77.88.8.8#skip-cert-verify=true, tls://77.88.8.1#skip-cert-verify=true',
+  ),
+  _DnsPreset('rf-plain', '🇷🇺 Яндекс (обычные) — работает в РФ', '77.88.8.8, 77.88.8.1'),
+  _DnsPreset(
+    'doh-cf',
+    '🔒 Cloudflare (DoH)',
+    'https://cloudflare-dns.com/dns-query#skip-cert-verify=true',
+  ),
+  _DnsPreset('doh-google', '🔒 Google (DoH)', 'https://dns.google/dns-query#skip-cert-verify=true'),
+  _DnsPreset(
+    'doh-adguard',
+    '🔒 AdGuard (DoH)',
+    'https://dns.adguard.com/dns-query#skip-cert-verify=true',
+  ),
+  _DnsPreset('doh-quad9', '🔒 Quad9 (DoH)', 'https://dns.quad9.net/dns-query#skip-cert-verify=true'),
+  _DnsPreset(
+    'doh-opendns',
+    '🔒 OpenDNS (DoH)',
+    'https://doh.opendns.com/dns-query#skip-cert-verify=true',
+  ),
+  _DnsPreset(
+    'dot-cf',
+    '🔒 Cloudflare (DoT)',
+    'tls://1.1.1.1#skip-cert-verify=true, tls://1.0.0.1#skip-cert-verify=true',
+  ),
+  _DnsPreset(
+    'dot-google',
+    '🔒 Google (DoT)',
+    'tls://8.8.8.8#skip-cert-verify=true, tls://8.8.4.4#skip-cert-verify=true',
+  ),
+  _DnsPreset(
+    'dot-adguard',
+    '🔒 AdGuard (DoT)',
+    'tls://94.140.14.14#skip-cert-verify=true, tls://94.140.15.15#skip-cert-verify=true',
+  ),
+  _DnsPreset(
+    'dot-quad9',
+    '🔒 Quad9 (DoT)',
+    'tls://9.9.9.9#skip-cert-verify=true, tls://149.112.112.112#skip-cert-verify=true',
+  ),
+  _DnsPreset(
+    'dot-opendns',
+    '🔒 OpenDNS (DoT)',
+    'tls://208.67.222.222#skip-cert-verify=true, tls://208.67.220.220#skip-cert-verify=true',
+  ),
+  _DnsPreset('plain-cf', '🌐 Cloudflare (обычные)', '1.1.1.1, 1.0.0.1'),
+  _DnsPreset('plain-google', '🌐 Google (обычные)', '8.8.8.8, 8.8.4.4'),
+  _DnsPreset('plain-adguard', '🌐 AdGuard (обычные)', '94.140.14.14, 94.140.15.15'),
+  _DnsPreset('plain-quad9', '🌐 Quad9 (обычные)', '9.9.9.9, 149.112.112.112'),
+  _DnsPreset('plain-opendns', '🌐 OpenDNS (обычные)', '208.67.222.222, 208.67.220.220'),
+];
+
 class GeneratorView extends ConsumerStatefulWidget {
   const GeneratorView({super.key});
 
@@ -27,6 +103,16 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     text: 'https://www.gstatic.com/generate_204',
   );
   final _mtuController = TextEditingController();
+  // DNS (раздел «7. DNS»): пустое поле = дефолт веб-генератора
+  // (kDefaultDnsValues в buildConfig).
+  final _defaultNsController = TextEditingController();
+  final _nameserverController = TextEditingController();
+  final _proxyNsController = TextEditingController();
+  final Map<String, String> _dnsSelection = {
+    _kFieldDefaultNs: _kDnsPresetDefault,
+    _kFieldNameserver: _kDnsPresetDefault,
+    _kFieldProxyNs: _kDnsPresetDefault,
+  };
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -85,6 +171,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _providerUrlController.dispose();
     _urlTestController.dispose();
     _mtuController.dispose();
+    _defaultNsController.dispose();
+    _nameserverController.dispose();
+    _proxyNsController.dispose();
     _providerIntervalController.dispose();
     _dio.close();
     super.dispose();
@@ -391,10 +480,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       final yaml = buildConfig(
         GeneratorParams(
           urlTest: _urlTestController.text,
-          defaultNameserver: kDefaultDnsValues['defaultNameserver'] as String,
-          nameserver: kDefaultDnsValues['nameserver'] as String,
-          proxyServerNameserver:
-              kDefaultDnsValues['proxyServerNameserver'] as String,
+          defaultNameserver: _defaultNsController.text,
+          nameserver: _nameserverController.text,
+          proxyServerNameserver: _proxyNsController.text,
           mtu: _mtuController.text.trim(),
           providerMode: _providerMode,
           providerUrl: _providerUrlController.text,
@@ -456,6 +544,59 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     );
   }
 
+  // ---------------- DNS ----------------
+
+  // Синхронизация «пресет ↔ текст» как в веб-генераторе: текст совпадает
+  // со значением пресета → этот пресет; пусто → «По умолчанию»;
+  // иначе → «Свой вариант».
+  String _dnsKeyForText(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return _kDnsPresetDefault;
+    for (final preset in _kDnsPresets) {
+      if (preset.value == trimmed) return preset.key;
+    }
+    return _kDnsPresetCustom;
+  }
+
+  TextEditingController _dnsControllerFor(String field) {
+    switch (field) {
+      case _kFieldDefaultNs:
+        return _defaultNsController;
+      case _kFieldNameserver:
+        return _nameserverController;
+      default:
+        return _proxyNsController;
+    }
+  }
+
+  void _selectDnsPreset(String field, String? key) {
+    if (key == null) return;
+    setState(() {
+      _dnsSelection[field] = key;
+      if (key == _kDnsPresetDefault) {
+        // «По умолчанию» = пустое поле: buildConfig возьмёт kDefaultDnsValues.
+        _dnsControllerFor(field).text = '';
+      } else if (key != _kDnsPresetCustom) {
+        // «Свой вариант» — текст не трогаем.
+        for (final preset in _kDnsPresets) {
+          if (preset.key == key) {
+            _dnsControllerFor(field).text = preset.value;
+            break;
+          }
+        }
+      }
+    });
+  }
+
+  void _onDnsTextChanged(String field, String text) {
+    final key = _dnsKeyForText(text);
+    if (_dnsSelection[field] != key) {
+      setState(() {
+        _dnsSelection[field] = key;
+      });
+    }
+  }
+
   // ---------------- UI ----------------
 
   Widget _section(String title, List<Widget> children) {
@@ -482,6 +623,68 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _dnsField({
+    required String field,
+    required String title,
+    required String subtitle,
+    required String hint,
+  }) {
+    final hintColor = Theme.of(context).hintColor;
+    final items = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(
+        value: _kDnsPresetDefault,
+        child: Text('— По умолчанию (пусто) —', overflow: TextOverflow.ellipsis),
+      ),
+      for (final preset in _kDnsPresets)
+        DropdownMenuItem(
+          value: preset.key,
+          child: Text(preset.label, overflow: TextOverflow.ellipsis),
+        ),
+      const DropdownMenuItem(
+        value: _kDnsPresetCustom,
+        child: Text('✏️ Свой вариант', overflow: TextOverflow.ellipsis),
+      ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 4),
+        Text(subtitle, style: TextStyle(fontSize: 12, color: hintColor)),
+        const SizedBox(height: 8),
+        InputDecorator(
+          decoration: const InputDecoration(
+            labelText: 'Пресет',
+            border: OutlineInputBorder(),
+          ),
+          child: DropdownButton<String>(
+            value: _dnsSelection[field] ?? _kDnsPresetDefault,
+            isExpanded: true,
+            isDense: true,
+            underline: const SizedBox.shrink(),
+            items: items,
+            onChanged: (key) => _selectDnsPreset(field, key),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _dnsControllerFor(field),
+          onChanged: (text) => _onDnsTextChanged(field, text),
+          minLines: 1,
+          maxLines: 2,
+          decoration: InputDecoration(
+            labelText: 'Серверы (через запятую)',
+            hintText: hint,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -683,7 +886,54 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             ),
           ),
         ]),
-        _section('7. Настройки', [
+        _section('7. DNS', [
+          Text(
+            'Глобальные DNS конфига — как «Шаг 1: DNS» в веб-генераторе. '
+            'Пустое поле = значения веб-генератора по умолчанию. В РФ '
+            'зарубежные DoH/DoT (AdGuard, Google, Cloudflare) часто '
+            'блокируются — для работы без VPN выбирайте Яндекс-пресеты. '
+            'Подстраховка: приложение и так добавляет tls://77.88.8.8 '
+            'в готовый конфиг (фикс v2), но основной nameserver лучше '
+            'сразу выбрать доступным.',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+          ),
+          const SizedBox(height: 12),
+          _dnsField(
+            field: _kFieldDefaultNs,
+            title: 'Default Nameserver — начальный DNS',
+            subtitle:
+                'Резолвит доменные имена основного DNS при старте. '
+                'Пусто — Cloudflare + AdGuard + Google (IP-адреса).',
+            hint:
+                'tls://1.1.1.1#skip-cert-verify=true, '
+                'https://94.140.14.14/dns-query#skip-cert-verify=true, '
+                'https://8.8.8.8/dns-query#skip-cert-verify=true',
+          ),
+          const SizedBox(height: 16),
+          _dnsField(
+            field: _kFieldNameserver,
+            title: 'Nameserver — основные DNS',
+            subtitle:
+                'Основные DNS-серверы конфига. Пусто — AdGuard DoT '
+                '(в РФ часто заблокирован).',
+            hint:
+                'tls://77.88.8.8#skip-cert-verify=true, '
+                'tls://77.88.8.1#skip-cert-verify=true',
+          ),
+          const SizedBox(height: 16),
+          _dnsField(
+            field: _kFieldProxyNs,
+            title: 'Proxy-server Nameserver — DNS для прокси',
+            subtitle:
+                'Резолв доменов самих прокси-нод; если он мёртв, VPN не '
+                'поднимается вовсе. Пусто — Cloudflare + AdGuard + Google.',
+            hint:
+                'tls://1.1.1.1#skip-cert-verify=true, '
+                'https://94.140.14.14/dns-query#skip-cert-verify=true, '
+                'https://8.8.8.8/dns-query#skip-cert-verify=true',
+          ),
+        ]),
+        _section('8. Настройки', [
           SegmentedButton<bool>(
             segments: const [
               ButtonSegment(value: false, label: Text('Встроить в конфиг')),
