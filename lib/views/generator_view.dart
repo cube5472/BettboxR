@@ -8,6 +8,7 @@ import 'package:bett_box/generator/generator_core.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
+import 'package:bett_box/widgets/widgets.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -476,8 +477,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     }
     final loading = ref.read(loadingProvider.notifier);
     loading.value = true;
+    String yaml;
     try {
-      final yaml = buildConfig(
+      yaml = buildConfig(
         GeneratorParams(
           urlTest: _urlTestController.text,
           defaultNameserver: _defaultNsController.text,
@@ -506,12 +508,28 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           customRules: _parseCustomRules(),
         ),
       );
-      final now = DateTime.now();
-      final label =
-          'BettboxR-${now.day.toString().padLeft(2, '0')}.'
-          '${now.month.toString().padLeft(2, '0')} '
-          '${now.hour.toString().padLeft(2, '0')}:'
-          '${now.minute.toString().padLeft(2, '0')}';
+    } on Object catch (e) {
+      if (!mounted) return;
+      await globalState.showMessage(
+        title: 'Генератор BettboxR',
+        message: TextSpan(text: '$e'),
+        cancelable: false,
+      );
+      return;
+    } finally {
+      loading.value = false;
+    }
+    if (!mounted) return;
+    // Перед созданием профиля предлагаем задать имя: подставлен
+    // автогенерированный вариант «BettboxR-ДД.ММ ЧЧ:ММ», его можно
+    // сразу заменить. Отмена — профиль не создаётся.
+    final label = await globalState.showCommonDialog<String>(
+      dismissible: false,
+      child: _ProfileNameDialog(suggestedName: _suggestedProfileLabel()),
+    );
+    if (label == null || label.trim().isEmpty || !mounted) return;
+    loading.value = true;
+    try {
       final profile = await Profile.normal(
         label: label,
       ).saveFileWithString(yaml);
@@ -536,6 +554,14 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     } finally {
       loading.value = false;
     }
+  }
+
+  String _suggestedProfileLabel() {
+    final now = DateTime.now();
+    return 'BettboxR-${now.day.toString().padLeft(2, '0')}.'
+        '${now.month.toString().padLeft(2, '0')} '
+        '${now.hour.toString().padLeft(2, '0')}:'
+        '${now.minute.toString().padLeft(2, '0')}';
   }
 
   void _showError(String message) {
@@ -1006,6 +1032,63 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// Диалог имени нового конфига: предложено автогенерированное имя
+// («BettboxR-ДД.ММ ЧЧ:ММ»), его можно сразу заменить. Пустое значение
+// при сохранении подменяется предложенным по умолчанию, «Отмена»
+// закрывает диалог без создания профиля.
+class _ProfileNameDialog extends StatefulWidget {
+  final String suggestedName;
+
+  const _ProfileNameDialog({required this.suggestedName});
+
+  @override
+  State<_ProfileNameDialog> createState() => _ProfileNameDialogState();
+}
+
+class _ProfileNameDialogState extends State<_ProfileNameDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.suggestedName,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: 'Имя конфига',
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Отмена'),
+        ),
+        TextButton(
+          onPressed: () {
+            final text = _controller.text.trim();
+            Navigator.of(
+              context,
+            ).pop(text.isEmpty ? widget.suggestedName : text);
+          },
+          child: const Text('Сохранить'),
+        ),
+      ],
+      child: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 60,
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          labelText: 'Имя',
+          counterText: '',
+        ),
+      ),
     );
   }
 }

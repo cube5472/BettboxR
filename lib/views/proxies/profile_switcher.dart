@@ -1,6 +1,8 @@
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/providers.dart';
+import 'package:bett_box/state.dart';
+import 'package:bett_box/views/profiles/edit_profile.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// Показывается автоматически, только когда профилей два и больше:
 /// с одним конфигом переключать нечего и панель скрыта.
+///
+/// Долгое нажатие на чип открывает редактирование этого конфига —
+/// тот же экран правки профиля, что и на странице «Конфигурации»
+/// (имя, подписка, автообновление, правка файла конфига).
 class ProxiesProfileSwitcher extends ConsumerWidget {
   const ProxiesProfileSwitcher({super.key});
 
@@ -24,6 +30,22 @@ class ProxiesProfileSwitcher extends ConsumerWidget {
       return;
     }
     ref.read(currentProfileIdProvider.notifier).value = profile.id;
+  }
+
+  void _handleEdit(BuildContext context, Profile profile) {
+    showExtend(
+      context,
+      builder: (_, type) {
+        return AdaptiveSheetScaffold(
+          type: type,
+          body: EditProfileView(
+            profile: profile,
+            context: context,
+          ),
+          title: appLocalizations.edit,
+        );
+      },
+    );
   }
 
   @override
@@ -50,6 +72,9 @@ class ProxiesProfileSwitcher extends ConsumerWidget {
                 isSelected: isSelected,
                 radius: 16,
                 onPressed: () => _handleSwitch(ref, profile),
+                onLongPress: globalState.isAndroidTV
+                    ? null
+                    : () => _handleEdit(context, profile),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
