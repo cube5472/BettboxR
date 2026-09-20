@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synchronized/synchronized.dart';
 
 import 'constant.dart';
 import 'path.dart';
@@ -32,6 +33,24 @@ class Preferences {
   /// не трогаются.
   static const _logLevelSilentMigratedKey = 'logLevelSilentMigrated';
 
+  /// Метка времени последнего сохранения конфига. Пишется в SharedPreferences
+  /// при каждом saveConfig; при загрузке сравнивается с mtime config.json,
+  /// чтобы после сбоя записи файла (гонка, нехватка места) загрузить более
+  /// свежую копию из SharedPreferences, а не устаревший файл.
+  static const _savedAtKey = 'configSavedAt';
+
+  /// Допуск в миллисекундах: в одном saveConfig SharedPreferences пишутся
+  /// ДО файла, поэтому mtime файла нормален, когда он чуть НОВЕЕ savedAt.
+  static const _savedAtToleranceMs = 5000;
+
+  /// Сериализует записи конфига. Параллельные saveConfig (старт туннеля,
+  /// сидирование встроенных скриптов, тумблеры UI) без замки гонялись за
+  /// один config.json.tmp: часть сохранений падала с PathNotFoundException
+  /// (журнал: "Cannot delete file / Cannot rename file ... .tmp"), а файл
+  /// оставался устаревшим — после перезапуска откатывались тумблеры скриптов
+  /// и «скрипт-оверрайд» профиля.
+  static final Lock _saveLock = Lock();
+
   Future<ClashConfig?> getClashConfig() async {
     final preferences = await sharedPreferencesCompleter.future;
     final clashConfigString = preferences?.getString(clashConfigKey);
@@ -54,11 +73,17 @@ class Preferences {
   Future<Config?> getConfig() async {
     final preferences = await sharedPreferencesCompleter.future;
 
+    DateTime? fileMtime;
     Config? fileConfig;
     try {
       final configFilePath = await appPath.appConfigPath;
       final configFile = File(configFilePath);
       if (await configFile.exists()) {
+        try {
+          fileMtime = await configFile.lastModified();
+        } catch (_) {
+          fileMtime = null;
+        }
         final content = await configFile.readAsString();
         if (content.isNotEmpty) {
           final configMap = json.decode(content);
@@ -85,6 +110,12 @@ class Preferences {
       if (fileConfig.profiles.isEmpty && prefsConfig.profiles.isNotEmpty) {
         selectedConfig = prefsConfig;
         await saveConfig(prefsConfig);
+      } else if (_isPrefsNewer(preferences, fileMtime)) {
+        // Файл остался от сорванного сохранения (гонка/сбой), а в
+        // SharedPreferences лежит более свежая копия — берём её и чиним файл.
+        commonPrint.log('config.json is stale, restoring newer config from preferences');
+        selectedConfig = prefsConfig;
+        await saveConfig(prefsConfig);
       } else {
         selectedConfig = fileConfig;
       }
@@ -103,6 +134,17 @@ class Preferences {
     return selectedConfig;
   }
 
+  /// SharedPreferences новее config.json с учётом допуска (_savedAtToleranceMs):
+  /// внутри одного saveConfig сперва пишется SharedPreferences, поэтому нормален
+  /// файл чуть новее savedAt; заметно более свежий savedAt значит, что запись
+  /// файла сорвалась (см. журнал: PathNotFoundException на config.json).
+  bool _isPrefsNewer(SharedPreferences? preferences, DateTime? fileMtime) {
+    final savedAt = preferences?.getInt(_savedAtKey);
+    if (savedAt == null) return false;
+    if (fileMtime == null) return true;
+    return savedAt > fileMtime.millisecondsSinceEpoch + _savedAtToleranceMs;
+  }
+
   Future<bool> saveConfig(Config config) async {
     final preferences = await sharedPreferencesCompleter.future;
     await preferences?.setBool('autoLaunch', config.appSetting.autoLaunch);
@@ -111,25 +153,35 @@ class Preferences {
 
     try {
       await preferences?.setString(configKey, jsonStr);
+      // Метка пишется ПОСЛЕ содержимого: если процесс умрёт между ними,
+      // savedAt останется старым и устаревший prefs не «перебьёт» файл.
+      await preferences?.setInt(
+        _savedAtKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
     } catch (e) {
       commonPrint.log('Failed to mirror config to preferences: $e');
     }
 
-    try {
-      final configFilePath = await appPath.appConfigPath;
-      final targetFile = File(configFilePath);
-      final tempFile = File('$configFilePath.tmp');
-      await tempFile.parent.create(recursive: true);
-      await tempFile.writeAsString(jsonStr, flush: true);
-      if (await targetFile.exists()) {
-        await targetFile.delete();
+    return _saveLock.synchronized(() async {
+      try {
+        final configFilePath = await appPath.appConfigPath;
+        final targetFile = File(configFilePath);
+        final tempFile = File('$configFilePath.tmp');
+        await tempFile.parent.create(recursive: true);
+        await tempFile.writeAsString(jsonStr, flush: true);
+        // Под замкой гонки нет; delete нужен только для платформ, где
+        // rename() не перезаписывает существующий целевой файл (Windows).
+        if (await targetFile.exists()) {
+          await targetFile.delete();
+        }
+        await tempFile.rename(configFilePath);
+        return true;
+      } catch (e, stackTrace) {
+        commonPrint.log('Failed to save config to file: $e\n$stackTrace');
+        return false;
       }
-      await tempFile.rename(configFilePath);
-      return true;
-    } catch (e, stackTrace) {
-      commonPrint.log('Failed to save config to file: $e\n$stackTrace');
-      return false;
-    }
+    });
   }
 
   Future<void> clearClashConfig() async {

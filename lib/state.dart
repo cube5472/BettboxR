@@ -591,10 +591,16 @@ class GlobalState {
   /// фильтр RU-нод), «Bag-rules-paranoid» (DNS-карантин) и «РФ-БС» (схема
   /// белых списков: правила + провайдеры + DNS-фолбэки). Скрипты не
   /// включаются автоматически — их нужно включить тумблером на карточке.
-  /// Если скрипт с таким именем уже есть (в том числе добавленный вручную
-  /// и отредактированный) — не трогаем его. Удалённый встроенный скрипт
-  /// появится снова при следующем запуске — это осознанно: он встроенный.
+  /// Если скрипт с таким именем уже есть — он не трогается, КРОМЕ случая,
+  /// когда это нетронутая старая версия встроенного скрипта (обновляется
+  /// до новой). Отредактированные пользователем скрипты не обновляются.
+  /// Удалённый встроенный скрипт появится снова при следующем запуске —
+  /// это осознанно: он встроенный.
   void _seedBuiltinScript() {
+    // Метка нетронутой старой версии «s-ru» (до мягкого применения правил):
+    // только прежний текст содержал предупреждение про отсутствующий
+    // rule-provider целиком; в новой версии его нет.
+    const kSRuOldVersionMarker = "в профиле нет rule-provider '";
     const builtins = <(String, String)>[
       (kBuiltinSRuScriptLabel, builtinSRuScript),
       (kBuiltinBagRulesParanoidLabel, builtinBagRulesParanoidScript),
@@ -603,10 +609,20 @@ class GlobalState {
     var next = config.scriptProps.scripts;
     var changed = false;
     for (final (label, content) in builtins) {
-      final exists = next.any((script) => script.label == label);
-      if (exists) continue;
-      next = [...next, Script.create(label: label, content: content)];
-      changed = true;
+      final index = next.indexWhere((script) => script.label == label);
+      if (index == -1) {
+        next = [...next, Script.create(label: label, content: content)];
+        changed = true;
+        continue;
+      }
+      final existing = next[index];
+      if (existing.content == content) continue;
+      final isUntouchedOldVersion = label == kBuiltinSRuScriptLabel &&
+          existing.content.contains(kSRuOldVersionMarker);
+      if (isUntouchedOldVersion) {
+        next[index] = existing.copyWith(content: content);
+        changed = true;
+      }
     }
     if (!changed) return;
     config = config.copyWith(

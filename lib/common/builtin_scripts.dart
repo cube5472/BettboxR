@@ -15,9 +15,11 @@ const String builtinSRuScript = r'''// Compatible_With_Bettbox
 // Зачем нужен:
 //  1) «Правила маршрутизации (s-ru)» — подставляет полный набор правил:
 //     реклама и шпионские домены в блок, RU-сервисы напрямую, Discord /
-//     YouTube / игры / AI и заблокированное — через VPN. Правила ставятся
-//     только если в профиле есть все нужные rule-providers и группы,
-//     иначе профиль остаётся на своих правилах (конфиг не ломается).
+//     YouTube / игры / AI и заблокированное — через VPN. Правила ставятся,
+//     если в профиле есть все нужные ГРУППЫ. Отсутствующие rule-providers
+//     не роняют схему: критичные списки (приватные диапазоны, RU-направляющие)
+//     заменяются встроенными правилами, остальные RULE-SET аккуратно
+//     пропускаются (причины — в журнале: строки «[script] s-ru: …»).
 //  2) «Убирать RU-ноды из авто-групп» — выкидывает RU-ноды из url-test /
 //     fallback / load-balance, чтобы автовыбор не гонял трафик через РФ.
 //     В обычных (select) группах RU-ноды остаются — можно выбрать вручную.
@@ -33,11 +35,39 @@ var ruleOptionsEnable = {
 };
 
 // ---- Фильтр RU-нод ----
-// Маска RU-нод (можно дополнить: /🇷🇺|Russia|\bRU\b/i)
-var RU_MASK = /🇷🇺|Russia/i;
+// Маска RU-нод. Шире прежней (/🇷🇺|Russia/i): ловит «RU-1», «РФ», «Россия»,
+// «Российск…», «Russian». \b работает только с ASCII-границами — этого
+// достаточно: слово RU окружено дефисом/пробелом/началом строки.
+var RU_MASK = /🇷🇺|Russia|Russian|\bRU\b|РФ|Россия|Российск/i;
+
+// Маска для exclude-filter групп (Go/RE2 — тот же набор ключей)
+var RU_EXCLUDE = "🇷🇺|Russia|Russian|\\bRU\\b|РФ|Россия|Российск";
 
 // Типы групп, из которых убираем RU-ноды
 var AUTO_TYPES = ["url-test", "fallback", "load-balance"];
+
+// ---- Встроенные замены для профилей без полного набора провайдеров ----
+// private-ips нет в списке провайдеров -> приватные диапазоны напрямую:
+var S_RU_PRIVATE_IP_RULES = [
+  "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve",
+  "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve",
+  "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve",
+  "IP-CIDR,127.0.0.0/8,DIRECT,no-resolve",
+  "IP-CIDR,169.254.0.0/16,DIRECT,no-resolve",
+  "IP-CIDR,224.0.0.0/4,DIRECT,no-resolve",
+  "IP-CIDR,255.255.255.255/32,DIRECT,no-resolve",
+  "IP-CIDR6,fc00::/7,DIRECT,no-resolve",
+  "IP-CIDR6,::1/128,DIRECT,no-resolve"
+];
+// private-domains нет -> локальные имена напрямую:
+var S_RU_PRIVATE_DOMAIN_RULES = [
+  "DOMAIN-SUFFIX,local,DIRECT",
+  "DOMAIN,localhost,DIRECT"
+];
+// Списки «RU-сервисы напрямую» нет -> один GEOIP-фолбэк (база geoip
+// встроена в клиент) на месте первого из пропавших:
+var S_RU_DIRECT_SETS = ["category-ru", "ru-apps"];
+var S_RU_DIRECT_FALLBACK_RULE = "GEOIP,RU,DIRECT";
 
 // ---- Набор правил s-ru ----
 var S_RU_RULES = [
@@ -147,16 +177,17 @@ function _usedRuleSets(rules) {
   return used;
 }
 
-// Ставит правила только при полном наборе провайдеров и групп — иначе профиль
-// остаётся на своих правилах, а не падает при старте ядра.
+// Ставит правила, если в профиле есть все нужные ГРУППЫ. Отсутствующие
+// rule-providers обрабатываются мягко: критичные категории заменяются
+// встроенными правилами, остальные RULE-SET пропускаются — схема работает
+// на любом профиле (дефолт генератора несёт только RoscomVPN: 26 из 41
+// списка, прежде из-за этого правила s-ru не применялись вовсе).
 function _applyRules(config) {
   var providers = _providerNames(config);
   var used = _usedRuleSets(S_RU_RULES);
+  var missing = [];
   for (var name in used) {
-    if (!providers[name]) {
-      console.warn("s-ru: в профиле нет rule-provider '" + name + "', правила не применены");
-      return false;
-    }
+    if (!providers[name]) missing.push(name);
   }
   var names = _groupNames(config);
   for (var i = 0; i < S_RU_REQUIRED_GROUPS.length; i++) {
@@ -165,7 +196,44 @@ function _applyRules(config) {
       return false;
     }
   }
-  config.rules = S_RU_RULES.slice();
+  if (missing.length === 0) {
+    config.rules = S_RU_RULES.slice();
+    return true;
+  }
+
+  var rules = [];
+  var dropped = [];
+  var geoipUsed = false;
+  for (var j = 0; j < S_RU_RULES.length; j++) {
+    var rule = S_RU_RULES[j];
+    var parts = String(rule).split(",");
+    if (parts[0] === "RULE-SET" && missing.indexOf(parts[1]) !== -1) {
+      if (parts[1] === "private-ips") {
+        for (var p = 0; p < S_RU_PRIVATE_IP_RULES.length; p++) {
+          rules.push(S_RU_PRIVATE_IP_RULES[p]);
+        }
+      } else if (parts[1] === "private-domains") {
+        for (var q = 0; q < S_RU_PRIVATE_DOMAIN_RULES.length; q++) {
+          rules.push(S_RU_PRIVATE_DOMAIN_RULES[q]);
+        }
+      } else if (S_RU_DIRECT_SETS.indexOf(parts[1]) !== -1) {
+        if (!geoipUsed) {
+          rules.push(S_RU_DIRECT_FALLBACK_RULE);
+          geoipUsed = true;
+        }
+        // последующие пропавшие RU-списки уже покрыты фолбэком
+      } else {
+        dropped.push(parts[1]);
+      }
+      continue;
+    }
+    rules.push(rule);
+  }
+  config.rules = rules;
+  console.warn("s-ru: нет списков (" + missing.join(", ") + ") — применено частично");
+  if (dropped.length > 0) {
+    console.warn("s-ru: RULE-SET без провайдеров пропущены: " + dropped.join(", "));
+  }
   return true;
 }
 
@@ -193,7 +261,7 @@ function _filterRuNodes(config) {
       group["include-all"] === true || (Array.isArray(group.use) && group.use.length > 0);
     if (usesProviders) {
       var old = typeof group["exclude-filter"] === "string" ? group["exclude-filter"] : "";
-      var add = "🇷🇺|Russia";
+      var add = RU_EXCLUDE;
       if (old.indexOf(add) === -1) {
         group["exclude-filter"] = old ? old + "|" + add : add;
       }
