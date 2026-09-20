@@ -20,9 +20,12 @@ const String builtinSRuScript = r'''// Compatible_With_Bettbox
 //     не роняют схему: критичные списки (приватные диапазоны, RU-направляющие)
 //     заменяются встроенными правилами, остальные RULE-SET аккуратно
 //     пропускаются (причины — в журнале: строки «[script] s-ru: …»).
-//  2) «Убирать RU-ноды из авто-групп» — выкидывает RU-ноды из url-test /
-//     fallback / load-balance, чтобы автовыбор не гонял трафик через РФ.
-//     В обычных (select) группах RU-ноды остаются — можно выбрать вручную.
+//  2) «Убирать RU-ноды из групп» — выкидывает RU-ноды из ВСЕХ групп
+//     (включая select): из явных списков proxies — напрямую, из групп на
+//     провайдерах/include-all — через exclude-filter (ядро применяет его
+//     к любому типу групп). Раньше (до v3) фильтровались только
+//     url-test / fallback / load-balance — в схеме генератора (все группы
+//     select + include-all) RU-ноды оставались в списке и в ручном выборе.
 //
 // Чекбоксы: Профили → Скрипты → «⋮» на карточке скрипта → «Настройка».
 // Сам скрипт включается тумблером на его карточке (и действует на профили,
@@ -31,20 +34,17 @@ const String builtinSRuScript = r'''// Compatible_With_Bettbox
 // ---- Чекбоксы (настройка скрипта в приложении) ----
 var ruleOptionsEnable = {
   "Правила маршрутизации (s-ru)": true,
-  "Убирать RU-ноды из авто-групп": true
+  "Убирать RU-ноды из групп": true
 };
 
 // ---- Фильтр RU-нод ----
-// Маска RU-нод. Шире прежней (/🇷🇺|Russia/i): ловит «RU-1», «РФ», «Россия»,
-// «Российск…», «Russian». \b работает только с ASCII-границами — этого
-// достаточно: слово RU окружено дефисом/пробелом/началом строки.
+// Маска RU-нод: ловит «🇷🇺», «RU-1», «РФ», «Россия», «Российск…», «Russian».
+// \b работает только с ASCII-границами — этого достаточно: слово RU
+// окружено дефисом/пробелом/началом строки.
 var RU_MASK = /🇷🇺|Russia|Russian|\bRU\b|РФ|Россия|Российск/i;
 
 // Маска для exclude-filter групп (Go/RE2 — тот же набор ключей)
 var RU_EXCLUDE = "🇷🇺|Russia|Russian|\\bRU\\b|РФ|Россия|Российск";
-
-// Типы групп, из которых убираем RU-ноды
-var AUTO_TYPES = ["url-test", "fallback", "load-balance"];
 
 // ---- Встроенные замены для профилей без полного набора провайдеров ----
 // private-ips нет в списке провайдеров -> приватные диапазоны напрямую:
@@ -243,22 +243,27 @@ function _filterRuNodes(config) {
 
   for (var i = 0; i < groups.length; i++) {
     var group = groups[i];
-    if (!group || AUTO_TYPES.indexOf(group.type) === -1) continue;
+    if (!group) continue;
 
-    // 1) обычный список прокси внутри группы
+    // 1) явный список прокси — ЛЮБОЙ тип группы (select тоже): RU-ноды
+    // выкидываются, но группе не даём опустеть (пустая ломает конфиг)
     if (Array.isArray(group.proxies)) {
       var filtered = group.proxies.filter(function (name) {
         return !RU_MASK.test(String(name));
       });
-      // не даём группе опустеть — пустая группа ломает конфиг
       if (filtered.length > 0) {
         group.proxies = filtered;
       }
     }
 
-    // 2) группы на провайдерах / include-all — фильтруем через exclude-filter
+    // 2) группы на провайдерах / include-all — фильтруем через exclude-filter.
+    // Ядро применяет exclude-filter к ЛЮБОМУ типу групп (не только к
+    // url-test/fallback/load-balance), поэтому select-группы генератора
+    // (🛡️ VPN, 📺 Youtube, 🎮 Игры, 💬 Discord.exe) тоже очищаются
     var usesProviders =
-      group["include-all"] === true || (Array.isArray(group.use) && group.use.length > 0);
+      group["include-all"] === true ||
+      group["include-all-providers"] === true ||
+      (Array.isArray(group.use) && group.use.length > 0);
     if (usesProviders) {
       var old = typeof group["exclude-filter"] === "string" ? group["exclude-filter"] : "";
       var add = RU_EXCLUDE;
@@ -277,7 +282,7 @@ function main(config) {
   if (opts["Правила маршрутизации (s-ru)"] !== false) {
     _applyRules(config);
   }
-  if (opts["Убирать RU-ноды из авто-групп"] !== false) {
+  if (opts["Убирать RU-ноды из групп"] !== false) {
     _filterRuNodes(config);
   }
   return config;
@@ -300,7 +305,18 @@ const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
 //     Проверка внешнего IP (api.ipify.org) принудительно через туннель.
 //     Правила ставятся В НАЧАЛО списка правил профиля — собственные
 //     правила маршрутизации профиля продолжают работать как раньше.
-//  2) «Блокировать QUIC (UDP 443)» — запрещает HTTP/3: весь HTTPS идёт
+//  2) «DNS ядра → Quad9 (через VPN)» — заменяет сам список nameserver
+//     ЯДРА на Quad9 с адаптером «#PROXY» (резолв идёт через туннель).
+//     Это ключевой пункт для dnsleaktest: собственный DNS ядра НЕ проходит
+//     через правила (пункт 1 его не достаёт), а утечки на тесте показывают
+//     именно nameserver ядра. Bootstrap (default-nameserver) и
+//     proxy-server-nameserver (резолв доменов самих нод — работает до
+//     подъёма туннеля) — только РФ-доступный Яндекс, никаких Google/
+//     AdGuard/Cloudflare. Прочие настройки dns профиля (enhanced-mode,
+//     fake-ip и т.д.) сохраняются. При включённом «Переопределении DNS»
+//     в настройках приложения приоритет у скрипта: его DNS восстанавливается
+//     после app-оверрайда.
+//  3) «Блокировать QUIC (UDP 443)» — запрещает HTTP/3: весь HTTPS идёт
 //     по TCP и одинаково проходит через туннель и правила. Бонус: на
 //     UDP/443 сидят WARP/MASQUE-туннели — они тоже закрываются.
 //
@@ -314,6 +330,7 @@ const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
 // ---- Чекбоксы (настройка скрипта в приложении) ----
 var ruleOptionsEnable = {
   "DNS-карантин (Quad9 через VPN)": true,
+  "DNS ядра → Quad9 (через VPN)": true,
   "Блокировать QUIC (UDP 443)": true
 };
 
@@ -351,7 +368,7 @@ var BLOCK_PLAIN_DNS = [
   "AND,((NETWORK,tcp),(DST-PORT,53)),REJECT"
 ];
 
-// ---- Полный запрет DoT/DoQ (порт 853), кроме Quad9 выше ----
+// ---- Полный запрет DoT/DoQ (порт 853) в правилах — Quad9 разрешён выше ----
 var BLOCK_DOT = "DST-PORT,853,REJECT";
 
 // ---- DoH публичных сервисов (порт 443 — ловим по доменам) ----
@@ -419,6 +436,42 @@ var BLOCK_RESOLVER_IPS = [
 
 // ---- QUIC / HTTP3 (UDP 443) ----
 var BLOCK_QUIC = "AND,((NETWORK,udp),(DST-PORT,443)),REJECT";
+
+// ---- DNS ядра: единственный резолвер — Quad9 через туннель ----
+// Адаптер «#PROXY» отправляет сами DNS-запросы через группу PROXY:
+// ядро резолвит через Quad9, а трафик до Quad9 идёт через VPN-ноду.
+var QUAD9_NAMESERVERS = [
+  "tls://9.9.9.9#PROXY",
+  "tls://149.112.112.9#PROXY",
+  "https://dns.quad9.net/dns-query#PROXY"
+];
+
+// Bootstrap (имя dns.quad9.net нужно разрешить ДО туннеля) и
+// proxy-server-nameserver (домены самих прокси-нод резолвятся до подъёма
+// туннеля) — только РФ-доступные резолверы, иначе карантин роняет
+// подключение. В default-nameserver допустимы только голые IP.
+var RF_BOOTSTRAP_DNS = ["77.88.8.8", "77.88.8.1"];
+var RF_DIRECT_DOT_DNS = ["tls://77.88.8.8", "tls://77.88.8.1"];
+
+// Заменяет резолверы ЯДРА (merge в dns профиля: enhanced-mode, fake-ip и
+// прочие настройки сохраняются). Требует группу PROXY — адаптер «#PROXY»
+// ссылается на неё, без группы ядро не поднимет конфиг.
+function _applyDns(config) {
+  if (!_hasGroup(config, "PROXY")) {
+    console.warn("Bag-rules-paranoid: в профиле нет группы 'PROXY', DNS ядра не заменены");
+    return false;
+  }
+  var dns = config.dns;
+  if (!dns || typeof dns !== "object" || Array.isArray(dns)) {
+    dns = {};
+  }
+  dns.enable = true;
+  dns.nameserver = QUAD9_NAMESERVERS.slice();
+  dns["default-nameserver"] = RF_BOOTSTRAP_DNS.slice();
+  dns["proxy-server-nameserver"] = RF_DIRECT_DOT_DNS.slice();
+  config.dns = dns;
+  return true;
+}
 
 // Собирает набор правил карантинa. quicBlock — включать ли запрет QUIC.
 function _bagRuleList(quicBlock) {
@@ -503,6 +556,9 @@ function main(config) {
     _apply(config, opts["Блокировать QUIC (UDP 443)"] !== false);
   } else {
     _remove(config);
+  }
+  if (opts["DNS ядра → Quad9 (через VPN)"] !== false) {
+    _applyDns(config);
   }
   return config;
 }

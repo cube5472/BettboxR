@@ -597,10 +597,22 @@ class GlobalState {
   /// Удалённый встроенный скрипт появится снова при следующем запуске —
   /// это осознанно: он встроенный.
   void _seedBuiltinScript() {
-    // Метка нетронутой старой версии «s-ru» (до мягкого применения правил):
-    // только прежний текст содержал предупреждение про отсутствующий
-    // rule-provider целиком; в новой версии его нет.
-    const kSRuOldVersionMarker = "в профиле нет rule-provider '";
+    // Метки нетронутых СТАРЫХ версий встроенных скриптов: при обнаружении
+    // такой версии содержимое молча обновляется до текущего (id и тумблер
+    // сохраняются). Метка живёт в комментарии старого текста — правка
+    // пользователем её обычно затирает, тогда скрипт не трогается.
+    const kLegacyVersionMarkers = <String, List<String>>{
+      kBuiltinSRuScriptLabel: [
+        // v1: жёсткое применение правил (до мягких замен списков)
+        "в профиле нет rule-provider '",
+        // v2: фильтр RU-нод только в авто-группах (до фильтра всех групп)
+        "Шире прежней",
+      ],
+      kBuiltinBagRulesParanoidLabel: [
+        // v2: только правила, без замены nameserver ядра на Quad9
+        "кроме Quad9 выше",
+      ],
+    };
     const builtins = <(String, String)>[
       (kBuiltinSRuScriptLabel, builtinSRuScript),
       (kBuiltinBagRulesParanoidLabel, builtinBagRulesParanoidScript),
@@ -617,8 +629,9 @@ class GlobalState {
       }
       final existing = next[index];
       if (existing.content == content) continue;
-      final isUntouchedOldVersion = label == kBuiltinSRuScriptLabel &&
-          existing.content.contains(kSRuOldVersionMarker);
+      final markers = kLegacyVersionMarkers[label];
+      final isUntouchedOldVersion = markers != null &&
+          markers.any(existing.content.contains);
       if (isUntouchedOldVersion) {
         next[index] = existing.copyWith(content: content);
         changed = true;
@@ -678,6 +691,11 @@ class GlobalState {
     final profileId = targetProfile.id;
     final configMap = await getProfileConfig(profileId);
     final rawConfig = await handleEvaluate(configMap, profile: targetProfile);
+    // Скрипт мог взять DNS ядра под контроль (карантин Quad9 в
+    // «Bag-rules-paranoid»): фиксируем его решение ДО app-оверрайдов,
+    // чтобы восстановить после них — иначе ensureRfReachableDns дописывает
+    // Яндекс в nameserver после скрипта, и dnsleaktest показывает утечку.
+    final scriptDnsLock = captureScriptDnsLock(rawConfig);
     final originalProxyGroups = rawConfig['proxy-groups'];
 
     final realPatchConfig = patchConfig.copyWith(
@@ -859,6 +877,11 @@ class GlobalState {
     final dnsNode = rawConfig['dns'];
     if (dnsNode is Map) {
       ensureRfReachableDns(dnsNode.cast<String, dynamic>());
+    }
+    // Скриптовый DNS-карантин главнее app-оверрайдов: восстанавливаем
+    // то, что выставил скрипт, поверх любых дописываний выше.
+    if (scriptDnsLock != null) {
+      rawConfig['dns'] = scriptDnsLock;
     }
 
     if (rawConfig['dns'] != null &&
