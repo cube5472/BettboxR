@@ -27,11 +27,8 @@ const String _kFieldDefaultNs = 'defaultNameserver';
 const String _kFieldNameserver = 'nameserver';
 const String _kFieldProxyNs = 'proxyServerNameserver';
 
-// Ключи SharedPreferences: шаблоны настроек генератора («Мой вариант 1» и
-// т.п.) и реестр профилей, созданных генератором (для «перегенерировать
-// и заменить» — чтобы трогать только свои профили, а не чужие подписки).
+// Ключ SharedPreferences: шаблоны настроек генератора («Мой вариант 1» и т.п.).
 const String _kPrefsTemplatesKey = 'bb.generator.templates.v1';
-const String _kPrefsProfileIdsKey = 'bb.generator.profileIds.v1';
 
 // Плейсхолдер выпадающего списка шаблонов.
 const String _kNoTemplateLabel = '— Выберите шаблон —';
@@ -132,16 +129,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     ),
   );
 
-  // Провайдеры правил
-  final Map<String, bool> _providerSets = {
-    'roscomvpn': true,
-    'davoyan': false,
-    'legiz': false,
-  };
-  static const Map<String, String> _providerLabels = {
-    'roscomvpn': 'RoscomVPN (основной набор)',
-    'davoyan': 'Davoyan (легкий, быстрые обновления)',
-    'legiz': 'Legiz (минимальный)',
+  // Категории правил (универсальный дедуплицированный набор; «base»
+  // всегда включена и чекбокса не имеет — см. kSelectableCategories).
+  final Map<String, bool> _ruleCategories = {
+    for (final key in kSelectableCategories) key: true,
   };
 
   // Пресеты сервисов и CDN
@@ -213,6 +204,32 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     } on Object {
       return url;
     }
+  }
+
+  // Краткая подпись чекбокса категории: сколько HTTP-списков качается
+  // и их имена (inline-провайдеры не скачиваются и не считаются).
+  String _categoryProvidersSummary(String key) {
+    final category = kRuleCategories[key];
+    final providers = category == null
+        ? const <String>[]
+        : (category['providers'] as List<dynamic>? ?? const [])
+              .cast<String>()
+              .where((name) => kRuleProviders[name] is Map)
+              .where(
+                (name) => kRuleProviders[name]['type'] != 'inline',
+              )
+              .toList();
+    if (providers.isEmpty) return 'списков не скачивает';
+    return '${providers.length} ${_pluralLists(providers.length)}: '
+        '${providers.join(', ')}';
+  }
+
+  String _pluralLists(int n) {
+    if (n % 10 == 1 && n % 100 != 11) return 'список';
+    if ([2, 3, 4].contains(n % 10) && ![12, 13, 14].contains(n % 100)) {
+      return 'списка';
+    }
+    return 'списков';
   }
 
   Future<String> _fetchText(String url) async {
@@ -515,7 +532,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         label: label,
       ).saveFileWithString(yaml);
       await globalState.appController.addProfile(profile);
-      await _rememberGeneratorProfile(profile.id);
       if (!mounted) return;
       await globalState.showMessage(
         title: 'Генератор BettboxR',
@@ -573,7 +589,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             int.tryParse(_providerIntervalController.text) ?? 86400,
         proxies: _proxies,
         chains: _chains,
-        providerSets: _providerSets.entries
+        ruleCategories: _ruleCategories.entries
             .where((e) => e.value)
             .map((e) => e.key)
             .toList(),
@@ -641,7 +657,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerUrl': _providerUrlController.text,
       'providerInterval': _providerIntervalController.text,
       'ruUnblock': _ruUnblock,
-      'providerSets': _providerSets.entries
+      'ruleCategories': _ruleCategories.entries
           .where((e) => e.value)
           .map((e) => e.key)
           .toList(),
@@ -668,10 +684,15 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _providerIntervalController.text =
           data['providerInterval']?.toString() ?? '86400';
       _ruUnblock = data['ruUnblock'] is bool ? data['ruUnblock'] as bool : true;
-      final providerSets = {
-        if (data['providerSets'] is List)
-          ...(data['providerSets'] as List).whereType<String>(),
-      };
+      // Совместимость: в шаблонах старой версии ключ назывался
+      // providerSets и вёл набор вендоров — категориям оттуда брать
+      // нечего, поэтому при отсутствии нового ключа категории не трогаем.
+      if (data['ruleCategories'] is List) {
+        final categories = {
+          ...(data['ruleCategories'] as List).whereType<String>(),
+        };
+        _ruleCategories.updateAll((key, _) => categories.contains(key));
+      }
       final servicePresets = {
         if (data['servicePresets'] is List)
           ...(data['servicePresets'] as List).whereType<String>(),
@@ -680,7 +701,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         if (data['cdnPresets'] is List)
           ...(data['cdnPresets'] as List).whereType<String>(),
       };
-      _providerSets.updateAll((key, _) => providerSets.contains(key));
       _servicePresets.updateAll((key, _) => servicePresets.contains(key));
       _cdnPresets.updateAll((key, _) => cdnPresets.contains(key));
       _customRulesController.text = data['customRules']?.toString() ?? '';
@@ -791,74 +811,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         ),
       ],
     );
-  }
-
-  // ---------------- Перегенерация существующего профиля ----------------
-
-  Future<List<String>> _readGeneratorProfileIds() async {
-    try {
-      final prefs = await _prefs();
-      return prefs?.getStringList(_kPrefsProfileIdsKey) ?? const <String>[];
-    } catch (_) {
-      return const <String>[];
-    }
-  }
-
-  Future<void> _rememberGeneratorProfile(String id) async {
-    try {
-      final prefs = await _prefs();
-      final ids = prefs?.getStringList(_kPrefsProfileIdsKey) ?? <String>[];
-      if (!ids.contains(id)) {
-        await prefs?.setStringList(_kPrefsProfileIdsKey, [...ids, id]);
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _updateExistingProfile() async {
-    final error = _validateForm();
-    if (error != null) {
-      _showError(error);
-      return;
-    }
-    final ids = await _readGeneratorProfileIds();
-    if (!mounted) return;
-    final candidates = ref
-        .read(profilesProvider)
-        .where((p) => ids.contains(p.id))
-        .toList();
-    if (candidates.isEmpty) {
-      _showError('Нет профилей, созданных генератором. Сначала создайте '
-          'профиль кнопкой «Создать профиль в BettboxR».');
-      return;
-    }
-    final target = await globalState.showCommonDialog<Profile>(
-      dismissible: false,
-      child: _ProfilePickDialog(candidates: candidates),
-    );
-    if (target == null || !mounted) return;
-    final loading = ref.read(loadingProvider.notifier);
-    loading.value = true;
-    try {
-      final yaml = _buildYamlConfig();
-      // Тот же ID и то же имя: saveFileWithString пишет в файл этого
-      // профиля (с валидацией ядром), выбранные ноды/скрипты/оверрайды
-      // остаются у профиля. Активный профиль применится автоматически.
-      final updated = await target.saveFileWithString(yaml);
-      globalState.appController.setProfileAndAutoApply(updated);
-      if (!mounted) return;
-      context.showNotifier(
-        'Профиль «${target.label ?? target.id}» обновлён',
-      );
-    } on Object catch (e) {
-      if (!mounted) return;
-      await globalState.showMessage(
-        title: 'Генератор BettboxR',
-        message: TextSpan(text: '$e'),
-        cancelable: false,
-      );
-    } finally {
-      loading.value = false;
-    }
   }
 
   void _showError(String message) {
@@ -1140,16 +1092,37 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             label: const Text('Добавить цепочку'),
           ),
         ]),
-        _section('3. Провайдеры правил', [
-          for (final entry in _providerSets.entries)
+        _section('3. Категории правил', [
+          Text(
+            'Один дедуплицированный набор списков вместо трёх вендорских '
+            'пакетов. Категория добавляет и провайдеров, и свои правила; '
+            'выключенная категория не качается и не попадает в конфиг.',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+          ),
+          const SizedBox(height: 4),
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.lock_outline, size: 20),
+            title: const Text('База (киллсвитч, приватные сети)'),
+            subtitle: const Text(
+              'Всегда включена: private → DIRECT, блок IPv6 и QUIC',
+            ),
+          ),
+          for (final entry in _ruleCategories.entries)
             CheckboxListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(_providerLabels[entry.key] ?? entry.key),
+              title: Text(kCategoryLabels[entry.key] ?? entry.key),
+              subtitle: Text(
+                _categoryProvidersSummary(entry.key),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               value: entry.value,
               onChanged: (checked) {
                 setState(() {
-                  _providerSets[entry.key] = checked ?? false;
+                  _ruleCategories[entry.key] = checked ?? false;
                 });
               },
             ),
@@ -1328,32 +1301,16 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         ]),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            children: [
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                ),
-                onPressed: _createProfile,
-                icon: const Icon(Icons.rocket_launch),
-                label: const Text(
-                  'Создать профиль в BettboxR',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                ),
-                onPressed: _updateExistingProfile,
-                icon: const Icon(Icons.autorenew),
-                label: const Text(
-                  'Обновить профиль из генератора',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ],
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
+            onPressed: _createProfile,
+            icon: const Icon(Icons.rocket_launch),
+            label: const Text(
+              'Создать профиль в BettboxR',
+              style: TextStyle(fontSize: 16),
+            ),
           ),
         ),
       ],
@@ -1473,73 +1430,4 @@ class _TemplateNameDialogState extends State<_TemplateNameDialog> {
   }
 }
 
-// Диалог выбора профиля для перегенерации: список профилей, ранее
-// созданных генератором. Выбранный профиль получит новый конфиг с теми
-// же именем и ID.
-class _ProfilePickDialog extends StatefulWidget {
-  final List<Profile> candidates;
 
-  const _ProfilePickDialog({required this.candidates});
-
-  @override
-  State<_ProfilePickDialog> createState() => _ProfilePickDialogState();
-}
-
-class _ProfilePickDialogState extends State<_ProfilePickDialog> {
-  late String _selectedId = widget.candidates.first.id;
-
-  @override
-  Widget build(BuildContext context) {
-    return CommonDialog(
-      title: 'Обновить профиль',
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Отмена'),
-        ),
-        TextButton(
-          onPressed: () {
-            for (final profile in widget.candidates) {
-              if (profile.id == _selectedId) {
-                Navigator.of(context).pop(profile);
-                return;
-              }
-            }
-          },
-          child: const Text('Обновить'),
-        ),
-      ],
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Конфиг будет перегенерирован из текущих настроек формы. '
-            'Имя и ID профиля сохранятся, содержимое заменится.',
-            style: TextStyle(fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          for (final profile in widget.candidates)
-            RadioListTile<String>(
-              value: profile.id,
-              groupValue: _selectedId,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _selectedId = value;
-                  });
-                }
-              },
-              title: EmojiText(
-                profile.label ?? profile.id,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}

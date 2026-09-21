@@ -18,21 +18,39 @@ List<dynamic> _l(String key) =>
 
 final Map<String, dynamic> kDefaultDnsValues = _m('defaultDnsValues');
 final Map<String, dynamic> kStaticObj = _m('staticObj');
-final Map<String, dynamic> kRuleProvidersDavoyan = _m('ruleProvidersDavoyan');
-final Map<String, dynamic> kRuleProvidersLegiz = _m('ruleProvidersLegiz');
-final Map<String, dynamic> kRuleProvidersRoscomvpn = _m(
-  'ruleProvidersRoscomvpn',
-);
+// Универсальный дедуплицированный набор провайдеров и категории правил.
+final Map<String, dynamic> kRuleProviders = _m('ruleProviders');
+final Map<String, dynamic> kRuleCategories = _m('ruleCategories');
+// Жёсткий порядок применения категорий: «base» всегда включена.
+const List<String> kCategoryOrder = [
+  'base',
+  'ads',
+  'torrents',
+  'services',
+  'games',
+  'ru',
+];
+// Категории, управляемые чекбоксами (всё, кроме фиксированной базы).
+const List<String> kSelectableCategories = [
+  'ads',
+  'torrents',
+  'services',
+  'games',
+  'ru',
+];
 final List<dynamic> kProxyGroups = _l('proxyGroups');
-final List<dynamic> kRulesBase = _l('rulesBase');
-final List<dynamic> kUnblockRules = _l('unblockRules');
+// Пресеты сервисов/CDN и обход блокировок RU: {providers, rules}.
 final Map<String, dynamic> kServiceRules = _m('serviceRules');
 final Map<String, dynamic> kCdnRules = _m('cdnRules');
+final Map<String, dynamic> kRuUnblock = _m('ruUnblock');
 
-final Map<String, Map<String, dynamic>> kProviderSets = {
-  'roscomvpn': kRuleProvidersRoscomvpn,
-  'davoyan': kRuleProvidersDavoyan,
-  'legiz': kRuleProvidersLegiz,
+// Лейблы категорий правил для UI генератора (ключи kSelectableCategories).
+final Map<String, String> kCategoryLabels = {
+  'ads': 'Реклама и шпионаж → блок',
+  'torrents': 'Торренты → DIRECT',
+  'services': 'Сервисы: YouTube, Telegram, GitHub, Google Play',
+  'games': 'Игры и лаунчеры → группа «Игры»',
+  'ru': 'Россия и Microsoft/Apple → DIRECT',
 };
 
 final Map<String, String> kPresetLabels = {
@@ -1946,7 +1964,9 @@ class GeneratorParams {
   final int providerInterval;
   final List<Map<String, dynamic>> proxies;
   final List<List<String>> chains;
-  final List<String> providerSets;
+  /// Включённые категории правил (см. kSelectableCategories); «base»
+  /// всегда добавляется независимо от этого списка.
+  final List<String> ruleCategories;
   final List<String> servicePresets;
   final List<String> cdnPresets;
   final bool ruUnblock;
@@ -1963,7 +1983,7 @@ class GeneratorParams {
     this.providerInterval = 86400,
     required this.proxies,
     this.chains = const [],
-    this.providerSets = const ['roscomvpn'],
+    this.ruleCategories = kSelectableCategories,
     this.servicePresets = const [],
     this.cdnPresets = const [],
     this.ruUnblock = true,
@@ -2029,31 +2049,34 @@ String buildConfig(GeneratorParams p) {
   final dnsObj = <String, dynamic>{
     'enable': true,
     'ipv6': false,
+    // DNS-запросы тоже проходят через правила: без respect-rules ядро
+    // диалит все DNS напрямую с устройства, и nameserver-policy для
+    // заблокированных резолверов не работает как задумано.
+    'respect-rules': true,
     'default-nameserver': defaultNS
         .split(',')
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList(),
-    'direct-nameserver': [
-      '77.88.8.8#DIRECT',
-      '77.88.8.1#DIRECT',
-      '8.8.8.8#DIRECT',
-    ],
+    // Прямые DNS только РФ-доступные: Google (8.8.8.8) на прямом канале
+    // в РФ нестабилен и тянет за собой таймауты при старте.
+    'direct-nameserver': ['77.88.8.8#DIRECT', '77.88.8.1#DIRECT'],
     'nameserver': nameserver
         .split(',')
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList(),
     'nameserver-policy': {
+      // Домены обновлений списков — через РФ-доступный DoT, иначе первый
+      // старт без VPN не сможет скачать rule-providers.
       'raw.githubusercontent.com,cdn.jsdelivr.net,github.com': [
-        'tls://77.88.8.8#skip-cert-verify=true',
-        'tls://77.88.8.1#skip-cert-verify=true',
-        'tls://8.8.8.8#skip-cert-verify=true',
+        'tls://77.88.8.8#DIRECT',
+        'tls://77.88.8.1#DIRECT',
       ],
-      'rule-set:ru-inline,ru-outside,yandex,mailru,drweb,geosite-ru': [
-        'tls://77.88.8.8#skip-cert-verify=true',
-        'tls://77.88.8.1#skip-cert-verify=true',
-        'tls://8.8.8.8#skip-cert-verify=true',
+      // RU-домены — через Яндекс-DoT напрямую: быстрый и доступный.
+      'rule-set:category-ru,whitelist,ru-apps': [
+        'tls://77.88.8.8#DIRECT',
+        'tls://77.88.8.1#DIRECT',
       ],
     },
     'prefer-h3': false,
@@ -2129,65 +2152,74 @@ String buildConfig(GeneratorParams p) {
     }
   }
 
-  // --- rule-providers ---
-  final selectedProviders = <String>[];
-  for (final key in ['roscomvpn', 'davoyan', 'legiz']) {
-    if (p.providerSets.contains(key)) selectedProviders.add(key);
-  }
-  var ruleProviders = <String, dynamic>{};
-  for (final key in ['roscomvpn', 'davoyan', 'legiz']) {
-    if (selectedProviders.contains(key)) {
-      ruleProviders.addAll(kProviderSets[key]!);
+  // --- rule-providers и правила (категорный универсальный набор) ---
+  // Провайдеры набираются из включённых категорий/пресетов; правила
+  // добавляются в жёстком порядке (kCategoryOrder) и ссылаться могут
+  // только на уже добавленных провайдеров.
+  final ruleProviders = <String, dynamic>{};
+  void addProviders(Iterable<dynamic> names) {
+    for (final name in names) {
+      final key = '$name';
+      final def = kRuleProviders[key];
+      if (def == null) continue;
+      ruleProviders[key] = jsonDecode(jsonEncode(def)) as Map<String, dynamic>;
     }
   }
-  final providerNames = ruleProviders.keys.toSet();
 
-  final filteredPolicy = <String, dynamic>{};
-  (dnsObj['nameserver-policy'] as Map<String, dynamic>).forEach((key, value) {
-    if (key.startsWith('rule-set:')) {
-      final sets = key.split(':')[1].split(',').map((s) => s.trim()).toList();
-      final allExist = sets.every(providerNames.contains);
-      if (allExist) filteredPolicy[key] = value;
-    } else {
-      filteredPolicy[key] = value;
-    }
-  });
-  dnsObj['nameserver-policy'] = filteredPolicy;
-
-  // --- правила ---
-  var allRules = <String>[];
-  for (final rule in kRulesBase.cast<String>()) {
-    if (rule.startsWith('RULE-SET,')) {
-      final parts = rule.split(',');
-      if (parts.length >= 2 && providerNames.contains(parts[1].trim())) {
-        allRules.add(rule);
+  void addRules(List<dynamic> rules, List<String> target) {
+    for (final rule in rules.cast<String>()) {
+      if (rule.startsWith('RULE-SET,')) {
+        final parts = rule.split(',');
+        if (parts.length >= 2 &&
+            !ruleProviders.containsKey(parts[1].trim())) {
+          continue;
+        }
       }
-    } else {
-      allRules.add(rule);
+      target.add(rule);
     }
   }
 
-  final presetRules = <String>[];
+  final activeRules = <String>[];
+  // 1) База (киллсвитч, приватные сети) — всегда.
+  final baseCategory = kRuleCategories['base'];
+  if (baseCategory != null) {
+    addProviders((baseCategory['providers'] as List<dynamic>?) ?? const []);
+    addRules(
+      (baseCategory['rules'] as List<dynamic>?) ?? const [],
+      activeRules,
+    );
+  }
+  // 2) Включённые категории — в жёстком порядке.
+  for (final key in kCategoryOrder) {
+    if (key == 'base') continue;
+    if (!p.ruleCategories.contains(key)) continue;
+    final category = kRuleCategories[key];
+    if (category == null) continue;
+    addProviders((category['providers'] as List<dynamic>?) ?? const []);
+    addRules(
+      (category['rules'] as List<dynamic>?) ?? const [],
+      activeRules,
+    );
+  }
+  // 3) Обход блокировок RU.
+  if (p.ruUnblock) {
+    addProviders((kRuUnblock['providers'] as List<dynamic>?) ?? const []);
+    addRules((kRuUnblock['rules'] as List<dynamic>?) ?? const [], activeRules);
+  }
+  // 4) Пресеты сервисов и CDN: несут своих провайдеров и правила.
   for (final name in p.servicePresets) {
-    final rules = kServiceRules[name];
-    if (rules != null) presetRules.addAll(rules.cast<String>());
+    final preset = kServiceRules[name];
+    if (preset == null) continue;
+    addProviders((preset['providers'] as List<dynamic>?) ?? const []);
+    addRules((preset['rules'] as List<dynamic>?) ?? const [], activeRules);
   }
   for (final name in p.cdnPresets) {
-    final rules = kCdnRules[name];
-    if (rules != null) presetRules.addAll(rules.cast<String>());
+    final preset = kCdnRules[name];
+    if (preset == null) continue;
+    addProviders((preset['providers'] as List<dynamic>?) ?? const []);
+    addRules((preset['rules'] as List<dynamic>?) ?? const [], activeRules);
   }
-  if (p.ruUnblock) presetRules.addAll(kUnblockRules.cast<String>());
-
-  for (final rule in presetRules) {
-    if (rule.startsWith('RULE-SET,')) {
-      final parts = rule.split(',');
-      if (parts.length >= 2 && providerNames.contains(parts[1].trim())) {
-        allRules.add(rule);
-      }
-    } else {
-      allRules.add(rule);
-    }
-  }
+  var allRules = activeRules;
 
   for (final rule in p.customRules) {
     final type = rule['type'] ?? '';
@@ -2195,7 +2227,7 @@ String buildConfig(GeneratorParams p) {
     final action = rule['action'] ?? '';
     if (value.isEmpty || action.isEmpty) continue;
     if (type == 'RULE-SET') {
-      if (!providerNames.contains(value)) continue;
+      if (!ruleProviders.containsKey(value)) continue;
       allRules.add('RULE-SET,$value,$action');
       continue;
     }
@@ -2214,21 +2246,9 @@ String buildConfig(GeneratorParams p) {
     }
   }
 
-  final finalRules = <String>[];
-  for (final rule in allRules) {
-    if (rule.startsWith('RULE-SET,')) {
-      final parts = rule.split(',');
-      if (parts.length >= 2 && providerNames.contains(parts[1].trim())) {
-        finalRules.add(rule);
-      }
-    } else {
-      finalRules.add(rule);
-    }
-  }
-
   final seen = <String>{};
   final uniqueRules = <String>[];
-  for (final rule in finalRules) {
+  for (final rule in allRules) {
     if (!seen.contains(rule)) {
       seen.add(rule);
       uniqueRules.add(rule);
@@ -2295,6 +2315,10 @@ String buildConfig(GeneratorParams p) {
           'ports': [80, '8080-8880'],
         },
         'TLS': {
+          // Подмена назначения для TLS нужна, чтобы rule-сопоставление
+          // работало по реальному SNI даже на голых IP (критично для
+          // respect-rules в DNS и для списков-доменов).
+          'override-destination': true,
           'ports': [443, 8443],
         },
       },
