@@ -1411,3 +1411,120 @@ class DetectionState {
 }
 
 final detectionState = DetectionState();
+
+/// Оркестратор проверки медиа-разблокировки: держит состояние
+/// (результаты по платформам, что сейчас тестируется) и гоняет
+/// [MediaUnlockChecker] ограниченным пулом параллельных запросов.
+class MediaUnlockStateManager {
+  static MediaUnlockStateManager? _instance;
+  MediaUnlockStateManager._internal();
+
+  factory MediaUnlockStateManager() {
+    _instance ??= MediaUnlockStateManager._internal();
+    return _instance!;
+  }
+
+  static const _concurrency = 4;
+
+  final state = ValueNotifier<MediaUnlockState>(const MediaUnlockState());
+
+  int _batchId = 0;
+
+  bool get _isChecking => state.value.testingPlatforms.isNotEmpty;
+
+  bool isBatchChecking([Iterable<MediaPlatform>? platforms]) {
+    final testing = state.value.testingPlatforms;
+    if (platforms == null) {
+      return testing.isNotEmpty;
+    }
+    return platforms.any(testing.contains);
+  }
+
+  void _update(MediaUnlockState Function(MediaUnlockState state) updater) {
+    state.value = updater(state.value);
+  }
+
+  void checkSingle(MediaPlatform platform, {bool force = false}) {
+    _runBatch([platform], force: force);
+  }
+
+  void checkPlatforms(List<MediaPlatform> platforms, {bool force = false}) {
+    _runBatch(platforms, force: force);
+  }
+
+  void checkAll({bool force = false, List<MediaPlatform>? platforms}) {
+    _runBatch(platforms ?? MediaPlatform.values.toList(), force: force);
+  }
+
+  /// Разовый автозапуск при старте приложения, пока данных нет совсем.
+  void tryStartCheck() {
+    if (!globalState.appState.isInit ||
+        state.value.isLoading ||
+        _isChecking ||
+        state.value.results.isNotEmpty) {
+      return;
+    }
+    checkAll();
+  }
+
+  /// Смена узла/профиля: данные устарели — перепроверить все платформы.
+  void startCheckOnNodeChange() {
+    if (_isChecking) {
+      return;
+    }
+    checkAll(force: true);
+  }
+
+  Future<void> _runBatch(
+    List<MediaPlatform> platforms, {
+    required bool force,
+  }) async {
+    if (platforms.isEmpty) {
+      return;
+    }
+    final batchId = ++_batchId;
+    final queue = List<MediaPlatform>.of(platforms);
+    _update(
+      (state) => state.copyWith(
+        isLoading: true,
+        testingPlatforms: {...state.testingPlatforms, ...queue},
+      ),
+    );
+    Future<void> worker() async {
+      while (queue.isNotEmpty && batchId == _batchId) {
+        final platform = queue.removeAt(0);
+        MediaUnlockResult result;
+        try {
+          result = await MediaUnlockChecker().checkPlatform(platform);
+        } catch (_) {
+          result = MediaUnlockResult(
+            platform: platform,
+            status: MediaUnlockStatus.failed,
+          );
+        }
+        if (batchId != _batchId) {
+          return;
+        }
+        _update(
+          (state) => state.copyWith(
+            results: {...state.results, platform: result},
+            testingPlatforms: {...state.testingPlatforms}..remove(platform),
+          ),
+        );
+      }
+    }
+    await Future.wait([for (var i = 0; i < _concurrency; i++) worker()]);
+    if (batchId != _batchId) {
+      return;
+    }
+    _update(
+      (state) => state.copyWith(
+        isLoading: false,
+        testingPlatforms: {...state.testingPlatforms}..removeAll(platforms),
+        lastChecked: DateTime.now(),
+      ),
+    );
+  }
+}
+
+final mediaUnlockState = MediaUnlockStateManager();

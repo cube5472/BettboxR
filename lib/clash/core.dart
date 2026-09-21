@@ -320,6 +320,18 @@ class ClashCore {
     return int.parse(value);
   }
 
+  Future<CoreStatus?> getCoreStatus() async {
+    final value = await clashInterface.getCoreStatus();
+    if (value.isEmpty) {
+      return null;
+    }
+    try {
+      return CoreStatus.fromJson(jsonDecode(value) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void resetTraffic() {
     clashInterface.resetTraffic();
   }
