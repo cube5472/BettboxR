@@ -12,6 +12,7 @@ import 'package:bett_box/widgets/widgets.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------- Пресеты DNS (порт «Шаг 1: DNS» веб-генератора) ----------------
 // Значения пресетов 1:1 из https://github.com/cube5472/RKN-gen-mihomo
@@ -25,6 +26,15 @@ const String _kDnsPresetCustom = 'custom';
 const String _kFieldDefaultNs = 'defaultNameserver';
 const String _kFieldNameserver = 'nameserver';
 const String _kFieldProxyNs = 'proxyServerNameserver';
+
+// Ключи SharedPreferences: шаблоны настроек генератора («Мой вариант 1» и
+// т.п.) и реестр профилей, созданных генератором (для «перегенерировать
+// и заменить» — чтобы трогать только свои профили, а не чужие подписки).
+const String _kPrefsTemplatesKey = 'bb.generator.templates.v1';
+const String _kPrefsProfileIdsKey = 'bb.generator.profileIds.v1';
+
+// Плейсхолдер выпадающего списка шаблонов.
+const String _kNoTemplateLabel = '— Выберите шаблон —';
 
 class _DnsPreset {
   final String key;
@@ -150,6 +160,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   List<String> _problems = const [];
   List<String> _pendingUrls = const [];
   String _lastParsedText = '';
+
+  // Шаблоны настроек генератора (галочки/DNS/правила, без ссылок и прокси).
+  final List<Map<String, dynamic>> _templates = [];
+  String? _selectedTemplateName;
   Timer? _debounce;
 
   @override
@@ -161,6 +175,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _servicePresets['youtube'] = true;
     _cdnPresets = {for (final key in kCdnRules.keys) key: false};
     _linksController.addListener(_onLinksChanged);
+    _loadTemplates();
   }
 
   @override
@@ -464,50 +479,16 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   }
 
   Future<void> _createProfile() async {
-    if (_providerMode && _providerUrlController.text.trim().isEmpty) {
-      _showError('Укажите URL подписки в разделе 7 (режим provider).');
-      return;
-    }
-    if (!_providerMode && _proxies.isEmpty) {
-      _showError(
-        'Нет прокси: вставьте ссылки или URL подписки в раздел 1 '
-        'и нажмите «Разобрать».',
-      );
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
       return;
     }
     final loading = ref.read(loadingProvider.notifier);
     loading.value = true;
     String yaml;
     try {
-      yaml = buildConfig(
-        GeneratorParams(
-          urlTest: _urlTestController.text,
-          defaultNameserver: _defaultNsController.text,
-          nameserver: _nameserverController.text,
-          proxyServerNameserver: _proxyNsController.text,
-          mtu: _mtuController.text.trim(),
-          providerMode: _providerMode,
-          providerUrl: _providerUrlController.text,
-          providerInterval:
-              int.tryParse(_providerIntervalController.text) ?? 86400,
-          proxies: _proxies,
-          chains: _chains,
-          providerSets: _providerSets.entries
-              .where((e) => e.value)
-              .map((e) => e.key)
-              .toList(),
-          servicePresets: _servicePresets.entries
-              .where((e) => e.value)
-              .map((e) => e.key)
-              .toList(),
-          cdnPresets: _cdnPresets.entries
-              .where((e) => e.value)
-              .map((e) => e.key)
-              .toList(),
-          ruUnblock: _ruUnblock,
-          customRules: _parseCustomRules(),
-        ),
-      );
+      yaml = _buildYamlConfig();
     } on Object catch (e) {
       if (!mounted) return;
       await globalState.showMessage(
@@ -534,6 +515,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         label: label,
       ).saveFileWithString(yaml);
       await globalState.appController.addProfile(profile);
+      await _rememberGeneratorProfile(profile.id);
       if (!mounted) return;
       await globalState.showMessage(
         title: 'Генератор BettboxR',
@@ -562,6 +544,321 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         '${now.month.toString().padLeft(2, '0')} '
         '${now.hour.toString().padLeft(2, '0')}:'
         '${now.minute.toString().padLeft(2, '0')}';
+  }
+
+  // ---------------- Форма: валидация и сборка ----------------
+
+  String? _validateForm() {
+    if (_providerMode && _providerUrlController.text.trim().isEmpty) {
+      return 'Укажите URL подписки в разделе 7 (режим provider).';
+    }
+    if (!_providerMode && _proxies.isEmpty) {
+      return 'Нет прокси: вставьте ссылки или URL подписки в раздел 1 '
+          'и нажмите «Разобрать».';
+    }
+    return null;
+  }
+
+  String _buildYamlConfig() {
+    return buildConfig(
+      GeneratorParams(
+        urlTest: _urlTestController.text,
+        defaultNameserver: _defaultNsController.text,
+        nameserver: _nameserverController.text,
+        proxyServerNameserver: _proxyNsController.text,
+        mtu: _mtuController.text.trim(),
+        providerMode: _providerMode,
+        providerUrl: _providerUrlController.text,
+        providerInterval:
+            int.tryParse(_providerIntervalController.text) ?? 86400,
+        proxies: _proxies,
+        chains: _chains,
+        providerSets: _providerSets.entries
+            .where((e) => e.value)
+            .map((e) => e.key)
+            .toList(),
+        servicePresets: _servicePresets.entries
+            .where((e) => e.value)
+            .map((e) => e.key)
+            .toList(),
+        cdnPresets: _cdnPresets.entries
+            .where((e) => e.value)
+            .map((e) => e.key)
+            .toList(),
+        ruUnblock: _ruUnblock,
+        customRules: _parseCustomRules(),
+      ),
+    );
+  }
+
+  // ---------------- Шаблоны генератора ----------------
+
+  Future<SharedPreferences?> _prefs() =>
+      Preferences().sharedPreferencesCompleter.future;
+
+  Future<void> _loadTemplates() async {
+    try {
+      final prefs = await _prefs();
+      final raw = prefs?.getStringList(_kPrefsTemplatesKey) ?? const [];
+      final loaded = <Map<String, dynamic>>[];
+      for (final item in raw) {
+        try {
+          final decoded = jsonDecode(item);
+          if (decoded is Map<String, dynamic> &&
+              decoded['name'] is String &&
+              decoded['data'] is Map) {
+            loaded.add(decoded);
+          }
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      setState(() {
+        _templates
+          ..clear()
+          ..addAll(loaded);
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _persistTemplates() async {
+    try {
+      final prefs = await _prefs();
+      await prefs?.setStringList(
+        _kPrefsTemplatesKey,
+        _templates.map(jsonEncode).toList(),
+      );
+    } catch (_) {}
+  }
+
+  Map<String, dynamic> _currentTemplateData() {
+    return <String, dynamic>{
+      'urlTest': _urlTestController.text,
+      'defaultNameserver': _defaultNsController.text,
+      'nameserver': _nameserverController.text,
+      'proxyServerNameserver': _proxyNsController.text,
+      'mtu': _mtuController.text,
+      'providerMode': _providerMode,
+      'providerUrl': _providerUrlController.text,
+      'providerInterval': _providerIntervalController.text,
+      'ruUnblock': _ruUnblock,
+      'providerSets': _providerSets.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      'servicePresets': _servicePresets.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      'cdnPresets':
+          _cdnPresets.entries.where((e) => e.value).map((e) => e.key).toList(),
+      'customRules': _customRulesController.text,
+    };
+  }
+
+  void _applyTemplateData(Map<String, dynamic> data) {
+    setState(() {
+      _urlTestController.text = data['urlTest']?.toString() ?? '';
+      _defaultNsController.text = data['defaultNameserver']?.toString() ?? '';
+      _nameserverController.text = data['nameserver']?.toString() ?? '';
+      _proxyNsController.text =
+          data['proxyServerNameserver']?.toString() ?? '';
+      _mtuController.text = data['mtu']?.toString() ?? '';
+      _providerMode = data['providerMode'] == true;
+      _providerUrlController.text = data['providerUrl']?.toString() ?? '';
+      _providerIntervalController.text =
+          data['providerInterval']?.toString() ?? '86400';
+      _ruUnblock = data['ruUnblock'] is bool ? data['ruUnblock'] as bool : true;
+      final providerSets = {
+        if (data['providerSets'] is List)
+          ...(data['providerSets'] as List).whereType<String>(),
+      };
+      final servicePresets = {
+        if (data['servicePresets'] is List)
+          ...(data['servicePresets'] as List).whereType<String>(),
+      };
+      final cdnPresets = {
+        if (data['cdnPresets'] is List)
+          ...(data['cdnPresets'] as List).whereType<String>(),
+      };
+      _providerSets.updateAll((key, _) => providerSets.contains(key));
+      _servicePresets.updateAll((key, _) => servicePresets.contains(key));
+      _cdnPresets.updateAll((key, _) => cdnPresets.contains(key));
+      _customRulesController.text = data['customRules']?.toString() ?? '';
+      for (final field in const [
+        _kFieldDefaultNs,
+        _kFieldNameserver,
+        _kFieldProxyNs,
+      ]) {
+        _dnsSelection[field] = _dnsKeyForText(_dnsControllerFor(field).text);
+      }
+    });
+  }
+
+  Future<void> _saveTemplateAs() async {
+    final suggested = 'Мой вариант ${_templates.length + 1}';
+    final name = await globalState.showCommonDialog<String>(
+      dismissible: false,
+      child: _TemplateNameDialog(suggestedName: suggested),
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty || !mounted) return;
+    setState(() {
+      _templates.removeWhere((t) => t['name'] == trimmed);
+      _templates.add({'name': trimmed, 'data': _currentTemplateData()});
+      _selectedTemplateName = trimmed;
+    });
+    await _persistTemplates();
+    if (!mounted) return;
+    context.showNotifier('Шаблон «$trimmed» сохранён');
+  }
+
+  void _onTemplateSelected(String? name) {
+    if (name == null || name == _selectedTemplateName) return;
+    Map<String, dynamic>? tpl;
+    for (final item in _templates) {
+      if (item['name'] == name) {
+        tpl = item;
+        break;
+      }
+    }
+    if (tpl == null) return;
+    _applyTemplateData(Map<String, dynamic>.from(tpl['data'] as Map));
+    setState(() {
+      _selectedTemplateName = name;
+    });
+    context.showNotifier('Шаблон «$name» применён');
+  }
+
+  Future<void> _deleteSelectedTemplate() async {
+    final name = _selectedTemplateName;
+    if (name == null) return;
+    setState(() {
+      _templates.removeWhere((t) => t['name'] == name);
+      _selectedTemplateName = null;
+    });
+    await _persistTemplates();
+    if (!mounted) return;
+    context.showNotifier('Шаблон «$name» удалён');
+  }
+
+  Widget _templateControls() {
+    final items = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(
+        value: '',
+        child: Text(
+          _kNoTemplateLabel,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      for (final tpl in _templates)
+        DropdownMenuItem(
+          value: tpl['name'] as String,
+          child: Text(
+            tpl['name'] as String,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+    ];
+    return Row(
+      children: [
+        Expanded(
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Сохранённые шаблоны',
+              border: OutlineInputBorder(),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedTemplateName ?? '',
+              isExpanded: true,
+              isDense: true,
+              underline: const SizedBox.shrink(),
+              items: items,
+              onChanged: _onTemplateSelected,
+            ),
+          ),
+        ),
+        IconButton(
+          tooltip: 'Сохранить текущие настройки как шаблон',
+          onPressed: _saveTemplateAs,
+          icon: const Icon(Icons.bookmark_add_outlined),
+        ),
+        IconButton(
+          tooltip: 'Удалить выбранный шаблон',
+          onPressed: _selectedTemplateName == null
+              ? null
+              : _deleteSelectedTemplate,
+          icon: const Icon(Icons.bookmark_remove_outlined),
+        ),
+      ],
+    );
+  }
+
+  // ---------------- Перегенерация существующего профиля ----------------
+
+  Future<List<String>> _readGeneratorProfileIds() async {
+    try {
+      final prefs = await _prefs();
+      return prefs?.getStringList(_kPrefsProfileIdsKey) ?? const <String>[];
+    } catch (_) {
+      return const <String>[];
+    }
+  }
+
+  Future<void> _rememberGeneratorProfile(String id) async {
+    try {
+      final prefs = await _prefs();
+      final ids = prefs?.getStringList(_kPrefsProfileIdsKey) ?? <String>[];
+      if (!ids.contains(id)) {
+        await prefs?.setStringList(_kPrefsProfileIdsKey, [...ids, id]);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _updateExistingProfile() async {
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
+      return;
+    }
+    final ids = await _readGeneratorProfileIds();
+    if (!mounted) return;
+    final candidates = ref
+        .read(profilesProvider)
+        .where((p) => ids.contains(p.id))
+        .toList();
+    if (candidates.isEmpty) {
+      _showError('Нет профилей, созданных генератором. Сначала создайте '
+          'профиль кнопкой «Создать профиль в BettboxR».');
+      return;
+    }
+    final target = await globalState.showCommonDialog<Profile>(
+      dismissible: false,
+      child: _ProfilePickDialog(candidates: candidates),
+    );
+    if (target == null || !mounted) return;
+    final loading = ref.read(loadingProvider.notifier);
+    loading.value = true;
+    try {
+      final yaml = _buildYamlConfig();
+      // Тот же ID и то же имя: saveFileWithString пишет в файл этого
+      // профиля (с валидацией ядром), выбранные ноды/скрипты/оверрайды
+      // остаются у профиля. Активный профиль применится автоматически.
+      final updated = await target.saveFileWithString(yaml);
+      globalState.appController.setProfileAndAutoApply(updated);
+      if (!mounted) return;
+      context.showNotifier(
+        'Профиль «${target.label ?? target.id}» обновлён',
+      );
+    } on Object catch (e) {
+      if (!mounted) return;
+      await globalState.showMessage(
+        title: 'Генератор BettboxR',
+        message: TextSpan(text: '$e'),
+        cancelable: false,
+      );
+    } finally {
+      loading.value = false;
+    }
   }
 
   void _showError(String message) {
@@ -1017,18 +1314,46 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             ),
           ),
         ]),
+        _section('9. Шаблон', [
+          Text(
+            'Сохраните текущие галочки, DNS и настройки как шаблон и '
+            'применяйте одним тапом. Ссылки и прокси в шаблон не входят.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).hintColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _templateControls(),
+        ]),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-            ),
-            onPressed: _createProfile,
-            icon: const Icon(Icons.rocket_launch),
-            label: const Text(
-              'Создать профиль в BettboxR',
-              style: TextStyle(fontSize: 16),
-            ),
+          child: Column(
+            children: [
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                onPressed: _createProfile,
+                icon: const Icon(Icons.rocket_launch),
+                label: const Text(
+                  'Создать профиль в BettboxR',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
+                onPressed: _updateExistingProfile,
+                icon: const Icon(Icons.autorenew),
+                label: const Text(
+                  'Обновить профиль из генератора',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -1088,6 +1413,132 @@ class _ProfileNameDialogState extends State<_ProfileNameDialog> {
           labelText: 'Имя',
           counterText: '',
         ),
+      ),
+    );
+  }
+}
+
+// Диалог названия шаблона генератора: предложено «Мой вариант N»,
+// его можно заменить; пустое значение подменяется предложенным.
+class _TemplateNameDialog extends StatefulWidget {
+  final String suggestedName;
+
+  const _TemplateNameDialog({required this.suggestedName});
+
+  @override
+  State<_TemplateNameDialog> createState() => _TemplateNameDialogState();
+}
+
+class _TemplateNameDialogState extends State<_TemplateNameDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.suggestedName,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: 'Название шаблона',
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Отмена'),
+        ),
+        TextButton(
+          onPressed: () {
+            final text = _controller.text.trim();
+            Navigator.of(
+              context,
+            ).pop(text.isEmpty ? widget.suggestedName : text);
+          },
+          child: const Text('Сохранить'),
+        ),
+      ],
+      child: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 40,
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          labelText: 'Название',
+          counterText: '',
+        ),
+      ),
+    );
+  }
+}
+
+// Диалог выбора профиля для перегенерации: список профилей, ранее
+// созданных генератором. Выбранный профиль получит новый конфиг с теми
+// же именем и ID.
+class _ProfilePickDialog extends StatefulWidget {
+  final List<Profile> candidates;
+
+  const _ProfilePickDialog({required this.candidates});
+
+  @override
+  State<_ProfilePickDialog> createState() => _ProfilePickDialogState();
+}
+
+class _ProfilePickDialogState extends State<_ProfilePickDialog> {
+  late String _selectedId = widget.candidates.first.id;
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: 'Обновить профиль',
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Отмена'),
+        ),
+        TextButton(
+          onPressed: () {
+            for (final profile in widget.candidates) {
+              if (profile.id == _selectedId) {
+                Navigator.of(context).pop(profile);
+                return;
+              }
+            }
+          },
+          child: const Text('Обновить'),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Конфиг будет перегенерирован из текущих настроек формы. '
+            'Имя и ID профиля сохранятся, содержимое заменится.',
+            style: TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          for (final profile in widget.candidates)
+            RadioListTile<String>(
+              value: profile.id,
+              groupValue: _selectedId,
+              contentPadding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedId = value;
+                  });
+                }
+              },
+              title: EmojiText(
+                profile.label ?? profile.id,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
       ),
     );
   }
