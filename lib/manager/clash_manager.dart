@@ -7,6 +7,7 @@ import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/app.dart';
 import 'package:bett_box/providers/config.dart';
 import 'package:bett_box/providers/state.dart';
+import 'package:bett_box/services/dns_stats.dart';
 import 'package:bett_box/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,10 +67,29 @@ class _ClashContainerState extends ConsumerState<ClashManager>
         clashCore.stopLog();
       }
     });
+
+    // DNS-статистика: синхронизация флага в провайдер (тянет за собой
+    // updateParamsProvider → на лету патчит log-level ядра) и включение/
+    // выключение потока логов независимо от настройки «Вести логи».
+    ref.read(dnsStatsEnabledProvider.notifier).state = dnsStats.enabled;
+    dnsStats.addListener(_handleDnsStatsChanged);
+  }
+
+  void _handleDnsStatsChanged() {
+    final enabled = dnsStats.enabled;
+    if (ref.read(dnsStatsEnabledProvider) != enabled) {
+      ref.read(dnsStatsEnabledProvider.notifier).state = enabled;
+    }
+    if (enabled) {
+      clashCore.startLog();
+    } else if (!ref.read(appSettingProvider).openLogs) {
+      clashCore.stopLog();
+    }
   }
 
   @override
   Future<void> dispose() async {
+    dnsStats.removeListener(_handleDnsStatsChanged);
     clashMessage.removeListener(this);
     super.dispose();
   }
@@ -87,6 +107,7 @@ class _ClashContainerState extends ConsumerState<ClashManager>
   @override
   void onLog(Log log) {
     ref.read(logsProvider.notifier).addLog(log);
+    dnsStats.handleLog(log.payload);
     if (log.logLevel == LogLevel.error) {
       globalState.showNotifier(log.payload);
     }

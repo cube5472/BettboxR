@@ -19,6 +19,7 @@ import 'package:bett_box/views/config/ntp.dart';
 import 'package:bett_box/views/config/sniffer.dart';
 import 'package:bett_box/views/config/tunnel.dart';
 import 'package:bett_box/views/connection/connections.dart';
+import 'package:bett_box/views/dns_stats.dart';
 import 'package:bett_box/views/generator_view.dart';
 import 'package:bett_box/views/hotkey.dart';
 import 'package:bett_box/views/other_setting.dart';
@@ -1099,6 +1100,13 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         category: dnsCategory,
         onTap: (context, _) => _pushPage(context, 'DNS', const DnsListView()),
       ),
+      _SearchItem(
+        title: 'DNS-статистика',
+        subtitle: 'Серверы, кэш, ошибки, топ-домены',
+        category: dnsCategory,
+        onTap: (context, _) =>
+            _pushPage(context, 'DNS-статистика', const DnsStatsView()),
+      ),
     ]);
 
     final ntpCategory = '$configCategory/NTP';
@@ -1381,6 +1389,11 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         title: 'Генератор',
         items: const [_GeneratorItem()],
       ),
+      _buildModernSection(
+        context,
+        title: 'Диагностика',
+        items: const [_DnsStatsItem()],
+      ),
       if (system.isAndroid)
         _buildModernSection(
           context,
@@ -1458,6 +1471,25 @@ class _GeneratorItem extends StatelessWidget {
       delegate: NextDelegate(
         title: 'Генератор BettboxR',
         builder: (_) => const GeneratorView(),
+      ),
+    );
+  }
+}
+
+class _DnsStatsItem extends StatelessWidget {
+  const _DnsStatsItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.next(
+      leading: const Icon(Icons.dns_outlined),
+      title: const Text('DNS-статистика'),
+      subtitle: const Text(
+        'Кто отвечает на DNS-запросы: серверы, кэш, ошибки, топ-домены',
+      ),
+      delegate: NextDelegate(
+        title: 'DNS-статистика',
+        builder: (_) => const DnsStatsView(),
       ),
     );
   }

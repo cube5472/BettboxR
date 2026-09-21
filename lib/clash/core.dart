@@ -8,6 +8,7 @@ import 'package:bett_box/clash/interface.dart';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
+import 'package:bett_box/services/dns_stats.dart';
 import 'package:bett_box/state.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
@@ -54,7 +55,7 @@ class ClashCore {
 
   Future<bool> init() async {
     await initGeo();
-    if (globalState.config.appSetting.openLogs) {
+    if (globalState.config.appSetting.openLogs || dnsStats.enabled) {
       clashCore.startLog();
     } else {
       clashCore.stopLog();
@@ -128,11 +129,8 @@ class ClashCore {
       final groupNames = [
         UsedProxy.GLOBAL.name,
         ...allList.where((e) {
-          final proxy = allProxies[e];
-          if (proxy is Map) {
-            return GroupTypeExtension.valueList.contains(proxy['type']);
-          }
-          return false;
+          final proxy = allProxies[e] as Map<String, dynamic>?;
+          return GroupTypeExtension.valueList.contains(proxy?['type']);
         }),
       ];
       final groupsRaw = groupNames.map((groupName) {
@@ -142,10 +140,7 @@ class ClashCore {
           proxyData.cast<String, dynamic>(),
         );
         group['all'] = ((group['all'] ?? []) as List)
-            .map((name) {
-              final p = allProxies[name];
-              return p is Map ? Map<String, dynamic>.from(p) : null;
-            })
+            .map((name) => allProxies[name])
             .whereType<Map<String, dynamic>>()
             .toList();
         return group;
@@ -277,14 +272,7 @@ class ClashCore {
     final profilePath = await appPath.getProfilePath(id);
     final res = await clashInterface.getConfig(profilePath, ageSecretKey: ageSecretKey);
     if (res.isSuccess) {
-      final data = res.data;
-      if (data is Map<String, dynamic>) {
-        return data;
-      }
-      if (data is Map) {
-        return Map<String, dynamic>.from(data);
-      }
-      return <String, dynamic>{};
+      return res.data as Map<String, dynamic>;
     } else {
       throw res.message;
     }
@@ -330,18 +318,6 @@ class ClashCore {
       return 0;
     }
     return int.parse(value);
-  }
-
-  Future<CoreStatus?> getCoreStatus() async {
-    final value = await clashInterface.getCoreStatus();
-    if (value.isEmpty) {
-      return null;
-    }
-    final decoded = json.decode(value);
-    if (decoded is! Map) {
-      return null;
-    }
-    return CoreStatus.fromJson(Map<String, dynamic>.from(decoded));
   }
 
   void resetTraffic() {

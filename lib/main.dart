@@ -8,6 +8,7 @@ import 'package:bett_box/plugins/app.dart';
 import 'package:bett_box/plugins/clipboard_ext.dart';
 import 'package:bett_box/plugins/tile.dart';
 import 'package:bett_box/plugins/vpn.dart';
+import 'package:bett_box/services/dns_stats.dart';
 import 'package:bett_box/state.dart';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
@@ -236,7 +237,10 @@ Future<void> _service(List<String> flags) async {
           await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
         }
 
-        if (globalState.config.appSetting.openLogs) {
+        // DNS-статистика требует поток логов даже при выключенном «Вести логи»;
+        // флаг перечитываем — UI-изолят мог переключить его после старта сервиса.
+        await dnsStats.reloadEnabled();
+        if (globalState.config.appSetting.openLogs || dnsStats.enabled) {
           await clashLibHandler.invokeAction(
             '{"id": "quickStartLog", "method": "startLog"}',
           );
