@@ -1386,6 +1386,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Queries go to the ISP DNS — a leak",
     ),
     "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage("DoT probe (Quad9)"),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT reachable"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT unreachable (TCP 853/TLS)",
+    ),
     "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
       "No IPv6 in the network — nothing to leak",
     ),

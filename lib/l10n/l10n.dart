@@ -6278,6 +6278,36 @@ class AppLocalizations {
     );
   }
 
+  /// `DoT probe (Quad9)`
+  String get stealthDotTitle {
+    return Intl.message(
+      'DoT probe (Quad9)',
+      name: 'stealthDotTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DoT reachable`
+  String get stealthDotOk {
+    return Intl.message(
+      'DoT reachable',
+      name: 'stealthDotOk',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DoT unreachable (TCP 853/TLS)`
+  String get stealthDotBad {
+    return Intl.message(
+      'DoT unreachable (TCP 853/TLS)',
+      name: 'stealthDotBad',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `No IPv6 in the network — nothing to leak`
   String get stealthIpv6OkNoV6 {
     return Intl.message(

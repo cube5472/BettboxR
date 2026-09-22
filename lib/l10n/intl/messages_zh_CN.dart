@@ -1008,6 +1008,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "查询流向运营商 DNS —— 存在泄露",
     ),
     "stealthDnsFail": MessageLookupByLibrary.simpleMessage("无法检测"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage("DoT 检测 (Quad9)"),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT 可用"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT 不可用 (TCP 853/TLS)",
+    ),
     "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
       "网络没有 IPv6 —— 无从泄露",
     ),

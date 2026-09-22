@@ -1445,6 +1445,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Запросы уходят к DNS провайдера — утечка",
     ),
     "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Не удалось проверить"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage("DoT-проба (Quad9)"),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT доступен"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT недоступен (TCP 853/TLS)",
+    ),
     "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
       "IPv6 в сети отсутствует — нечему утекать",
     ),
