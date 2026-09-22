@@ -1161,7 +1161,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             contentPadding: EdgeInsets.zero,
             title: const Text('Разблокировка заблокированных RU-ресурсов'),
             subtitle: const Text(
-              'oisd_big, re-filter, ru-inline-banned, inline-blocked-ips',
+              're-filter, ru-inline-banned, inline-blocked-ips',
             ),
             value: _ruUnblock,
             onChanged: (checked) {

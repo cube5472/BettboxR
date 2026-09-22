@@ -2154,7 +2154,8 @@ String buildConfig(GeneratorParams p) {
 
   // --- rule-providers и правила (категорный универсальный набор) ---
   // Провайдеры набираются из включённых категорий/пресетов; правила
-  // добавляются в жёстком порядке (kCategoryOrder) и ссылаться могут
+  // добавляются в жёстком порядке (категории по kCategoryOrder, пресеты
+  // сервисов — между «играми» и «ru», см. ниже) и ссылаться могут
   // только на уже добавленных провайдеров.
   final ruleProviders = <String, dynamic>{};
   void addProviders(Iterable<dynamic> names) {
@@ -2189,9 +2190,9 @@ String buildConfig(GeneratorParams p) {
       activeRules,
     );
   }
-  // 2) Включённые категории — в жёстком порядке.
+  // 2) Включённые категории — в жёстком порядке, кроме «ru».
   for (final key in kCategoryOrder) {
-    if (key == 'base') continue;
+    if (key == 'base' || key == 'ru') continue;
     if (!p.ruleCategories.contains(key)) continue;
     final category = kRuleCategories[key];
     if (category == null) continue;
@@ -2201,18 +2202,32 @@ String buildConfig(GeneratorParams p) {
       activeRules,
     );
   }
-  // 3) Обход блокировок RU.
-  if (p.ruUnblock) {
-    addProviders((kRuUnblock['providers'] as List<dynamic>?) ?? const []);
-    addRules((kRuUnblock['rules'] as List<dynamic>?) ?? const [], activeRules);
-  }
-  // 4) Пресеты сервисов и CDN: несут своих провайдеров и правила.
+  // 3) Пресеты сервисов — ОБЯЗАТЕЛЬНО до категории «ru»: их правила
+  //    (пуши Apple/FCM из пресета «Ghostline») иначе перехватываются
+  //    RULE-SET,apple,DIRECT и становятся мёртвыми.
   for (final name in p.servicePresets) {
     final preset = kServiceRules[name];
     if (preset == null) continue;
     addProviders((preset['providers'] as List<dynamic>?) ?? const []);
     addRules((preset['rules'] as List<dynamic>?) ?? const [], activeRules);
   }
+  // 4) Категория «ru» — RU-сервисы и RU-домены напрямую.
+  if (p.ruleCategories.contains('ru')) {
+    final ruCategory = kRuleCategories['ru'];
+    if (ruCategory != null) {
+      addProviders((ruCategory['providers'] as List<dynamic>?) ?? const []);
+      addRules(
+        (ruCategory['rules'] as List<dynamic>?) ?? const [],
+        activeRules,
+      );
+    }
+  }
+  // 5) Обход блокировок RU.
+  if (p.ruUnblock) {
+    addProviders((kRuUnblock['providers'] as List<dynamic>?) ?? const []);
+    addRules((kRuUnblock['rules'] as List<dynamic>?) ?? const [], activeRules);
+  }
+  // 6) CDN-пресеты: несут своих провайдеров и правила.
   for (final name in p.cdnPresets) {
     final preset = kCdnRules[name];
     if (preset == null) continue;
