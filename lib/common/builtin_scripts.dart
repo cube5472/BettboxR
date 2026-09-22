@@ -14,7 +14,7 @@ const String builtinSRuScript = r'''// Compatible_With_Bettbox
 //
 // Зачем нужен:
 //  1) «Правила маршрутизации (s-ru)» — подставляет полный набор правил:
-//     реклама и шпионские домены в блок, RU-сервисы напрямую, Discord /
+//     реклама, шпионаж и списки oisd в блок, RU-сервисы напрямую, Discord /
 //     YouTube / игры / AI и заблокированное — через VPN. Правила ставятся,
 //     если в профиле есть все нужные ГРУППЫ. Отсутствующие rule-providers
 //     не роняют схему: критичные списки (приватные диапазоны, RU-направляющие)
@@ -78,6 +78,7 @@ var S_RU_RULES = [
   'RULE-SET,private-domains,DIRECT',
   'RULE-SET,category-ads,REJECT-DROP',
   'RULE-SET,win-spy,REJECT-DROP',
+  'RULE-SET,oisd_big,REJECT-DROP',
   'RULE-SET,torrent-domains,DIRECT',
   'RULE-SET,google-play,PROXY',
   'RULE-SET,twitch-ads,PROXY',
@@ -124,7 +125,6 @@ var S_RU_RULES = [
   'IP-CIDR,54.0.0.0/8,PROXY',
   'IP-CIDR,23.235.32.0/20,PROXY',
   'IP-CIDR,43.249.72.0/22,PROXY',
-  'RULE-SET,oisd_big,PROXY',
   'RULE-SET,refilter_domains,PROXY',
   'RULE-SET,ru-inline-banned,PROXY',
   'RULE-SET,inline-blocked-ips,PROXY',
@@ -577,7 +577,9 @@ const String builtinRFBSScript = r'''// Compatible_With_Bettbox
 //     правил схемы ПЕРЕД правилами профиля: приватные адреса, весь IPv6 и
 //     (по чекбоксу) QUIC в блок; RU-сервисы и белый список РКН — напрямую;
 //     заблокированное (Telegram/YouTube/Discord/AI/Cloudflare/соцсети и пр.)
-//     — через PROXY. 50 нужных rule-providers скрипт добавляет в профиль
+//     — через PROXY; пуши Apple/FCM (DST-PORT 5223, push.apple.com, FCM) —
+//     тоже PROXY и обязательно ДО apple DIRECT (иначе мёртвые).
+//     50 нужных rule-providers скрипт добавляет в профиль
 //     сам (roscomvpn-geosite и др.); провайдер профиля с тем же именем
 //     заменяется — схема самодостаточна. На первый старт ядра нужна
 //     доступность источников списков (cdn.jsdelivr.net/github), дальше они
@@ -621,6 +623,7 @@ var RF_BS_RULES = [
   "RULE-SET,private-domains,DIRECT",
   "RULE-SET,category-ads,REJECT-DROP",
   "RULE-SET,win-spy,REJECT-DROP",
+  "RULE-SET,oisd_big,REJECT-DROP",
   "RULE-SET,torrent-domains,DIRECT",
   "RULE-SET,google-play,PROXY",
   "RULE-SET,twitch-ads,PROXY",
@@ -633,6 +636,11 @@ var RF_BS_RULES = [
   "RULE-SET,escapefromtarkov,🎮 Игры",
   "RULE-SET,steam,🎮 Игры",
   "RULE-SET,faceit,🎮 Игры",
+  "DST-PORT,5223,PROXY",
+  "DOMAIN-SUFFIX,push.apple.com,PROXY",
+  "DOMAIN-SUFFIX,mtalk.google.com,PROXY",
+  "DOMAIN-SUFFIX,identity.apple.com,PROXY",
+  "DOMAIN-SUFFIX,deviceenrollment.apple.com,PROXY",
   "RULE-SET,twitch,DIRECT",
   "RULE-SET,microsoft,DIRECT",
   "RULE-SET,apple,DIRECT",
@@ -669,11 +677,6 @@ var RF_BS_RULES = [
   "DOMAIN-SUFFIX,facebook.com,PROXY",
   "RULE-SET,whatsapp-domains,PROXY",
   "DOMAIN-KEYWORD,bittorrent,DIRECT",
-  "DST-PORT,5223,PROXY",
-  "DOMAIN-SUFFIX,push.apple.com,PROXY",
-  "DOMAIN-SUFFIX,mtalk.google.com,PROXY",
-  "DOMAIN-SUFFIX,identity.apple.com,PROXY",
-  "DOMAIN-SUFFIX,deviceenrollment.apple.com,PROXY",
   "RULE-SET,cloudflare-ips,PROXY",
   "RULE-SET,cloudflare-domains,PROXY",
   "IP-CIDR,23.0.0.0/12,PROXY",
@@ -682,7 +685,6 @@ var RF_BS_RULES = [
   "IP-CIDR,54.0.0.0/8,PROXY",
   "IP-CIDR,23.235.32.0/20,PROXY",
   "IP-CIDR,43.249.72.0/22,PROXY",
-  "RULE-SET,oisd_big,PROXY",
   "RULE-SET,refilter_domains,PROXY",
   "RULE-SET,ru-inline-banned,PROXY",
   "RULE-SET,inline-blocked-ips,PROXY",
@@ -810,6 +812,13 @@ var RF_BS_OUR_STRINGS = (function () {
   for (var i = 0; i < RF_BS_RULES.length; i++) {
     map[RF_BS_RULES[i]] = true;
     map[_resolveRule(RF_BS_RULES[i], {})] = true;
+  }
+  // Строки прежних версий схемы — чтобы повторное применение снимало и их
+  // (oisd_big был PROXY в хвосте до переноса в блок рекламы).
+  var legacy = ["RULE-SET,oisd_big,PROXY"];
+  for (var j = 0; j < legacy.length; j++) {
+    map[legacy[j]] = true;
+    map[_resolveRule(legacy[j], {})] = true;
   }
   return map;
 })();
