@@ -524,11 +524,12 @@ class AppController {
       _lastFlagCountryCode = countryCode;
       // Имя не распознано, но нода выбрана — запросим свежую IP-проверку,
       // чтобы фолбэк отражал реальную страну выхода (после проверки флаг
-      // перепостится слушателем в app_manager).
+      // перепостится слушателем в app_manager). startCheck уже дебаунсится
+      // через debouncer(FunctionTag.checkIp), повторные тики не штормят канал.
       if (byName == null &&
           nodeName.isNotEmpty &&
           vpn_service.service != null) {
-        addCheckIpDebounce();
+        detectionState.startCheck();
       }
     } catch (e) {
       commonPrint.log('syncNodeFlagNotification failed: $e');
