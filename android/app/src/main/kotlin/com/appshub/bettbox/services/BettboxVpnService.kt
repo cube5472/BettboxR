@@ -224,6 +224,12 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         val isSuspended = GlobalState.isSmartStopped
         val isHighPriority = GlobalState.isNotificationHighPriority
         ensureNotificationChannel(isSuspended, isHighPriority)
+        // Флаг страны выбранной ноды: восстановить из SharedPreferences ДО
+        // сборки уведомления — createBettboxNotificationBuilder читает код
+        // из GlobalState.nodeFlagCountryCode (smallIcon-буквы + largeIcon-флаг).
+        if (!isSuspended) {
+            NodeFlagNotification.restore(this)
+        }
         val (title, content) = notificationTitleAndContent(isSuspended)
 
         lastNotificationText = null
@@ -237,14 +243,6 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         val isFirstTime = !hasStartedForeground
         if (isFirstTime) {
             hasStartedForeground = true
-        }
-
-        // Флаг страны выбранной ноды: сервис мог подняться без открытого
-        // приложения (Always-on VPN после загрузки, рестарт процесса после
-        // свайпа из recents) — восстанавливаем тихое уведомление с флагом
-        // из SharedPreferences, пока Dart-код не начнёт слать актуальный.
-        if (!isSuspended) {
-            NodeFlagNotification.restore(this)
         }
 
         val pendingProfile = pendingSpeedProfile

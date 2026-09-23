@@ -624,6 +624,11 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     return@launch
                 }
                 NodeFlagNotification.update(context, countryCode, nodeName)
+                // Флаг живёт в ОСНОВНОМ уведомлении (smallIcon-буквы +
+                // largeIcon-цветной флаг) — пересобираем его с новым кодом.
+                (bettBoxService as? BettboxVpnService)?.resetNotificationBuilder()
+                (bettBoxService as? BettboxService)?.resetNotificationBuilder()
+                startForeground()
             }.onFailure {
                 android.util.Log.e("VpnPlugin", "updateNotificationFlag error: ${it.message}")
             }

@@ -1,7 +1,5 @@
 package com.appshub.bettbox.services
 
-import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.graphics.Bitmap
@@ -10,31 +8,34 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import com.appshub.bettbox.GlobalState
 
 /**
- * Второе тихое уведомление: страна выбранной ноды рядом с иконкой
- * приложения («кубиком») в статус-баре.
+ * Страна выбранной ноды в ОСНОВНОМ уведомлении BettboxR.
  *
- * ВАЖНО О ОГРАНИЧЕНИИ ANDROID: smallIcon в статус-баре всегда рендерится
- * как монохромная альфа-маска — цвета bitmap-иконки система выбрасывает.
- * Поэтому цветной флаг в статус-баре показать невозможно в принципе
- * (цветной bitmap даёт белый силуэт-прямоугольник — выглядит как мусор).
- * Компромисс:
- *  - статус-бар: белый силуэт ISO-кода страны («SE», «DE»), для
- *    неопределённой страны — силуэт «флажка на древке»;
- *  - шторка: цветной флаг страны как largeIcon + флаг-эмодзи в тексте
- *    («Bettbox • 🇩🇪 DE») — эмодзи и largeIcon рендерятся в цвете.
+ * С 2026.09 отдельного флаг-уведомления больше НЕТ — иконки флага встроены
+ * в основное VPN-уведомление (см. BaseServiceInterface.createBettboxNotificationBuilder):
+ *  - smallIcon (статус-бар): монохромный силуэт ISO-кода страны («SE», «DE»);
+ *    силуэт, потому что Android рендерит smallIcon как альфа-маску без цвета;
+ *  - largeIcon (шторка): цветной флаг страны вместо иконки приложения.
  *
- * Публичные точки входа — [update] (пустой код страны И пустое имя ноды
- * убирают уведомление; если нода есть, а страна не определена — постится
- * нейтральный «флажок», пока IP-проверка не уточнит страну) и [restore]
- * (восстановление при старте сервиса, когда приложение не открыто).
- * Сервис при остановке вызывает [cancel].
- * Внешний гейт «VPN запущен» — в VpnPlugin.handleUpdateNotificationFlag.
+ * Этот объект теперь отвечает только за:
+ *  - [update] — валидация кода от Dart, persist в SharedPreferences и
+ *    публикация в GlobalState.nodeFlagCountryCode;
+ *  - [restore] — чтение persist при старте сервиса (Always-on VPN после
+ *    загрузки, рестарт процесса), плюс уборка legacy-уведомления ID и
+ *    канала от старых сборок;
+ *  - [cancel] — сброс при остановке VPN (onRevoke/onDestroy сервисов);
+ *  - [FlagPainter] — программное рисование иконок.
+ *
+ * Внешний гейт «VPN запущен» — в VpnPlugin.handleUpdateNotificationFlag;
+ * после update он пересобирает основное уведомление.
  */
 object NodeFlagNotification {
+    /** ID legacy-отдельного уведомления — только для уборки со старых сборок. */
     const val ID = 30001
-    private const val CHANNEL_ID = "Bettbox_NodeFlag"
+    /** Канал legacy-уведомления — удаляется при первой возможности. */
+    private const val LEGACY_CHANNEL_ID = "Bettbox_NodeFlag"
     private const val PREFS = "bettbox_node_flag"
     private const val KEY_CODE = "countryCode"
     private const val KEY_NODE = "nodeName"
@@ -42,142 +43,74 @@ object NodeFlagNotification {
     @Volatile
     private var lastKey: String? = null
 
+    /**
+     * Новый код страны от Dart: валидация, persist, публикация в
+     * GlobalState. Само уведомление здесь НЕ постится — VpnPlugin после
+     * этого вызова пересобирает основное уведомление.
+     */
     fun update(context: Context?, countryCode: String?, nodeName: String?) {
         if (context == null) return
-        val manager =
-            context.getSystemService(NotificationManager::class.java) ?: return
-
         val code = countryCode?.trim()
             ?.uppercase()
             ?.takeIf { it.length == 2 && it.all { ch -> ch in 'A'..'Z' } }
         val name = nodeName?.trim()?.takeIf { it.isNotEmpty() }
 
-        if (code == null) {
-            // Страна не определена. Совсем без ноды флаг ни к чему —
-            // снимаем уведомление. А при ноде с «безликим» именем (личный
-            // VPS и т.п.) показываем нейтральный «флажок»: уведомление
-            // с флагом живёт всегда, а после IP-проверки Dart пришлёт
-            // реальный код страны.
-            if (name == null) {
-                cancel(context)
-                return
-            }
-            savePrefs(context, "", name)
-            val key = "?|$name"
-            if (key == lastKey) return
-            lastKey = key
-            post(context, manager, null, name)
+        if (code == null && name == null) {
+            // Совсем без ноды — гасим (иконки вернутся к дефолту приложения).
+            cancel(context)
             return
         }
 
         savePrefs(context, code, name)
-
-        val key = "$code|$name"
+        val key = "${code ?: "?"}|$name"
         if (key == lastKey) return
         lastKey = key
-
-        post(context, manager, code, name)
+        GlobalState.nodeFlagCountryCode = code
     }
 
     /**
-     * Восстановление флага при старте сервиса: рестарт процесса,
-     * Always-on VPN после загрузки, свайп приложения из recents —
-     * когда Dart-код ещё не запускался и постить флаг некому.
-     * Читает последнюю сохранённую пару (код страны, имя ноды) из
-     * SharedPreferences и постит уведомление заново. Пустой код страны
-     * (неопределённая страна) восстанавливается нейтральным «флажком».
+     * Восстановление при старте сервиса: рестарт процесса, Always-on VPN
+     * после загрузки, свайп приложения из recents — когда Dart-код ещё не
+     * запускался. Читает последнюю сохранённую пару из SharedPreferences в
+     * GlobalState — иконки флага подхватит createBettboxNotificationBuilder.
+     * Заодно убирает наследие старых сборок: отдельное уведомление ID и
+     * его канал.
      */
     fun restore(context: Context?) {
         if (context == null) return
+        val manager =
+            context.getSystemService(NotificationManager::class.java)
+        runCatching {
+            manager?.cancel(ID)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                manager?.deleteNotificationChannel(LEGACY_CHANNEL_ID)
+            }
+        }
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val code = prefs.getString(KEY_CODE, null)?.trim()
             ?.uppercase()
             ?.takeIf { it.length == 2 && it.all { ch -> ch in 'A'..'Z' } }
         val nodeName = prefs.getString(KEY_NODE, null)?.trim()?.takeIf { it.isNotEmpty() }
-        if (code == null && nodeName == null) return
-        val manager =
-            context.getSystemService(NotificationManager::class.java) ?: return
         lastKey = "${code ?: "?"}|$nodeName"
-        post(context, manager, code, nodeName)
+        GlobalState.nodeFlagCountryCode = code
     }
 
-    private fun post(
-        context: Context,
-        manager: NotificationManager,
-        code: String?,
-        nodeName: String?,
-    ) {
-        runCatching {
-            ensureChannel(context, manager)
-            // Статус-бар: монохромный силуэт ISO-кода («SE») или «флажок»;
-            // шторка: цветной флаг (largeIcon) + эмодзи в тексте.
-            val title = nodeName?.trim()?.takeIf { it.isNotEmpty() } ?: "Bettbox"
-            val text = if (code != null) "Bettbox • ${flagEmoji(code)} $code" else "Bettbox"
-            val notification = Notification.Builder(context, CHANNEL_ID)
-                .setSmallIcon(
-                    android.graphics.drawable.Icon.createWithBitmap(
-                        FlagPainter.paintSmall(code)
-                    )
-                )
-                .setLargeIcon(
-                    android.graphics.drawable.Icon.createWithBitmap(
-                        FlagPainter.paintLarge(code)
-                    )
-                )
-                .setContentTitle(title)
-                .setContentText(text)
-                .setOngoing(true)
-                .setShowWhen(false)
-                .setPriority(Notification.PRIORITY_LOW)
-                .setCategory(Notification.CATEGORY_SERVICE)
-                .build()
-            manager.notify(ID, notification)
-        }.onFailure {
-            android.util.Log.e("NodeFlagNotification", "update error: ${it.message}")
-        }
-    }
-
-    /** Флаг-эмодзи из ISO-кода («DE» → «🇩🇪») для цветного отображения в шторке. */
-    private fun flagEmoji(code: String): String {
-        val upper = code.trim().uppercase()
-        if (upper.length != 2 || !upper.all { it in 'A'..'Z' }) return ""
-        val sb = StringBuilder()
-        for (ch in upper) {
-            sb.append(String(Character.toChars(0x1F1E6 + (ch - 'A'))))
-        }
-        return sb.toString()
-    }
-
-    private fun savePrefs(context: Context, code: String, nodeName: String?) {
+    private fun savePrefs(context: Context, code: String?, nodeName: String?) {
         runCatching {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit()
-                .putString(KEY_CODE, code)
+                .putString(KEY_CODE, code ?: "")
                 .putString(KEY_NODE, nodeName?.trim()?.takeIf { it.isNotEmpty() } ?: "")
                 .apply()
         }
     }
 
     fun cancel(context: Context?) {
-        if (context == null) return
         lastKey = null
+        GlobalState.nodeFlagCountryCode = null
         runCatching {
-            context.getSystemService(NotificationManager::class.java)?.cancel(ID)
+            context?.getSystemService(NotificationManager::class.java)?.cancel(ID)
         }
-    }
-
-    private fun ensureChannel(context: Context, manager: NotificationManager) {
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Bettbox Node Flag",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            setShowBadge(false)
-            setSound(null, null)
-            enableVibration(false)
-        }
-        manager.createNotificationChannel(channel)
     }
 }
 
@@ -570,8 +503,9 @@ object FlagPainter {
     /**
      * SmallIcon для статус-бара (48x48, только альфа): Android рендерит
      * smallIcon как монохромную маску, поэтому рисуем белый силуэт —
-     * двухбуквенный ISO-код страны. Для неизвестной страны — силуэт
-     * «флажка на древке».
+     * двухбуквенный ISO-код страны. Буквы максимально крупные: стартуем
+     * с 46px и ужимаем по ширине канвы (любая пара знаков — «SE», «NW» —
+     * заполняет ~92% ширины). Для неизвестной страны — силуэт «флажка».
      */
     fun paintSmall(code: String?): Bitmap {
         val bitmap = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
@@ -582,13 +516,19 @@ object FlagPainter {
         }
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFFFFFFFF.toInt()
-            textSize = 30f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
         }
+        val text = code.uppercase()
+        paint.textSize = 46f
+        val width = paint.measureText(text)
+        val maxW = SIZE * 0.92f
+        if (width > maxW) {
+            paint.textSize = 46f * maxW / width
+        }
         val x = SIZE / 2f
         val y = SIZE / 2f - (paint.descent() + paint.ascent()) / 2f
-        canvas.drawText(code.uppercase(), x, y, paint)
+        canvas.drawText(text, x, y, paint)
         return bitmap
     }
 

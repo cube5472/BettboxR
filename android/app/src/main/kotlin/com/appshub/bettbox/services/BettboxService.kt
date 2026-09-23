@@ -75,6 +75,11 @@ class BettboxService : Service(), BaseServiceInterface {
         val isSuspended = GlobalState.isSmartStopped
         val isHighPriority = GlobalState.isNotificationHighPriority
         ensureNotificationChannel(isSuspended, isHighPriority)
+        // Флаг страны: восстановить из SharedPreferences ДО сборки уведомления
+        // (см. BettboxVpnService.startForeground).
+        if (!isSuspended) {
+            NodeFlagNotification.restore(this)
+        }
         val (title, content) = notificationTitleAndContent(isSuspended)
 
         val builder = createBettboxNotificationBuilder(isSuspended, isHighPriority)
@@ -89,12 +94,6 @@ class BettboxService : Service(), BaseServiceInterface {
             hasStartedForeground = true
         } else {
             getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
-        }
-
-        // Флаг страны выбранной ноды: восстановление после старта сервиса
-        // без открытого приложения (см. BettboxVpnService.startForeground).
-        if (!isSuspended) {
-            NodeFlagNotification.restore(this)
         }
     }
 
