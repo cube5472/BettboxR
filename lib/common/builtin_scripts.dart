@@ -70,9 +70,17 @@ var S_RU_DIRECT_SETS = ["category-ru", "ru-apps"];
 var S_RU_DIRECT_FALLBACK_RULE = "GEOIP,RU,DIRECT";
 
 // ---- Набор правил s-ru ----
+// Telegram-исключение (RULE-SET,telegram-ips → PROXY,no-resolve) стоит
+// ВЫШЕ IPv6-киллсвитча и QUIC-блока: звонки Telegram — UDP/443 на адреса
+// Telegram DC, без этого они режутся QUIC-блоком раньше телеграм-правила.
+// no-resolve: для доменных соединений правило пропускается без резолва
+// (резолв всё равно случится позже на direct-ips), звонки же идут
+// напрямую на IP — они матчатся всегда. Провайдера нет в профиле —
+// правило мягко пропустится (см. _applyRules).
 var S_RU_RULES = [
   'DOMAIN,api.ipify.org,🛡️ VPN',
   'RULE-SET,private-ips,DIRECT,no-resolve',
+  'RULE-SET,telegram-ips,PROXY,no-resolve',
   'IP-CIDR,::/0,REJECT-DROP,no-resolve',
   'AND,((NETWORK,UDP),(DST-PORT,443)),REJECT-DROP',
   'RULE-SET,private-domains,DIRECT',
@@ -103,7 +111,6 @@ var S_RU_RULES = [
   'RULE-SET,games,🎮 Игры',
   'RULE-SET,ru-apps,DIRECT',
   'RULE-SET,direct-ips,DIRECT',
-  'RULE-SET,telegram-ips,PROXY',
   'RULE-SET,telegram-domains,PROXY',
   'RULE-SET,discord_domains,PROXY',
   'RULE-SET,discord_voiceips,PROXY',
@@ -319,6 +326,10 @@ const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
 //  3) «Блокировать QUIC (UDP 443)» — запрещает HTTP/3: весь HTTPS идёт
 //     по TCP и одинаково проходит через туннель и правила. Бонус: на
 //     UDP/443 сидят WARP/MASQUE-туннели — они тоже закрываются.
+//     Исключение: UDP/443 на адреса Telegram (rule-provider telegram-ips)
+//     идёт через PROXY — звонки Telegram не режутся. Исключение ставится
+//     только если в профиле ЕСТЬ провайдер telegram-ips (иначе RULE-SET
+//     уронил бы конфиг); если провайдера нет — QUIC блокируется целиком.
 //
 // Защита: правила применяются только если в профиле есть группа PROXY и
 // список правил — иначе конфиг не трогается. Повторное применение
@@ -437,6 +448,22 @@ var BLOCK_RESOLVER_IPS = [
 // ---- QUIC / HTTP3 (UDP 443) ----
 var BLOCK_QUIC = "AND,((NETWORK,udp),(DST-PORT,443)),REJECT";
 
+// ---- Telegram-исключение над QUIC-блоком ----
+// Звонки Telegram — UDP/443 на адреса Telegram DC: без исключения
+// BLOCK_QUIC режет их раньше правил маршрутизации профиля. Ставится
+// только при наличии в профиле rule-provider telegram-ips.
+var TG_EXEMPT_RULE = "RULE-SET,telegram-ips,PROXY,no-resolve";
+
+function _hasRuleProvider(config, name) {
+  var providers = config["rule-providers"];
+  return !!(
+    providers &&
+    typeof providers === "object" &&
+    !Array.isArray(providers) &&
+    providers[name]
+  );
+}
+
 // ---- DNS ядра: единственный резолвер — Quad9 через туннель ----
 // Адаптер «#PROXY» отправляет сами DNS-запросы через группу PROXY:
 // ядро резолвит через Quad9, а трафик до Quad9 идёт через VPN-ноду.
@@ -473,8 +500,9 @@ function _applyDns(config) {
   return true;
 }
 
-// Собирает набор правил карантинa. quicBlock — включать ли запрет QUIC.
-function _bagRuleList(quicBlock) {
+// Собирает набор правил карантинa. quicBlock — включать ли запрет QUIC;
+// tgExempt — ставить ли Telegram-исключение перед QUIC-правилом.
+function _bagRuleList(quicBlock, tgExempt) {
   var rules = [];
   // Проверка внешнего IP — всегда через туннель. Ставим самым первым:
   // правило срабатывает раньше любых блокировок (в т.ч. раньше запрета QUIC).
@@ -500,13 +528,17 @@ function _bagRuleList(quicBlock) {
     rules.push("IP-CIDR," + BLOCK_RESOLVER_IPS[i] + ",REJECT,no-resolve");
   }
   if (quicBlock) {
+    if (tgExempt) {
+      rules.push(TG_EXEMPT_RULE);
+    }
     rules.push(BLOCK_QUIC);
   }
   return rules;
 }
 
-// Полный набор (с QUIC-правилом) — по нему находим/удаляем свои правила.
-var BAG_ALL_RULES = _bagRuleList(true);
+// Полный набор (с QUIC-правилом и Telegram-исключением) — по нему
+// находим/удаляем свои правила.
+var BAG_ALL_RULES = _bagRuleList(true, true);
 
 function _isOurs(rule) {
   return BAG_ALL_RULES.indexOf(String(rule)) !== -1;
@@ -532,7 +564,8 @@ function _apply(config, quicBlock) {
     console.warn("Bag-rules-paranoid: в профиле нет списка правил, правила не применены");
     return false;
   }
-  config.rules = _bagRuleList(quicBlock).concat(
+  var tgExempt = _hasRuleProvider(config, "telegram-ips");
+  config.rules = _bagRuleList(quicBlock, tgExempt).concat(
     config.rules.filter(function (rule) {
       return !_isOurs(rule);
     })
@@ -616,8 +649,14 @@ var ruleOptionsEnable = {
 };
 
 // ---- Правила схемы (без финала MATCH; цели-группы резолвятся по профилю) ----
+// Telegram-исключение (RULE-SET,telegram-ips → PROXY,no-resolve) стоит
+// ВЫШЕ IPv6-киллсвитча и QUIC-блока: звонки Telegram — UDP/443 на адреса
+// Telegram DC, без этого они режутся QUIC-блоком раньше телеграм-правила.
+// no-resolve: для доменных соединений правило пропускается без резолва.
+// Провайдер telegram-ips скрипт добавляет сам (см. RF_BS_PROVIDERS).
 var RF_BS_RULES = [
   "RULE-SET,private-ips,DIRECT,no-resolve",
+  "RULE-SET,telegram-ips,PROXY,no-resolve",
   "IP-CIDR,::/0,REJECT-DROP,no-resolve",
   "AND,((NETWORK,UDP),(DST-PORT,443)),REJECT-DROP",
   "RULE-SET,private-domains,DIRECT",
@@ -662,7 +701,6 @@ var RF_BS_RULES = [
   "RULE-SET,games,🎮 Игры",
   "RULE-SET,ru-apps,DIRECT",
   "RULE-SET,direct-ips,DIRECT",
-  "RULE-SET,telegram-ips,PROXY",
   "RULE-SET,telegram-domains,PROXY",
   "RULE-SET,discord_domains,PROXY",
   "RULE-SET,discord_voiceips,PROXY",
@@ -814,8 +852,9 @@ var RF_BS_OUR_STRINGS = (function () {
     map[_resolveRule(RF_BS_RULES[i], {})] = true;
   }
   // Строки прежних версий схемы — чтобы повторное применение снимало и их
-  // (oisd_big был PROXY в хвосте до переноса в блок рекламы).
-  var legacy = ["RULE-SET,oisd_big,PROXY"];
+  // (oisd_big был PROXY в хвосте до переноса в блок рекламы; telegram-ips
+  // был без no-resolve в хвосте до переноса над QUIC-блоком).
+  var legacy = ["RULE-SET,oisd_big,PROXY", "RULE-SET,telegram-ips,PROXY"];
   for (var j = 0; j < legacy.length; j++) {
     map[legacy[j]] = true;
     map[_resolveRule(legacy[j], {})] = true;
