@@ -90,6 +90,12 @@ class BettboxService : Service(), BaseServiceInterface {
         } else {
             getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
         }
+
+        // Флаг страны выбранной ноды: восстановление после старта сервиса
+        // без открытого приложения (см. BettboxVpnService.startForeground).
+        if (!isSuspended) {
+            NodeFlagNotification.restore(this)
+        }
     }
 
     override fun onTrimMemory(level: Int) {

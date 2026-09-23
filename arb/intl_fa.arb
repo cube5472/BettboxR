@@ -740,6 +740,8 @@
   "flagged": "نشانه‌گذاری‌شده",
   "coalThemeMode": "تم مشکی ذغالی",
   "coalThemeModeDesc": "سطوح مشکی ذغالی با حاشیه صورتی کارت‌ها",
+  "coalTurquoiseMode": "تم مشکی ذغالی فیروزه‌ای",
+  "coalTurquoiseModeDesc": "سطوح مشکی ذغالی با حاشیه فیروزه‌ای کارت‌ها",
   "manualSort": "دستی",
   "resetManualSort": "بازنشانی مرتب‌سازی دستی"
 }

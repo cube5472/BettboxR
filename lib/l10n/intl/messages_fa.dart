@@ -1372,6 +1372,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
       "سطوح مشکی ذغالی با حاشیه صورتی کارت‌ها",
     ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("تم مشکی ذغالی فیروزه‌ای"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "سطوح مشکی ذغالی با حاشیه فیروزه‌ای کارت‌ها",
+    ),
     "manualSort": MessageLookupByLibrary.simpleMessage("دستی"),
     "resetManualSort": MessageLookupByLibrary.simpleMessage("بازنشانی مرتب‌سازی دستی"),
   };

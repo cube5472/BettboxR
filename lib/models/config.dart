@@ -349,6 +349,7 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(DynamicSchemeVariant.content) DynamicSchemeVariant schemeVariant,
     @Default(false) bool pureBlack,
     @Default(false) bool coalTheme,
+    @Default(false) bool coalThemeTurquoise,
     @Default(TextScale()) TextScale textScale,
     @Default(false) bool useDarkIcon,
     @Default(false) bool useHarmonyFont,

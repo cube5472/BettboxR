@@ -58,6 +58,7 @@ class ThemeView extends ConsumerWidget {
       _PrimaryColorItem(),
       if (brightness == Brightness.dark) _PrueBlackItem(),
       _CoalThemeItem(),
+      _CoalThemeTurquoiseItem(),
       if (toggleItems.isNotEmpty) ...generateSection(items: toggleItems),
     ];
     return generateListView(items);
@@ -410,9 +411,58 @@ class _CoalThemeItem extends ConsumerWidget {
       delegate: SwitchDelegate(
         value: coalTheme,
         onChanged: (value) {
+          // Варианты «угольной темы» взаимоисключающие: включение розового
+          // выключает бирюзовый (и наоборот — см. _CoalThemeTurquoiseItem).
           ref
               .read(themeSettingProvider.notifier)
-              .updateState((state) => state.copyWith(coalTheme: value));
+              .updateState(
+                (state) => state.copyWith(
+                  coalTheme: value,
+                  coalThemeTurquoise: value ? false : state.coalThemeTurquoise,
+                ),
+              );
+        },
+      ),
+    );
+  }
+}
+
+class _CoalThemeTurquoiseItem extends ConsumerWidget {
+  const _CoalThemeTurquoiseItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final coalThemeTurquoise = ref.watch(
+      themeSettingProvider.select((state) => state.coalThemeTurquoise),
+    );
+    return ListItem.switchItem(
+      leading: Icon(Icons.diamond_outlined),
+      horizontalTitleGap: 12,
+      title: Text(
+        appLocalizations.coalTurquoiseMode,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: context.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      subtitle: Text(
+        appLocalizations.coalTurquoiseModeDesc,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: context.colorScheme.onSurfaceVariant.withOpacity(0.7),
+        ),
+      ),
+      delegate: SwitchDelegate(
+        value: coalThemeTurquoise,
+        onChanged: (value) {
+          // Варианты «угольной темы» взаимоисключающие: включение бирюзового
+          // выключает розовый (и наоборот — см. _CoalThemeItem).
+          ref
+              .read(themeSettingProvider.notifier)
+              .updateState(
+                (state) => state.copyWith(
+                  coalThemeTurquoise: value,
+                  coalTheme: value ? false : state.coalTheme,
+                ),
+              );
         },
       ),
     );

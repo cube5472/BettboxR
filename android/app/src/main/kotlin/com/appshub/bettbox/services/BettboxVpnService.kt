@@ -239,6 +239,14 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             hasStartedForeground = true
         }
 
+        // Флаг страны выбранной ноды: сервис мог подняться без открытого
+        // приложения (Always-on VPN после загрузки, рестарт процесса после
+        // свайпа из recents) — восстанавливаем тихое уведомление с флагом
+        // из SharedPreferences, пока Dart-код не начнёт слать актуальный.
+        if (!isSuspended) {
+            NodeFlagNotification.restore(this)
+        }
+
         val pendingProfile = pendingSpeedProfile
         val pendingSpeed = pendingSpeedInfo
         if (!isSuspended && GlobalState.isSpeedNotificationEnabled && pendingProfile != null && pendingSpeed != null) {

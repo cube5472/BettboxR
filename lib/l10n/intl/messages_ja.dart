@@ -1073,6 +1073,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
       "炭黒のサーフェスとピンクのカード枠",
     ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("ターコイズ炭黒テーマ"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "炭黒のサーフェスとターコイズのカード枠",
+    ),
     "manualSort": MessageLookupByLibrary.simpleMessage("手動"),
     "resetManualSort": MessageLookupByLibrary.simpleMessage("手動並べ替えをリセット"),
   };

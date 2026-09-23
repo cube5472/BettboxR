@@ -21,13 +21,17 @@ import android.graphics.RectF
  * Флаг рисуется программно (FlagPainter): упрощённые флаги ~50 стран;
  * для неизвестного кода — нейтральная запасная иконка «флажок».
  *
- * Публичная точка входа — [update]: пустой/некорректный код страны
- * убирает уведомление. Сервис при остановке вызывает [cancel].
+ * Публичные точки входа — [update] (пустой/некорректный код страны
+ * убирает уведомление) и [restore] (восстановление при старте сервиса,
+ * когда приложение не открыто). Сервис при остановке вызывает [cancel].
  * Внешний гейт «VPN запущен» — в VpnPlugin.handleUpdateNotificationFlag.
  */
 object NodeFlagNotification {
     const val ID = 30001
     private const val CHANNEL_ID = "Bettbox_NodeFlag"
+    private const val PREFS = "bettbox_node_flag"
+    private const val KEY_CODE = "countryCode"
+    private const val KEY_NODE = "nodeName"
 
     @Volatile
     private var lastKey: String? = null
@@ -42,14 +46,48 @@ object NodeFlagNotification {
             ?.takeIf { it.length == 2 && it.all { ch -> ch in 'A'..'Z' } }
 
         if (code == null) {
+            // Кода нет — снимаем уведомление, но сохранённый флаг НЕ стираем:
+            // он понадобится при рестарте сервиса без открытого приложения.
             cancel(context)
             return
         }
+
+        savePrefs(context, code, nodeName)
 
         val key = "$code|$nodeName"
         if (key == lastKey) return
         lastKey = key
 
+        post(context, manager, code, nodeName)
+    }
+
+    /**
+     * Восстановление флага при старте сервиса: рестарт процесса,
+     * Always-on VPN после загрузки, свайп приложения из recents —
+     * когда Dart-код ещё не запускался и постить флаг некому.
+     * Читает последнюю сохранённую пару (код страны, имя ноды) из
+     * SharedPreferences и постит уведомление заново.
+     */
+    fun restore(context: Context?) {
+        if (context == null) return
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val code = prefs.getString(KEY_CODE, null)?.trim()
+            ?.uppercase()
+            ?.takeIf { it.length == 2 && it.all { ch -> ch in 'A'..'Z' } }
+            ?: return
+        val nodeName = prefs.getString(KEY_NODE, null)
+        val manager =
+            context.getSystemService(NotificationManager::class.java) ?: return
+        lastKey = "$code|$nodeName"
+        post(context, manager, code, nodeName)
+    }
+
+    private fun post(
+        context: Context,
+        manager: NotificationManager,
+        code: String,
+        nodeName: String?,
+    ) {
         runCatching {
             ensureChannel(context, manager)
             val bitmap = FlagPainter.paint(code)
@@ -66,6 +104,16 @@ object NodeFlagNotification {
             manager.notify(ID, notification)
         }.onFailure {
             android.util.Log.e("NodeFlagNotification", "update error: ${it.message}")
+        }
+    }
+
+    private fun savePrefs(context: Context, code: String, nodeName: String?) {
+        runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_CODE, code)
+                .putString(KEY_NODE, nodeName?.trim()?.takeIf { it.isNotEmpty() } ?: "")
+                .apply()
         }
     }
 

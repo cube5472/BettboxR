@@ -740,6 +740,8 @@
   "flagged": "フラグ付き",
   "coalThemeMode": "炭黒テーマ",
   "coalThemeModeDesc": "炭黒のサーフェスとピンクのカード枠",
+  "coalTurquoiseMode": "ターコイズ炭黒テーマ",
+  "coalTurquoiseModeDesc": "炭黒のサーフェスとターコイズのカード枠",
   "manualSort": "手動",
   "resetManualSort": "手動並べ替えをリセット"
 }

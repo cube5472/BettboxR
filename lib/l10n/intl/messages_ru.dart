@@ -1398,6 +1398,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
       "Угольно-чёрный фон и розовая окантовка карточек",
     ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("Угольная тема (бирюза)"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "Угольно-чёрный фон и бирюзовая окантовка карточек",
+    ),
     "hiddenUnavailableCount": m5,
     "hideUnavailable": MessageLookupByLibrary.simpleMessage(
       "Скрыть недоступные",

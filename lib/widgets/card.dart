@@ -150,17 +150,21 @@ class CommonCard extends StatelessWidget {
     if (type == CommonCardType.filled) {
       return BorderSide.none;
     }
-    // «Угольная тема»: розовая окантовка всех карточек.
+    // «Угольная тема»: розовая или бирюзовая окантовка всех карточек
+    // (какой вариант включён — см. views/theme.dart).
     if (colorScheme.brightness == Brightness.dark &&
-        globalState.config.themeProps.coalTheme) {
-      const pink = Color(kCoalPink);
+        (globalState.config.themeProps.coalTheme ||
+            globalState.config.themeProps.coalThemeTurquoise)) {
+      final edge = globalState.config.themeProps.coalThemeTurquoise
+          ? const Color(kCoalTurquoise)
+          : const Color(kCoalPink);
       if (states.contains(WidgetState.hovered) ||
           states.contains(WidgetState.focused) ||
           states.contains(WidgetState.pressed)) {
-        return BorderSide(color: pink.withValues(alpha: 0.9));
+        return BorderSide(color: edge.withValues(alpha: 0.9));
       }
       return BorderSide(
-        color: isSelected ? pink : pink.withValues(alpha: 0.55),
+        color: isSelected ? edge : edge.withValues(alpha: 0.55),
       );
     }
     final hoverColor = isSelected
@@ -283,16 +287,20 @@ class SettingsBlock extends StatelessWidget {
           Card(
             color: context.colorScheme.surfaceContainer,
             clipBehavior: Clip.antiAlias,
-            // «Угольная тема»: розовая окантовка карточек настроек.
+            // «Угольная тема»: розовая или бирюзовая окантовка карточек
+            // настроек (какой вариант включён — см. views/theme.dart).
             shape:
                 Theme.of(context).colorScheme.brightness == Brightness.dark &&
-                    globalState.config.themeProps.coalTheme
+                    (globalState.config.themeProps.coalTheme ||
+                        globalState.config.themeProps.coalThemeTurquoise)
                 ? SmoothRoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
-                      color: const Color(
-                        kCoalPink,
-                      ).withValues(alpha: 0.45),
+                      color: (globalState.config.themeProps
+                                  .coalThemeTurquoise
+                              ? const Color(kCoalTurquoise)
+                              : const Color(kCoalPink))
+                          .withValues(alpha: 0.45),
                     ),
                   )
                 : null,

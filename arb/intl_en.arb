@@ -739,6 +739,8 @@
   "flagged": "Flagged",
   "coalThemeMode": "Coal Black Theme",
   "coalThemeModeDesc": "Coal-black surfaces with pink card outlines",
+  "coalTurquoiseMode": "Coal Turquoise Theme",
+  "coalTurquoiseModeDesc": "Coal-black surfaces with turquoise card outlines",
   "hideUnavailable": "Hide unavailable",
   "showUnavailable": "Show unavailable",
   "hiddenUnavailableCount": "Hidden unavailable: {count} — tap to show",

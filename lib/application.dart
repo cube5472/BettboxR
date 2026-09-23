@@ -47,9 +47,16 @@ class ApplicationState extends ConsumerState<Application>
     var scheme = ref.read(genColorSchemeProvider(brightness));
     if (brightness == Brightness.dark) {
       final props = ref.read(themeSettingProvider);
-      // «Угольная тема» — отдельный переключатель в настройках темы:
-      // угольно-чёрные поверхности и розовая окантовка, акцент — розовый.
-      // Выключена — обычная тёмная схема (+ «Чистый чёрный», если выбран).
+      // «Угольная тема» — два отдельных переключателя в настройках темы
+      // (взаимоисключающие, см. views/theme.dart): бирюзовый и розовый
+      // варианты угольно-чёрных поверхностей. Приоритет — у бирюзы.
+      if (props.coalThemeTurquoise) {
+        return ColorScheme.fromSeed(
+          seedColor: const Color(kCoalTurquoise),
+          brightness: Brightness.dark,
+          dynamicSchemeVariant: props.schemeVariant,
+        ).toCoalTurquoise();
+      }
       if (props.coalTheme) {
         return ColorScheme.fromSeed(
           seedColor: const Color(kCoalPink),
@@ -251,9 +258,10 @@ class ApplicationState extends ConsumerState<Application>
               locale:
                   utils.getLocaleForString(locale) ?? utils.getSystemLocale(),
               supportedLocales: AppLocalizations.delegate.supportedLocales,
-              // Угольная тема сама по себе тёмная — форсируем тёмный режим,
-              // пока переключатель включён (независимо от системной темы).
-              themeMode: themeProps.coalTheme
+              // Угольная тема (любой вариант) сама по себе тёмная —
+              // форсируем тёмный режим, пока хоть один переключатель
+              // включён (независимо от системной темы).
+              themeMode: themeProps.coalTheme || themeProps.coalThemeTurquoise
                   ? ThemeMode.dark
                   : themeProps.themeMode,
               theme: ThemeData(

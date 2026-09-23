@@ -1083,6 +1083,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
       "탄소 검정 표면과 분홍색 카드 테두리",
     ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("청록색 탄소 블랙 테마"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "탄소 검정 표면과 청록색 카드 테두리",
+    ),
     "manualSort": MessageLookupByLibrary.simpleMessage("수동"),
     "resetManualSort": MessageLookupByLibrary.simpleMessage("수동 정렬 초기화"),
   };

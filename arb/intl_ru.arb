@@ -742,6 +742,8 @@
   "flagged": "Помечен",
   "coalThemeMode": "Угольная тема",
   "coalThemeModeDesc": "Угольно-чёрный фон и розовая окантовка карточек",
+  "coalTurquoiseMode": "Угольная тема (бирюза)",
+  "coalTurquoiseModeDesc": "Угольно-чёрный фон и бирюзовая окантовка карточек",
   "hideUnavailable": "Скрыть недоступные",
   "showUnavailable": "Показать недоступные",
   "hiddenUnavailableCount": "Скрыто недоступных: {count} — нажмите, чтобы показать",

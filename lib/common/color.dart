@@ -121,15 +121,39 @@ extension ColorSchemeExtension on ColorScheme {
       : this;
 }
 
-/// Цвет-акцент «угольной» темы: розовый (окантовка карточек и общий акцент).
+/// Цвет-акцент «угольной» темы, бирюзовый вариант: окантовка карточек
+/// и общий акцент.
+const kCoalTurquoise = 0xFF40D0C0;
+
+/// Цвет-акцент «угольной» темы, розовый вариант: окантовка карточек
+/// и общий акцент.
 const kCoalPink = 0xFFF06292;
 
-/// «Угольная тема» — включается отдельным переключателем в настройках темы
-/// (см. views/theme.dart) и применяется в application.dart (_getAppColorScheme).
-/// Угольно-чёрные поверхности с нейтрально-тёплым подтоном, обводки —
-/// приглушённый розовый (outline/outlineVariant), общий акцент — розовый
-/// (сид цвета). Розовая обводка самих карточек — в widgets/card.dart.
+/// «Угольная тема» — два отдельных переключателя в настройках темы
+/// (см. views/theme.dart), применяются в application.dart
+/// (_getAppColorScheme). Бирюзовый вариант: угольно-чёрные поверхности
+/// с холодным подтоном, обводки — приглушённая бирюза
+/// (outline/outlineVariant), общий акцент — бирюза (сид цвета).
+/// Обводка самих карточек — в widgets/card.dart.
 extension CoalThemeExtension on ColorScheme {
+  ColorScheme toCoalTurquoise() => copyWith(
+    surface: const Color(0xFF070909),
+    surfaceDim: const Color(0xFF040505),
+    surfaceBright: const Color(0xFF161A19),
+    surfaceContainerLowest: const Color(0xFF030404),
+    surfaceContainerLow: const Color(0xFF090B0B),
+    surfaceContainer: const Color(0xFF0C0F0E),
+    surfaceContainerHigh: const Color(0xFF111413),
+    surfaceContainerHighest: const Color(0xFF161918),
+    onSurface: const Color(0xFFDCE5E3),
+    onSurfaceVariant: const Color(0xFFA0B2AE),
+    outline: const Color(0xFF37A093),
+    outlineVariant: const Color(0xFF1F544E),
+  );
+
+  /// Розовый вариант: те же угольно-чёрные поверхности, но с
+  /// нейтрально-тёплым подтоном, обводки — приглушённый розовый,
+  /// общий акцент — розовый (сид цвета).
   ColorScheme toCoalPink() => copyWith(
     surface: const Color(0xFF080708),
     surfaceDim: const Color(0xFF050405),

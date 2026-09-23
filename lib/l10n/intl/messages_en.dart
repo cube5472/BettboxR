@@ -1341,6 +1341,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
       "Coal-black surfaces with pink card outlines",
     ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("Coal Turquoise Theme"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "Coal-black surfaces with turquoise card outlines",
+    ),
     "hiddenUnavailableCount": m5,
     "hideUnavailable": MessageLookupByLibrary.simpleMessage("Hide unavailable"),
     "showUnavailable": MessageLookupByLibrary.simpleMessage("Show unavailable"),

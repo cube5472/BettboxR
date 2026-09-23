@@ -982,6 +982,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "years": m15,
     "coalThemeMode": MessageLookupByLibrary.simpleMessage("煤黑主題"),
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面與粉紅色卡片描邊"),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("青綠色煤黑主題"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面與青綠色卡片描邊"),
     "security": MessageLookupByLibrary.simpleMessage("安全"),
     "stealthCheck": MessageLookupByLibrary.simpleMessage("隱身檢測"),
     "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(

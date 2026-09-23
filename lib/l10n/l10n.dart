@@ -6018,6 +6018,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Coal Turquoise Theme`
+  String get coalTurquoiseMode {
+    return Intl.message(
+      'Coal Turquoise Theme',
+      name: 'coalTurquoiseMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Coal-black surfaces with turquoise card outlines`
+  String get coalTurquoiseModeDesc {
+    return Intl.message(
+      'Coal-black surfaces with turquoise card outlines',
+      name: 'coalTurquoiseModeDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Hide unavailable`
   String get hideUnavailable {
     return Intl.message(
