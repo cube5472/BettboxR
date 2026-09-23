@@ -1396,7 +1396,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "years": m15,
     "coalThemeMode": MessageLookupByLibrary.simpleMessage("Угольная тема"),
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "Угольно-чёрный фон и бирюзовая окантовка карточек",
+      "Угольно-чёрный фон и розовая окантовка карточек",
     ),
     "hiddenUnavailableCount": m5,
     "hideUnavailable": MessageLookupByLibrary.simpleMessage(

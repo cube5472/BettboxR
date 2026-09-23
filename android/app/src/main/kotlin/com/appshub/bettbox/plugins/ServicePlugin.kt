@@ -106,6 +106,13 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 )
                 result.success(true)
             }
+            "updateNotificationFlag" -> {
+                VpnPlugin.handleUpdateNotificationFlag(
+                    call.argument<String>("countryCode"),
+                    call.argument<String>("nodeName")
+                )
+                result.success(true)
+            }
             "restoreNotification" -> {
                 val context = com.appshub.bettbox.BettboxApplication.getAppContext()
                 if (context != null) {

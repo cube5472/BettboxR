@@ -150,17 +150,17 @@ class CommonCard extends StatelessWidget {
     if (type == CommonCardType.filled) {
       return BorderSide.none;
     }
-    // «Угольная тема»: бирюзовая окантовка всех карточек.
+    // «Угольная тема»: розовая окантовка всех карточек.
     if (colorScheme.brightness == Brightness.dark &&
         globalState.config.themeProps.coalTheme) {
-      const turquoise = Color(kCoalTurquoise);
+      const pink = Color(kCoalPink);
       if (states.contains(WidgetState.hovered) ||
           states.contains(WidgetState.focused) ||
           states.contains(WidgetState.pressed)) {
-        return BorderSide(color: turquoise.withValues(alpha: 0.9));
+        return BorderSide(color: pink.withValues(alpha: 0.9));
       }
       return BorderSide(
-        color: isSelected ? turquoise : turquoise.withValues(alpha: 0.55),
+        color: isSelected ? pink : pink.withValues(alpha: 0.55),
       );
     }
     final hoverColor = isSelected
@@ -283,7 +283,7 @@ class SettingsBlock extends StatelessWidget {
           Card(
             color: context.colorScheme.surfaceContainer,
             clipBehavior: Clip.antiAlias,
-            // «Угольная тема»: бирюзовая окантовка карточек настроек.
+            // «Угольная тема»: розовая окантовка карточек настроек.
             shape:
                 Theme.of(context).colorScheme.brightness == Brightness.dark &&
                     globalState.config.themeProps.coalTheme
@@ -291,7 +291,7 @@ class SettingsBlock extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
                       color: const Color(
-                        kCoalTurquoise,
+                        kCoalPink,
                       ).withValues(alpha: 0.45),
                     ),
                   )

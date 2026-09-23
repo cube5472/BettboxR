@@ -48,14 +48,14 @@ class ApplicationState extends ConsumerState<Application>
     if (brightness == Brightness.dark) {
       final props = ref.read(themeSettingProvider);
       // «Угольная тема» — отдельный переключатель в настройках темы:
-      // угольно-чёрные поверхности и бирюзовая окантовка, акцент — бирюза.
+      // угольно-чёрные поверхности и розовая окантовка, акцент — розовый.
       // Выключена — обычная тёмная схема (+ «Чистый чёрный», если выбран).
       if (props.coalTheme) {
         return ColorScheme.fromSeed(
-          seedColor: const Color(kCoalTurquoise),
+          seedColor: const Color(kCoalPink),
           brightness: Brightness.dark,
           dynamicSchemeVariant: props.schemeVariant,
-        ).toCoalTurquoise();
+        ).toCoalPink();
       }
       scheme = scheme.toPureBlack(props.pureBlack);
     }

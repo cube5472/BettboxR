@@ -967,7 +967,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理员权限"),
     "years": m15,
     "coalThemeMode": MessageLookupByLibrary.simpleMessage("煤黑主题"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面与青绿色卡片描边"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面与粉色卡片描边"),
     "security": MessageLookupByLibrary.simpleMessage("安全"),
     "stealthCheck": MessageLookupByLibrary.simpleMessage("隐身检测"),
     "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(

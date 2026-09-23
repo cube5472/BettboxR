@@ -29,6 +29,7 @@ import com.appshub.bettbox.services.BaseServiceInterface
 import com.appshub.bettbox.services.BettboxService
 import com.appshub.bettbox.services.BettboxVpnService
 import com.appshub.bettbox.services.LeakWatchdog
+import com.appshub.bettbox.services.NodeFlagNotification
 import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.BinaryMessenger
@@ -258,6 +259,14 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 handleUpdateNotificationSpeed(
                     call.argument<String>("profileName") ?: "",
                     call.argument<String>("speedInfo") ?: ""
+                )
+                result.success(true)
+            }
+
+            "updateNotificationFlag" -> {
+                handleUpdateNotificationFlag(
+                    call.argument<String>("countryCode"),
+                    call.argument<String>("nodeName")
                 )
                 result.success(true)
             }
@@ -595,6 +604,28 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 (bettBoxService as? BettboxVpnService)?.updateNotificationSpeed(profileName, speedInfo)
             }.onFailure {
                 android.util.Log.e("VpnPlugin", "updateNotificationSpeed error: ${it.message}")
+            }
+        }
+    }
+
+    /**
+     * Флаг страны выбранной ноды в статус-баре (рядом с иконкой приложения).
+     *
+     * Показывается только при запущенном VPN: пока сервис не активен —
+     * уведомление с флагом убирается, чтобы «висящий» флаг не вводил в
+     * заблуждение. При остановке VPN флаг гасится в onDestroy сервиса.
+     */
+    fun handleUpdateNotificationFlag(countryCode: String?, nodeName: String?) {
+        scope.launch {
+            runCatching {
+                val context = BettboxApplication.getAppContext()
+                if (GlobalState.currentRunState != RunState.START) {
+                    NodeFlagNotification.cancel(context)
+                    return@launch
+                }
+                NodeFlagNotification.update(context, countryCode, nodeName)
+            }.onFailure {
+                android.util.Log.e("VpnPlugin", "updateNotificationFlag error: ${it.message}")
             }
         }
     }

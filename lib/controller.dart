@@ -49,6 +49,7 @@ class AppController {
   int _setupGeneration = 0;
   final Set<String> _updatingProfileIds = {};
   Timer? _idleGcTimer;
+  String? _lastFlagNodeName;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
 
@@ -426,6 +427,13 @@ class AppController {
 
     final isScreenOn = globalState.isScreenOn;
 
+    // Флаг страны выбранной ноды в статус-баре — живёт независимо от
+    // «уведомления о скорости», поэтому синхронизируем его до раннего
+    // возврата ниже (внутри — свой кэш, лишних вызовов канала нет).
+    if (system.isAndroid) {
+      await syncNodeFlagNotification();
+    }
+
     if (!shouldUpdateDashboard &&
         !(networkSpeedNotification && isScreenOn) &&
         !enableTraySpeed) {
@@ -457,6 +465,42 @@ class AppController {
         profileName,
         speedInfo,
       );
+    }
+  }
+
+  /// Синхронизирует флаг страны выбранной ноды с уведомлением в статус-баре:
+  /// рядом с иконкой приложения («кубиком») показывается флаг страны ноды,
+  /// выбранной в текущей группе. Пустой результат убирает флаг.
+  ///
+  /// Нода определяется так: в режиме Global — выделение группы GLOBAL,
+  /// иначе — группа [Profile.currentGroupName] (последняя открытая вкладка
+  /// «Прокси»), а без неё — первая группа конфига. Вызов на каждый тик
+  /// трафика безопасен: смены ноды кэшируются и в Dart, и в Kotlin.
+  Future<void> syncNodeFlagNotification() async {
+    if (!system.isAndroid) {
+      return;
+    }
+    try {
+      final groups = _ref.read(groupsProvider);
+      Group? group;
+      if (_ref.read(patchClashConfigProvider.select((state) => state.mode)) ==
+          Mode.global) {
+        group = groups.getGroup(GroupName.GLOBAL.name);
+      }
+      if (group == null) {
+        final groupName = _ref.read(currentProfileProvider)?.currentGroupName;
+        group = groupName != null ? groups.getGroup(groupName) : null;
+        group ??= groups.firstOrNull;
+      }
+      final nodeName = group?.realNow ?? '';
+      if (nodeName == _lastFlagNodeName) {
+        return;
+      }
+      _lastFlagNodeName = nodeName;
+      final countryCode = detectNodeCountryCode(nodeName);
+      await vpn_service.service?.updateNotificationFlag(countryCode, nodeName);
+    } catch (e) {
+      commonPrint.log('syncNodeFlagNotification failed: $e');
     }
   }
 
@@ -962,6 +1006,9 @@ class AppController {
       }
 
       _ref.read(groupsProvider.notifier).value = newGroups;
+      // Группы обновились (в т.ч. автопереключение url-test/отказ групп) —
+      // обновим и флаг страны активной ноды в статус-баре.
+      unawaited(syncNodeFlagNotification());
       _updateGroupsRetryCount = 0;
       _updateGroupsRetryTimer?.cancel();
       _updateGroupsRetryTimer = null;

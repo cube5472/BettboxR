@@ -113,6 +113,19 @@ class Vpn {
     });
   }
 
+  /// Обновляет флаг страны выбранной ноды рядом с иконкой приложения
+  /// в статус-баре (второе тихое уведомление). Пустой [countryCode]
+  /// убирает флаг.
+  Future<void> updateNotificationFlag(
+    String? countryCode,
+    String nodeName,
+  ) async {
+    await methodChannel.invokeMethod<void>('updateNotificationFlag', {
+      'countryCode': countryCode,
+      'nodeName': nodeName,
+    });
+  }
+
   void addListener(VpnListener listener) => _listeners.add(listener);
 
   void removeListener(VpnListener listener) => _listeners.remove(listener);

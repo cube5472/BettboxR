@@ -104,6 +104,8 @@ class BettboxService : Service(), BaseServiceInterface {
     override fun onDestroy() {
         stop()
         fairMemoryHelper.unregister(this)
+        // Флаг страны ноды живёт только вместе с сервисом.
+        NodeFlagNotification.cancel(this)
         super.onDestroy()
     }
 }

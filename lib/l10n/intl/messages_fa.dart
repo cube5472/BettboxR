@@ -1370,7 +1370,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "years": m15,
     "coalThemeMode": MessageLookupByLibrary.simpleMessage("تم مشکی ذغالی"),
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "سطوح مشکی ذغالی با حاشیه فیروزه‌ای کارت‌ها",
+      "سطوح مشکی ذغالی با حاشیه صورتی کارت‌ها",
     ),
     "manualSort": MessageLookupByLibrary.simpleMessage("دستی"),
     "resetManualSort": MessageLookupByLibrary.simpleMessage("بازنشانی مرتب‌سازی دستی"),

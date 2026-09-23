@@ -327,6 +327,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             getSystemService(android.app.NotificationManager::class.java)
                 ?.cancel(GlobalState.NOTIFICATION_ID)
         }.onFailure { Log.e(TAG, "onRevoke error: ${it.message}") }
+        NodeFlagNotification.cancel(this)
         super.onRevoke()
     }
 
@@ -337,6 +338,8 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             unlockReceiver = null
         }
         fairMemoryHelper.unregister(this)
+        // Флаг страны ноды живёт только вместе с VPN-сервисом.
+        NodeFlagNotification.cancel(this)
         super.onDestroy()
     }
 }

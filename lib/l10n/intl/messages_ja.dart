@@ -1071,7 +1071,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "years": m15,
     "coalThemeMode": MessageLookupByLibrary.simpleMessage("炭黒テーマ"),
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "炭黒のサーフェスとターコイズのカード枠",
+      "炭黒のサーフェスとピンクのカード枠",
     ),
     "manualSort": MessageLookupByLibrary.simpleMessage("手動"),
     "resetManualSort": MessageLookupByLibrary.simpleMessage("手動並べ替えをリセット"),

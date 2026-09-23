@@ -5,6 +5,7 @@ export 'color.dart';
 export 'constant.dart';
 export 'context.dart';
 export 'converter.dart';
+export 'country.dart';
 export 'datetime.dart';
 export 'dns_override.dart';
 export 'fixed.dart';

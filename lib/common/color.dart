@@ -121,28 +121,28 @@ extension ColorSchemeExtension on ColorScheme {
       : this;
 }
 
-/// Цвет-акцент «угольной» темы: бирюза (окантовка карточек и общий акцент).
-const kCoalTurquoise = 0xFF40D0C0;
+/// Цвет-акцент «угольной» темы: розовый (окантовка карточек и общий акцент).
+const kCoalPink = 0xFFF06292;
 
 /// «Угольная тема» — включается отдельным переключателем в настройках темы
 /// (см. views/theme.dart) и применяется в application.dart (_getAppColorScheme).
-/// Угольно-чёрные поверхности с холодным подтоном, обводки — приглушённая
-/// бирюза (outline/outlineVariant), общий акцент — бирюза (сид цвета).
-/// Бирюзовая обводка самих карточек — в widgets/card.dart.
+/// Угольно-чёрные поверхности с нейтрально-тёплым подтоном, обводки —
+/// приглушённый розовый (outline/outlineVariant), общий акцент — розовый
+/// (сид цвета). Розовая обводка самих карточек — в widgets/card.dart.
 extension CoalThemeExtension on ColorScheme {
-  ColorScheme toCoalTurquoise() => copyWith(
-    surface: const Color(0xFF070909),
-    surfaceDim: const Color(0xFF040505),
-    surfaceBright: const Color(0xFF161A19),
-    surfaceContainerLowest: const Color(0xFF030404),
-    surfaceContainerLow: const Color(0xFF090B0B),
-    surfaceContainer: const Color(0xFF0C0F0E),
-    surfaceContainerHigh: const Color(0xFF111413),
-    surfaceContainerHighest: const Color(0xFF161918),
-    onSurface: const Color(0xFFDCE5E3),
-    onSurfaceVariant: const Color(0xFFA0B2AE),
-    outline: const Color(0xFF37A093),
-    outlineVariant: const Color(0xFF1F544E),
+  ColorScheme toCoalPink() => copyWith(
+    surface: const Color(0xFF080708),
+    surfaceDim: const Color(0xFF050405),
+    surfaceBright: const Color(0xFF191317),
+    surfaceContainerLowest: const Color(0xFF030203),
+    surfaceContainerLow: const Color(0xFF0A0809),
+    surfaceContainer: const Color(0xFF0D0B0C),
+    surfaceContainerHigh: const Color(0xFF121012),
+    surfaceContainerHighest: const Color(0xFF171416),
+    onSurface: const Color(0xFFE8DCE2),
+    onSurfaceVariant: const Color(0xFFB2A1AB),
+    outline: const Color(0xFFA8567A),
+    outlineVariant: const Color(0xFF532940),
   );
 }
 
