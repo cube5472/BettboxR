@@ -9,17 +9,21 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Typeface
 
 /**
- * Второе тихое уведомление: флаг страны выбранной ноды рядом с иконкой
+ * Второе тихое уведомление: страна выбранной ноды рядом с иконкой
  * приложения («кубиком») в статус-баре.
  *
- * Android показывает маленькую иконку каждого активного уведомления в
- * статус-баре, поэтому «флаг рядом с кубиком» реализован отдельным
- * low-importance ongoing-уведомлением с флагом в качестве smallIcon
- * (bitmap-иконка, minSdk 26 — Icon.createWithBitmap доступен).
- * Флаг рисуется программно (FlagPainter): упрощённые флаги ~50 стран;
- * для неизвестного кода — нейтральная запасная иконка «флажок».
+ * ВАЖНО О ОГРАНИЧЕНИИ ANDROID: smallIcon в статус-баре всегда рендерится
+ * как монохромная альфа-маска — цвета bitmap-иконки система выбрасывает.
+ * Поэтому цветной флаг в статус-баре показать невозможно в принципе
+ * (цветной bitmap даёт белый силуэт-прямоугольник — выглядит как мусор).
+ * Компромисс:
+ *  - статус-бар: белый силуэт ISO-кода страны («SE», «DE»), для
+ *    неопределённой страны — силуэт «флажка на древке»;
+ *  - шторка: цветной флаг страны как largeIcon + флаг-эмодзи в тексте
+ *    («Bettbox • 🇩🇪 DE») — эмодзи и largeIcon рендерятся в цвете.
  *
  * Публичные точки входа — [update] (пустой код страны И пустое имя ноды
  * убирают уведомление; если нода есть, а страна не определена — постится
@@ -105,14 +109,23 @@ object NodeFlagNotification {
     ) {
         runCatching {
             ensureChannel(context, manager)
-            val bitmap =
-                if (code != null) FlagPainter.paint(code)
-                else FlagPainter.paintUnknown()
+            // Статус-бар: монохромный силуэт ISO-кода («SE») или «флажок»;
+            // шторка: цветной флаг (largeIcon) + эмодзи в тексте.
             val title = nodeName?.trim()?.takeIf { it.isNotEmpty() } ?: "Bettbox"
+            val text = if (code != null) "Bettbox • ${flagEmoji(code)} $code" else "Bettbox"
             val notification = Notification.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.graphics.drawable.Icon.createWithBitmap(bitmap))
+                .setSmallIcon(
+                    android.graphics.drawable.Icon.createWithBitmap(
+                        FlagPainter.paintSmall(code)
+                    )
+                )
+                .setLargeIcon(
+                    android.graphics.drawable.Icon.createWithBitmap(
+                        FlagPainter.paintLarge(code)
+                    )
+                )
                 .setContentTitle(title)
-                .setContentText(if (code != null) "Bettbox • $code" else "Bettbox")
+                .setContentText(text)
                 .setOngoing(true)
                 .setShowWhen(false)
                 .setPriority(Notification.PRIORITY_LOW)
@@ -122,6 +135,17 @@ object NodeFlagNotification {
         }.onFailure {
             android.util.Log.e("NodeFlagNotification", "update error: ${it.message}")
         }
+    }
+
+    /** Флаг-эмодзи из ISO-кода («DE» → «🇩🇪») для цветного отображения в шторке. */
+    private fun flagEmoji(code: String): String {
+        val upper = code.trim().uppercase()
+        if (upper.length != 2 || !upper.all { it in 'A'..'Z' }) return ""
+        val sb = StringBuilder()
+        for (ch in upper) {
+            sb.append(String(Character.toChars(0x1F1E6 + (ch - 'A'))))
+        }
+        return sb.toString()
     }
 
     private fun savePrefs(context: Context, code: String, nodeName: String?) {
@@ -535,12 +559,64 @@ object FlagPainter {
         canvas.restore()
     }
 
-    /** Публичная заготовка: нейтральный «флажок» для неопределённой страны. */
+    /** Нейтральный «флажок» для неопределённой страны (48x48, цветной). */
     fun paintUnknown(): Bitmap {
         val bitmap = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         paintGeneric(canvas)
         return bitmap
+    }
+
+    /**
+     * SmallIcon для статус-бара (48x48, только альфа): Android рендерит
+     * smallIcon как монохромную маску, поэтому рисуем белый силуэт —
+     * двухбуквенный ISO-код страны. Для неизвестной страны — силуэт
+     * «флажка на древке».
+     */
+    fun paintSmall(code: String?): Bitmap {
+        val bitmap = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        if (code == null) {
+            paintPennantGlyph(canvas)
+            return bitmap
+        }
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFFFFFF.toInt()
+            textSize = 30f
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+        }
+        val x = SIZE / 2f
+        val y = SIZE / 2f - (paint.descent() + paint.ascent()) / 2f
+        canvas.drawText(code.uppercase(), x, y, paint)
+        return bitmap
+    }
+
+    /**
+     * LargeIcon для шторки: цветной флаг (или нейтральный «флажок»),
+     * вырезанный до полосы полотнища 48x32 и увеличенный до 108x72.
+     */
+    fun paintLarge(code: String?): Bitmap {
+        val src = if (code != null) paint(code) else paintUnknown()
+        val strip = Bitmap.createBitmap(src, 0, TOP.toInt(), SIZE, FH.toInt())
+        return Bitmap.createScaledBitmap(strip, 108, 72, true)
+    }
+
+    /** Белый силуэт «флажок на древке» — для smallIcon без известной страны. */
+    private fun paintPennantGlyph(canvas: Canvas) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.color = 0xFFFFFFFF.toInt()
+        // Древко.
+        canvas.drawRect(FW * 0.2f, TOP - 4f, FW * 0.28f, TOP + FH + 4f, paint)
+        // Полотнище с вырезом («ласточкин хвост»).
+        val path = Path()
+        path.moveTo(FW * 0.28f, TOP + 1f)
+        path.lineTo(FW * 0.88f, TOP + 1f)
+        path.lineTo(FW * 0.72f, TOP + FH * 0.35f)
+        path.lineTo(FW * 0.88f, TOP + FH * 0.69f)
+        path.lineTo(FW * 0.28f, TOP + FH * 0.69f)
+        path.close()
+        canvas.drawPath(path, paint)
     }
 
     private fun paintGeneric(canvas: Canvas) {
