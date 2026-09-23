@@ -28,6 +28,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
   Timer? _missedUpdateCheckTimer;
   DateTime? _lastMissedUpdateCheck;
   late final VoidCallback _dashboardTickListener;
+  late final VoidCallback _ipInfoFlagListener;
 
   static const _missedUpdateCheckDelay = Duration(seconds: 5);
   static const _missedUpdateCheckThrottle = Duration(seconds: 60);
@@ -43,6 +44,13 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       unawaited(globalState.appController.updateRunTime());
     };
     dashboardRefreshManager.tick1s.addListener(_dashboardTickListener);
+    // Флаг страны ноды: после завершения IP-проверки фолбэк-код страны
+    // выхода мог обновиться — перепостим уведомление флага (внутри кэш
+    // пары «нода+страна», лишних вызовов канала не будет).
+    _ipInfoFlagListener = () {
+      unawaited(globalState.appController.syncNodeFlagNotification());
+    };
+    detectionState.state.addListener(_ipInfoFlagListener);
     ref.listenManual(layoutChangeProvider, (prev, next) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (prev != next) {
@@ -94,6 +102,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     _dashboardRefreshDebounceTimer?.cancel();
     _missedUpdateCheckTimer?.cancel();
     dashboardRefreshManager.tick1s.removeListener(_dashboardTickListener);
+    detectionState.state.removeListener(_ipInfoFlagListener);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

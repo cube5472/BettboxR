@@ -50,6 +50,7 @@ class AppController {
   final Set<String> _updatingProfileIds = {};
   Timer? _idleGcTimer;
   String? _lastFlagNodeName;
+  String? _lastFlagCountryCode;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
 
@@ -468,6 +469,21 @@ class AppController {
     }
   }
 
+  /// Страна выхода из последней IP-проверки («стелс проверка» на дашборде).
+  ///
+  /// Фолбэк для нод, чьё имя не содержит ни флаг-эмодзи, ни страны/города,
+  /// ни ISO-кода (личные VPS с именем вроде «vps-R»): флаг берём из
+  /// реальной страны выходного IP — она обновляется IP-проверкой, которую
+  /// [syncNodeFlagNotification] запрашивает сама при смене ноды.
+  String? _fallbackFlagCountryCode() {
+    final info = detectionState.rawIpInfo ?? detectionState.state.value.ipInfo;
+    final code = info?.countryCode.trim().toUpperCase();
+    if (code == null || !RegExp(r'^[A-Z]{2}$').hasMatch(code)) {
+      return null;
+    }
+    return code;
+  }
+
   /// Синхронизирует флаг страны выбранной ноды с уведомлением в статус-баре:
   /// рядом с иконкой приложения («кубиком») показывается флаг страны ноды,
   /// выбранной в текущей группе. Пустой результат убирает флаг.
@@ -476,6 +492,10 @@ class AppController {
   /// иначе — группа [Profile.currentGroupName] (последняя открытая вкладка
   /// «Прокси»), а без неё — первая группа конфига. Вызов на каждый тик
   /// трафика безопасен: смены ноды кэшируются и в Dart, и в Kotlin.
+  ///
+  /// Страна: сначала распознавание по имени ноды (эмодзи/слова/ISO-код),
+  /// затем фолбэк — страна выходного IP последней проверки. Кэш обновляется
+  /// ТОЛЬКО после успешной отправки, чтобы сбой канала не «заморозил» флаг.
   Future<void> syncNodeFlagNotification() async {
     if (!system.isAndroid) {
       return;
@@ -493,12 +513,23 @@ class AppController {
         group ??= groups.firstOrNull;
       }
       final nodeName = group?.realNow ?? '';
-      if (nodeName == _lastFlagNodeName) {
+      final byName = detectNodeCountryCode(nodeName);
+      final countryCode = byName ?? _fallbackFlagCountryCode();
+      if (nodeName == _lastFlagNodeName &&
+          countryCode == _lastFlagCountryCode) {
         return;
       }
-      _lastFlagNodeName = nodeName;
-      final countryCode = detectNodeCountryCode(nodeName);
       await vpn_service.service?.updateNotificationFlag(countryCode, nodeName);
+      _lastFlagNodeName = nodeName;
+      _lastFlagCountryCode = countryCode;
+      // Имя не распознано, но нода выбрана — запросим свежую IP-проверку,
+      // чтобы фолбэк отражал реальную страну выхода (после проверки флаг
+      // перепостится слушателем в app_manager).
+      if (byName == null &&
+          nodeName.isNotEmpty &&
+          vpn_service.service != null) {
+        addCheckIpDebounce();
+      }
     } catch (e) {
       commonPrint.log('syncNodeFlagNotification failed: $e');
     }

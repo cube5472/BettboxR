@@ -21,9 +21,11 @@ import android.graphics.RectF
  * Флаг рисуется программно (FlagPainter): упрощённые флаги ~50 стран;
  * для неизвестного кода — нейтральная запасная иконка «флажок».
  *
- * Публичные точки входа — [update] (пустой/некорректный код страны
- * убирает уведомление) и [restore] (восстановление при старте сервиса,
- * когда приложение не открыто). Сервис при остановке вызывает [cancel].
+ * Публичные точки входа — [update] (пустой код страны И пустое имя ноды
+ * убирают уведомление; если нода есть, а страна не определена — постится
+ * нейтральный «флажок», пока IP-проверка не уточнит страну) и [restore]
+ * (восстановление при старте сервиса, когда приложение не открыто).
+ * Сервис при остановке вызывает [cancel].
  * Внешний гейт «VPN запущен» — в VpnPlugin.handleUpdateNotificationFlag.
  */
 object NodeFlagNotification {
@@ -44,21 +46,33 @@ object NodeFlagNotification {
         val code = countryCode?.trim()
             ?.uppercase()
             ?.takeIf { it.length == 2 && it.all { ch -> ch in 'A'..'Z' } }
+        val name = nodeName?.trim()?.takeIf { it.isNotEmpty() }
 
         if (code == null) {
-            // Кода нет — снимаем уведомление, но сохранённый флаг НЕ стираем:
-            // он понадобится при рестарте сервиса без открытого приложения.
-            cancel(context)
+            // Страна не определена. Совсем без ноды флаг ни к чему —
+            // снимаем уведомление. А при ноде с «безликим» именем (личный
+            // VPS и т.п.) показываем нейтральный «флажок»: уведомление
+            // с флагом живёт всегда, а после IP-проверки Dart пришлёт
+            // реальный код страны.
+            if (name == null) {
+                cancel(context)
+                return
+            }
+            savePrefs(context, "", name)
+            val key = "?|$name"
+            if (key == lastKey) return
+            lastKey = key
+            post(context, manager, null, name)
             return
         }
 
-        savePrefs(context, code, nodeName)
+        savePrefs(context, code, name)
 
-        val key = "$code|$nodeName"
+        val key = "$code|$name"
         if (key == lastKey) return
         lastKey = key
 
-        post(context, manager, code, nodeName)
+        post(context, manager, code, name)
     }
 
     /**
@@ -66,7 +80,8 @@ object NodeFlagNotification {
      * Always-on VPN после загрузки, свайп приложения из recents —
      * когда Dart-код ещё не запускался и постить флаг некому.
      * Читает последнюю сохранённую пару (код страны, имя ноды) из
-     * SharedPreferences и постит уведомление заново.
+     * SharedPreferences и постит уведомление заново. Пустой код страны
+     * (неопределённая страна) восстанавливается нейтральным «флажком».
      */
     fun restore(context: Context?) {
         if (context == null) return
@@ -74,28 +89,30 @@ object NodeFlagNotification {
         val code = prefs.getString(KEY_CODE, null)?.trim()
             ?.uppercase()
             ?.takeIf { it.length == 2 && it.all { ch -> ch in 'A'..'Z' } }
-            ?: return
-        val nodeName = prefs.getString(KEY_NODE, null)
+        val nodeName = prefs.getString(KEY_NODE, null)?.trim()?.takeIf { it.isNotEmpty() }
+        if (code == null && nodeName == null) return
         val manager =
             context.getSystemService(NotificationManager::class.java) ?: return
-        lastKey = "$code|$nodeName"
+        lastKey = "${code ?: "?"}|$nodeName"
         post(context, manager, code, nodeName)
     }
 
     private fun post(
         context: Context,
         manager: NotificationManager,
-        code: String,
+        code: String?,
         nodeName: String?,
     ) {
         runCatching {
             ensureChannel(context, manager)
-            val bitmap = FlagPainter.paint(code)
+            val bitmap =
+                if (code != null) FlagPainter.paint(code)
+                else FlagPainter.paintUnknown()
             val title = nodeName?.trim()?.takeIf { it.isNotEmpty() } ?: "Bettbox"
             val notification = Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.graphics.drawable.Icon.createWithBitmap(bitmap))
                 .setContentTitle(title)
-                .setContentText("Bettbox • $code")
+                .setContentText(if (code != null) "Bettbox • $code" else "Bettbox")
                 .setOngoing(true)
                 .setShowWhen(false)
                 .setPriority(Notification.PRIORITY_LOW)
@@ -516,6 +533,14 @@ object FlagPainter {
         canvas.drawLine(left + w / 2f, top, left + w / 2f, top + h, paint)
         canvas.drawLine(left, top + h / 2f, left + w, top + h / 2f, paint)
         canvas.restore()
+    }
+
+    /** Публичная заготовка: нейтральный «флажок» для неопределённой страны. */
+    fun paintUnknown(): Bitmap {
+        val bitmap = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        paintGeneric(canvas)
+        return bitmap
     }
 
     private fun paintGeneric(canvas: Canvas) {
