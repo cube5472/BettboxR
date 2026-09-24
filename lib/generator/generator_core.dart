@@ -2103,6 +2103,44 @@ GeneratorParams? extractGeneratorParams(String content) {
   return null;
 }
 
+/// Извлекает текстовый блок `proxies:` из YAML конфига. Используется при
+/// открытии готового профиля в генераторе: блок подставляется в поле
+/// «Источники прокси» как локальный текст, поэтому ноды отображаются,
+/// переживают правку текста и повторное нажатие «Разобрать» (те же
+/// правила захвата блока, что в _salvageProxyItems: элементы могут
+/// стоять на любом отступе, верхнеуровневый ключ завершает блок).
+/// Возвращает '' если блока нет или он не содержит элементов.
+String extractProxiesYamlBlock(String yaml) {
+  final lines = yaml.split('\n');
+  final keyProxies = RegExp(r'^proxies\s*:\s*(#.*)?$');
+  final itemStartRe = RegExp(r'^(\s*)- ');
+  var start = -1;
+  for (var i = 0; i < lines.length; i++) {
+    if (keyProxies.hasMatch(lines[i])) {
+      start = i;
+      break;
+    }
+  }
+  if (start < 0) return '';
+  final block = <String>['proxies:'];
+  for (var i = start + 1; i < lines.length; i++) {
+    final t = lines[i];
+    if (t.trim().isEmpty ||
+        t.startsWith(' ') ||
+        t.startsWith('\t') ||
+        itemStartRe.hasMatch(t)) {
+      block.add(t);
+    } else {
+      break;
+    }
+  }
+  while (block.isNotEmpty && block.last.trim().isEmpty) {
+    block.removeLast();
+  }
+  if (block.length <= 1) return '';
+  return block.join('\n');
+}
+
 const Map<String, List<String>> _kRequiredFields = {
   'vless': ['uuid'],
   'trojan': ['password'],

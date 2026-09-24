@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:bett_box/common/common.dart';
@@ -8,6 +7,7 @@ import 'package:bett_box/models/models.dart';
 import 'package:bett_box/pages/editor.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
+import 'package:bett_box/views/generator_view.dart';
 import 'package:bett_box/views/profiles/edit_profile.dart';
 import 'package:bett_box/views/profiles/override_profile.dart';
 import 'package:bett_box/views/profiles/scripts.dart';
@@ -278,13 +278,12 @@ class ProfileItem extends StatelessWidget {
     }
   }
 
-  // «Пересобрать генератором»: параметры сборки читаются из маркера в
-  // шапке YAML (записывается при генерации), прогоняются через
-  // актуальный buildConfig, результат заменяет содержимое того же
-  // профиля. ID профиля не меняется — выбранная нода, кэш выбора и
-  // настройки профиля сохраняются; если профиль активен, конфиг
-  // применяется на лету (setProfileAndAutoApply). Прошлая версия
-  // файла остаётся рядом в «.bak» до следующей пересборки.
+  // «Изменить в генераторе»: конфиг открывается в генераторе с
+  // подставленными параметрами из маркера в шапке YAML (пресеты, DNS,
+  // правила, ноды). Пользователь правит что нужно и пересобирает
+  // кнопкой внизу экрана — результат валидируется ядром и записывается
+  // в тот же профиль (бэкап .bak, hot-apply активного профиля —
+  // внутри генератора, см. _rebuildProfile в generator_view.dart).
   Future<void> _handleRebuild(BuildContext context) async {
     const title = 'Генератор BettboxR';
     try {
@@ -296,43 +295,25 @@ class ProfileItem extends StatelessWidget {
           title: title,
           message: TextSpan(
             text: 'Этот конфиг создан не генератором — в шапке файла нет '
-                'маркера с параметрами. Пересборка недоступна: соберите '
-                'конфиг заново в генераторе.',
+                'маркера с параметрами. Редактирование недоступно: '
+                'соберите конфиг заново в генераторе.',
           ),
           cancelable: false,
         );
         return;
       }
-      final confirmed = await globalState.showMessage(
-        title: 'Пересобрать конфиг?',
-        message: TextSpan(
-          text: 'Правила, DNS, группы и пресеты профиля '
-              '«${profile.label ?? profile.id}» будут заново собраны '
-              'текущей версией генератора из сохранённых параметров.\n\n'
-              'Ручные правки файла будут потеряны; текущая версия '
-              'сохранится в резервную копию рядом с конфигом.',
+      if (!context.mounted) return;
+      showExtend(
+        context,
+        builder: (_, type) => AdaptiveSheetScaffold(
+          type: type,
+          title: 'Генератор BettboxR',
+          body: GeneratorView(
+            rebuildProfile: profile,
+            rebuildYaml: oldContent,
+          ),
         ),
       );
-      if (confirmed != true) return;
-      final appController = globalState.appController;
-      appController.setProfile(profile.copyWith(isUpdating: true));
-      try {
-        final backupPath =
-            '${await appPath.getProfilePath(profile.id)}.bak';
-        await File(backupPath).writeAsString(oldContent, flush: true);
-        final yaml = embedGeneratorMarker(buildConfig(params), params);
-        final updated = await profile.saveFileWithString(yaml);
-        appController.setProfileAndAutoApply(
-          updated.copyWith(isUpdating: false),
-        );
-        if (context.mounted) {
-          final backupName = backupPath.split('/').last;
-          context.showNotifier('Конфиг пересобран (бэкап: $backupName)');
-        }
-      } on Object {
-        appController.setProfile(profile.copyWith(isUpdating: false));
-        rethrow;
-      }
     } on Object catch (e) {
       await globalState.showMessage(
         title: title,
@@ -559,8 +540,8 @@ class ProfileItem extends StatelessWidget {
         ),
       ],
       PopupMenuItemData(
-        icon: Icons.auto_fix_high,
-        label: 'Пересобрать генератором',
+        icon: Icons.edit_note,
+        label: 'Изменить в генераторе',
         onPressed: () {
           _handleRebuild(context);
         },
