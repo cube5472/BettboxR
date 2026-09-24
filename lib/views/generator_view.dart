@@ -2,6 +2,7 @@
 // Вставка ссылок/подписок/AWG-конфигов → правила и пресеты → создание профиля.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/generator/generator_core.dart';
@@ -97,7 +98,14 @@ const List<_DnsPreset> _kDnsPresets = [
 ];
 
 class GeneratorView extends ConsumerStatefulWidget {
-  const GeneratorView({super.key});
+  // Режим пересборки: профиль-цель и его текущий YAML (с маркером).
+  // Заданы → генератор открывается с параметрами профиля (пресеты,
+  // DNS, правила, ноды), кнопка внизу пересобирает этот же профиль
+  // вместо создания нового.
+  final Profile? rebuildProfile;
+  final String? rebuildYaml;
+
+  const GeneratorView({super.key, this.rebuildProfile, this.rebuildYaml});
 
   @override
   ConsumerState<GeneratorView> createState() => _GeneratorViewState();
@@ -167,6 +175,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _cdnPresets = {for (final key in kCdnRules.keys) key: false};
     _linksController.addListener(_onLinksChanged);
     _loadTemplates();
+    if (_isRebuild) _hydrateForRebuild();
   }
 
   @override
@@ -184,6 +193,56 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _providerIntervalController.dispose();
     _dio.close();
     super.dispose();
+  }
+
+  bool get _isRebuild =>
+      widget.rebuildProfile != null && widget.rebuildYaml != null;
+
+  // ---------------- Режим пересборки: загрузка параметров профиля ----------------
+
+  // Заполняет форму параметрами из маркера профиля. Пресеты/DNS/правила
+  // проходят через _applyTemplateData (тот же путь, что и у шаблонов);
+  // ноды восстанавливаются из params.proxies, а в поле «Источники»
+  // подставляется YAML-блок proxies: из самого конфига — тогда правка
+  // текста и повторное нажатие «Разобрать» не теряют ноды.
+  void _hydrateForRebuild() {
+    final yaml = widget.rebuildYaml;
+    if (yaml == null || yaml.isEmpty) return;
+    final params = extractGeneratorParams(yaml);
+    if (params == null) return;
+    final proxiesBlock = params.providerMode
+        ? ''
+        : extractProxiesYamlBlock(yaml);
+    _applyTemplateData(<String, dynamic>{
+      'urlTest': params.urlTest,
+      'defaultNameserver': params.defaultNameserver,
+      'nameserver': params.nameserver,
+      'proxyServerNameserver': params.proxyServerNameserver,
+      'mtu': params.mtu,
+      'providerMode': params.providerMode,
+      'providerUrl': params.providerUrl,
+      'providerInterval': params.providerInterval,
+      'ruUnblock': params.ruUnblock,
+      'ruleCategories': List<String>.from(params.ruleCategories),
+      'servicePresets': List<String>.from(params.servicePresets),
+      'cdnPresets': List<String>.from(params.cdnPresets),
+      'customRules': params.customRules
+          .map((r) => '${r['type']},${r['value']},${r['action']}')
+          .join('\n'),
+    });
+    if (params.providerMode) return;
+    // _lastParsedText обновляем ДО смены текста: слушатель
+    // _onLinksChanged сработает синхронно и не запланирует разбор.
+    _lastParsedText = proxiesBlock;
+    setState(() {
+      _proxies = List<Map<String, dynamic>>.from(params.proxies);
+      _chains
+        ..clear()
+        ..addAll(params.chains.map((c) => List<String>.from(c)));
+      if (proxiesBlock.isNotEmpty) {
+        _linksController.text = proxiesBlock;
+      }
+    });
   }
 
   // ---------------- Разбор источников ----------------
@@ -543,6 +602,63 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         cancelable: false,
       );
     } on Object catch (e) {
+      if (!mounted) return;
+      await globalState.showMessage(
+        title: 'Генератор BettboxR',
+        message: TextSpan(text: '$e'),
+        cancelable: false,
+      );
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Пересборка существующего профиля (кнопка в режиме _isRebuild):
+  // конфиг собирается из ТЕКУЩЕГО состояния формы (пользователь мог
+  // поменять пресеты), валидируется ядром и записывается в тот же
+  // профиль. ID не меняется — выбранная нода и настройки профиля
+  // сохраняются; активный профиль применяется на лету. Прежняя версия
+  // файла остаётся рядом в «.bak» до следующей пересборки.
+  Future<void> _rebuildProfile() async {
+    final profile = widget.rebuildProfile!;
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
+      return;
+    }
+    final confirmed = await globalState.showMessage(
+      title: 'Пересобрать конфиг?',
+      message: TextSpan(
+        text: 'Профиль «${profile.label ?? profile.id}» будет заново '
+            'собран из параметров на этой странице. Ручные правки '
+            'файла будут потеряны; текущая версия сохранится в '
+            'резервную копию рядом с конфигом.',
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final loading = ref.read(loadingProvider.notifier);
+    final appController = globalState.appController;
+    loading.value = true;
+    appController.setProfile(profile.copyWith(isUpdating: true));
+    try {
+      final yaml = _buildYamlConfig();
+      final oldFile = await profile.getFile();
+      final oldContent = await oldFile.readAsString();
+      final backupPath =
+          '${await appPath.getProfilePath(profile.id)}.bak';
+      await File(backupPath).writeAsString(oldContent, flush: true);
+      final updated = await profile.saveFileWithString(yaml);
+      appController.setProfileAndAutoApply(
+        updated.copyWith(isUpdating: false),
+      );
+      if (!mounted) return;
+      final backupName = backupPath.split('/').last;
+      context.showNotifier('Конфиг пересобран (бэкап: $backupName)');
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } on Object catch (e) {
+      appController.setProfile(profile.copyWith(isUpdating: false));
       if (!mounted) return;
       await globalState.showMessage(
         title: 'Генератор BettboxR',
@@ -970,6 +1086,41 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     return ListView(
       padding: const EdgeInsets.only(bottom: 32, top: 4),
       children: [
+        if (_isRebuild)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Card(
+              margin: EdgeInsets.zero,
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.edit_note,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Редактирование профиля '
+                        '«${widget.rebuildProfile!.label ?? widget.rebuildProfile!.id}»: '
+                        'при сохранении конфиг будет пересобран.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         _section('1. Источники прокси', [
           TextField(
             controller: _linksController,
@@ -1307,11 +1458,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
             ),
-            onPressed: _createProfile,
-            icon: const Icon(Icons.rocket_launch),
-            label: const Text(
-              'Создать профиль в BettboxR',
-              style: TextStyle(fontSize: 16),
+            onPressed: _isRebuild ? _rebuildProfile : _createProfile,
+            icon: Icon(
+              _isRebuild ? Icons.auto_fix_high : Icons.rocket_launch,
+            ),
+            label: Text(
+              _isRebuild ? 'Пересобрать профиль' : 'Создать профиль в BettboxR',
+              style: const TextStyle(fontSize: 16),
             ),
           ),
         ),
