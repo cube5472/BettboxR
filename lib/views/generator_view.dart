@@ -576,35 +576,37 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   }
 
   String _buildYamlConfig() {
-    return buildConfig(
-      GeneratorParams(
-        urlTest: _urlTestController.text,
-        defaultNameserver: _defaultNsController.text,
-        nameserver: _nameserverController.text,
-        proxyServerNameserver: _proxyNsController.text,
-        mtu: _mtuController.text.trim(),
-        providerMode: _providerMode,
-        providerUrl: _providerUrlController.text,
-        providerInterval:
-            int.tryParse(_providerIntervalController.text) ?? 86400,
-        proxies: _proxies,
-        chains: _chains,
-        ruleCategories: _ruleCategories.entries
-            .where((e) => e.value)
-            .map((e) => e.key)
-            .toList(),
-        servicePresets: _servicePresets.entries
-            .where((e) => e.value)
-            .map((e) => e.key)
-            .toList(),
-        cdnPresets: _cdnPresets.entries
-            .where((e) => e.value)
-            .map((e) => e.key)
-            .toList(),
-        ruUnblock: _ruUnblock,
-        customRules: _parseCustomRules(),
-      ),
+    final params = GeneratorParams(
+      urlTest: _urlTestController.text,
+      defaultNameserver: _defaultNsController.text,
+      nameserver: _nameserverController.text,
+      proxyServerNameserver: _proxyNsController.text,
+      mtu: _mtuController.text.trim(),
+      providerMode: _providerMode,
+      providerUrl: _providerUrlController.text,
+      providerInterval:
+          int.tryParse(_providerIntervalController.text) ?? 86400,
+      proxies: _proxies,
+      chains: _chains,
+      ruleCategories: _ruleCategories.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      servicePresets: _servicePresets.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      cdnPresets: _cdnPresets.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      ruUnblock: _ruUnblock,
+      customRules: _parseCustomRules(),
     );
+    // Маркер с параметрами сборки в шапке YAML: профиль затем можно
+    // пересобрать одним тапом (меню карточки на странице
+    // «Конфигурации») актуальной версией генератора.
+    return embedGeneratorMarker(buildConfig(params), params);
   }
 
   // ---------------- Шаблоны генератора ----------------

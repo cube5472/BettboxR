@@ -1991,6 +1991,118 @@ class GeneratorParams {
   });
 }
 
+// ---------------- Маркер генераторного конфига ----------------
+//
+// Каждый конфиг, собранный генератором, получает в шапку YAML две
+// строки-комментария: признак «собран генератором» и полный JSON
+// параметров сборки. Ядро mihomo игнорирует YAML-комментарии, а
+// utils.patchYamlConfig (прогоняется при каждом сохранении профиля)
+// их не меняет — значит маркер переживает валидацию и бэкапы.
+// Наличие маркера = профиль можно «Пересобрать» одним тапом: параметры
+// достаются из шапки, прогоняются через актуальный buildConfig и
+// результат заменяет содержимое того же профиля (ID не меняется —
+// выбранная нода, кэш выбора и настройки профиля сохраняются).
+
+const String kGeneratorMarkerLine = '# bettboxr-generator v1';
+const String kGeneratorParamsPrefix = '# bettboxr-params: ';
+
+/// Обратимая сериализация параметров генератора в JSON.
+Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
+  'urlTest': p.urlTest,
+  'defaultNameserver': p.defaultNameserver,
+  'nameserver': p.nameserver,
+  'proxyServerNameserver': p.proxyServerNameserver,
+  'mtu': p.mtu,
+  'providerMode': p.providerMode,
+  'providerUrl': p.providerUrl,
+  'providerInterval': p.providerInterval,
+  'proxies': p.proxies,
+  'chains': p.chains,
+  'ruleCategories': p.ruleCategories,
+  'servicePresets': p.servicePresets,
+  'cdnPresets': p.cdnPresets,
+  'ruUnblock': p.ruUnblock,
+  'customRules': p.customRules,
+};
+
+List<Map<String, dynamic>> _jsonMapList(dynamic v) => v is List
+    ? v.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+    : const <Map<String, dynamic>>[];
+
+List<List<String>> _jsonStrListList(dynamic v) => v is List
+    ? v
+          .map(
+            (e) => e is List ? e.map((x) => '$x').toList() : <String>[],
+          )
+          .toList()
+    : const <List<String>>[];
+
+List<String> _jsonStrList(dynamic v) =>
+    v is List ? v.map((e) => '$e').toList() : const <String>[];
+
+List<Map<String, String>> _jsonStrMapList(dynamic v) => v is List
+    ? v
+          .whereType<Map>()
+          .map((e) => e.map((k, val) => MapEntry('$k', '$val')))
+          .toList()
+    : const <Map<String, String>>[];
+
+/// Восстановление параметров из JSON, записанного
+/// [generatorParamsToJson]. Недостающие поля заменяются дефолтами
+/// конструктора, так что старые маркеры остаются совместимыми с новыми
+/// версиями генератора.
+GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
+  return GeneratorParams(
+    urlTest: json['urlTest'] as String? ?? '',
+    defaultNameserver: json['defaultNameserver'] as String? ?? '',
+    nameserver: json['nameserver'] as String? ?? '',
+    proxyServerNameserver: json['proxyServerNameserver'] as String? ?? '',
+    mtu: json['mtu'] as String?,
+    providerMode: json['providerMode'] as bool? ?? false,
+    providerUrl: json['providerUrl'] as String? ?? '',
+    providerInterval: json['providerInterval'] as int? ?? 86400,
+    proxies: _jsonMapList(json['proxies']),
+    chains: _jsonStrListList(json['chains']),
+    ruleCategories: _jsonStrList(json['ruleCategories']),
+    servicePresets: _jsonStrList(json['servicePresets']),
+    cdnPresets: _jsonStrList(json['cdnPresets']),
+    ruUnblock: json['ruUnblock'] as bool? ?? true,
+    customRules: _jsonStrMapList(json['customRules']),
+  );
+}
+
+/// Дописывает в шапку собранного YAML маркер с параметрами сборки.
+/// JSON кодируется одной строкой (jsonEncode не выпускает переводов
+/// строки), поэтому маркер всегда занимает ровно одну строку.
+String embedGeneratorMarker(String yaml, GeneratorParams p) {
+  final json = jsonEncode(generatorParamsToJson(p));
+  return '$kGeneratorMarkerLine\n$kGeneratorParamsPrefix$json\n$yaml';
+}
+
+/// Достаёт параметры сборки из шапки конфига. Возвращает null, если
+/// маркера нет (конфиг создан не генератором или шапка повреждена).
+/// Сканируются только строки до первого содержимого: маркер обязан
+/// находиться в начале файла, иначе конфиг считаем не-генераторным.
+GeneratorParams? extractGeneratorParams(String content) {
+  try {
+    for (final rawLine in content.split('\n')) {
+      final line = rawLine.trimLeft();
+      if (line.isEmpty) continue;
+      if (!line.startsWith('#')) return null;
+      if (line.startsWith(kGeneratorParamsPrefix)) {
+        final decoded = jsonDecode(
+          line.substring(kGeneratorParamsPrefix.length).trim(),
+        );
+        if (decoded is Map<String, dynamic>) {
+          return generatorParamsFromJson(decoded);
+        }
+        return null;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 const Map<String, List<String>> _kRequiredFields = {
   'vless': ['uuid'],
   'trojan': ['password'],

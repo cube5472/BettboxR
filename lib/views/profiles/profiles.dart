@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
+import 'package:bett_box/generator/generator_core.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/pages/editor.dart';
 import 'package:bett_box/providers/providers.dart';
@@ -276,6 +278,70 @@ class ProfileItem extends StatelessWidget {
     }
   }
 
+  // «Пересобрать генератором»: параметры сборки читаются из маркера в
+  // шапке YAML (записывается при генерации), прогоняются через
+  // актуальный buildConfig, результат заменяет содержимое того же
+  // профиля. ID профиля не меняется — выбранная нода, кэш выбора и
+  // настройки профиля сохраняются; если профиль активен, конфиг
+  // применяется на лету (setProfileAndAutoApply). Прошлая версия
+  // файла остаётся рядом в «.bak» до следующей пересборки.
+  Future<void> _handleRebuild(BuildContext context) async {
+    const title = 'Генератор BettboxR';
+    try {
+      final file = await profile.getFile();
+      final oldContent = await file.readAsString();
+      final params = extractGeneratorParams(oldContent);
+      if (params == null) {
+        await globalState.showMessage(
+          title: title,
+          message: TextSpan(
+            text: 'Этот конфиг создан не генератором — в шапке файла нет '
+                'маркера с параметрами. Пересборка недоступна: соберите '
+                'конфиг заново в генераторе.',
+          ),
+          cancelable: false,
+        );
+        return;
+      }
+      final confirmed = await globalState.showMessage(
+        title: 'Пересобрать конфиг?',
+        message: TextSpan(
+          text: 'Правила, DNS, группы и пресеты профиля '
+              '«${profile.label ?? profile.id}» будут заново собраны '
+              'текущей версией генератора из сохранённых параметров.\n\n'
+              'Ручные правки файла будут потеряны; текущая версия '
+              'сохранится в резервную копию рядом с конфигом.',
+        ),
+      );
+      if (confirmed != true) return;
+      final appController = globalState.appController;
+      appController.setProfile(profile.copyWith(isUpdating: true));
+      try {
+        final backupPath =
+            '${await appPath.getProfilePath(profile.id)}.bak';
+        await File(backupPath).writeAsString(oldContent, flush: true);
+        final yaml = embedGeneratorMarker(buildConfig(params), params);
+        final updated = await profile.saveFileWithString(yaml);
+        appController.setProfileAndAutoApply(
+          updated.copyWith(isUpdating: false),
+        );
+        if (context.mounted) {
+          final backupName = backupPath.split('/').last;
+          context.showNotifier('Конфиг пересобран (бэкап: $backupName)');
+        }
+      } on Object {
+        appController.setProfile(profile.copyWith(isUpdating: false));
+        rethrow;
+      }
+    } on Object catch (e) {
+      await globalState.showMessage(
+        title: title,
+        message: TextSpan(text: '$e'),
+        cancelable: false,
+      );
+    }
+  }
+
   void _handleShowEditExtendPage(BuildContext context) {
     final editKey = GlobalKey<EditProfileViewState>();
     showExtend(
@@ -492,6 +558,13 @@ class ProfileItem extends StatelessWidget {
           },
         ),
       ],
+      PopupMenuItemData(
+        icon: Icons.auto_fix_high,
+        label: 'Пересобрать генератором',
+        onPressed: () {
+          _handleRebuild(context);
+        },
+      ),
       PopupMenuItemData(
         icon: Icons.extension_outlined,
         label: appLocalizations.override,
