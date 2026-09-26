@@ -122,10 +122,10 @@
   "add": "新增",
   "save": "儲存",
   "delete": "刪除",
-  "years": "{count, plural, other{年}}", 
-  "months": "{count, plural, other{月}}", 
-  "hours": "{count, plural, other{小時}}", 
-  "days": "{count, plural, other{天}}", 
+  "years": "{count, plural, other{年}}",
+  "months": "{count, plural, other{月}}",
+  "hours": "{count, plural, other{小時}}",
+  "days": "{count, plural, other{天}}",
   "minutes": "{count, plural, other{分鐘}}",
   "seconds": "秒",
   "ago": "前",
@@ -209,8 +209,6 @@
   "recovery": "還原",
   "recoveryProfiles": "僅還原設定檔",
   "recoveryAll": "還原所有資料",
-  "selectBackupVersion": "選擇備份版本",
-  "noBackupFileFound": "未找到備份檔案",
   "recoverySuccess": "還原成功",
   "backupSuccess": "備份成功",
   "noInfo": "暫無資訊",
@@ -299,26 +297,6 @@
   "fadingFour": "四方爍動",
   "wave": "波浪起伏",
   "doubleBounce": "雙重彈奏",
-  "chasingDots": "雙星追逐",
-  "cubeGrid": "九宮爍影",
-  "dancingSquare": "方塊起舞",
-  "dualRing": "雙環迴旋",
-  "fadingCube": "方影微漾",
-  "fadingGrid": "柵格隱現",
-  "foldingCube": "魔方翻折",
-  "hourGlass": "沙漏翻轉",
-  "pianoWave": "琴鍵律動",
-  "pouringHourGlass": "流沙傾注",
-  "pouringHourGlassRefined": "玉漏凝光",
-  "pulsingGrid": "矩陣脈動",
-  "pumpingHeart": "怦然心動",
-  "ring": "光環流轉",
-  "ripple": "水波蕩漾",
-  "rotatingPlain": "靈板翻轉",
-  "spinningCircle": "圓盤翻轉",
-  "squareCircle": "方圓化境",
-  "wanderingCubes": "雙角巡遊",
-  "waveSpinner": "波瀾疊轉",
   "sort": "排序",
   "columns": "列數",
   "proxiesSetting": "代理設定",
@@ -485,7 +463,7 @@
   "fallbackConcurrentDesc": "使用預設 DNS 和 Fallback 同步查詢",
   "geoipCode": "GeoIP 代碼",
   "ipcidr": "IP / 遮罩",
-  "domain": "網域",
+  "domain": "組織 / 域名",
   "reset": "重設",
   "action_view": "顯示 / 隱藏",
   "action_start": "啟動 / 停止",
@@ -527,7 +505,6 @@
   "regExp": "正規表示式",
   "icon": "圖片",
   "iconConfiguration": "圖片設定",
-  "iconConfigurationDesc": "自訂代理組 ICON 圖示",
   "noData": "暫無資料",
   "adminAutoLaunch": "管理員自啟動",
   "adminAutoLaunchDesc": "使用管理員模式開機自動啟動",
@@ -628,7 +605,7 @@
   "deleteTip": "確定刪除目前的 {label} 嗎？",
   "deleteMultipTip": "確定刪除選取的 {label} 嗎？",
   "nullTip": "暫無 {label}",
-  "script": "腳本",
+  "script": "指令碼",
   "color": "顏色",
   "rename": "重新命名",
   "unnamed": "未命名",
@@ -689,7 +666,6 @@
   "ageKeyPairGeneratedSuccess": "已生成 X25519 金鑰對，請妥善保存",
   "agePrivateKeyRequired": "請先輸入正確的 Age 私鑰",
   "lineWrap": "自動換行",
-  "autoStickyHeader": "自動吸頂",
   "showHiddenItems": "顯示隱藏項",
   "blockComment": "註解",
   "locate": "定位",
@@ -704,7 +680,6 @@
   "clear": "清空",
   "back": "返回",
   "closeAll": "關閉全部",
-  "script": "指令碼",
   "moreIpInfo": "更多 IP 資訊",
   "viewDetailedIpData": "檢視詳細 IP 資料",
   "ipAddress": "IP 位址",
@@ -712,7 +687,6 @@
   "provinceAndCity": "省份 / 城市",
   "operatorOrAsn": "歸屬 / ASN",
   "continent": "大洲",
-  "domain": "組織 / 域名",
   "copiedToClipboard": "已複製到剪貼簿",
   "privateIp": "私有 / 區域網路 IP 位址",
   "isp": "電信業者",
@@ -742,7 +716,6 @@
   "mediaUnlockRefreshOnNodeChange": "節點變化時自動重新整理檢測",
   "mediaUnlockColorfulIcons": "預設顯示彩色 ICON 圖示",
   "mediaUnlockRefreshByCategory": "根據當前分組狀態局部重新整理",
-
   "mediaUnlockPinnedSettingsDesc": "可選 4 個在小組件常駐展示的項目",
   "mediaUnlockSelectLimit": "最多只能選擇 4 個項目",
   "categoryAll": "全部",
@@ -759,7 +732,6 @@
   "notUnlocked": "未解鎖",
   "checkFailed": "Timeout",
   "testing": "檢測中",
-  "other": "其他",
   "flagged": "已標記",
   "coalThemeMode": "煤黑主題",
   "coalThemeModeDesc": "煤黑表面與粉紅色卡片描邊",
@@ -767,6 +739,30 @@
   "coalTurquoiseModeDesc": "煤黑表面與青綠色卡片描邊",
   "manualSort": "手動",
   "resetManualSort": "重置手動排序",
+  "selectBackupVersion": "選擇備份版本",
+  "noBackupFileFound": "未找到備份檔案",
+  "chasingDots": "雙星追逐",
+  "cubeGrid": "九宮爍影",
+  "dancingSquare": "方塊起舞",
+  "dualRing": "雙環迴旋",
+  "fadingCube": "方影微漾",
+  "fadingGrid": "柵格隱現",
+  "foldingCube": "魔方翻折",
+  "hourGlass": "沙漏翻轉",
+  "pianoWave": "琴鍵律動",
+  "pouringHourGlass": "流沙傾注",
+  "pouringHourGlassRefined": "玉漏凝光",
+  "pulsingGrid": "矩陣脈動",
+  "pumpingHeart": "怦然心動",
+  "ring": "光環流轉",
+  "ripple": "水波蕩漾",
+  "rotatingPlain": "靈板翻轉",
+  "spinningCircle": "圓盤翻轉",
+  "squareCircle": "方圓化境",
+  "wanderingCubes": "雙角巡遊",
+  "waveSpinner": "波瀾疊轉",
+  "iconConfigurationDesc": "自訂代理組 ICON 圖示",
+  "autoStickyHeader": "自動吸頂",
   "tvScanImport": "掃碼 / 局域網導入",
   "tvScanImportDesc": "手機掃碼或局域網推送設定檔至電視",
   "tvScanStep1": "確保手機與 TV 連接在同一 Wi-Fi 局域網",
@@ -783,6 +779,71 @@
   "addUser": "新增用戶",
   "editUser": "編輯用戶",
   "userAuthEmpty": "未設定驗證用戶，局域網連線無需憑據",
-  "usernameCannotContainColon": "使用者名稱不能包含冒號"
+  "usernameCannotContainColon": "使用者名稱不能包含冒號",
+  "pause": "暫停",
+  "security": "安全",
+  "stealthCheck": "隱身檢測",
+  "stealthCheckChecking": "檢測中…",
+  "stealthCheckCopyReport": "複製報告",
+  "stealthCheckEnableVpn": "開啟 VPN",
+  "stealthCheckFail": "無法檢測",
+  "stealthCheckRerun": "重新檢測",
+  "stealthCheckRun": "開始檢測",
+  "stealthDnsFail": "無法檢測",
+  "stealthDnsTitle": "DNS 查詢",
+  "stealthDotOk": "DoT 可用",
+  "stealthDotTitle": "DoT 檢測 (Quad9)",
+  "stealthExitFail": "無法取得",
+  "stealthExitTitle": "出口 IP",
+  "stealthFix": "修復",
+  "stealthIpv6Bad": "IPv6 繞過了隧道",
+  "stealthPortsTitle": "本地埠",
+  "stealthTunTitle": "VPN 介面",
+  "pauseForMinutes": "Pause for {minutes} min",
+  "@pauseForMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckDesc": "檢測類應用能看到哪些 VPN 痕跡",
+  "stealthCheckNeedVpn": "請先開啟 VPN，沒有隧道就無法檢測",
+  "stealthCheckScore": "{closed} of {total} closed",
+  "@stealthCheckScore": {
+    "placeholders": {
+      "closed": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckedAt": "Checked at {time}",
+  "@stealthCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthDnsLeak": "查詢流向電信商 DNS —— 存在洩漏",
+  "stealthDnsOk": "解析器與電信商 DNS 不一致",
+  "stealthDotBad": "DoT 不可用 (TCP 853/TLS)",
+  "stealthExitOk": "流量經節點出去",
+  "stealthIpv6OkCovered": "IPv6 已被隧道覆蓋",
+  "stealthIpv6OkNoV6": "網路沒有 IPv6 —— 無從洩漏",
+  "stealthPortsBad": "Answering ports: {ports}",
+  "@stealthPortsBad": {
+    "placeholders": {
+      "ports": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthPortsOk": "埠靜默，檢測器發現不了代理",
+  "stealthTunWarn": "tun 介面對所有應用可見，無 root 無法隱藏",
+  "stealthVpnNetTitle": "系統中的 VPN 網路",
+  "stealthVpnNetWarn": "應用能看到活躍的 VPN 網路（TRANSPORT_VPN）"
 }
-

@@ -209,8 +209,6 @@
   "recovery": "Restore",
   "recoveryProfiles": "Restore Profiles Only",
   "recoveryAll": "Restore All Data",
-  "selectBackupVersion": "Select Backup Version",
-  "noBackupFileFound": "No backup file found",
   "recoverySuccess": "Restore Successful",
   "backupSuccess": "Backup Successful",
   "noInfo": "No Info",
@@ -299,26 +297,6 @@
   "fadingFour": "Fading Four",
   "wave": "Wave",
   "doubleBounce": "Double Bounce",
-  "chasingDots": "Chasing Dots",
-  "cubeGrid": "Cube Grid",
-  "dancingSquare": "Dancing Square",
-  "dualRing": "Dual Ring",
-  "fadingCube": "Fading Cube",
-  "fadingGrid": "Fading Grid",
-  "foldingCube": "Folding Cube",
-  "hourGlass": "Hourglass",
-  "pianoWave": "Piano Wave",
-  "pouringHourGlass": "Pouring Hourglass",
-  "pouringHourGlassRefined": "Refined Hourglass",
-  "pulsingGrid": "Pulsing Grid",
-  "pumpingHeart": "Pumping Heart",
-  "ring": "Ring",
-  "ripple": "Ripple",
-  "rotatingPlain": "Rotating Plain",
-  "spinningCircle": "Spinning Circle",
-  "squareCircle": "Square Circle",
-  "wanderingCubes": "Wandering Cubes",
-  "waveSpinner": "Wave Spinner",
   "sort": "Sort",
   "columns": "Columns",
   "proxiesSetting": "Proxy Settings",
@@ -485,7 +463,7 @@
   "fallbackConcurrentDesc": "Query default DNS and Fallback synchronously",
   "geoipCode": "GeoIP Code",
   "ipcidr": "IP/CIDR",
-  "domain": "Domain",
+  "domain": "Organization / Domain",
   "reset": "Reset",
   "action_view": "Show/Hide",
   "action_start": "Start/Stop",
@@ -527,7 +505,6 @@
   "regExp": "RegExp",
   "icon": "Icon",
   "iconConfiguration": "Icon Configuration",
-  "iconConfigurationDesc": "Customize proxy group ICON icons",
   "noData": "No Data",
   "adminAutoLaunch": "Admin Auto-Launch",
   "adminAutoLaunchDesc": "Auto-start with admin privileges",
@@ -688,7 +665,6 @@
   "ageKeyPairGeneratedSuccess": "X25519 Key pair generated, please keep it safe",
   "agePrivateKeyRequired": "Please enter a correct Age private key first",
   "lineWrap": "Wrap Lines",
-  "autoStickyHeader": "Auto Sticky Header",
   "showHiddenItems": "Show Hidden Items",
   "blockComment": "Comment",
   "locate": "Locate",
@@ -703,7 +679,6 @@
   "clear": "Clear",
   "back": "Back",
   "closeAll": "Close All",
-  "script": "Script",
   "moreIpInfo": "More IP Information",
   "viewDetailedIpData": "View Detailed IP Data",
   "ipAddress": "IP Address",
@@ -711,7 +686,6 @@
   "provinceAndCity": "Province / City",
   "operatorOrAsn": "Organization / ASN",
   "continent": "Continent",
-  "domain": "Organization / Domain",
   "copiedToClipboard": "Copied to clipboard",
   "privateIp": "Private / LAN IP Address",
   "isp": "ISP",
@@ -741,7 +715,6 @@
   "mediaUnlockRefreshOnNodeChange": "Auto refresh on node change",
   "mediaUnlockColorfulIcons": "Show colored icons by default",
   "mediaUnlockRefreshByCategory": "Partially refresh based on current category",
-
   "mediaUnlockPinnedSettingsDesc": "Select up to 4 items to pin on the widget",
   "mediaUnlockSelectLimit": "You can select up to 4 items",
   "categoryAll": "All",
@@ -758,7 +731,6 @@
   "notUnlocked": "Not Unlocked",
   "checkFailed": "Timeout",
   "testing": "Testing",
-  "other": "Other",
   "flagged": "Flagged",
   "coalThemeMode": "Coal Black Theme",
   "coalThemeModeDesc": "Coal-black surfaces with pink card outlines",
@@ -767,9 +739,39 @@
   "hideUnavailable": "Hide unavailable",
   "showUnavailable": "Show unavailable",
   "hiddenUnavailableCount": "Hidden unavailable: {count} — tap to show",
-  "@hiddenUnavailableCount": {"placeholders": {"count": {"type": "num"}}},
+  "@hiddenUnavailableCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "manualSort": "Manual",
   "resetManualSort": "Reset manual sort",
+  "selectBackupVersion": "Select Backup Version",
+  "noBackupFileFound": "No backup file found",
+  "chasingDots": "Chasing Dots",
+  "cubeGrid": "Cube Grid",
+  "dancingSquare": "Dancing Square",
+  "dualRing": "Dual Ring",
+  "fadingCube": "Fading Cube",
+  "fadingGrid": "Fading Grid",
+  "foldingCube": "Folding Cube",
+  "hourGlass": "Hourglass",
+  "pianoWave": "Piano Wave",
+  "pouringHourGlass": "Pouring Hourglass",
+  "pouringHourGlassRefined": "Refined Hourglass",
+  "pulsingGrid": "Pulsing Grid",
+  "pumpingHeart": "Pumping Heart",
+  "ring": "Ring",
+  "ripple": "Ripple",
+  "rotatingPlain": "Rotating Plain",
+  "spinningCircle": "Spinning Circle",
+  "squareCircle": "Square Circle",
+  "wanderingCubes": "Wandering Cubes",
+  "waveSpinner": "Wave Spinner",
+  "iconConfigurationDesc": "Customize proxy group ICON icons",
+  "autoStickyHeader": "Auto Sticky Header",
   "tvScanImport": "Scan / LAN Import",
   "tvScanImportDesc": "Scan QR or push profile to TV via LAN",
   "tvScanStep1": "Ensure phone and TV are on the same Wi-Fi network",
@@ -786,6 +788,71 @@
   "addUser": "Add User",
   "editUser": "Edit User",
   "userAuthEmpty": "No authentication configured, LAN connections do not require credentials",
-  "usernameCannotContainColon": "Username cannot contain colons"
+  "usernameCannotContainColon": "Username cannot contain colons",
+  "pause": "Pause",
+  "security": "Security",
+  "stealthCheck": "Stealth check",
+  "stealthCheckChecking": "Checking…",
+  "stealthCheckCopyReport": "Copy report",
+  "stealthCheckEnableVpn": "Enable VPN",
+  "stealthCheckFail": "Could not check",
+  "stealthCheckRerun": "Rerun",
+  "stealthCheckRun": "Run check",
+  "stealthDnsFail": "Could not check",
+  "stealthDnsTitle": "DNS queries",
+  "stealthDotOk": "DoT reachable",
+  "stealthDotTitle": "DoT probe (Quad9)",
+  "stealthExitFail": "Could not fetch",
+  "stealthExitTitle": "Exit IP",
+  "stealthFix": "Fix",
+  "stealthIpv6Bad": "IPv6 bypasses the tunnel",
+  "stealthPortsTitle": "Local ports",
+  "stealthTunTitle": "VPN interface",
+  "pauseForMinutes": "Pause for {minutes} min",
+  "@pauseForMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckDesc": "What VPN-detecting apps can see about you",
+  "stealthCheckNeedVpn": "Turn on the VPN — there is nothing to check without the tunnel",
+  "stealthCheckScore": "{closed} of {total} closed",
+  "@stealthCheckScore": {
+    "placeholders": {
+      "closed": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckedAt": "Checked at {time}",
+  "@stealthCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthDnsLeak": "Queries go to the ISP DNS — a leak",
+  "stealthDnsOk": "Resolver does not match the ISP DNS",
+  "stealthDotBad": "DoT unreachable (TCP 853/TLS)",
+  "stealthExitOk": "Traffic exits through the node",
+  "stealthIpv6OkCovered": "IPv6 is covered by the tunnel",
+  "stealthIpv6OkNoV6": "No IPv6 in the network — nothing to leak",
+  "stealthPortsBad": "Answering ports: {ports}",
+  "@stealthPortsBad": {
+    "placeholders": {
+      "ports": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthPortsOk": "Ports are silent — detectors will not spot the proxy",
+  "stealthTunWarn": "The tun interface is visible to all apps, it cannot be hidden without root",
+  "stealthVpnNetTitle": "VPN network in the system",
+  "stealthVpnNetWarn": "Apps can see the active VPN network (TRANSPORT_VPN)"
 }
-

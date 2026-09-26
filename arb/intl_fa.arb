@@ -209,8 +209,6 @@
   "recovery": "بازیابی",
   "recoveryProfiles": "فقط بازیابی پروفایل‌ها",
   "recoveryAll": "بازیابی تمام داده‌ها",
-  "selectBackupVersion": "انتخاب نسخه پشتیبان",
-  "noBackupFileFound": "فایل پشتیبان پیدا نشد",
   "recoverySuccess": "بازیابی با موفقیت انجام شد",
   "backupSuccess": "پشتیبان‌گیری با موفقیت انجام شد",
   "noInfo": "اطلاعاتی موجود نیست",
@@ -299,26 +297,6 @@
   "fadingFour": "چهار دایره محوشونده",
   "wave": "موج",
   "doubleBounce": "جهش دوگانه",
-  "chasingDots": "نقاط تعقیب‌کننده",
-  "cubeGrid": "شبکه مکعب‌ها",
-  "dancingSquare": "مربع رقصان",
-  "dualRing": "حلقه دوتایی",
-  "fadingCube": "مکعب محوشونده",
-  "fadingGrid": "شبکه محوشونده",
-  "foldingCube": "مکعب تاشو",
-  "hourGlass": "ساعت شنی",
-  "pianoWave": "موج پیانو",
-  "pouringHourGlass": "ساعت شنی روان",
-  "pouringHourGlassRefined": "ساعت شنی ظریف",
-  "pulsingGrid": "شبکه تپنده",
-  "pumpingHeart": "قلب تپنده",
-  "ring": "حلقه",
-  "ripple": "موج آب",
-  "rotatingPlain": "صفحه چرخان",
-  "spinningCircle": "دایره چرخان",
-  "squareCircle": "مربع و دایره",
-  "wanderingCubes": "مکعب‌های سرگردان",
-  "waveSpinner": "چرخنده موجی",
   "sort": "مرتب‌سازی",
   "columns": "تعداد ستون‌ها",
   "proxiesSetting": "تنظیمات پروکسی",
@@ -485,7 +463,7 @@
   "fallbackConcurrentDesc": "استعلام همزمان از DNS اصلی و فالبک",
   "geoipCode": "کد GeoIP",
   "ipcidr": "IP / ماسک",
-  "domain": "دامنه",
+  "domain": "سازمان / دامنه",
   "reset": "بازنشانی",
   "action_view": "نمایش / پنهان",
   "action_start": "شروع / توقف",
@@ -527,7 +505,6 @@
   "regExp": "عبارت باقاعده (RegEx)",
   "icon": "تصویر",
   "iconConfiguration": "تنظیمات تصویر",
-  "iconConfigurationDesc": "سفارشی‌سازی آیکون‌های ICON گروه پروکسی",
   "noData": "داده‌ای موجود نیست",
   "adminAutoLaunch": "شروع خودکار با دسترسی Admin",
   "adminAutoLaunchDesc": "اجرای خودکار با دسترسی Admin هنگام بووت",
@@ -689,7 +666,6 @@
   "ageKeyPairGeneratedSuccess": "جفت کلید X25519 با موفقیت ساخته شد. لطفاً آن را ذخیره کنید",
   "agePrivateKeyRequired": "لطفا ابتدا کلید خصوصی Age صحیح را وارد کنید",
   "lineWrap": "شکستن خطوط",
-  "autoStickyHeader": "چسبندگی خودکار سربرگ",
   "showHiddenItems": "نمایش موارد پنهان",
   "blockComment": "کامنت",
   "locate": "موقعیت",
@@ -704,7 +680,6 @@
   "clear": "پاک کردن",
   "back": "بازگشت",
   "closeAll": "بستن همه",
-  "script": "اسکریپت",
   "moreIpInfo": "اطلاعات بیشتر IP",
   "viewDetailedIpData": "مشاهده داده‌های دقیق IP",
   "ipAddress": "آدرس IP",
@@ -712,7 +687,6 @@
   "provinceAndCity": "استان / شهر",
   "operatorOrAsn": "سازمان / ASN",
   "continent": "قاره",
-  "domain": "سازمان / دامنه",
   "copiedToClipboard": "در کلیپ‌بورد کپی شد",
   "privateIp": "آدرس IP خصوصی / شبکه محلی",
   "isp": "ارائه‌دهنده اینترنت",
@@ -742,7 +716,6 @@
   "mediaUnlockRefreshOnNodeChange": "به‌روزرسانی خودکار هنگام تغییر گره",
   "mediaUnlockColorfulIcons": "نمایش آیکون‌های رنگی به‌صورت پیش‌فرض",
   "mediaUnlockRefreshByCategory": "تازه‌سازی جزئی بر اساس دسته‌بندی فعلی",
-
   "mediaUnlockPinnedSettingsDesc": "امکان انتخاب حداکثر ۴ مورد برای پین کردن در ویجت",
   "mediaUnlockSelectLimit": "حداکثر می‌توانید ۴ مورد را انتخاب کنید",
   "categoryAll": "همه",
@@ -759,7 +732,6 @@
   "notUnlocked": "مسدود",
   "checkFailed": "Timeout",
   "testing": "در حال بررسی",
-  "other": "سایر",
   "flagged": "نشانه‌گذاری‌شده",
   "coalThemeMode": "تم مشکی ذغالی",
   "coalThemeModeDesc": "سطوح مشکی ذغالی با حاشیه صورتی کارت‌ها",
@@ -767,6 +739,30 @@
   "coalTurquoiseModeDesc": "سطوح مشکی ذغالی با حاشیه فیروزه‌ای کارت‌ها",
   "manualSort": "دستی",
   "resetManualSort": "بازنشانی مرتب‌سازی دستی",
+  "selectBackupVersion": "انتخاب نسخه پشتیبان",
+  "noBackupFileFound": "فایل پشتیبان پیدا نشد",
+  "chasingDots": "نقاط تعقیب‌کننده",
+  "cubeGrid": "شبکه مکعب‌ها",
+  "dancingSquare": "مربع رقصان",
+  "dualRing": "حلقه دوتایی",
+  "fadingCube": "مکعب محوشونده",
+  "fadingGrid": "شبکه محوشونده",
+  "foldingCube": "مکعب تاشو",
+  "hourGlass": "ساعت شنی",
+  "pianoWave": "موج پیانو",
+  "pouringHourGlass": "ساعت شنی روان",
+  "pouringHourGlassRefined": "ساعت شنی ظریف",
+  "pulsingGrid": "شبکه تپنده",
+  "pumpingHeart": "قلب تپنده",
+  "ring": "حلقه",
+  "ripple": "موج آب",
+  "rotatingPlain": "صفحه چرخان",
+  "spinningCircle": "دایره چرخان",
+  "squareCircle": "مربع و دایره",
+  "wanderingCubes": "مکعب‌های سرگردان",
+  "waveSpinner": "چرخنده موجی",
+  "iconConfigurationDesc": "سفارشی‌سازی آیکون‌های ICON گروه پروکسی",
+  "autoStickyHeader": "چسبندگی خودکار سربرگ",
   "tvScanImport": "اسکن / وارد کردن از شبکه محلی",
   "tvScanImportDesc": "اسکن کد یا ارسال پروفایل به تلویزیون از شبکه محلی",
   "tvScanStep1": "مطمئن شوید گوشی و TV به یک شبکه Wi-Fi متصل هستند",
@@ -783,6 +779,71 @@
   "addUser": "افزودن کاربر",
   "editUser": "ویرایش کاربر",
   "userAuthEmpty": "کاربری برای احراز هویت تنظیم نشده، اتصال شبکه محلی نیازی به مشخصات ندارد",
-  "usernameCannotContainColon": "نام کاربری نباید شامل دونقطه (:) باشد"
+  "usernameCannotContainColon": "نام کاربری نباید شامل دونقطه (:) باشد",
+  "pause": "Pause",
+  "security": "Security",
+  "stealthCheck": "Stealth check",
+  "stealthCheckChecking": "Checking…",
+  "stealthCheckCopyReport": "Copy report",
+  "stealthCheckEnableVpn": "Enable VPN",
+  "stealthCheckFail": "Could not check",
+  "stealthCheckRerun": "Rerun",
+  "stealthCheckRun": "Run check",
+  "stealthDnsFail": "Could not check",
+  "stealthDnsTitle": "DNS queries",
+  "stealthDotOk": "DoT reachable",
+  "stealthDotTitle": "DoT probe (Quad9)",
+  "stealthExitFail": "Could not fetch",
+  "stealthExitTitle": "Exit IP",
+  "stealthFix": "Fix",
+  "stealthIpv6Bad": "IPv6 bypasses the tunnel",
+  "stealthPortsTitle": "Local ports",
+  "stealthTunTitle": "VPN interface",
+  "pauseForMinutes": "Pause for {minutes} min",
+  "@pauseForMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckDesc": "What VPN-detecting apps can see about you",
+  "stealthCheckNeedVpn": "Turn on the VPN — there is nothing to check without the tunnel",
+  "stealthCheckScore": "{closed} of {total} closed",
+  "@stealthCheckScore": {
+    "placeholders": {
+      "closed": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckedAt": "Checked at {time}",
+  "@stealthCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthDnsLeak": "Queries go to the ISP DNS — a leak",
+  "stealthDnsOk": "Resolver does not match the ISP DNS",
+  "stealthDotBad": "DoT unreachable (TCP 853/TLS)",
+  "stealthExitOk": "Traffic exits through the node",
+  "stealthIpv6OkCovered": "IPv6 is covered by the tunnel",
+  "stealthIpv6OkNoV6": "No IPv6 in the network — nothing to leak",
+  "stealthPortsBad": "Answering ports: {ports}",
+  "@stealthPortsBad": {
+    "placeholders": {
+      "ports": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthPortsOk": "Ports are silent — detectors will not spot the proxy",
+  "stealthTunWarn": "The tun interface is visible to all apps, it cannot be hidden without root",
+  "stealthVpnNetTitle": "VPN network in the system",
+  "stealthVpnNetWarn": "Apps can see the active VPN network (TRANSPORT_VPN)"
 }
-

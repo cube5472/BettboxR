@@ -209,8 +209,6 @@
   "recovery": "復元",
   "recoveryProfiles": "プロファイルのみ復元",
   "recoveryAll": "すべてのデータを復元",
-  "selectBackupVersion": "バックアップバージョンの選択",
-  "noBackupFileFound": "バックアップファイルが見つかりません",
   "recoverySuccess": "復元成功",
   "backupSuccess": "バックアップ成功",
   "noInfo": "情報なし",
@@ -299,26 +297,6 @@
   "fadingFour": "フェードフォースクエア",
   "wave": "ウェーブ",
   "doubleBounce": "ダブルバウンス",
-  "chasingDots": "チェイシングドット",
-  "cubeGrid": "キューブグリッド",
-  "dancingSquare": "ダンシングスクエア",
-  "dualRing": "デュアルリング",
-  "fadingCube": "フェードキューブ",
-  "fadingGrid": "フェードグリッド",
-  "foldingCube": "フォールディングキューブ",
-  "hourGlass": "アワーグラス",
-  "pianoWave": "ピアノウェーブ",
-  "pouringHourGlass": "ポーリングアワーグラス",
-  "pouringHourGlassRefined": "リファインドグラス",
-  "pulsingGrid": "パルスグリッド",
-  "pumpingHeart": "ハートビート",
-  "ring": "リング",
-  "ripple": "リップル",
-  "rotatingPlain": "プレーンローテーション",
-  "spinningCircle": "スピンサークル",
-  "squareCircle": "スクエアサークル",
-  "wanderingCubes": "ワンダリングキューブ",
-  "waveSpinner": "ウェーブスピナー",
   "sort": "並び替え",
   "columns": "列数",
   "proxiesSetting": "プロキシ設定",
@@ -485,7 +463,7 @@
   "fallbackConcurrentDesc": "デフォルトDNSとフォールバックDNSを同時に照会",
   "geoipCode": "GeoIPコード",
   "ipcidr": "IP / サブネットマスク",
-  "domain": "ドメイン",
+  "domain": "組織 / ドメイン",
   "reset": "リセット",
   "action_view": "表示 / 非表示",
   "action_start": "開始 / 停止",
@@ -527,7 +505,6 @@
   "regExp": "正規表現",
   "icon": "画像",
   "iconConfiguration": "画像設定",
-  "iconConfigurationDesc": "プロキシグループのICONアイコンをカスタマイズ",
   "noData": "データがありません",
   "adminAutoLaunch": "管理者権限で自動起動",
   "adminAutoLaunchDesc": "管理者モードでOS起動時に自動開始",
@@ -689,7 +666,6 @@
   "ageKeyPairGeneratedSuccess": "X25519鍵ペアを生成しました。大切に保管してください",
   "agePrivateKeyRequired": "正しいAge秘密鍵を先に入力してください",
   "lineWrap": "折り返し",
-  "autoStickyHeader": "自動固定ヘッダー",
   "showHiddenItems": "非表示項目を表示",
   "blockComment": "コメント",
   "locate": "位置",
@@ -704,7 +680,6 @@
   "clear": "消去",
   "back": "戻る",
   "closeAll": "すべて閉じる",
-  "script": "スクリプト",
   "moreIpInfo": "詳細 IP 情報",
   "viewDetailedIpData": "詳細なIPデータを見る",
   "ipAddress": "IP アドレス",
@@ -712,7 +687,6 @@
   "provinceAndCity": "都道府県 / 都市",
   "operatorOrAsn": "組織 / ASN",
   "continent": "大陸",
-  "domain": "組織 / ドメイン",
   "copiedToClipboard": "クリップボードにコピーしました",
   "privateIp": "プライベート / LAN IP アドレス",
   "isp": "プロバイダ",
@@ -742,7 +716,6 @@
   "mediaUnlockRefreshOnNodeChange": "ノード変更時に自動更新",
   "mediaUnlockColorfulIcons": "既定でカラーアイコンを表示",
   "mediaUnlockRefreshByCategory": "現在のカテゴリに基づいて部分更新",
-
   "mediaUnlockPinnedSettingsDesc": "ウィジェットに常駐表示する最大4項目を選択できます",
   "mediaUnlockSelectLimit": "最大4項目まで選択できます",
   "categoryAll": "すべて",
@@ -759,7 +732,6 @@
   "notUnlocked": "未解除",
   "checkFailed": "Timeout",
   "testing": "検出中",
-  "other": "その他",
   "flagged": "フラグ付き",
   "coalThemeMode": "炭黒テーマ",
   "coalThemeModeDesc": "炭黒のサーフェスとピンクのカード枠",
@@ -767,6 +739,30 @@
   "coalTurquoiseModeDesc": "炭黒のサーフェスとターコイズのカード枠",
   "manualSort": "手動",
   "resetManualSort": "手動並べ替えをリセット",
+  "selectBackupVersion": "バックアップバージョンの選択",
+  "noBackupFileFound": "バックアップファイルが見つかりません",
+  "chasingDots": "チェイシングドット",
+  "cubeGrid": "キューブグリッド",
+  "dancingSquare": "ダンシングスクエア",
+  "dualRing": "デュアルリング",
+  "fadingCube": "フェードキューブ",
+  "fadingGrid": "フェードグリッド",
+  "foldingCube": "フォールディングキューブ",
+  "hourGlass": "アワーグラス",
+  "pianoWave": "ピアノウェーブ",
+  "pouringHourGlass": "ポーリングアワーグラス",
+  "pouringHourGlassRefined": "リファインドグラス",
+  "pulsingGrid": "パルスグリッド",
+  "pumpingHeart": "ハートビート",
+  "ring": "リング",
+  "ripple": "リップル",
+  "rotatingPlain": "プレーンローテーション",
+  "spinningCircle": "スピンサークル",
+  "squareCircle": "スクエアサークル",
+  "wanderingCubes": "ワンダリングキューブ",
+  "waveSpinner": "ウェーブスピナー",
+  "iconConfigurationDesc": "プロキシグループのICONアイコンをカスタマイズ",
+  "autoStickyHeader": "自動固定ヘッダー",
   "tvScanImport": "スキャン / LANインポート",
   "tvScanImportDesc": "スマホでスキャンまたはLAN経由でTVに設定をプッシュ",
   "tvScanStep1": "スマホとTVが同じWi-Fiネットワークにあることを確認",
@@ -783,6 +779,71 @@
   "addUser": "ユーザーを追加",
   "editUser": "ユーザーを編集",
   "userAuthEmpty": "認証ユーザーが設定されていません。LAN接続には資格情報が不要です",
-  "usernameCannotContainColon": "ユーザー名にコロン（:）を含めることはできません"
+  "usernameCannotContainColon": "ユーザー名にコロン（:）を含めることはできません",
+  "pause": "Pause",
+  "security": "Security",
+  "stealthCheck": "Stealth check",
+  "stealthCheckChecking": "Checking…",
+  "stealthCheckCopyReport": "Copy report",
+  "stealthCheckEnableVpn": "Enable VPN",
+  "stealthCheckFail": "Could not check",
+  "stealthCheckRerun": "Rerun",
+  "stealthCheckRun": "Run check",
+  "stealthDnsFail": "Could not check",
+  "stealthDnsTitle": "DNS queries",
+  "stealthDotOk": "DoT reachable",
+  "stealthDotTitle": "DoT probe (Quad9)",
+  "stealthExitFail": "Could not fetch",
+  "stealthExitTitle": "Exit IP",
+  "stealthFix": "Fix",
+  "stealthIpv6Bad": "IPv6 bypasses the tunnel",
+  "stealthPortsTitle": "Local ports",
+  "stealthTunTitle": "VPN interface",
+  "pauseForMinutes": "Pause for {minutes} min",
+  "@pauseForMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckDesc": "What VPN-detecting apps can see about you",
+  "stealthCheckNeedVpn": "Turn on the VPN — there is nothing to check without the tunnel",
+  "stealthCheckScore": "{closed} of {total} closed",
+  "@stealthCheckScore": {
+    "placeholders": {
+      "closed": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckedAt": "Checked at {time}",
+  "@stealthCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthDnsLeak": "Queries go to the ISP DNS — a leak",
+  "stealthDnsOk": "Resolver does not match the ISP DNS",
+  "stealthDotBad": "DoT unreachable (TCP 853/TLS)",
+  "stealthExitOk": "Traffic exits through the node",
+  "stealthIpv6OkCovered": "IPv6 is covered by the tunnel",
+  "stealthIpv6OkNoV6": "No IPv6 in the network — nothing to leak",
+  "stealthPortsBad": "Answering ports: {ports}",
+  "@stealthPortsBad": {
+    "placeholders": {
+      "ports": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthPortsOk": "Ports are silent — detectors will not spot the proxy",
+  "stealthTunWarn": "The tun interface is visible to all apps, it cannot be hidden without root",
+  "stealthVpnNetTitle": "VPN network in the system",
+  "stealthVpnNetWarn": "Apps can see the active VPN network (TRANSPORT_VPN)"
 }
-

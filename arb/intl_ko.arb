@@ -209,8 +209,6 @@
   "recovery": "복구",
   "recoveryProfiles": "프로필만 복구",
   "recoveryAll": "모든 데이터 복구",
-  "selectBackupVersion": "백업 버전 선택",
-  "noBackupFileFound": "백업 파일을 찾을 수 없습니다",
   "recoverySuccess": "복구 성공",
   "backupSuccess": "백업 성공",
   "noInfo": "정보 없음",
@@ -299,26 +297,6 @@
   "fadingFour": "페이딩 포 스퀘어",
   "wave": "웨이브",
   "doubleBounce": "더블 바운스",
-  "chasingDots": "체이싱 도트",
-  "cubeGrid": "큐브 그리드",
-  "dancingSquare": "댄싱 스퀘어",
-  "dualRing": "듀얼 링",
-  "fadingCube": "페이딩 큐브",
-  "fadingGrid": "페이딩 그리드",
-  "foldingCube": "폴딩 큐브",
-  "hourGlass": "모래시계",
-  "pianoWave": "피아노 웨이브",
-  "pouringHourGlass": "흐르는 모래시계",
-  "pouringHourGlassRefined": "정밀 모래시계",
-  "pulsingGrid": "펄싱 그리드",
-  "pumpingHeart": "펌핑 하트",
-  "ring": "링",
-  "ripple": "물결 리플",
-  "rotatingPlain": "로테이팅 플레인",
-  "spinningCircle": "스피닝 서클",
-  "squareCircle": "스퀘어 서클",
-  "wanderingCubes": "원더링 큐브",
-  "waveSpinner": "웨이브 스피너",
   "sort": "정렬",
   "columns": "열 수",
   "proxiesSetting": "프록시 설정",
@@ -485,7 +463,7 @@
   "fallbackConcurrentDesc": "기본 DNS와 폴백 DNS 동시 조회",
   "geoipCode": "GeoIP 코드",
   "ipcidr": "IP / 서브넷 마스크",
-  "domain": "도메인",
+  "domain": "조직 / 도메인",
   "reset": "초기화",
   "action_view": "표시 / 숨기기",
   "action_start": "시작 / 정지",
@@ -527,7 +505,6 @@
   "regExp": "정규식",
   "icon": "이미지",
   "iconConfiguration": "이미지 설정",
-  "iconConfigurationDesc": "프록시 그룹 ICON 아이콘 사용자 지정",
   "noData": "데이터가 없습니다",
   "adminAutoLaunch": "관리자 권한 자동 시작",
   "adminAutoLaunchDesc": "관리자 모드로 부팅 시 자동 실행",
@@ -689,7 +666,6 @@
   "ageKeyPairGeneratedSuccess": "X25519 키 쌍이 생성되었습니다. 잘 보관하세요",
   "agePrivateKeyRequired": "올바른 Age 개인키를 먼저 입력하세요",
   "lineWrap": "자동 줄바꿈",
-  "autoStickyHeader": "헤더 자동 고정",
   "showHiddenItems": "숨겨진 항목 표시",
   "blockComment": "주석",
   "locate": "위치",
@@ -704,7 +680,6 @@
   "clear": "지우기",
   "back": "뒤로",
   "closeAll": "모두 닫기",
-  "script": "스크립트",
   "moreIpInfo": "상세 IP 정보",
   "viewDetailedIpData": "상세 IP 데이터 보기",
   "ipAddress": "IP 주소",
@@ -712,7 +687,6 @@
   "provinceAndCity": "시 / 도 / 도시",
   "operatorOrAsn": "소속 / ASN",
   "continent": "대륙",
-  "domain": "조직 / 도메인",
   "copiedToClipboard": "클립보드에 복사되었습니다",
   "privateIp": "사설 / LAN IP 주소",
   "isp": "통신사",
@@ -742,7 +716,6 @@
   "mediaUnlockRefreshOnNodeChange": "노드 변경 시 자동 새로고침",
   "mediaUnlockColorfulIcons": "기본적으로 컬러 아이콘 표시",
   "mediaUnlockRefreshByCategory": "현재 카테고리를 기반으로 부분 새로고침",
-
   "mediaUnlockPinnedSettingsDesc": "위젯에 고정 표시할 항목을 최대 4개 선택할 수 있습니다",
   "mediaUnlockSelectLimit": "최대 4개 항목까지 선택할 수 있습니다",
   "categoryAll": "전체",
@@ -759,7 +732,6 @@
   "notUnlocked": "잠김",
   "checkFailed": "Timeout",
   "testing": "검사 중",
-  "other": "기타",
   "flagged": "표시됨",
   "coalThemeMode": "탄소 블랙 테마",
   "coalThemeModeDesc": "탄소 검정 표면과 분홍색 카드 테두리",
@@ -767,6 +739,30 @@
   "coalTurquoiseModeDesc": "탄소 검정 표면과 청록색 카드 테두리",
   "manualSort": "수동",
   "resetManualSort": "수동 정렬 초기화",
+  "selectBackupVersion": "백업 버전 선택",
+  "noBackupFileFound": "백업 파일을 찾을 수 없습니다",
+  "chasingDots": "체이싱 도트",
+  "cubeGrid": "큐브 그리드",
+  "dancingSquare": "댄싱 스퀘어",
+  "dualRing": "듀얼 링",
+  "fadingCube": "페이딩 큐브",
+  "fadingGrid": "페이딩 그리드",
+  "foldingCube": "폴딩 큐브",
+  "hourGlass": "모래시계",
+  "pianoWave": "피아노 웨이브",
+  "pouringHourGlass": "흐르는 모래시계",
+  "pouringHourGlassRefined": "정밀 모래시계",
+  "pulsingGrid": "펄싱 그리드",
+  "pumpingHeart": "펌핑 하트",
+  "ring": "링",
+  "ripple": "물결 리플",
+  "rotatingPlain": "로테이팅 플레인",
+  "spinningCircle": "스피닝 서클",
+  "squareCircle": "스퀘어 서클",
+  "wanderingCubes": "원더링 큐브",
+  "waveSpinner": "웨이브 스피너",
+  "iconConfigurationDesc": "프록시 그룹 ICON 아이콘 사용자 지정",
+  "autoStickyHeader": "헤더 자동 고정",
   "tvScanImport": "스캔 / LAN 가져오기",
   "tvScanImportDesc": "스마트폰으로 스캔하거나 LAN을 통해 TV로 프로필 푸시",
   "tvScanStep1": "스마트폰과 TV가 동일한 Wi-Fi 네트워크에 연결되어 있는지 확인",
@@ -783,6 +779,71 @@
   "addUser": "사용자 추가",
   "editUser": "사용자 편집",
   "userAuthEmpty": "인증 사용자가 설정되지 않았습니다. LAN 연결에는 자격 증명이 필요하지 않습니다",
-  "usernameCannotContainColon": "사용자 이름에는 콜론(:)을 포함할 수 없습니다"
+  "usernameCannotContainColon": "사용자 이름에는 콜론(:)을 포함할 수 없습니다",
+  "pause": "Pause",
+  "security": "Security",
+  "stealthCheck": "Stealth check",
+  "stealthCheckChecking": "Checking…",
+  "stealthCheckCopyReport": "Copy report",
+  "stealthCheckEnableVpn": "Enable VPN",
+  "stealthCheckFail": "Could not check",
+  "stealthCheckRerun": "Rerun",
+  "stealthCheckRun": "Run check",
+  "stealthDnsFail": "Could not check",
+  "stealthDnsTitle": "DNS queries",
+  "stealthDotOk": "DoT reachable",
+  "stealthDotTitle": "DoT probe (Quad9)",
+  "stealthExitFail": "Could not fetch",
+  "stealthExitTitle": "Exit IP",
+  "stealthFix": "Fix",
+  "stealthIpv6Bad": "IPv6 bypasses the tunnel",
+  "stealthPortsTitle": "Local ports",
+  "stealthTunTitle": "VPN interface",
+  "pauseForMinutes": "Pause for {minutes} min",
+  "@pauseForMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckDesc": "What VPN-detecting apps can see about you",
+  "stealthCheckNeedVpn": "Turn on the VPN — there is nothing to check without the tunnel",
+  "stealthCheckScore": "{closed} of {total} closed",
+  "@stealthCheckScore": {
+    "placeholders": {
+      "closed": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckedAt": "Checked at {time}",
+  "@stealthCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthDnsLeak": "Queries go to the ISP DNS — a leak",
+  "stealthDnsOk": "Resolver does not match the ISP DNS",
+  "stealthDotBad": "DoT unreachable (TCP 853/TLS)",
+  "stealthExitOk": "Traffic exits through the node",
+  "stealthIpv6OkCovered": "IPv6 is covered by the tunnel",
+  "stealthIpv6OkNoV6": "No IPv6 in the network — nothing to leak",
+  "stealthPortsBad": "Answering ports: {ports}",
+  "@stealthPortsBad": {
+    "placeholders": {
+      "ports": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthPortsOk": "Ports are silent — detectors will not spot the proxy",
+  "stealthTunWarn": "The tun interface is visible to all apps, it cannot be hidden without root",
+  "stealthVpnNetTitle": "VPN network in the system",
+  "stealthVpnNetWarn": "Apps can see the active VPN network (TRANSPORT_VPN)"
 }
-

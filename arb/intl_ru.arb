@@ -209,8 +209,6 @@
   "recovery": "Восстановить",
   "recoveryProfiles": "Только профили",
   "recoveryAll": "Все данные",
-  "selectBackupVersion": "Выберите версию резервной копии",
-  "noBackupFileFound": "Файл резервной копии не найден",
   "recoverySuccess": "Восстановление успешно",
   "backupSuccess": "Резервное копирование успешно",
   "noInfo": "Нет информации",
@@ -299,26 +297,6 @@
   "fadingFour": "Затухающие точки",
   "wave": "Волна",
   "doubleBounce": "Двойной отскок",
-  "chasingDots": "Догоняющие точки",
-  "cubeGrid": "Сетка кубов",
-  "dancingSquare": "Танцующий квадрат",
-  "dualRing": "Двойное кольцо",
-  "fadingCube": "Затухающий куб",
-  "fadingGrid": "Затухающая сетка",
-  "foldingCube": "Складывающийся куб",
-  "hourGlass": "Песочные часы",
-  "pianoWave": "Фортепианная волна",
-  "pouringHourGlass": "Сыплющиеся часы",
-  "pouringHourGlassRefined": "Точные песочные часы",
-  "pulsingGrid": "Пульсирующая сетка",
-  "pumpingHeart": "Бьющееся сердце",
-  "ring": "Кольцо",
-  "ripple": "Рябь",
-  "rotatingPlain": "Вращающаяся плоскость",
-  "spinningCircle": "Вращающийся диск",
-  "squareCircle": "Квадратный круг",
-  "wanderingCubes": "Блуждающие кубы",
-  "waveSpinner": "Волновой спиннер",
   "sort": "Сортировка",
   "columns": "Колонки",
   "proxiesSetting": "Настройки прокси",
@@ -527,7 +505,6 @@
   "regExp": "Регулярное выражение",
   "icon": "Иконка",
   "iconConfiguration": "Настройка иконки",
-  "iconConfigurationDesc": "Настройка значков ICON групп прокси",
   "noData": "Нет данных",
   "adminAutoLaunch": "Автозапуск от администратора",
   "adminAutoLaunchDesc": "Автозапуск с правами администратора",
@@ -691,7 +668,6 @@
   "ageKeyPairGeneratedSuccess": "Пара ключей X25519 создана, сохраните её в надёжном месте",
   "agePrivateKeyRequired": "Пожалуйста, сначала введите корректный приватный ключ Age",
   "lineWrap": "Перенос строк",
-  "autoStickyHeader": "Автозакрепление заголовка",
   "showHiddenItems": "Показать скрытые",
   "blockComment": "Комментарий",
   "locate": "Найти",
@@ -744,7 +720,6 @@
   "mediaUnlockRefreshOnNodeChange": "Автообновление при смене узла",
   "mediaUnlockColorfulIcons": "Показывать цветные значки по умолчанию",
   "mediaUnlockRefreshByCategory": "Частичное обновление по текущей категории",
-
   "mediaUnlockPinnedSettingsDesc": "Можно выбрать до 4 элементов для закрепления в виджете",
   "mediaUnlockSelectLimit": "Можно выбрать максимум 4 элемента",
   "categoryAll": "Все",
@@ -761,7 +736,6 @@
   "notUnlocked": "Заблокировано",
   "checkFailed": "Timeout",
   "testing": "Проверка",
-  "other": "Другое",
   "flagged": "Помечен",
   "coalThemeMode": "Угольная тема",
   "coalThemeModeDesc": "Угольно-чёрный фон и розовая окантовка карточек",
@@ -770,9 +744,39 @@
   "hideUnavailable": "Скрыть недоступные",
   "showUnavailable": "Показать недоступные",
   "hiddenUnavailableCount": "Скрыто недоступных: {count} — нажмите, чтобы показать",
-  "@hiddenUnavailableCount": {"placeholders": {"count": {"type": "num"}}},
+  "@hiddenUnavailableCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "manualSort": "Вручную",
   "resetManualSort": "Сбросить ручную сортировку",
+  "selectBackupVersion": "Выберите версию резервной копии",
+  "noBackupFileFound": "Файл резервной копии не найден",
+  "chasingDots": "Догоняющие точки",
+  "cubeGrid": "Сетка кубов",
+  "dancingSquare": "Танцующий квадрат",
+  "dualRing": "Двойное кольцо",
+  "fadingCube": "Затухающий куб",
+  "fadingGrid": "Затухающая сетка",
+  "foldingCube": "Складывающийся куб",
+  "hourGlass": "Песочные часы",
+  "pianoWave": "Фортепианная волна",
+  "pouringHourGlass": "Сыплющиеся часы",
+  "pouringHourGlassRefined": "Точные песочные часы",
+  "pulsingGrid": "Пульсирующая сетка",
+  "pumpingHeart": "Бьющееся сердце",
+  "ring": "Кольцо",
+  "ripple": "Рябь",
+  "rotatingPlain": "Вращающаяся плоскость",
+  "spinningCircle": "Вращающийся диск",
+  "squareCircle": "Квадратный круг",
+  "wanderingCubes": "Блуждающие кубы",
+  "waveSpinner": "Волновой спиннер",
+  "iconConfigurationDesc": "Настройка значков ICON групп прокси",
+  "autoStickyHeader": "Автозакрепление заголовка",
   "tvScanImport": "Сканирование / Импорт по LAN",
   "tvScanImportDesc": "Сканируйте QR или отправьте профиль на ТВ через LAN",
   "tvScanStep1": "Убедитесь, что телефон и TV подключены к одной сети Wi-Fi",
@@ -789,5 +793,71 @@
   "addUser": "Добавить пользователя",
   "editUser": "Редактировать пользователя",
   "userAuthEmpty": "Пользователи аутентификации не настроены, подключение по LAN не требует учетных данных",
-  "usernameCannotContainColon": "Имя пользователя не может содержать двоеточие"
+  "usernameCannotContainColon": "Имя пользователя не может содержать двоеточие",
+  "pause": "Пауза",
+  "security": "Безопасность",
+  "stealthCheck": "Стелс-проверка",
+  "stealthCheckChecking": "Проверка…",
+  "stealthCheckCopyReport": "Скопировать отчёт",
+  "stealthCheckEnableVpn": "Включить VPN",
+  "stealthCheckFail": "Не удалось проверить",
+  "stealthCheckRerun": "Повторить",
+  "stealthCheckRun": "Запустить проверку",
+  "stealthDnsFail": "Не удалось проверить",
+  "stealthDnsTitle": "DNS-запросы",
+  "stealthDotOk": "DoT доступен",
+  "stealthDotTitle": "DoT-проба (Quad9)",
+  "stealthExitFail": "Не удалось получить",
+  "stealthExitTitle": "Выходной IP",
+  "stealthFix": "Исправить",
+  "stealthIpv6Bad": "IPv6 уходит мимо туннеля",
+  "stealthPortsTitle": "Локальные порты",
+  "stealthTunTitle": "VPN-интерфейс",
+  "pauseForMinutes": "Pause for {minutes} min",
+  "@pauseForMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckDesc": "Что о вашем VPN увидят приложения-детекторы",
+  "stealthCheckNeedVpn": "Включите VPN — без туннеля проверять нечего",
+  "stealthCheckScore": "{closed} of {total} closed",
+  "@stealthCheckScore": {
+    "placeholders": {
+      "closed": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthCheckedAt": "Checked at {time}",
+  "@stealthCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthDnsLeak": "Запросы уходят к DNS провайдера — утечка",
+  "stealthDnsOk": "Резолвер не совпадает с DNS провайдера",
+  "stealthDotBad": "DoT недоступен (TCP 853/TLS)",
+  "stealthExitOk": "Трафик выходит через ноду",
+  "stealthIpv6OkCovered": "IPv6 покрыт туннелем",
+  "stealthIpv6OkNoV6": "IPv6 в сети отсутствует — нечему утекать",
+  "stealthPortsBad": "Answering ports: {ports}",
+  "@stealthPortsBad": {
+    "placeholders": {
+      "ports": {
+        "type": "Object"
+      }
+    }
+  },
+  "stealthPortsOk": "Порты молчат — детектор не увидит прокси",
+  "stealthTunWarn": "Интерфейс tun виден всем приложениям — без root его не скрыть",
+  "stealthVpnNetTitle": "VPN-сеть в системе",
+  "stealthVpnNetWarn": "Приложения видят активную VPN-сеть (TRANSPORT_VPN)"
 }
