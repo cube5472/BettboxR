@@ -14,6 +14,7 @@ class Window {
     if (system.isWindows) {
       protocol.register('clash');
       protocol.register('clashmeta');
+      protocol.register('flclash');
       protocol.register('bettbox');
     }
     await windowManager.ensureInitialized();
@@ -24,65 +25,42 @@ class Window {
     await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
     await windowManager.setAlwaysOnTop(props.isPinned);
     if (!system.isMacOS) {
-      final left = props.left ?? 0;
-      final top = props.top ?? 0;
-      final width = props.width;
-      final height = props.height;
-      if (left == 0 && top == 0) {
+      final left = props.left;
+      final top = props.top;
+      if (left == null || top == null) {
         await windowManager.setAlignment(Alignment.center);
       } else {
-        bool hasRestoredPosition = false;
+        final savedDpr = props.scaleFactor;
+        final currentDpr = windowManager.getDevicePixelRatio();
+
+        final physLeft = left * savedDpr;
+        final physTop = top * savedDpr;
+        final physRight = physLeft + props.width * savedDpr;
+        final physBottom = physTop + props.height * savedDpr;
+
+        bool isPositionValid = false;
         try {
           final displays = await screenRetriever.getAllDisplays();
-          if (displays.isNotEmpty) {
-            final windowRect = Rect.fromLTWH(left, top, width, height);
-            Display? bestDisplay;
-            double maxOverlapArea = 0;
-
-            for (final display in displays) {
-              final visiblePos = display.visiblePosition ?? Offset.zero;
-              final visibleSize = display.visibleSize ?? display.size;
-              final displayRect = Rect.fromLTWH(
-                visiblePos.dx,
-                visiblePos.dy,
-                visibleSize.width,
-                visibleSize.height,
-              );
-
-              if (!windowRect.overlaps(displayRect)) continue;
-
-              final overlapL = max(windowRect.left, displayRect.left);
-              final overlapT = max(windowRect.top, displayRect.top);
-              final overlapR = min(windowRect.right, displayRect.right);
-              final overlapB = min(windowRect.bottom, displayRect.bottom);
-
-              final overlapArea = (overlapR - overlapL) * (overlapB - overlapT);
-              if (overlapArea > maxOverlapArea) {
-                maxOverlapArea = overlapArea;
-                bestDisplay = display;
-              }
-            }
-
-            final windowArea = width * height;
-            if (bestDisplay != null && (maxOverlapArea / windowArea) >= 0.3) {
-              final visiblePos = bestDisplay.visiblePosition ?? Offset.zero;
-              final visibleSize = bestDisplay.visibleSize ?? bestDisplay.size;
-
-              final minX = visiblePos.dx;
-              final maxX = max(minX, visiblePos.dx + visibleSize.width - 100);
-              final safeLeft = left.clamp(minX, maxX);
-
-              final minY = visiblePos.dy;
-              final maxY = max(minY, visiblePos.dy + visibleSize.height - 40);
-              final safeTop = top.clamp(minY, maxY);
-
-              await windowManager.setPosition(Offset(safeLeft, safeTop));
-              hasRestoredPosition = true;
-            }
-          }
+          isPositionValid = displays.any((display) {
+            final pos = display.visiblePosition;
+            if (pos == null) return false;
+            final sf = (display.scaleFactor ?? 1.0).toDouble();
+            final physDisplayBounds = Rect.fromLTWH(
+              pos.dx * sf,
+              pos.dy * sf,
+              display.size.width * sf,
+              display.size.height * sf,
+            );
+            return physDisplayBounds.contains(Offset(physLeft, physTop)) ||
+                physDisplayBounds.contains(Offset(physRight, physBottom));
+          });
         } catch (_) {}
-
-        if (!hasRestoredPosition) {
+        if (isPositionValid) {
+          await windowManager.setPosition(Offset(
+            physLeft / currentDpr,
+            physTop / currentDpr,
+          ));
+        } else {
           await windowManager.setAlignment(Alignment.center);
         }
       }

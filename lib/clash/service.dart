@@ -138,6 +138,10 @@ class ClashService extends ClashHandlerInterface {
 
     await _destroySocket();
 
+    if (system.isWindows) {
+      await helperClient.stopCore().catchError((_) => false);
+    }
+
     process?.kill();
     if (process != null) {
       await process!.exitCode.timeout(
@@ -166,8 +170,8 @@ class ClashService extends ClashHandlerInterface {
     environment['SAFE_PATHS'] = homeDirPath;
 
     if (system.isWindows) {
-      final serviceOk = await windows?.registerService() ?? false;
-      if (serviceOk) {
+      final isHealthy = await windows?.isHelperHealthy() ?? false;
+      if (isHealthy) {
         final started = await helperClient.startCore(
           corePath: appPath.corePath,
           arg: arg,
@@ -175,25 +179,32 @@ class ClashService extends ClashHandlerInterface {
         );
         if (started) {
           await _waitForCoreReady();
-          isStarting = false;
-          if (system.isWindows && globalState.config.appSetting.enableHighPriority) {
-            unawaited(
-              helperClient
-                  .setProcessPriority(
-                    '${AppIdentity.coreExecutableName}.exe',
-                    true,
-                  )
-                  .catchError((e) {
-                    commonPrint.log('Failed to set core process priority: $e');
-                    return false;
-                  }),
-            );
+          if (socketCompleter.isCompleted) {
+            isStarting = false;
+            if (system.isWindows && globalState.config.appSetting.enableHighPriority) {
+              unawaited(
+                helperClient
+                    .setProcessPriority(
+                      '${AppIdentity.coreExecutableName}.exe',
+                      true,
+                    )
+                    .catchError((e) {
+                      commonPrint.log('Failed to set core process priority: $e');
+                      return false;
+                    }),
+              );
+            }
+            return;
           }
-          return;
+          commonPrint.log(
+            'Helper start core timed out waiting for socket, falling back to normal mode',
+          );
+          await helperClient.stopCore().catchError((_) => false);
+        } else {
+          commonPrint.log(
+            'Helper start core failed, falling back to normal mode',
+          );
         }
-        commonPrint.log(
-          'Helper start core failed, falling back to normal mode',
-        );
       }
     }
 
@@ -241,7 +252,15 @@ class ClashService extends ClashHandlerInterface {
     if (_isDestroying || globalState.isExiting) {
       return;
     }
-    final socket = await socketCompleter.future;
+    if (_restartCompleter != null) {
+      await _restartCompleter!.future;
+    }
+    final socket = await socketCompleter.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        throw TimeoutException('Core socket connection timed out');
+      },
+    );
     try {
       final frame = FrameCodec.encode(message);
       socket.add(frame);

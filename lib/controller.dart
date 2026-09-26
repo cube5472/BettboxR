@@ -220,7 +220,6 @@ class AppController {
             return;
           }
           await globalState.handleStart([updateRunTime, updateTraffic]);
-          await updateProviders();
           if (!res.isError) {
             Future.microtask(() async {
               try {
@@ -236,7 +235,6 @@ class AppController {
         } catch (e) {
           commonPrint.log('FastStart macOS auth error: $e');
           await globalState.handleStart([updateRunTime, updateTraffic]);
-          await updateProviders();
           _backgroundLoad();
         }
         _scheduleCheckIpRefresh();
@@ -244,7 +242,6 @@ class AppController {
       }
 
       await globalState.handleStart([updateRunTime, updateTraffic]);
-      await updateProviders();
 
       Future.microtask(() async {
         try {
@@ -279,7 +276,6 @@ class AppController {
 
     _scheduleCheckIpRefresh();
 
-    await updateProviders();
     _backgroundLoad();
   }
 
@@ -295,6 +291,10 @@ class AppController {
 
     Future.microtask(() async {
       try {
+        await updateProviders();
+        if (version != _backgroundLoadVersion) return;
+        if (generation != _coreGeneration) return;
+
         List<Group> groups = [];
         for (var attempt = 0; attempt < 3; attempt++) {
           if (version != _backgroundLoadVersion) return;
@@ -1173,7 +1173,7 @@ class AppController {
     commonPrint.log('clear preferences');
     globalState.config = Config(
       themeProps: defaultThemeProps,
-      networkProps: defaultNetworkProps.copyWith(systemProxy: system.isDesktop),
+      networkProps: defaultNetworkProps,
     );
   }
 
@@ -1936,6 +1936,16 @@ class AppController {
     final homeDirPath = await appPath.homeDirPath;
     final profilesPath = await appPath.profilesPath;
     final configJson = globalState.config.toJson();
+    if (configJson['dav'] is Map) {
+      final davMap = Map<String, dynamic>.from(configJson['dav'] as Map);
+      if (davMap['user'] is String) {
+        davMap['user'] = utils.encryptSecret(davMap['user'] as String);
+      }
+      if (davMap['password'] is String) {
+        davMap['password'] = utils.encryptSecret(davMap['password'] as String);
+      }
+      configJson['dav'] = davMap;
+    }
 
     // Get valid profile IDs
     final validProfileIds = globalState.config.profiles
@@ -2173,6 +2183,14 @@ class AppController {
     var tempConfig = Config.compatibleFromJson(
       json.decode(utf8.decode(configContent)),
     );
+    if (tempConfig.dav != null) {
+      tempConfig = tempConfig.copyWith(
+        dav: tempConfig.dav!.copyWith(
+          user: utils.decryptSecret(tempConfig.dav!.user),
+          password: utils.decryptSecret(tempConfig.dav!.password),
+        ),
+      );
+    }
 
     final recoveryStrategy = _ref.read(
       appSettingProvider.select((state) => state.recoveryStrategy),
@@ -2185,6 +2203,9 @@ class AppController {
 
     _recovery(tempConfig, recoveryOption);
     await savePreferences();
+    if (globalState.isStart) {
+      await applyProfile(silence: true);
+    }
   }
 
   Future<void> _cleanProfilesDirForOverride() async {
@@ -2302,6 +2323,9 @@ class AppController {
 
     _recoveryLimited(limitedConfig, recoveryOption);
     await savePreferences();
+    if (globalState.isStart) {
+      await applyProfile(silence: true);
+    }
 
     _showRecoveryResultMessage(profiles);
   }

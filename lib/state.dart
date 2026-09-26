@@ -23,9 +23,9 @@ import 'package:synchronized/synchronized.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'common/common.dart';
+import 'package:bett_box/services/dns_stats.dart';
 import 'controller.dart';
 import 'models/models.dart';
-import 'package:bett_box/services/dns_stats.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
 
@@ -35,13 +35,26 @@ class GlobalState {
   bool isService = false;
   bool isExiting = false;
   bool isScreenOn = true;
-
-  /// Карта «имя ноды → транспорт» (ws/grpc/xhttp/tcp/...), строится в patchRawConfig
-  /// и используется в списке прокси для отображения типа ноды (vless grpc и т.п.).
-  Map<String, String> proxyNetworkMap = {};
   Timer? timer;
   Timer? groupsUpdateTimer;
-  late Config config;
+  Config? _config;
+
+  bool get hasConfig => _config != null;
+
+  Config get config =>
+      _config ??
+      Config(
+        themeProps: defaultThemeProps,
+        patchClashConfig: system.isAndroid
+            ? const ClashConfig(findProcessMode: FindProcessMode.always)
+            : defaultClashConfig,
+        networkProps: defaultNetworkProps,
+        appSetting: defaultAppSettingProps.copyWith(
+          showStartSwitch: _isAndroidTV ?? false,
+        ),
+      );
+
+  set config(Config value) => _config = value;
   late AppState appState;
   bool isPre = true;
   String? coreSHA256;
@@ -67,6 +80,21 @@ class GlobalState {
   Timer? _backgroundCleanupTimer;
   final Lock _scriptEvaluateLock = Lock();
   bool isInit = false;
+
+  bool get hasMediaUnlockWidget {
+    final widgets = system.isAndroid
+        ? config.appSetting.mobileDashboardWidgets
+        : config.appSetting.desktopDashboardWidgets;
+    return widgets.contains(DashboardWidget.mediaUnlock) ||
+        widgets.contains(DashboardWidget.mediaUnlockSmall);
+  }
+
+  bool get hasNetworkDetectionWidget {
+    final widgets = system.isAndroid
+        ? config.appSetting.mobileDashboardWidgets
+        : config.appSetting.desktopDashboardWidgets;
+    return widgets.contains(DashboardWidget.networkDetection);
+  }
 
   bool get isStart => startTime != null && startTime!.isBeforeNow;
 
@@ -105,6 +133,12 @@ class GlobalState {
     await init();
   }
 
+  Future<String?> getOrCalcCoreSHA256() async {
+    if (coreSHA256 != null && coreSHA256!.isNotEmpty) return coreSHA256;
+    coreSHA256 = await _calcCoreSHA256();
+    return coreSHA256;
+  }
+
   Future<String?> _calcCoreSHA256() async {
     try {
       final file = File(appPath.corePath);
@@ -138,9 +172,7 @@ class GlobalState {
           patchClashConfig: system.isAndroid
               ? const ClashConfig(findProcessMode: FindProcessMode.always)
               : defaultClashConfig,
-          networkProps: defaultNetworkProps.copyWith(
-            systemProxy: system.isDesktop,
-          ),
+          networkProps: defaultNetworkProps,
           appSetting: defaultAppSettingProps.copyWith(
             showStartSwitch: _isAndroidTV ?? false,
           ),
@@ -556,7 +588,7 @@ class GlobalState {
     }
   }
 
-  /// Встраивает предустановленные скрипты: «s-ru» (правила маршрутизации +
+  /// Встраиваемые скрипты: «s-ru» (перезапуск core при смене IP,
   /// фильтр RU-нод), «Bag-rules-paranoid» (DNS-карантин) и «РФ-БС» (схема
   /// белых списков: правила + провайдеры + DNS-фолбэки). Скрипты не
   /// включаются автоматически — их нужно включить тумблером на карточке.
@@ -607,16 +639,16 @@ class GlobalState {
   Future<void> _writeRunningConfig(Map<String, dynamic> clashConfig) async {
     final content = await encodeCompactYamlTask(clashConfig);
     final configPath = await appPath.configFilePath;
-    final tempFile = File('$configPath.tmp');
+    final tempFile = File('$configPath.${DateTime.now().microsecondsSinceEpoch}.tmp');
+    await tempFile.parent.create(recursive: true);
     await tempFile.writeAsString(content, flush: true);
     try {
       await tempFile.rename(configPath);
     } catch (_) {
-      final targetFile = File(configPath);
-      if (await targetFile.exists()) {
-        await targetFile.delete();
+      if (await tempFile.exists()) {
+        await tempFile.copy(configPath);
+        await tempFile.delete();
       }
-      await tempFile.rename(configPath);
     }
   }
 
@@ -626,7 +658,7 @@ class GlobalState {
   }) async {
     final targetProfile = profile ?? config.currentProfile;
     if (targetProfile == null) {
-      return {};
+      return <String, dynamic>{};
     }
     final profileId = targetProfile.id;
     final configMap = await getProfileConfig(profileId);
@@ -688,9 +720,20 @@ class GlobalState {
     rawConfig['tproxy-port'] = realPatchConfig.tproxyPort;
     rawConfig['find-process-mode'] = realPatchConfig.findProcessMode.name;
     rawConfig['allow-lan'] = realPatchConfig.allowLan;
+    if (realPatchConfig.authentication.isNotEmpty) {
+      rawConfig['authentication'] = realPatchConfig.authentication;
+      if (realPatchConfig.skipAuthPrefixes.isNotEmpty) {
+        rawConfig['skip-auth-prefixes'] = realPatchConfig.skipAuthPrefixes;
+      } else {
+        rawConfig.remove('skip-auth-prefixes');
+      }
+    } else {
+      rawConfig.remove('authentication');
+      rawConfig.remove('skip-auth-prefixes');
+    }
     rawConfig['mode'] = realPatchConfig.mode.name;
     if (rawConfig['tun'] == null) {
-      rawConfig['tun'] = {};
+      rawConfig['tun'] = <String, dynamic>{};
     }
     rawConfig['tun']['enable'] = realPatchConfig.tun.enable;
     rawConfig['tun']['device'] = realPatchConfig.tun.device;
@@ -722,7 +765,7 @@ class GlobalState {
       }
     }
     if (rawConfig['profile'] == null) {
-      rawConfig['profile'] = {};
+      rawConfig['profile'] = <String, dynamic>{};
     }
     if (rawConfig['proxy-providers'] != null) {
       final proxyProviders = rawConfig['proxy-providers'] as Map;
@@ -767,7 +810,7 @@ class GlobalState {
     rawConfig['geox-url'] = realPatchConfig.geoXUrl.toJson();
     rawConfig['global-ua'] = realPatchConfig.globalUa;
     if (rawConfig['hosts'] == null) {
-      rawConfig['hosts'] = {};
+      rawConfig['hosts'] = <String, dynamic>{};
     }
     for (final host in realPatchConfig.hosts.entries) {
       rawConfig['hosts'][host.key] = host.value.splitByMultipleSeparators;
@@ -779,7 +822,7 @@ class GlobalState {
     ];
 
     if (rawConfig['dns'] == null) {
-      rawConfig['dns'] = {};
+      rawConfig['dns'] = <String, dynamic>{};
     }
     final isEnableDns = rawConfig['dns']['enable'] == true;
     final overrideDns = globalState.config.overrideDns;
@@ -797,7 +840,7 @@ class GlobalState {
         false => realPatchConfig.dns,
       };
       rawConfig['dns'] = dns.toJson();
-      rawConfig['dns']['nameserver-policy'] = {};
+      rawConfig['dns']['nameserver-policy'] = <String, dynamic>{};
       for (final entry in dns.nameserverPolicy.entries) {
         rawConfig['dns']['nameserver-policy'][entry.key] =
             entry.value.splitByMultipleSeparators;
@@ -808,6 +851,7 @@ class GlobalState {
         originalHosts: originalHosts,
       );
     }
+
     // ТСПУ режет UDP-53 к дефолтному 1.1.1.1 и DoT/DoH зарубежных резолверов
     // (AdGuard, Google, Cloudflare): профили с собственным DNS из генератора
     // или подписки (dns.enable: true, overrideDns выключен) остаются вообще
@@ -1013,15 +1057,8 @@ class GlobalState {
     final globalClientFingerprint = rawConfig['global-client-fingerprint'];
     if (rawConfig['proxies'] is List) {
       final proxiesList = rawConfig['proxies'] as List;
-      final transportMap = <String, String>{};
       for (final proxy in proxiesList) {
         if (proxy is! Map) continue;
-
-        final proxyName = proxy['name']?.toString();
-        if (proxyName != null && proxyName.isNotEmpty) {
-          transportMap[proxyName] =
-              proxy['network']?.toString().toLowerCase() ?? '';
-        }
 
         final type = proxy['type']?.toString().toLowerCase();
         final isTls = proxy['tls'] == true;
@@ -1043,12 +1080,11 @@ class GlobalState {
         final realityOpts = proxy['reality-opts'];
         if (realityOpts is Map) {
           final shortId = realityOpts['short-id'];
-          if (shortId is num) {
+          if (shortId is int) {
             realityOpts['short-id'] = shortId.toString();
           }
         }
       }
-      proxyNetworkMap = transportMap;
     }
 
     if (targetProfile.groupSwitches.isNotEmpty &&
@@ -1105,7 +1141,7 @@ class GlobalState {
 
       if (profile != null && !profile.useScriptOverride) return config;
 
-      config['proxy-providers'] ??= {};
+      config['proxy-providers'] ??= <String, dynamic>{};
 
       try {
         return await JavaScriptRuntimeManager.evaluateScript(
@@ -1282,9 +1318,10 @@ class DetectionState {
     final appState = globalState.appState;
     if (!appState.isInit) return;
 
-    if (showLoading || state.value.ipInfo == null) {
-      state.value = state.value.copyWith(isLoading: true, errorMessage: null);
-    }
+    state.value = state.value.copyWith(
+      isLoading: true,
+      errorMessage: null,
+    );
 
     final delay = immediate
         ? Duration.zero
@@ -1341,8 +1378,8 @@ class DetectionState {
       errorMessage: _rawIpInfo != null
           ? null
           : (state.value.ipInfo == null
-                ? appLocalizations.tryManualRefresh
-                : null),
+              ? appLocalizations.tryManualRefresh
+              : null),
     );
   }
 
@@ -1412,119 +1449,350 @@ class DetectionState {
 
 final detectionState = DetectionState();
 
-/// Оркестратор проверки медиа-разблокировки: держит состояние
-/// (результаты по платформам, что сейчас тестируется) и гоняет
-/// [MediaUnlockChecker] ограниченным пулом параллельных запросов.
-class MediaUnlockStateManager {
-  static MediaUnlockStateManager? _instance;
-  MediaUnlockStateManager._internal();
+class MediaUnlockStateNotifier {
+  static MediaUnlockStateNotifier? _instance;
+  final _checker = MediaUnlockChecker();
+  int _requestId = 0;
+  Timer? _nodeChangeTimer;
+  static const _nodeChangeDelay = Duration(milliseconds: 800);
+  String? _lastCheckedNodeSignature;
+  bool? _preIsStart;
 
-  factory MediaUnlockStateManager() {
-    _instance ??= MediaUnlockStateManager._internal();
+  String _getNodeSignature() {
+    final profileId = globalState.config.currentProfileId ?? '';
+    final mode = globalState.config.patchClashConfig.mode.name;
+    final selectedMap = globalState.config.currentProfile?.selectedMap ?? {};
+    final sortedEntries = selectedMap.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final selectedStr =
+        sortedEntries.map((e) => '${e.key}:${e.value}').join(';');
+    String activeGroupsStr = '';
+    if (globalState.isInit) {
+      try {
+        final groups = globalState.appController.ref.read(groupsProvider);
+        if (groups.isNotEmpty) {
+          final sortedGroups = groups.toList()
+            ..sort((a, b) => a.name.compareTo(b.name));
+          activeGroupsStr =
+              sortedGroups.map((g) => '${g.name}:${g.realNow}').join(';');
+        }
+      } catch (_) {}
+    }
+    return '$profileId|$mode|$selectedStr|$activeGroupsStr';
+  }
+
+  final state = ValueNotifier<MediaUnlockState>(
+    const MediaUnlockState(),
+  );
+  final Set<MediaPlatform> _batchTestingPlatforms = {};
+
+  bool isBatchChecking([Iterable<MediaPlatform>? platforms]) {
+    if (state.value.isLoading) return true;
+    if (platforms == null) {
+      return state.value.testingPlatforms.any(_batchTestingPlatforms.contains);
+    }
+    return platforms.any(
+      (p) =>
+          state.value.testingPlatforms.contains(p) &&
+          _batchTestingPlatforms.contains(p),
+    );
+  }
+
+  MediaUnlockStateNotifier._internal();
+
+  factory MediaUnlockStateNotifier() {
+    _instance ??= MediaUnlockStateNotifier._internal();
     return _instance!;
   }
 
-  static const _concurrency = 4;
+  List<MediaPlatform> get pinnedPlatforms {
+    final pinned = globalState.config.appSetting.pinnedMediaPlatforms;
+    return (pinned.isNotEmpty ? pinned : defaultPinnedMediaPlatforms)
+        .take(4)
+        .toList();
+  }
 
-  final state = ValueNotifier<MediaUnlockState>(const MediaUnlockState());
+  void checkSingle(MediaPlatform platform) async {
+    _batchTestingPlatforms.remove(platform);
+    if (state.value.testingPlatforms.contains(platform)) return;
+    final currentTesting =
+        Set<MediaPlatform>.from(state.value.testingPlatforms)..add(platform);
+    state.value = state.value.copyWith(testingPlatforms: currentTesting);
 
-  int _batchId = 0;
-
-  bool get _isChecking => state.value.testingPlatforms.isNotEmpty;
-
-  bool isBatchChecking([Iterable<MediaPlatform>? platforms]) {
-    final testing = state.value.testingPlatforms;
-    if (platforms == null) {
-      return testing.isNotEmpty;
+    try {
+      final res = await _checker.checkPlatform(platform).timeout(
+        const Duration(seconds: 8),
+        onTimeout: () => MediaUnlockResult(
+          platform: platform,
+          status: MediaUnlockStatus.failed,
+        ),
+      );
+      final finalMap =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      finalMap[platform] = res;
+      state.value = state.value.copyWith(
+        results: finalMap,
+        lastChecked: DateTime.now(),
+      );
+    } catch (_) {
+      final finalMap =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      finalMap.putIfAbsent(
+        platform,
+        () => MediaUnlockResult(
+          platform: platform,
+          status: MediaUnlockStatus.failed,
+        ),
+      );
+      state.value = state.value.copyWith(
+        results: finalMap,
+        lastChecked: DateTime.now(),
+      );
+    } finally {
+      final nextTesting =
+          Set<MediaPlatform>.from(state.value.testingPlatforms)
+            ..remove(platform);
+      state.value = state.value.copyWith(testingPlatforms: nextTesting);
     }
-    return platforms.any(testing.contains);
   }
 
-  void _update(MediaUnlockState Function(MediaUnlockState state) updater) {
-    state.value = updater(state.value);
-  }
-
-  void checkSingle(MediaPlatform platform, {bool force = false}) {
-    _runBatch([platform], force: force);
-  }
-
-  void checkPlatforms(List<MediaPlatform> platforms, {bool force = false}) {
-    _runBatch(platforms, force: force);
-  }
-
-  void checkAll({bool force = false, List<MediaPlatform>? platforms}) {
-    _runBatch(platforms ?? MediaPlatform.values.toList(), force: force);
-  }
-
-  /// Разовый автозапуск при старте приложения, пока данных нет совсем.
-  void tryStartCheck() {
-    if (!globalState.appState.isInit ||
-        state.value.isLoading ||
-        _isChecking ||
-        state.value.results.isNotEmpty) {
-      return;
-    }
-    checkAll();
-  }
-
-  /// Смена узла/профиля: данные устарели — перепроверить все платформы.
-  void startCheckOnNodeChange() {
-    if (_isChecking) {
-      return;
-    }
-    checkAll(force: true);
-  }
-
-  Future<void> _runBatch(
+  void checkPlatforms(
     List<MediaPlatform> platforms, {
-    required bool force,
+    bool force = false,
+    bool isFullCheck = false,
+    bool isBatchCheck = false,
   }) async {
-    if (platforms.isEmpty) {
-      return;
+    final isRunning = globalState.appState.runTime != null;
+    if (!isRunning && !force) return;
+
+    if (force) {
+      _checker.cancel();
     }
-    final batchId = ++_batchId;
-    final queue = List<MediaPlatform>.of(platforms);
-    _update(
-      (state) => state.copyWith(
-        isLoading: true,
-        testingPlatforms: {...state.testingPlatforms, ...queue},
-      ),
+
+    final targetPlatforms = force
+        ? platforms.toList()
+        : platforms
+            .where((p) => !state.value.testingPlatforms.contains(p))
+            .toList();
+    if (targetPlatforms.isEmpty) return;
+
+    final requestId = ++_requestId;
+    if (isBatchCheck) {
+      _batchTestingPlatforms.addAll(targetPlatforms);
+    }
+    final pendingTesting =
+        Set<MediaPlatform>.from(state.value.testingPlatforms)
+          ..addAll(targetPlatforms);
+
+    state.value = state.value.copyWith(
+      isLoading: isFullCheck ? true : state.value.isLoading,
+      testingPlatforms: pendingTesting,
     );
-    Future<void> worker() async {
-      while (queue.isNotEmpty && batchId == _batchId) {
-        final platform = queue.removeAt(0);
-        MediaUnlockResult result;
-        try {
-          result = await MediaUnlockChecker().checkPlatform(platform);
-        } catch (_) {
-          result = MediaUnlockResult(
-            platform: platform,
-            status: MediaUnlockStatus.failed,
+
+    Timer? throttleTimer;
+    final bufferResults = <MediaPlatform, MediaUnlockResult>{};
+
+    void flushUpdates() {
+      throttleTimer?.cancel();
+      throttleTimer = null;
+      if (bufferResults.isEmpty) return;
+      final updates = Map<MediaPlatform, MediaUnlockResult>.from(bufferResults);
+      bufferResults.clear();
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results)
+            ..addAll(updates);
+      final nextTesting =
+          Set<MediaPlatform>.from(state.value.testingPlatforms)
+            ..removeAll(updates.keys);
+      state.value = state.value.copyWith(
+        results: nextResults,
+        testingPlatforms: nextTesting,
+      );
+    }
+
+    try {
+      final results = await _checker.checkAll(
+        platforms: targetPlatforms,
+        onProgress: (res) {
+          if (requestId != _requestId) return;
+          bufferResults[res.platform] = res;
+          throttleTimer ??= Timer(
+            const Duration(milliseconds: 100),
+            flushUpdates,
           );
-        }
-        if (batchId != _batchId) {
-          return;
-        }
-        _update(
-          (state) => state.copyWith(
-            results: {...state.results, platform: result},
-            testingPlatforms: {...state.testingPlatforms}..remove(platform),
+        },
+      ).timeout(
+        Duration(seconds: (targetPlatforms.length / 8).ceil() * 8 + 5),
+        onTimeout: () {
+          _checker.cancel();
+          final timeoutMap = <MediaPlatform, MediaUnlockResult>{};
+          for (final p in targetPlatforms) {
+            timeoutMap[p] = bufferResults[p] ??
+                state.value.results[p] ??
+                MediaUnlockResult(
+                  platform: p,
+                  status: MediaUnlockStatus.failed,
+                );
+          }
+          return timeoutMap;
+        },
+      );
+      if (requestId != _requestId) return;
+      flushUpdates();
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in targetPlatforms) {
+        nextResults[p] = results[p] ??
+            bufferResults[p] ??
+            state.value.results[p] ??
+            MediaUnlockResult(
+              platform: p,
+              status: MediaUnlockStatus.failed,
+            );
+      }
+      _lastCheckedNodeSignature = _getNodeSignature();
+      state.value = state.value.copyWith(
+        isLoading: isFullCheck ? false : state.value.isLoading,
+        results: nextResults,
+        lastChecked: DateTime.now(),
+      );
+    } catch (_) {
+      throttleTimer?.cancel();
+      if (requestId != _requestId) return;
+      flushUpdates();
+      final fallbackResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in targetPlatforms) {
+        fallbackResults.putIfAbsent(
+          p,
+          () => MediaUnlockResult(
+            platform: p,
+            status: MediaUnlockStatus.failed,
           ),
         );
       }
+      _lastCheckedNodeSignature = _getNodeSignature();
+      state.value = state.value.copyWith(
+        isLoading: isFullCheck ? false : state.value.isLoading,
+        results: fallbackResults,
+        lastChecked: DateTime.now(),
+      );
+    } finally {
+      throttleTimer?.cancel();
+      _batchTestingPlatforms.removeAll(targetPlatforms);
+      final nextTesting =
+          Set<MediaPlatform>.from(state.value.testingPlatforms)
+            ..removeAll(targetPlatforms);
+      state.value = state.value.copyWith(
+        isLoading: (requestId == _requestId && isFullCheck)
+            ? false
+            : state.value.isLoading,
+        testingPlatforms: nextTesting,
+      );
     }
-    await Future.wait([for (var i = 0; i < _concurrency; i++) worker()]);
-    if (batchId != _batchId) {
+  }
+
+  void checkPinned({bool force = false, List<MediaPlatform>? platforms}) {
+    checkPlatforms(platforms ?? pinnedPlatforms, force: force);
+  }
+
+  void checkAll({
+    bool force = false,
+    List<MediaPlatform>? platforms,
+  }) {
+    final targets = platforms ?? MediaPlatform.values;
+    final isFull = targets.length >= MediaPlatform.values.length;
+    checkPlatforms(
+      targets,
+      force: force,
+      isFullCheck: isFull,
+      isBatchCheck: true,
+    );
+  }
+
+  void startCheckOnNodeChange() async {
+    final isRunning = globalState.appState.runTime != null;
+    if (!isRunning) {
+      _preIsStart = false;
+      _nodeChangeTimer?.cancel();
       return;
     }
-    _update(
-      (state) => state.copyWith(
+    final isStartup = _preIsStart != true;
+    _preIsStart = true;
+
+    if (!globalState.hasMediaUnlockWidget) return;
+    if (!globalState.config.appSetting.mediaUnlockRefreshOnNodeChange) return;
+
+    if (isStartup) {
+      _nodeChangeTimer?.cancel();
+      _checker.cancel();
+      final requestId = ++_requestId;
+
+      if (globalState.hasNetworkDetectionWidget) {
+        var waited = 0;
+        while (detectionState.state.value.isLoading &&
+            waited < 6000 &&
+            globalState.appState.runTime != null &&
+            requestId == _requestId) {
+          await Future.delayed(const Duration(milliseconds: 150));
+          waited += 150;
+        }
+      } else {
+        await Future.delayed(const Duration(seconds: 2));
+      }
+      if (requestId != _requestId || globalState.appState.runTime == null) return;
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in pinnedPlatforms) {
+        nextResults.remove(p);
+      }
+      state.value = state.value.copyWith(
+        results: nextResults,
+        testingPlatforms: {},
         isLoading: false,
-        testingPlatforms: {...state.testingPlatforms}..removeAll(platforms),
-        lastChecked: DateTime.now(),
-      ),
-    );
+      );
+      _lastCheckedNodeSignature = _getNodeSignature();
+      checkPinned(force: true);
+      return;
+    }
+
+    _nodeChangeTimer?.cancel();
+    _nodeChangeTimer = Timer(_nodeChangeDelay, () {
+      if (globalState.appState.runTime == null) return;
+      if (globalState.backgroundMode.value) return;
+
+      final currentSignature = _getNodeSignature();
+      if (_lastCheckedNodeSignature == currentSignature &&
+          state.value.results.isNotEmpty) {
+        return;
+      }
+      _lastCheckedNodeSignature = currentSignature;
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in pinnedPlatforms) {
+        nextResults.remove(p);
+      }
+      state.value = state.value.copyWith(
+        results: nextResults,
+        testingPlatforms: {},
+        isLoading: false,
+      );
+      checkPinned(force: true);
+    });
+  }
+
+  void tryStartCheck() {
+    final isRunning = globalState.appState.runTime != null;
+    if (!isRunning) return;
+    if (!globalState.hasMediaUnlockWidget) return;
+    if (state.value.isLoading || state.value.testingPlatforms.isNotEmpty) return;
+    if (state.value.results.isNotEmpty) return;
+    final needsInitialCheck =
+        pinnedPlatforms.any((p) => !state.value.results.containsKey(p));
+    if (!needsInitialCheck) return;
+    checkPinned();
   }
 }
 
-final mediaUnlockState = MediaUnlockStateManager();
+final mediaUnlockState = MediaUnlockStateNotifier();
+

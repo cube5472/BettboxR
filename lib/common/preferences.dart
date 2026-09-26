@@ -166,16 +166,19 @@ class Preferences {
     return _saveLock.synchronized(() async {
       try {
         final configFilePath = await appPath.appConfigPath;
-        final targetFile = File(configFilePath);
-        final tempFile = File('$configFilePath.tmp');
+        final tempFile = File('$configFilePath.${DateTime.now().microsecondsSinceEpoch}.tmp');
         await tempFile.parent.create(recursive: true);
         await tempFile.writeAsString(jsonStr, flush: true);
-        // Под замкой гонки нет; delete нужен только для платформ, где
-        // rename() не перезаписывает существующий целевой файл (Windows).
-        if (await targetFile.exists()) {
-          await targetFile.delete();
+        try {
+          await tempFile.rename(configFilePath);
+        } catch (_) {
+          // rename() может не перезаписать существующий файл (Windows) —
+          // тогда копируем поверх и убираем временный файл.
+          if (await tempFile.exists()) {
+            await tempFile.copy(configFilePath);
+            await tempFile.delete();
+          }
         }
-        await tempFile.rename(configFilePath);
         return true;
       } catch (e, stackTrace) {
         commonPrint.log('Failed to save config to file: $e\n$stackTrace');
