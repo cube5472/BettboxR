@@ -23,9 +23,9 @@ import 'package:synchronized/synchronized.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'common/common.dart';
-import 'package:bett_box/services/dns_stats.dart';
 import 'controller.dart';
 import 'models/models.dart';
+import 'package:bett_box/services/dns_stats.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
 
@@ -35,6 +35,10 @@ class GlobalState {
   bool isService = false;
   bool isExiting = false;
   bool isScreenOn = true;
+
+  /// Карта «имя ноды → транспорт» (ws/grpc/xhttp/tcp/...), строится в patchRawConfig
+  /// и используется в списке прокси для отображения типа ноды (vless grpc и т.п.).
+  Map<String, String> proxyNetworkMap = {};
   Timer? timer;
   Timer? groupsUpdateTimer;
   Config? _config;
@@ -588,7 +592,7 @@ class GlobalState {
     }
   }
 
-  /// Встраиваемые скрипты: «s-ru» (перезапуск core при смене IP,
+  /// Встраивает предустановленные скрипты: «s-ru» (правила маршрутизации +
   /// фильтр RU-нод), «Bag-rules-paranoid» (DNS-карантин) и «РФ-БС» (схема
   /// белых списков: правила + провайдеры + DNS-фолбэки). Скрипты не
   /// включаются автоматически — их нужно включить тумблером на карточке.
@@ -658,7 +662,7 @@ class GlobalState {
   }) async {
     final targetProfile = profile ?? config.currentProfile;
     if (targetProfile == null) {
-      return <String, dynamic>{};
+      return {};
     }
     final profileId = targetProfile.id;
     final configMap = await getProfileConfig(profileId);
@@ -733,7 +737,7 @@ class GlobalState {
     }
     rawConfig['mode'] = realPatchConfig.mode.name;
     if (rawConfig['tun'] == null) {
-      rawConfig['tun'] = <String, dynamic>{};
+      rawConfig['tun'] = {};
     }
     rawConfig['tun']['enable'] = realPatchConfig.tun.enable;
     rawConfig['tun']['device'] = realPatchConfig.tun.device;
@@ -765,7 +769,7 @@ class GlobalState {
       }
     }
     if (rawConfig['profile'] == null) {
-      rawConfig['profile'] = <String, dynamic>{};
+      rawConfig['profile'] = {};
     }
     if (rawConfig['proxy-providers'] != null) {
       final proxyProviders = rawConfig['proxy-providers'] as Map;
@@ -810,7 +814,7 @@ class GlobalState {
     rawConfig['geox-url'] = realPatchConfig.geoXUrl.toJson();
     rawConfig['global-ua'] = realPatchConfig.globalUa;
     if (rawConfig['hosts'] == null) {
-      rawConfig['hosts'] = <String, dynamic>{};
+      rawConfig['hosts'] = {};
     }
     for (final host in realPatchConfig.hosts.entries) {
       rawConfig['hosts'][host.key] = host.value.splitByMultipleSeparators;
@@ -822,7 +826,7 @@ class GlobalState {
     ];
 
     if (rawConfig['dns'] == null) {
-      rawConfig['dns'] = <String, dynamic>{};
+      rawConfig['dns'] = {};
     }
     final isEnableDns = rawConfig['dns']['enable'] == true;
     final overrideDns = globalState.config.overrideDns;
@@ -840,7 +844,7 @@ class GlobalState {
         false => realPatchConfig.dns,
       };
       rawConfig['dns'] = dns.toJson();
-      rawConfig['dns']['nameserver-policy'] = <String, dynamic>{};
+      rawConfig['dns']['nameserver-policy'] = {};
       for (final entry in dns.nameserverPolicy.entries) {
         rawConfig['dns']['nameserver-policy'][entry.key] =
             entry.value.splitByMultipleSeparators;
@@ -851,7 +855,6 @@ class GlobalState {
         originalHosts: originalHosts,
       );
     }
-
     // ТСПУ режет UDP-53 к дефолтному 1.1.1.1 и DoT/DoH зарубежных резолверов
     // (AdGuard, Google, Cloudflare): профили с собственным DNS из генератора
     // или подписки (dns.enable: true, overrideDns выключен) остаются вообще
@@ -1057,8 +1060,15 @@ class GlobalState {
     final globalClientFingerprint = rawConfig['global-client-fingerprint'];
     if (rawConfig['proxies'] is List) {
       final proxiesList = rawConfig['proxies'] as List;
+      final transportMap = <String, String>{};
       for (final proxy in proxiesList) {
         if (proxy is! Map) continue;
+
+        final proxyName = proxy['name']?.toString();
+        if (proxyName != null && proxyName.isNotEmpty) {
+          transportMap[proxyName] =
+              proxy['network']?.toString().toLowerCase() ?? '';
+        }
 
         final type = proxy['type']?.toString().toLowerCase();
         final isTls = proxy['tls'] == true;
@@ -1080,11 +1090,12 @@ class GlobalState {
         final realityOpts = proxy['reality-opts'];
         if (realityOpts is Map) {
           final shortId = realityOpts['short-id'];
-          if (shortId is int) {
+          if (shortId is num) {
             realityOpts['short-id'] = shortId.toString();
           }
         }
       }
+      proxyNetworkMap = transportMap;
     }
 
     if (targetProfile.groupSwitches.isNotEmpty &&
@@ -1141,7 +1152,7 @@ class GlobalState {
 
       if (profile != null && !profile.useScriptOverride) return config;
 
-      config['proxy-providers'] ??= <String, dynamic>{};
+      config['proxy-providers'] ??= {};
 
       try {
         return await JavaScriptRuntimeManager.evaluateScript(
@@ -1318,10 +1329,9 @@ class DetectionState {
     final appState = globalState.appState;
     if (!appState.isInit) return;
 
-    state.value = state.value.copyWith(
-      isLoading: true,
-      errorMessage: null,
-    );
+    if (showLoading || state.value.ipInfo == null) {
+      state.value = state.value.copyWith(isLoading: true, errorMessage: null);
+    }
 
     final delay = immediate
         ? Duration.zero
@@ -1378,8 +1388,8 @@ class DetectionState {
       errorMessage: _rawIpInfo != null
           ? null
           : (state.value.ipInfo == null
-              ? appLocalizations.tryManualRefresh
-              : null),
+                ? appLocalizations.tryManualRefresh
+                : null),
     );
   }
 
@@ -1449,6 +1459,9 @@ class DetectionState {
 
 final detectionState = DetectionState();
 
+/// Оркестратор проверки медиа-разблокировки: держит состояние
+/// (результаты по платформам, что сейчас тестируется) и гоняет
+/// [MediaUnlockChecker] ограниченным пулом параллельных запросов.
 class MediaUnlockStateNotifier {
   static MediaUnlockStateNotifier? _instance;
   final _checker = MediaUnlockChecker();
@@ -1795,4 +1808,3 @@ class MediaUnlockStateNotifier {
 }
 
 final mediaUnlockState = MediaUnlockStateNotifier();
-

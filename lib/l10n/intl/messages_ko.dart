@@ -30,28 +30,36 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(label) => "${label} 항목이 이미 존재합니다";
 
-  static String m5(count) => "${Intl.plural(count, other: '#시간')}";
+  static String m6(count) => "${Intl.plural(count, other: '#시간')}";
 
-  static String m6(count) => "${count}";
+  static String m7(count) => "${count}";
 
-  static String m7(count) => "${Intl.plural(count, other: '#분')}";
+  static String m8(count) => "${Intl.plural(count, other: '#분')}";
 
-  static String m8(count) => "${Intl.plural(count, other: '#개월')}";
+  static String m9(count) => "${Intl.plural(count, other: '#개월')}";
 
-  static String m9(label) => "${label} 항목이 없습니다";
+  static String m10(label) => "${label} 항목이 없습니다";
 
-  static String m10(label) => "${label} 항목은 숫자여야 합니다";
+  static String m11(label) => "${label} 항목은 숫자여야 합니다";
 
-  static String m11(label) => "${label} 항목은 1024~49151 사이여야 합니다 (0은 비활성화)";
+  static String m12(minutes) => "Pause for ${minutes} min";
 
-  static String m12(statusCode) =>
+  static String m13(label) => "${label} 항목은 1024~49151 사이여야 합니다 (0은 비활성화)";
+
+  static String m14(statusCode) =>
       "프로필 가져오기에 실패했습니다. 네트워크 상태를 확인하거나 구독 링크를 재설정해 보세요 ( HTTP 오류 코드: ${statusCode} )";
 
-  static String m13(count) => "${count}개 선택됨";
+  static String m15(count) => "${count}개 선택됨";
 
-  static String m14(label) => "${label} 항목은 올바른 URL이어야 합니다";
+  static String m16(closed, total) => "${closed} of ${total} closed";
 
-  static String m15(count) => "${Intl.plural(count, other: '#년')}";
+  static String m17(time) => "Checked at ${time}";
+
+  static String m18(ports) => "Answering ports: ${ports}";
+
+  static String m19(label) => "${label} 항목은 올바른 URL이어야 합니다";
+
+  static String m20(count) => "${Intl.plural(count, other: '#년')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -226,6 +234,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "clipboardImport": MessageLookupByLibrary.simpleMessage("클립보드에서 가져오기"),
     "close": MessageLookupByLibrary.simpleMessage("닫기"),
     "closeAll": MessageLookupByLibrary.simpleMessage("모두 닫기"),
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("탄소 블랙 테마"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
+      "탄소 검정 표면과 분홍색 카드 테두리",
+    ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("청록색 탄소 블랙 테마"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "탄소 검정 표면과 청록색 카드 테두리",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("색상"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("색상 팔레트"),
     "columns": MessageLookupByLibrary.simpleMessage("열 수"),
@@ -490,7 +506,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "키보드로 애플리케이션 제어",
     ),
     "hourGlass": MessageLookupByLibrary.simpleMessage("모래시계"),
-    "hours": m5,
+    "hours": m6,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("HTTP 포트 스니핑"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP 포워딩"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -528,7 +544,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("활성화 시 IPv6 트래픽 수신 허용"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("IPv6 인바운드 허용"),
     "isp": MessageLookupByLibrary.simpleMessage("통신사"),
-    "itemsCount": m6,
+    "itemsCount": m7,
     "just": MessageLookupByLibrary.simpleMessage("방금 전"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP Keep-Alive 간격",
@@ -559,6 +575,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopbackDesc": MessageLookupByLibrary.simpleMessage("UWP 앱 루프백 제한 해제"),
     "loose": MessageLookupByLibrary.simpleMessage("여유있게"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("IP 다시 가져오기"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("수동"),
     "maximize": MessageLookupByLibrary.simpleMessage("최대화"),
     "mediaUnlock": MessageLookupByLibrary.simpleMessage("연결성 테스트"),
     "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
@@ -594,11 +611,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimize": MessageLookupByLibrary.simpleMessage("최소화"),
     "minimizeOnExit": MessageLookupByLibrary.simpleMessage("종료 시 최소화"),
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage("기본 창 닫기 동작 변경"),
-    "minutes": m7,
+    "minutes": m8,
     "mixedPort": MessageLookupByLibrary.simpleMessage("혼합 포트 (Mixed)"),
     "mode": MessageLookupByLibrary.simpleMessage("모드"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("모노크롬"),
-    "months": m8,
+    "months": m9,
     "more": MessageLookupByLibrary.simpleMessage("더보기"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("상세 IP 정보"),
     "name": MessageLookupByLibrary.simpleMessage("이름"),
@@ -684,8 +701,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "프로필이 없습니다. 프로필을 추가해주세요",
     ),
-    "nullTip": m9,
-    "numberTip": m10,
+    "nullTip": m10,
+    "numberTip": m11,
     "oneColumn": MessageLookupByLibrary.simpleMessage("1열"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("온라인 패널"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("아이콘만"),
@@ -749,6 +766,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "parsePureIpDesc": MessageLookupByLibrary.simpleMessage("순수 IP 연결 분석"),
     "password": MessageLookupByLibrary.simpleMessage("비밀번호"),
     "paste": MessageLookupByLibrary.simpleMessage("붙여넣기"),
+    "pause": MessageLookupByLibrary.simpleMessage("Pause"),
+    "pauseForMinutes": m12,
     "pianoWave": MessageLookupByLibrary.simpleMessage("피아노 웨이브"),
     "pin": MessageLookupByLibrary.simpleMessage("고정"),
     "pleaseBindWebDAV": MessageLookupByLibrary.simpleMessage("WebDAV를 연결해 주세요"),
@@ -772,7 +791,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "중복되지 않는 포트를 입력하세요",
     ),
-    "portTip": m11,
+    "portTip": m13,
     "pouringHourGlass": MessageLookupByLibrary.simpleMessage("흐르는 모래시계"),
     "pouringHourGlassRefined": MessageLookupByLibrary.simpleMessage("정밀 모래시계"),
     "powerSwitch": MessageLookupByLibrary.simpleMessage("전원 스위치"),
@@ -789,7 +808,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "프로필이 수정되었습니다. 자동 업데이트를 끄시겠습니까?",
     ),
-    "profileImportFailed": m12,
+    "profileImportFailed": m14,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "프로필 이름을 입력하세요",
     ),
@@ -872,6 +891,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requests": MessageLookupByLibrary.simpleMessage("요청"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage("최근 요청 기록 보기"),
     "reset": MessageLookupByLibrary.simpleMessage("초기화"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("수동 정렬 초기화"),
     "resetTip": MessageLookupByLibrary.simpleMessage("정말 초기화하시겠습니까?"),
     "resources": MessageLookupByLibrary.simpleMessage("리소스"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("외부 리소스 정보"),
@@ -909,10 +929,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "search": MessageLookupByLibrary.simpleMessage("검색"),
     "seconds": MessageLookupByLibrary.simpleMessage("초"),
     "secretCopied": MessageLookupByLibrary.simpleMessage("비밀번호가 클립보드에 복사되었습니다"),
+    "security": MessageLookupByLibrary.simpleMessage("Security"),
     "selectAll": MessageLookupByLibrary.simpleMessage("전체 선택"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage("백업 버전 선택"),
     "selected": MessageLookupByLibrary.simpleMessage("선택됨"),
-    "selectedCountTitle": m13,
+    "selectedCountTitle": m15,
     "serviceReady": MessageLookupByLibrary.simpleMessage("서비스 준비 완료"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("서비스 실행 중"),
     "settings": MessageLookupByLibrary.simpleMessage("설정"),
@@ -974,6 +995,68 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("시작 중..."),
     "status": MessageLookupByLibrary.simpleMessage("상태"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("끄면 시스템 DNS를 사용합니다"),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("Stealth check"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage(
+      "Copy report",
+    ),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "What VPN-detecting apps can see about you",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Enable VPN"),
+    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "Turn on the VPN — there is nothing to check without the tunnel",
+    ),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Rerun"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Run check"),
+    "stealthCheckScore": m16,
+    "stealthCheckedAt": m17,
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "Queries go to the ISP DNS — a leak",
+    ),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "Resolver does not match the ISP DNS",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT unreachable (TCP 853/TLS)",
+    ),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT reachable"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage(
+      "DoT probe (Quad9)",
+    ),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Could not fetch"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage(
+      "Traffic exits through the node",
+    ),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Exit IP"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("Fix"),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage(
+      "IPv6 bypasses the tunnel",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 is covered by the tunnel",
+    ),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "No IPv6 in the network — nothing to leak",
+    ),
+    "stealthPortsBad": m18,
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "Ports are silent — detectors will not spot the proxy",
+    ),
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Local ports"),
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN interface"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "The tun interface is visible to all apps, it cannot be hidden without root",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage(
+      "VPN network in the system",
+    ),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "Apps can see the active VPN network (TRANSPORT_VPN)",
+    ),
     "stop": MessageLookupByLibrary.simpleMessage("정지"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("정지 중..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("스토어 복구"),
@@ -1104,7 +1187,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("업로드"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URL 주소로 프로필 가져오기"),
-    "urlTip": m14,
+    "urlTip": m19,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "글로벌 스크립트 오버라이드 사용",
     ),
@@ -1142,16 +1225,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("화이트리스트 모드"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("시스템 적용"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("관리자 권한이 필요합니다"),
-    "years": m15,
-    "coalThemeMode": MessageLookupByLibrary.simpleMessage("탄소 블랙 테마"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "탄소 검정 표면과 분홍색 카드 테두리",
-    ),
-    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("청록색 탄소 블랙 테마"),
-    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
-      "탄소 검정 표면과 청록색 카드 테두리",
-    ),
-    "manualSort": MessageLookupByLibrary.simpleMessage("수동"),
-    "resetManualSort": MessageLookupByLibrary.simpleMessage("수동 정렬 초기화"),
+    "years": m20,
   };
 }

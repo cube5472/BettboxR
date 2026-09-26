@@ -1774,26 +1774,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Select Backup Version`
-  String get selectBackupVersion {
-    return Intl.message(
-      'Select Backup Version',
-      name: 'selectBackupVersion',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `No backup file found`
-  String get noBackupFileFound {
-    return Intl.message(
-      'No backup file found',
-      name: 'noBackupFileFound',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Restore Successful`
   String get recoverySuccess {
     return Intl.message(
@@ -2434,166 +2414,6 @@ class AppLocalizations {
     return Intl.message(
       'Double Bounce',
       name: 'doubleBounce',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Chasing Dots`
-  String get chasingDots {
-    return Intl.message(
-      'Chasing Dots',
-      name: 'chasingDots',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Cube Grid`
-  String get cubeGrid {
-    return Intl.message('Cube Grid', name: 'cubeGrid', desc: '', args: []);
-  }
-
-  /// `Dancing Square`
-  String get dancingSquare {
-    return Intl.message(
-      'Dancing Square',
-      name: 'dancingSquare',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Dual Ring`
-  String get dualRing {
-    return Intl.message('Dual Ring', name: 'dualRing', desc: '', args: []);
-  }
-
-  /// `Fading Cube`
-  String get fadingCube {
-    return Intl.message('Fading Cube', name: 'fadingCube', desc: '', args: []);
-  }
-
-  /// `Fading Grid`
-  String get fadingGrid {
-    return Intl.message('Fading Grid', name: 'fadingGrid', desc: '', args: []);
-  }
-
-  /// `Folding Cube`
-  String get foldingCube {
-    return Intl.message(
-      'Folding Cube',
-      name: 'foldingCube',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Hourglass`
-  String get hourGlass {
-    return Intl.message('Hourglass', name: 'hourGlass', desc: '', args: []);
-  }
-
-  /// `Piano Wave`
-  String get pianoWave {
-    return Intl.message('Piano Wave', name: 'pianoWave', desc: '', args: []);
-  }
-
-  /// `Pouring Hourglass`
-  String get pouringHourGlass {
-    return Intl.message(
-      'Pouring Hourglass',
-      name: 'pouringHourGlass',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Refined Hourglass`
-  String get pouringHourGlassRefined {
-    return Intl.message(
-      'Refined Hourglass',
-      name: 'pouringHourGlassRefined',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Pulsing Grid`
-  String get pulsingGrid {
-    return Intl.message(
-      'Pulsing Grid',
-      name: 'pulsingGrid',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Pumping Heart`
-  String get pumpingHeart {
-    return Intl.message(
-      'Pumping Heart',
-      name: 'pumpingHeart',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Ring`
-  String get ring {
-    return Intl.message('Ring', name: 'ring', desc: '', args: []);
-  }
-
-  /// `Ripple`
-  String get ripple {
-    return Intl.message('Ripple', name: 'ripple', desc: '', args: []);
-  }
-
-  /// `Rotating Plain`
-  String get rotatingPlain {
-    return Intl.message(
-      'Rotating Plain',
-      name: 'rotatingPlain',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Spinning Circle`
-  String get spinningCircle {
-    return Intl.message(
-      'Spinning Circle',
-      name: 'spinningCircle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Square Circle`
-  String get squareCircle {
-    return Intl.message(
-      'Square Circle',
-      name: 'squareCircle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Wandering Cubes`
-  String get wanderingCubes {
-    return Intl.message(
-      'Wandering Cubes',
-      name: 'wanderingCubes',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Wave Spinner`
-  String get waveSpinner {
-    return Intl.message(
-      'Wave Spinner',
-      name: 'waveSpinner',
       desc: '',
       args: [],
     );
@@ -4349,16 +4169,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Customize proxy group ICON icons`
-  String get iconConfigurationDesc {
-    return Intl.message(
-      'Customize proxy group ICON icons',
-      name: 'iconConfigurationDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `No Data`
   String get noData {
     return Intl.message('No Data', name: 'noData', desc: '', args: []);
@@ -5649,16 +5459,6 @@ class AppLocalizations {
     return Intl.message('Wrap Lines', name: 'lineWrap', desc: '', args: []);
   }
 
-  /// `Auto Sticky Header`
-  String get autoStickyHeader {
-    return Intl.message(
-      'Auto Sticky Header',
-      name: 'autoStickyHeader',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Show Hidden Items`
   String get showHiddenItems {
     return Intl.message(
@@ -6174,6 +5974,291 @@ class AppLocalizations {
     return Intl.message('Flagged', name: 'flagged', desc: '', args: []);
   }
 
+  /// `Coal Black Theme`
+  String get coalThemeMode {
+    return Intl.message(
+      'Coal Black Theme',
+      name: 'coalThemeMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Coal-black surfaces with pink card outlines`
+  String get coalThemeModeDesc {
+    return Intl.message(
+      'Coal-black surfaces with pink card outlines',
+      name: 'coalThemeModeDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Coal Turquoise Theme`
+  String get coalTurquoiseMode {
+    return Intl.message(
+      'Coal Turquoise Theme',
+      name: 'coalTurquoiseMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Coal-black surfaces with turquoise card outlines`
+  String get coalTurquoiseModeDesc {
+    return Intl.message(
+      'Coal-black surfaces with turquoise card outlines',
+      name: 'coalTurquoiseModeDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hide unavailable`
+  String get hideUnavailable {
+    return Intl.message(
+      'Hide unavailable',
+      name: 'hideUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show unavailable`
+  String get showUnavailable {
+    return Intl.message(
+      'Show unavailable',
+      name: 'showUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hidden unavailable: {count} — tap to show`
+  String hiddenUnavailableCount(num count) {
+    return Intl.message(
+      'Hidden unavailable: $count — tap to show',
+      name: 'hiddenUnavailableCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Manual`
+  String get manualSort {
+    return Intl.message('Manual', name: 'manualSort', desc: '', args: []);
+  }
+
+  /// `Reset manual sort`
+  String get resetManualSort {
+    return Intl.message(
+      'Reset manual sort',
+      name: 'resetManualSort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select Backup Version`
+  String get selectBackupVersion {
+    return Intl.message(
+      'Select Backup Version',
+      name: 'selectBackupVersion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No backup file found`
+  String get noBackupFileFound {
+    return Intl.message(
+      'No backup file found',
+      name: 'noBackupFileFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Chasing Dots`
+  String get chasingDots {
+    return Intl.message(
+      'Chasing Dots',
+      name: 'chasingDots',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cube Grid`
+  String get cubeGrid {
+    return Intl.message('Cube Grid', name: 'cubeGrid', desc: '', args: []);
+  }
+
+  /// `Dancing Square`
+  String get dancingSquare {
+    return Intl.message(
+      'Dancing Square',
+      name: 'dancingSquare',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Dual Ring`
+  String get dualRing {
+    return Intl.message('Dual Ring', name: 'dualRing', desc: '', args: []);
+  }
+
+  /// `Fading Cube`
+  String get fadingCube {
+    return Intl.message('Fading Cube', name: 'fadingCube', desc: '', args: []);
+  }
+
+  /// `Fading Grid`
+  String get fadingGrid {
+    return Intl.message('Fading Grid', name: 'fadingGrid', desc: '', args: []);
+  }
+
+  /// `Folding Cube`
+  String get foldingCube {
+    return Intl.message(
+      'Folding Cube',
+      name: 'foldingCube',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hourglass`
+  String get hourGlass {
+    return Intl.message('Hourglass', name: 'hourGlass', desc: '', args: []);
+  }
+
+  /// `Piano Wave`
+  String get pianoWave {
+    return Intl.message('Piano Wave', name: 'pianoWave', desc: '', args: []);
+  }
+
+  /// `Pouring Hourglass`
+  String get pouringHourGlass {
+    return Intl.message(
+      'Pouring Hourglass',
+      name: 'pouringHourGlass',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refined Hourglass`
+  String get pouringHourGlassRefined {
+    return Intl.message(
+      'Refined Hourglass',
+      name: 'pouringHourGlassRefined',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pulsing Grid`
+  String get pulsingGrid {
+    return Intl.message(
+      'Pulsing Grid',
+      name: 'pulsingGrid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pumping Heart`
+  String get pumpingHeart {
+    return Intl.message(
+      'Pumping Heart',
+      name: 'pumpingHeart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ring`
+  String get ring {
+    return Intl.message('Ring', name: 'ring', desc: '', args: []);
+  }
+
+  /// `Ripple`
+  String get ripple {
+    return Intl.message('Ripple', name: 'ripple', desc: '', args: []);
+  }
+
+  /// `Rotating Plain`
+  String get rotatingPlain {
+    return Intl.message(
+      'Rotating Plain',
+      name: 'rotatingPlain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Spinning Circle`
+  String get spinningCircle {
+    return Intl.message(
+      'Spinning Circle',
+      name: 'spinningCircle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Square Circle`
+  String get squareCircle {
+    return Intl.message(
+      'Square Circle',
+      name: 'squareCircle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wandering Cubes`
+  String get wanderingCubes {
+    return Intl.message(
+      'Wandering Cubes',
+      name: 'wanderingCubes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wave Spinner`
+  String get waveSpinner {
+    return Intl.message(
+      'Wave Spinner',
+      name: 'waveSpinner',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Customize proxy group ICON icons`
+  String get iconConfigurationDesc {
+    return Intl.message(
+      'Customize proxy group ICON icons',
+      name: 'iconConfigurationDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Auto Sticky Header`
+  String get autoStickyHeader {
+    return Intl.message(
+      'Auto Sticky Header',
+      name: 'autoStickyHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Scan / LAN Import`
   String get tvScanImport {
     return Intl.message(
@@ -6329,89 +6414,9 @@ class AppLocalizations {
     );
   }
 
-  /// `HTTP proxy is generally not recommended on non-desktop platforms. Only enable this feature when necessary and you fully understand the implications.`
-  String get vpnSystemProxyConfirmDesc {
-    return Intl.message(
-      'HTTP proxy is generally not recommended on non-desktop platforms. Only enable this feature when necessary and you fully understand the implications.',
-      name: 'vpnSystemProxyConfirmDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Manual`
-  String get manualSort {
-    return Intl.message('Manual', name: 'manualSort', desc: '', args: []);
-  }
-
-  /// `Reset manual sort`
-  String get resetManualSort {
-    return Intl.message(
-      'Reset manual sort',
-      name: 'resetManualSort',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Coal Black Theme`
-  String get coalThemeMode {
-    return Intl.message(
-      'Coal Black Theme',
-      name: 'coalThemeMode',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Coal-black surfaces with turquoise card outlines`
-  String get coalThemeModeDesc {
-    return Intl.message(
-      'Coal-black surfaces with turquoise card outlines',
-      name: 'coalThemeModeDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Coal Turquoise Theme`
-  String get coalTurquoiseMode {
-    return Intl.message(
-      'Coal Turquoise Theme',
-      name: 'coalTurquoiseMode',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Coal-black surfaces with turquoise card outlines`
-  String get coalTurquoiseModeDesc {
-    return Intl.message(
-      'Coal-black surfaces with turquoise card outlines',
-      name: 'coalTurquoiseModeDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Hide unavailable`
-  String get hideUnavailable {
-    return Intl.message(
-      'Hide unavailable',
-      name: 'hideUnavailable',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Show unavailable`
-  String get showUnavailable {
-    return Intl.message(
-      'Show unavailable',
-      name: 'showUnavailable',
-      desc: '',
-      args: [],
-    );
+  /// `Pause`
+  String get pause {
+    return Intl.message('Pause', name: 'pause', desc: '', args: []);
   }
 
   /// `Security`
@@ -6421,7 +6426,172 @@ class AppLocalizations {
 
   /// `Stealth check`
   String get stealthCheck {
-    return Intl.message('Stealth check', name: 'stealthCheck', desc: '', args: []);
+    return Intl.message(
+      'Stealth check',
+      name: 'stealthCheck',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking…`
+  String get stealthCheckChecking {
+    return Intl.message(
+      'Checking…',
+      name: 'stealthCheckChecking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy report`
+  String get stealthCheckCopyReport {
+    return Intl.message(
+      'Copy report',
+      name: 'stealthCheckCopyReport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enable VPN`
+  String get stealthCheckEnableVpn {
+    return Intl.message(
+      'Enable VPN',
+      name: 'stealthCheckEnableVpn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not check`
+  String get stealthCheckFail {
+    return Intl.message(
+      'Could not check',
+      name: 'stealthCheckFail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rerun`
+  String get stealthCheckRerun {
+    return Intl.message('Rerun', name: 'stealthCheckRerun', desc: '', args: []);
+  }
+
+  /// `Run check`
+  String get stealthCheckRun {
+    return Intl.message(
+      'Run check',
+      name: 'stealthCheckRun',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not check`
+  String get stealthDnsFail {
+    return Intl.message(
+      'Could not check',
+      name: 'stealthDnsFail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DNS queries`
+  String get stealthDnsTitle {
+    return Intl.message(
+      'DNS queries',
+      name: 'stealthDnsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DoT reachable`
+  String get stealthDotOk {
+    return Intl.message(
+      'DoT reachable',
+      name: 'stealthDotOk',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DoT probe (Quad9)`
+  String get stealthDotTitle {
+    return Intl.message(
+      'DoT probe (Quad9)',
+      name: 'stealthDotTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not fetch`
+  String get stealthExitFail {
+    return Intl.message(
+      'Could not fetch',
+      name: 'stealthExitFail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exit IP`
+  String get stealthExitTitle {
+    return Intl.message(
+      'Exit IP',
+      name: 'stealthExitTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fix`
+  String get stealthFix {
+    return Intl.message('Fix', name: 'stealthFix', desc: '', args: []);
+  }
+
+  /// `IPv6 bypasses the tunnel`
+  String get stealthIpv6Bad {
+    return Intl.message(
+      'IPv6 bypasses the tunnel',
+      name: 'stealthIpv6Bad',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Local ports`
+  String get stealthPortsTitle {
+    return Intl.message(
+      'Local ports',
+      name: 'stealthPortsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `VPN interface`
+  String get stealthTunTitle {
+    return Intl.message(
+      'VPN interface',
+      name: 'stealthTunTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pause for {minutes} min`
+  String pauseForMinutes(Object minutes) {
+    return Intl.message(
+      'Pause for $minutes min',
+      name: 'pauseForMinutes',
+      desc: '',
+      args: [minutes],
+    );
   }
 
   /// `What VPN-detecting apps can see about you`
@@ -6444,53 +6614,93 @@ class AppLocalizations {
     );
   }
 
-  /// `Enable VPN`
-  String get stealthCheckEnableVpn {
+  /// `{closed} of {total} closed`
+  String stealthCheckScore(Object closed, Object total) {
     return Intl.message(
-      'Enable VPN',
-      name: 'stealthCheckEnableVpn',
+      '$closed of $total closed',
+      name: 'stealthCheckScore',
+      desc: '',
+      args: [closed, total],
+    );
+  }
+
+  /// `Checked at {time}`
+  String stealthCheckedAt(Object time) {
+    return Intl.message(
+      'Checked at $time',
+      name: 'stealthCheckedAt',
+      desc: '',
+      args: [time],
+    );
+  }
+
+  /// `Queries go to the ISP DNS — a leak`
+  String get stealthDnsLeak {
+    return Intl.message(
+      'Queries go to the ISP DNS — a leak',
+      name: 'stealthDnsLeak',
       desc: '',
       args: [],
     );
   }
 
-  /// `Run check`
-  String get stealthCheckRun {
-    return Intl.message('Run check', name: 'stealthCheckRun', desc: '', args: []);
-  }
-
-  /// `Rerun`
-  String get stealthCheckRerun {
-    return Intl.message('Rerun', name: 'stealthCheckRerun', desc: '', args: []);
-  }
-
-  /// `Copy report`
-  String get stealthCheckCopyReport {
+  /// `Resolver does not match the ISP DNS`
+  String get stealthDnsOk {
     return Intl.message(
-      'Copy report',
-      name: 'stealthCheckCopyReport',
+      'Resolver does not match the ISP DNS',
+      name: 'stealthDnsOk',
       desc: '',
       args: [],
     );
   }
 
-  /// `Checking…`
-  String get stealthCheckChecking {
+  /// `DoT unreachable (TCP 853/TLS)`
+  String get stealthDotBad {
     return Intl.message(
-      'Checking…',
-      name: 'stealthCheckChecking',
+      'DoT unreachable (TCP 853/TLS)',
+      name: 'stealthDotBad',
       desc: '',
       args: [],
     );
   }
 
-  /// `Local ports`
-  String get stealthPortsTitle {
+  /// `Traffic exits through the node`
+  String get stealthExitOk {
     return Intl.message(
-      'Local ports',
-      name: 'stealthPortsTitle',
+      'Traffic exits through the node',
+      name: 'stealthExitOk',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `IPv6 is covered by the tunnel`
+  String get stealthIpv6OkCovered {
+    return Intl.message(
+      'IPv6 is covered by the tunnel',
+      name: 'stealthIpv6OkCovered',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No IPv6 in the network — nothing to leak`
+  String get stealthIpv6OkNoV6 {
+    return Intl.message(
+      'No IPv6 in the network — nothing to leak',
+      name: 'stealthIpv6OkNoV6',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Answering ports: {ports}`
+  String stealthPortsBad(Object ports) {
+    return Intl.message(
+      'Answering ports: $ports',
+      name: 'stealthPortsBad',
+      desc: '',
+      args: [ports],
     );
   }
 
@@ -6499,16 +6709,6 @@ class AppLocalizations {
     return Intl.message(
       'Ports are silent — detectors will not spot the proxy',
       name: 'stealthPortsOk',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `VPN interface`
-  String get stealthTunTitle {
-    return Intl.message(
-      'VPN interface',
-      name: 'stealthTunTitle',
       desc: '',
       args: [],
     );
@@ -6542,161 +6742,6 @@ class AppLocalizations {
       desc: '',
       args: [],
     );
-  }
-
-  /// `Could not check`
-  String get stealthCheckFail {
-    return Intl.message(
-      'Could not check',
-      name: 'stealthCheckFail',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Pause`
-  String get pause {
-    return Intl.message('Pause', name: 'pause', desc: '', args: []);
-  }
-
-  /// `Resume`
-  String get resume {
-    return Intl.message('Resume', name: 'resume', desc: '', args: []);
-  }
-
-  /// `DNS queries`
-  String get stealthDnsTitle {
-    return Intl.message(
-      'DNS queries',
-      name: 'stealthDnsTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Resolver does not match the ISP DNS`
-  String get stealthDnsOk {
-    return Intl.message(
-      'Resolver does not match the ISP DNS',
-      name: 'stealthDnsOk',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Queries go to the ISP DNS — a leak`
-  String get stealthDnsLeak {
-    return Intl.message(
-      'Queries go to the ISP DNS — a leak',
-      name: 'stealthDnsLeak',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Could not check`
-  String get stealthDnsFail {
-    return Intl.message(
-      'Could not check',
-      name: 'stealthDnsFail',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `DoT probe (Quad9)`
-  String get stealthDotTitle {
-    return Intl.message(
-      'DoT probe (Quad9)',
-      name: 'stealthDotTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `DoT reachable`
-  String get stealthDotOk {
-    return Intl.message(
-      'DoT reachable',
-      name: 'stealthDotOk',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `DoT unreachable (TCP 853/TLS)`
-  String get stealthDotBad {
-    return Intl.message(
-      'DoT unreachable (TCP 853/TLS)',
-      name: 'stealthDotBad',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `No IPv6 in the network — nothing to leak`
-  String get stealthIpv6OkNoV6 {
-    return Intl.message(
-      'No IPv6 in the network — nothing to leak',
-      name: 'stealthIpv6OkNoV6',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `IPv6 is covered by the tunnel`
-  String get stealthIpv6OkCovered {
-    return Intl.message(
-      'IPv6 is covered by the tunnel',
-      name: 'stealthIpv6OkCovered',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `IPv6 bypasses the tunnel`
-  String get stealthIpv6Bad {
-    return Intl.message(
-      'IPv6 bypasses the tunnel',
-      name: 'stealthIpv6Bad',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Exit IP`
-  String get stealthExitTitle {
-    return Intl.message(
-      'Exit IP',
-      name: 'stealthExitTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Traffic exits through the node`
-  String get stealthExitOk {
-    return Intl.message(
-      'Traffic exits through the node',
-      name: 'stealthExitOk',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Could not fetch`
-  String get stealthExitFail {
-    return Intl.message(
-      'Could not fetch',
-      name: 'stealthExitFail',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Fix`
-  String get stealthFix {
-    return Intl.message('Fix', name: 'stealthFix', desc: '', args: []);
   }
 }
 

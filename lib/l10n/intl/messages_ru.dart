@@ -32,37 +32,43 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m4(label) => "${label} уже существует";
 
   static String m5(count) =>
+      "Скрыто недоступных: ${count} — нажмите, чтобы показать";
+
+  static String m6(count) =>
       "${Intl.plural(count, one: 'час', few: 'часа', many: 'часов', other: 'часов')}";
 
-  static String m6(count) => "${count}";
-
-  static String m7(count) =>
-      "${Intl.plural(count, one: 'минуту', few: 'минуты', many: 'минут', other: 'минут')}";
+  static String m7(count) => "${count}";
 
   static String m8(count) =>
+      "${Intl.plural(count, one: 'минуту', few: 'минуты', many: 'минут', other: 'минут')}";
+
+  static String m9(count) =>
       "${Intl.plural(count, one: 'месяц', few: 'месяца', many: 'месяцев', other: 'месяцев')}";
 
-  static String m9(label) => "${label} отсутствует";
+  static String m10(label) => "${label} отсутствует";
 
-  static String m10(label) => "${label} должен быть числом";
+  static String m11(label) => "${label} должен быть числом";
 
-  static String m11(label) =>
+  static String m12(minutes) => "Pause for ${minutes} min";
+
+  static String m13(label) =>
       "${label} должен быть от 1024 до 49151, 0 для отключения";
 
-  static String m12(statusCode) =>
+  static String m14(statusCode) =>
       "Не удалось импортировать профиль. Проверьте состояние сети или попробуйте сбросить ссылку подписки ( код ошибки HTTP: ${statusCode} )";
 
-  static String m13(count) => "Выбрано: ${count}";
+  static String m15(count) => "Выбрано: ${count}";
 
-  static String m14(label) => "${label} должен быть URL";
+  static String m16(closed, total) => "${closed} of ${total} closed";
 
-  static String m15(count) =>
+  static String m17(time) => "Checked at ${time}";
+
+  static String m18(ports) => "Answering ports: ${ports}";
+
+  static String m19(label) => "${label} должен быть URL";
+
+  static String m20(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
-
-  static String st1(closed, total) => "Закрыто ${closed} из ${total}";
-  static String st2(ports) => "Отвечают порты: ${ports}";
-  static String st0(time) => "Проверено в ${time}";
-  static String pm1(minutes) => "Пауза на ${minutes} мин";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -287,6 +293,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "clipboardImport": MessageLookupByLibrary.simpleMessage("Импорт из буфера"),
     "close": MessageLookupByLibrary.simpleMessage("Закрыть"),
     "closeAll": MessageLookupByLibrary.simpleMessage("Закрыть все"),
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("Угольная тема"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
+      "Угольно-чёрный фон и розовая окантовка карточек",
+    ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage(
+      "Угольная тема (бирюза)",
+    ),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "Угольно-чёрный фон и бирюзовая окантовка карточек",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("Цвет"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("Цветовые схемы"),
     "columns": MessageLookupByLibrary.simpleMessage("Колонки"),
@@ -607,6 +623,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Таймаут проверки работоспособности узлов",
     ),
     "heapObjects": MessageLookupByLibrary.simpleMessage("Objects"),
+    "hiddenUnavailableCount": m5,
+    "hideUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Скрыть недоступные",
+    ),
     "highPriority": MessageLookupByLibrary.simpleMessage("Высокий приоритет"),
     "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "Повысить приоритет процесса приложения и ядра",
@@ -631,7 +651,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Управление приложением с клавиатуры",
     ),
     "hourGlass": MessageLookupByLibrary.simpleMessage("Песочные часы"),
-    "hours": m5,
+    "hours": m6,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage(
       "HTTP порты сниффера",
     ),
@@ -677,7 +697,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Разрешить входящие IPv6",
     ),
     "isp": MessageLookupByLibrary.simpleMessage("Провайдер"),
-    "itemsCount": m6,
+    "itemsCount": m7,
     "just": MessageLookupByLibrary.simpleMessage("Только что"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "Интервал TCP keep-alive",
@@ -716,6 +736,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Максимальная"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("Обновить IP"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("Вручную"),
     "maximize": MessageLookupByLibrary.simpleMessage("Развернуть"),
     "mediaUnlock": MessageLookupByLibrary.simpleMessage("Проверка доступности"),
     "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
@@ -765,11 +786,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "Изменить поведение при выходе",
     ),
-    "minutes": m7,
+    "minutes": m8,
     "mixedPort": MessageLookupByLibrary.simpleMessage("Смешанный порт"),
     "mode": MessageLookupByLibrary.simpleMessage("Режим"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("Монохром"),
-    "months": m8,
+    "months": m9,
     "more": MessageLookupByLibrary.simpleMessage("Подробности"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage(
       "Подробная информация об IP",
@@ -873,8 +894,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "Нет профиля, добавьте его",
     ),
-    "nullTip": m9,
-    "numberTip": m10,
+    "nullTip": m10,
+    "numberTip": m11,
     "oneColumn": MessageLookupByLibrary.simpleMessage("1 колонка"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("Онлайн-панель"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("Только иконки"),
@@ -958,6 +979,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "password": MessageLookupByLibrary.simpleMessage("Пароль"),
     "paste": MessageLookupByLibrary.simpleMessage("Вставить"),
+    "pause": MessageLookupByLibrary.simpleMessage("Пауза"),
+    "pauseForMinutes": m12,
     "pianoWave": MessageLookupByLibrary.simpleMessage("Фортепианная волна"),
     "pin": MessageLookupByLibrary.simpleMessage("Закрепить"),
     "pleaseBindWebDAV": MessageLookupByLibrary.simpleMessage(
@@ -983,7 +1006,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "Введите разные порты",
     ),
-    "portTip": m11,
+    "portTip": m13,
     "pouringHourGlass": MessageLookupByLibrary.simpleMessage("Сыплющиеся часы"),
     "pouringHourGlassRefined": MessageLookupByLibrary.simpleMessage(
       "Точные песочные часы",
@@ -1010,7 +1033,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Конфигурация изменена. Отключить автообновление?",
     ),
-    "profileImportFailed": m12,
+    "profileImportFailed": m14,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "Введите имя профиля",
     ),
@@ -1123,6 +1146,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Просмотр недавних запросов",
     ),
     "reset": MessageLookupByLibrary.simpleMessage("Сброс"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage(
+      "Сбросить ручную сортировку",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage("Сбросить настройки?"),
     "resources": MessageLookupByLibrary.simpleMessage("Ресурсы"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage(
@@ -1172,12 +1198,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "secretCopied": MessageLookupByLibrary.simpleMessage(
       "Пароль скопирован в буфер обмена",
     ),
+    "security": MessageLookupByLibrary.simpleMessage("Безопасность"),
     "selectAll": MessageLookupByLibrary.simpleMessage("Выбрать все"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage(
       "Выберите версию резервной копии",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Выбрано"),
-    "selectedCountTitle": m13,
+    "selectedCountTitle": m15,
     "serviceReady": MessageLookupByLibrary.simpleMessage("Служба готова"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Служба запущена"),
     "settings": MessageLookupByLibrary.simpleMessage("Настройки"),
@@ -1190,6 +1217,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage(
       "Отображать отдельную кнопку переключения на главной странице",
+    ),
+    "showUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Показать недоступные",
     ),
     "shrink": MessageLookupByLibrary.simpleMessage("Стандарт"),
     "silentLaunch": MessageLookupByLibrary.simpleMessage("Тихий запуск"),
@@ -1256,6 +1286,80 @@ class MessageLookup extends MessageLookupByLibrary {
     "status": MessageLookupByLibrary.simpleMessage("Статус"),
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Использовать системный DNS при выключении",
+    ),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("Стелс-проверка"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Проверка…"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage(
+      "Скопировать отчёт",
+    ),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "Что о вашем VPN увидят приложения-детекторы",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage(
+      "Включить VPN",
+    ),
+    "stealthCheckFail": MessageLookupByLibrary.simpleMessage(
+      "Не удалось проверить",
+    ),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "Включите VPN — без туннеля проверять нечего",
+    ),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Повторить"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage(
+      "Запустить проверку",
+    ),
+    "stealthCheckScore": m16,
+    "stealthCheckedAt": m17,
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage(
+      "Не удалось проверить",
+    ),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "Запросы уходят к DNS провайдера — утечка",
+    ),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "Резолвер не совпадает с DNS провайдера",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS-запросы"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT недоступен (TCP 853/TLS)",
+    ),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT доступен"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage(
+      "DoT-проба (Quad9)",
+    ),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage(
+      "Не удалось получить",
+    ),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage(
+      "Трафик выходит через ноду",
+    ),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Выходной IP"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("Исправить"),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage(
+      "IPv6 уходит мимо туннеля",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 покрыт туннелем",
+    ),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "IPv6 в сети отсутствует — нечему утекать",
+    ),
+    "stealthPortsBad": m18,
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "Порты молчат — детектор не увидит прокси",
+    ),
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage(
+      "Локальные порты",
+    ),
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN-интерфейс"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "Интерфейс tun виден всем приложениям — без root его не скрыть",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage(
+      "VPN-сеть в системе",
+    ),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "Приложения видят активную VPN-сеть (TRANSPORT_VPN)",
     ),
     "stop": MessageLookupByLibrary.simpleMessage("Остановка"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Остановка VPN"),
@@ -1421,7 +1525,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Отправка"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Получить профиль по URL"),
-    "urlTip": m14,
+    "urlTip": m19,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Глобальное переопределение",
     ),
@@ -1473,79 +1577,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Требуются права администратора",
     ),
-    "years": m15,
-    "coalThemeMode": MessageLookupByLibrary.simpleMessage("Угольная тема"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "Угольно-чёрный фон и розовая окантовка карточек",
-    ),
-    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("Угольная тема (бирюза)"),
-    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
-      "Угольно-чёрный фон и бирюзовая окантовка карточек",
-    ),
-    "hiddenUnavailableCount": m5,
-    "hideUnavailable": MessageLookupByLibrary.simpleMessage(
-      "Скрыть недоступные",
-    ),
-    "showUnavailable": MessageLookupByLibrary.simpleMessage(
-      "Показать недоступные",
-    ),
-    "security": MessageLookupByLibrary.simpleMessage("Безопасность"),
-    "stealthCheck": MessageLookupByLibrary.simpleMessage("Стелс-проверка"),
-    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
-      "Что о вашем VPN увидят приложения-детекторы",
-    ),
-    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
-      "Включите VPN — без туннеля проверять нечего",
-    ),
-    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Включить VPN"),
-    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Запустить проверку"),
-    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Повторить"),
-    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("Скопировать отчёт"),
-    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Проверка…"),
-    "stealthCheckedAt": st0,
-    "stealthCheckScore": st1,
-    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Локальные порты"),
-    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
-      "Порты молчат — детектор не увидит прокси",
-    ),
-    "stealthPortsBad": st2,
-    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN-интерфейс"),
-    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
-      "Интерфейс tun виден всем приложениям — без root его не скрыть",
-    ),
-    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage("VPN-сеть в системе"),
-    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
-      "Приложения видят активную VPN-сеть (TRANSPORT_VPN)",
-    ),
-    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Не удалось проверить"),
-    "pause": MessageLookupByLibrary.simpleMessage("Пауза"),
-    "pauseForMinutes": pm1,
-    "resume": MessageLookupByLibrary.simpleMessage("Продолжить"),
-    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS-запросы"),
-    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
-      "Резолвер не совпадает с DNS провайдера",
-    ),
-    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
-      "Запросы уходят к DNS провайдера — утечка",
-    ),
-    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Не удалось проверить"),
-    "stealthDotTitle": MessageLookupByLibrary.simpleMessage("DoT-проба (Quad9)"),
-    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT доступен"),
-    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
-      "DoT недоступен (TCP 853/TLS)",
-    ),
-    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
-      "IPv6 в сети отсутствует — нечему утекать",
-    ),
-    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
-      "IPv6 покрыт туннелем",
-    ),
-    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 уходит мимо туннеля"),
-    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Выходной IP"),
-    "stealthExitOk": MessageLookupByLibrary.simpleMessage("Трафик выходит через ноду"),
-    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Не удалось получить"),
-    "stealthFix": MessageLookupByLibrary.simpleMessage("Исправить"),
-    "manualSort": MessageLookupByLibrary.simpleMessage("Вручную"),
-    "resetManualSort": MessageLookupByLibrary.simpleMessage("Сбросить ручную сортировку"),
+    "years": m20,
   };
 }

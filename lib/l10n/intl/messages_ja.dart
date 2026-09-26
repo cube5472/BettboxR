@@ -30,28 +30,36 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(label) => "${label} はすでに存在します";
 
-  static String m5(count) => "${Intl.plural(count, other: '時間')}";
+  static String m6(count) => "${Intl.plural(count, other: '時間')}";
 
-  static String m6(count) => "${count}";
+  static String m7(count) => "${count}";
 
-  static String m7(count) => "${Intl.plural(count, other: '分')}";
+  static String m8(count) => "${Intl.plural(count, other: '分')}";
 
-  static String m8(count) => "${Intl.plural(count, other: 'ヶ月')}";
+  static String m9(count) => "${Intl.plural(count, other: 'ヶ月')}";
 
-  static String m9(label) => "${label} はありません";
+  static String m10(label) => "${label} はありません";
 
-  static String m10(label) => "${label} は数値である必要があります";
+  static String m11(label) => "${label} は数値である必要があります";
 
-  static String m11(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
+  static String m12(minutes) => "Pause for ${minutes} min";
 
-  static String m12(statusCode) =>
+  static String m13(label) => "${label} は1024〜49151の範囲で指定してください（0で無効）";
+
+  static String m14(statusCode) =>
       "プロファイルのインポートに失敗しました。通信状態を確認するかURLをリセットしてください ( HTTPエラーコード: ${statusCode} )";
 
-  static String m13(count) => "${count} 件選択中";
+  static String m15(count) => "${count} 件選択中";
 
-  static String m14(label) => "${label} は有効なURLである必要があります";
+  static String m16(closed, total) => "${closed} of ${total} closed";
 
-  static String m15(count) => "${Intl.plural(count, other: '年')}";
+  static String m17(time) => "Checked at ${time}";
+
+  static String m18(ports) => "Answering ports: ${ports}";
+
+  static String m19(label) => "${label} は有効なURLである必要があります";
+
+  static String m20(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -216,6 +224,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "clipboardImport": MessageLookupByLibrary.simpleMessage("クリップボードから取り込み"),
     "close": MessageLookupByLibrary.simpleMessage("閉じる"),
     "closeAll": MessageLookupByLibrary.simpleMessage("すべて閉じる"),
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("炭黒テーマ"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
+      "炭黒のサーフェスとピンクのカード枠",
+    ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("ターコイズ炭黒テーマ"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "炭黒のサーフェスとターコイズのカード枠",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("カラー"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("カラーパレット"),
     "columns": MessageLookupByLibrary.simpleMessage("列数"),
@@ -480,7 +496,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "キーボードでアプリを操作",
     ),
     "hourGlass": MessageLookupByLibrary.simpleMessage("アワーグラス"),
-    "hours": m5,
+    "hours": m6,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("HTTPポート解析"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP転送"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -516,7 +532,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("IPv6トラフィックの受信を有効化"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("IPv6インバウンド通信を許可"),
     "isp": MessageLookupByLibrary.simpleMessage("プロバイダ"),
-    "itemsCount": m6,
+    "itemsCount": m7,
     "just": MessageLookupByLibrary.simpleMessage("たった今"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP Keep-Alive間隔",
@@ -547,6 +563,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopbackDesc": MessageLookupByLibrary.simpleMessage("UWPアプリのループバック制限を解除"),
     "loose": MessageLookupByLibrary.simpleMessage("ルーズ"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("IPを再取得"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("手動"),
     "maximize": MessageLookupByLibrary.simpleMessage("最大化"),
     "mediaUnlock": MessageLookupByLibrary.simpleMessage("接続性テスト"),
     "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
@@ -584,11 +601,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "デフォルトのウィンドウ閉じる動作を変更",
     ),
-    "minutes": m7,
+    "minutes": m8,
     "mixedPort": MessageLookupByLibrary.simpleMessage("混合ポート (Mixed)"),
     "mode": MessageLookupByLibrary.simpleMessage("モード"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("モノクローム"),
-    "months": m8,
+    "months": m9,
     "more": MessageLookupByLibrary.simpleMessage("詳細"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("詳細 IP 情報"),
     "name": MessageLookupByLibrary.simpleMessage("名前"),
@@ -672,8 +689,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "プロファイルがありません。追加してください",
     ),
-    "nullTip": m9,
-    "numberTip": m10,
+    "nullTip": m10,
+    "numberTip": m11,
     "oneColumn": MessageLookupByLibrary.simpleMessage("1列"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("オンラインパネル"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("アイコンのみ"),
@@ -735,6 +752,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "parsePureIpDesc": MessageLookupByLibrary.simpleMessage("IP直接接続を解析"),
     "password": MessageLookupByLibrary.simpleMessage("パスワード"),
     "paste": MessageLookupByLibrary.simpleMessage("貼り付け"),
+    "pause": MessageLookupByLibrary.simpleMessage("Pause"),
+    "pauseForMinutes": m12,
     "pianoWave": MessageLookupByLibrary.simpleMessage("ピアノウェーブ"),
     "pin": MessageLookupByLibrary.simpleMessage("固定"),
     "pleaseBindWebDAV": MessageLookupByLibrary.simpleMessage("WebDAVを連携してください"),
@@ -760,7 +779,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "重複しないポート番号を入力してください",
     ),
-    "portTip": m11,
+    "portTip": m13,
     "pouringHourGlass": MessageLookupByLibrary.simpleMessage("ポーリングアワーグラス"),
     "pouringHourGlassRefined": MessageLookupByLibrary.simpleMessage(
       "リファインドグラス",
@@ -779,7 +798,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "プロファイルが変更されました。自動更新をオフにしますか？",
     ),
-    "profileImportFailed": m12,
+    "profileImportFailed": m14,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "設定名を入力してください",
     ),
@@ -864,6 +883,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requests": MessageLookupByLibrary.simpleMessage("リクエスト"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage("最近の通信リクエスト履歴を表示"),
     "reset": MessageLookupByLibrary.simpleMessage("リセット"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("手動並べ替えをリセット"),
     "resetTip": MessageLookupByLibrary.simpleMessage("本当にリセットしますか？"),
     "resources": MessageLookupByLibrary.simpleMessage("リソース"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部リソース情報"),
@@ -901,12 +921,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "secretCopied": MessageLookupByLibrary.simpleMessage(
       "パスワードをクリップボードにコピーしました",
     ),
+    "security": MessageLookupByLibrary.simpleMessage("Security"),
     "selectAll": MessageLookupByLibrary.simpleMessage("すべて選択"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage(
       "バックアップバージョンの選択",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("選択済み"),
-    "selectedCountTitle": m13,
+    "selectedCountTitle": m15,
     "serviceReady": MessageLookupByLibrary.simpleMessage("サービス準備完了"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("サービス稼働中"),
     "settings": MessageLookupByLibrary.simpleMessage("設定"),
@@ -970,6 +991,68 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("起動中..."),
     "status": MessageLookupByLibrary.simpleMessage("ステータス"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("オフにするとシステムDNSを使用します"),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("Stealth check"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage(
+      "Copy report",
+    ),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "What VPN-detecting apps can see about you",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Enable VPN"),
+    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "Turn on the VPN — there is nothing to check without the tunnel",
+    ),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Rerun"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Run check"),
+    "stealthCheckScore": m16,
+    "stealthCheckedAt": m17,
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "Queries go to the ISP DNS — a leak",
+    ),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "Resolver does not match the ISP DNS",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT unreachable (TCP 853/TLS)",
+    ),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT reachable"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage(
+      "DoT probe (Quad9)",
+    ),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Could not fetch"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage(
+      "Traffic exits through the node",
+    ),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Exit IP"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("Fix"),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage(
+      "IPv6 bypasses the tunnel",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 is covered by the tunnel",
+    ),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "No IPv6 in the network — nothing to leak",
+    ),
+    "stealthPortsBad": m18,
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "Ports are silent — detectors will not spot the proxy",
+    ),
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Local ports"),
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN interface"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "The tun interface is visible to all apps, it cannot be hidden without root",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage(
+      "VPN network in the system",
+    ),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "Apps can see the active VPN network (TRANSPORT_VPN)",
+    ),
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("停止中..."),
     "storeFix": MessageLookupByLibrary.simpleMessage("ストア修復"),
@@ -1096,7 +1179,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("送信"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("URLから設定を取得"),
-    "urlTip": m14,
+    "urlTip": m19,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "グローバルスクリプトオーバーライドを使用",
     ),
@@ -1134,16 +1217,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("ホワイトリストモード"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("システムへ適用"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("管理者権限が必要です"),
-    "years": m15,
-    "coalThemeMode": MessageLookupByLibrary.simpleMessage("炭黒テーマ"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "炭黒のサーフェスとピンクのカード枠",
-    ),
-    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("ターコイズ炭黒テーマ"),
-    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
-      "炭黒のサーフェスとターコイズのカード枠",
-    ),
-    "manualSort": MessageLookupByLibrary.simpleMessage("手動"),
-    "resetManualSort": MessageLookupByLibrary.simpleMessage("手動並べ替えをリセット"),
+    "years": m20,
   };
 }

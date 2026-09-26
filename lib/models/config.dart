@@ -332,10 +332,10 @@ abstract class ProxiesStyle with _$ProxiesStyle {
     @Default(ProxyCardType.shrink) ProxyCardType cardType,
     @Default(DelayAnimationType.none) DelayAnimationType delayAnimation,
     @Default({}) Map<String, String> iconMap,
-    @Default(250) int concurrencyLimit,
     // Ручной порядок нод внутри групп: ключ — имя группы,
     // значение — упорядоченный список имён нод.
     @Default({}) Map<String, List<String>> proxyOrders,
+    @Default(250) int concurrencyLimit,
     @Default(true) bool autoStickyHeader,
     @Default(false) bool showHiddenItems,
     @Default(false) bool hasCustomizedStyle,

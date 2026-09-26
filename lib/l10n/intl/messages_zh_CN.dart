@@ -30,33 +30,36 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(label) => "${label}当前已存在";
 
-  static String m5(count) => "${Intl.plural(count, other: '小时')}";
+  static String m6(count) => "${Intl.plural(count, other: '小时')}";
 
-  static String m6(count) => "${count}";
+  static String m7(count) => "${count}";
 
-  static String m7(count) => "${Intl.plural(count, other: '分钟')}";
+  static String m8(count) => "${Intl.plural(count, other: '分钟')}";
 
-  static String m8(count) => "${Intl.plural(count, other: '月')}";
+  static String m9(count) => "${Intl.plural(count, other: '月')}";
 
-  static String m9(label) => "暂无${label}";
+  static String m10(label) => "暂无${label}";
 
-  static String m10(label) => "${label}必须为数字";
+  static String m11(label) => "${label}必须为数字";
 
-  static String m11(label) => "${label} 必须在 1024 到 49151 之间，0 为关闭";
+  static String m12(minutes) => "Pause for ${minutes} min";
 
-  static String m12(statusCode) =>
+  static String m13(label) => "${label} 必须在 1024 到 49151 之间，0 为关闭";
+
+  static String m14(statusCode) =>
       "配置导入失败，请检查网络状况或尝试重置订阅链接( HTTP错误代码: ${statusCode} )";
 
-  static String m13(count) => "已选择 ${count} 项";
+  static String m15(count) => "已选择 ${count} 项";
 
-  static String m14(label) => "${label}必须为URL";
+  static String m16(closed, total) => "${closed} of ${total} closed";
 
-  static String m15(count) => "${Intl.plural(count, other: '年')}";
+  static String m17(time) => "Checked at ${time}";
 
-  static String st2(ports) => "有响应的端口：${ports}";
-  static String pm1(minutes) => "暂停 ${minutes} 分钟";
-  static String st1(closed, total) => "已封堵 ${closed}/${total} 项";
-  static String st0(time) => "检测时间：${time}";
+  static String m18(ports) => "Answering ports: ${ports}";
+
+  static String m19(label) => "${label}必须为URL";
+
+  static String m20(count) => "${Intl.plural(count, other: '年')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -201,6 +204,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "clipboardImport": MessageLookupByLibrary.simpleMessage("剪贴板导入"),
     "close": MessageLookupByLibrary.simpleMessage("关闭"),
     "closeAll": MessageLookupByLibrary.simpleMessage("关闭全部"),
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("煤黑主题"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面与粉色卡片描边"),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("青绿色煤黑主题"),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "煤黑表面与青绿色卡片描边",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("颜色"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("配色方案"),
     "columns": MessageLookupByLibrary.simpleMessage("列数"),
@@ -435,7 +444,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagement": MessageLookupByLibrary.simpleMessage("快捷键管理"),
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage("使用键盘控制应用程序"),
     "hourGlass": MessageLookupByLibrary.simpleMessage("沙漏翻转"),
-    "hours": m5,
+    "hours": m6,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("HTTP 端口嗅探"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP转发"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
@@ -469,7 +478,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("开启后将可以接收 IPv6 流量"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("允许 IPv6 入站"),
     "isp": MessageLookupByLibrary.simpleMessage("运营商"),
-    "itemsCount": m6,
+    "itemsCount": m7,
     "just": MessageLookupByLibrary.simpleMessage("刚刚"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage("TCP 保持活动间隔"),
     "key": MessageLookupByLibrary.simpleMessage("键"),
@@ -498,6 +507,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "loopbackDesc": MessageLookupByLibrary.simpleMessage("用于 UWP 回环解锁"),
     "loose": MessageLookupByLibrary.simpleMessage("宽松"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("重新获取 IP"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("手动"),
     "maximize": MessageLookupByLibrary.simpleMessage("最大化"),
     "mediaUnlock": MessageLookupByLibrary.simpleMessage("连通性测试"),
     "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
@@ -533,11 +543,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimize": MessageLookupByLibrary.simpleMessage("最小化"),
     "minimizeOnExit": MessageLookupByLibrary.simpleMessage("退出最小化"),
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage("修改系统默认退出事件"),
-    "minutes": m7,
+    "minutes": m8,
     "mixedPort": MessageLookupByLibrary.simpleMessage("混合端口"),
     "mode": MessageLookupByLibrary.simpleMessage("模式"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("单色"),
-    "months": m8,
+    "months": m9,
     "more": MessageLookupByLibrary.simpleMessage("查看"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("更多 IP 信息"),
     "name": MessageLookupByLibrary.simpleMessage("名称"),
@@ -609,8 +619,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "ntpStatus": MessageLookupByLibrary.simpleMessage("状态"),
     "ntpStatusDesc": MessageLookupByLibrary.simpleMessage("开启 NTP 时间服务"),
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage("没有配置文件,请先添加配置文件"),
-    "nullTip": m9,
-    "numberTip": m10,
+    "nullTip": m10,
+    "numberTip": m11,
     "oneColumn": MessageLookupByLibrary.simpleMessage("一列"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("在线面板"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("仅图标"),
@@ -670,6 +680,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "parsePureIpDesc": MessageLookupByLibrary.simpleMessage("解析纯 IP 连接"),
     "password": MessageLookupByLibrary.simpleMessage("密码"),
     "paste": MessageLookupByLibrary.simpleMessage("粘贴"),
+    "pause": MessageLookupByLibrary.simpleMessage("暂停"),
+    "pauseForMinutes": m12,
     "pianoWave": MessageLookupByLibrary.simpleMessage("琴键律动"),
     "pin": MessageLookupByLibrary.simpleMessage("置顶"),
     "pleaseBindWebDAV": MessageLookupByLibrary.simpleMessage("请绑定 WebDAV"),
@@ -687,7 +699,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "port": MessageLookupByLibrary.simpleMessage("端口"),
     "portConflictTip": MessageLookupByLibrary.simpleMessage("请输入不同的端口"),
-    "portTip": m11,
+    "portTip": m13,
     "pouringHourGlass": MessageLookupByLibrary.simpleMessage("流沙倾注"),
     "pouringHourGlassRefined": MessageLookupByLibrary.simpleMessage("玉漏凝光"),
     "powerSwitch": MessageLookupByLibrary.simpleMessage("启动开关"),
@@ -704,7 +716,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "配置文件已经修改，是否关闭自动更新？",
     ),
-    "profileImportFailed": m12,
+    "profileImportFailed": m14,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "请输入配置名称",
     ),
@@ -779,6 +791,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requests": MessageLookupByLibrary.simpleMessage("请求"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage("查看最近请求记录"),
     "reset": MessageLookupByLibrary.simpleMessage("重置"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("重置手动排序"),
     "resetTip": MessageLookupByLibrary.simpleMessage("确定要重置吗?"),
     "resources": MessageLookupByLibrary.simpleMessage("资源"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage("外部资源相关信息"),
@@ -812,10 +825,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "search": MessageLookupByLibrary.simpleMessage("搜索"),
     "seconds": MessageLookupByLibrary.simpleMessage("秒"),
     "secretCopied": MessageLookupByLibrary.simpleMessage("密码已复制到剪贴板"),
+    "security": MessageLookupByLibrary.simpleMessage("安全"),
     "selectAll": MessageLookupByLibrary.simpleMessage("全选"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage("选择备份版本"),
     "selected": MessageLookupByLibrary.simpleMessage("已选择"),
-    "selectedCountTitle": m13,
+    "selectedCountTitle": m15,
     "serviceReady": MessageLookupByLibrary.simpleMessage("服务已就绪"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("服务正在运行中"),
     "settings": MessageLookupByLibrary.simpleMessage("设置"),
@@ -869,6 +883,52 @@ class MessageLookup extends MessageLookupByLibrary {
     "startVpn": MessageLookupByLibrary.simpleMessage("正在启动"),
     "status": MessageLookupByLibrary.simpleMessage("状态"),
     "statusDesc": MessageLookupByLibrary.simpleMessage("关闭后将使用系统 DNS"),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("隐身检测"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("检测中…"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("复制报告"),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "检测类应用能看到哪些 VPN 痕迹",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("开启 VPN"),
+    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("无法检测"),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "请先开启 VPN，没有隧道就无法检测",
+    ),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("重新检测"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("开始检测"),
+    "stealthCheckScore": m16,
+    "stealthCheckedAt": m17,
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("无法检测"),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "查询流向运营商 DNS —— 存在泄露",
+    ),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage("解析器与运营商 DNS 不一致"),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS 查询"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT 不可用 (TCP 853/TLS)",
+    ),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT 可用"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage("DoT 检测 (Quad9)"),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("无法获取"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage("流量经节点出去"),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("出口 IP"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("修复"),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 绕过了隧道"),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage("IPv6 已被隧道覆盖"),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "网络没有 IPv6 —— 无从泄露",
+    ),
+    "stealthPortsBad": m18,
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage("端口静默，检测器发现不了代理"),
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("本地端口"),
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN 接口"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "tun 接口对所有应用可见，无 root 无法隐藏",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage("系统中的 VPN 网络"),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "应用能看到活跃的 VPN 网络（TRANSPORT_VPN）",
+    ),
     "stop": MessageLookupByLibrary.simpleMessage("停止"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("正在停止"),
     "storeFix": MessageLookupByLibrary.simpleMessage("商店修复"),
@@ -977,7 +1037,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("上传"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("通过 URL 获取配置文件"),
-    "urlTip": m14,
+    "urlTip": m19,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage("使用全局脚本覆写"),
     "useHosts": MessageLookupByLibrary.simpleMessage("使用Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("使用系统 Hosts"),
@@ -1011,68 +1071,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "whitelistMode": MessageLookupByLibrary.simpleMessage("白名单模式"),
     "writeToSystem": MessageLookupByLibrary.simpleMessage("写入系统"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("需要管理员权限"),
-    "years": m15,
-    "coalThemeMode": MessageLookupByLibrary.simpleMessage("煤黑主题"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面与粉色卡片描边"),
-    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("青绿色煤黑主题"),
-    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage("煤黑表面与青绿色卡片描边"),
-    "security": MessageLookupByLibrary.simpleMessage("安全"),
-    "stealthCheck": MessageLookupByLibrary.simpleMessage("隐身检测"),
-    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
-      "检测类应用能看到哪些 VPN 痕迹",
-    ),
-    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
-      "请先开启 VPN，没有隧道就无法检测",
-    ),
-    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("开启 VPN"),
-    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("开始检测"),
-    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("重新检测"),
-    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("复制报告"),
-    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("检测中…"),
-    "stealthCheckedAt": st0,
-    "stealthCheckScore": st1,
-    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("本地端口"),
-    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
-      "端口静默，检测器发现不了代理",
-    ),
-    "stealthPortsBad": st2,
-    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN 接口"),
-    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
-      "tun 接口对所有应用可见，无 root 无法隐藏",
-    ),
-    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage("系统中的 VPN 网络"),
-    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
-      "应用能看到活跃的 VPN 网络（TRANSPORT_VPN）",
-    ),
-    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("无法检测"),
-    "pause": MessageLookupByLibrary.simpleMessage("暂停"),
-    "pauseForMinutes": pm1,
-    "resume": MessageLookupByLibrary.simpleMessage("恢复"),
-    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS 查询"),
-    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
-      "解析器与运营商 DNS 不一致",
-    ),
-    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
-      "查询流向运营商 DNS —— 存在泄露",
-    ),
-    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("无法检测"),
-    "stealthDotTitle": MessageLookupByLibrary.simpleMessage("DoT 检测 (Quad9)"),
-    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT 可用"),
-    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
-      "DoT 不可用 (TCP 853/TLS)",
-    ),
-    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
-      "网络没有 IPv6 —— 无从泄露",
-    ),
-    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
-      "IPv6 已被隧道覆盖",
-    ),
-    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 绕过了隧道"),
-    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("出口 IP"),
-    "stealthExitOk": MessageLookupByLibrary.simpleMessage("流量经节点出去"),
-    "stealthExitFail": MessageLookupByLibrary.simpleMessage("无法获取"),
-    "stealthFix": MessageLookupByLibrary.simpleMessage("修复"),
-    "manualSort": MessageLookupByLibrary.simpleMessage("手动"),
-    "resetManualSort": MessageLookupByLibrary.simpleMessage("重置手动排序"),
+    "years": m20,
   };
 }

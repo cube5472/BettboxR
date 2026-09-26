@@ -166,14 +166,16 @@ class Preferences {
     return _saveLock.synchronized(() async {
       try {
         final configFilePath = await appPath.appConfigPath;
-        final tempFile = File('$configFilePath.${DateTime.now().microsecondsSinceEpoch}.tmp');
+        final tempFile = File(
+          '$configFilePath.${DateTime.now().microsecondsSinceEpoch}.tmp',
+        );
         await tempFile.parent.create(recursive: true);
         await tempFile.writeAsString(jsonStr, flush: true);
         try {
           await tempFile.rename(configFilePath);
         } catch (_) {
-          // rename() может не перезаписать существующий файл (Windows) —
-          // тогда копируем поверх и убираем временный файл.
+          // rename() не перезаписывает существующий целевой файл на части
+          // платформ (Windows) — падаем на copy+delete.
           if (await tempFile.exists()) {
             await tempFile.copy(configFilePath);
             await tempFile.delete();

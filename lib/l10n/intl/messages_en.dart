@@ -30,38 +30,43 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(label) => "${label} already exists";
 
-  static String m5(count) =>
+  static String m5(count) => "Hidden unavailable: ${count} — tap to show";
+
+  static String m6(count) =>
       "${Intl.plural(count, one: 'hour', other: 'hours')}";
 
-  static String m6(count) => "${count}";
-
-  static String m7(count) =>
-      "${Intl.plural(count, one: 'minute', other: 'minutes')}";
+  static String m7(count) => "${count}";
 
   static String m8(count) =>
+      "${Intl.plural(count, one: 'minute', other: 'minutes')}";
+
+  static String m9(count) =>
       "${Intl.plural(count, one: 'month', other: 'months')}";
 
-  static String m9(label) => "No ${label}";
+  static String m10(label) => "No ${label}";
 
-  static String m10(label) => "${label} must be a number";
+  static String m11(label) => "${label} must be a number";
 
-  static String m11(label) =>
+  static String m12(minutes) => "Pause for ${minutes} min";
+
+  static String m13(label) =>
       "${label} must be between 1024 and 49151, 0 to disable";
 
-  static String m12(statusCode) =>
+  static String m14(statusCode) =>
       "Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: ${statusCode} )";
 
-  static String m13(count) => "${count} items selected";
+  static String m15(count) => "${count} items selected";
 
-  static String m14(label) => "${label} must be a URL";
+  static String m16(closed, total) => "${closed} of ${total} closed";
 
-  static String m15(count) =>
+  static String m17(time) => "Checked at ${time}";
+
+  static String m18(ports) => "Answering ports: ${ports}";
+
+  static String m19(label) => "${label} must be a URL";
+
+  static String m20(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
-
-  static String st1(closed, total) => "${closed} of ${total} closed";
-  static String st2(ports) => "Answering ports: ${ports}";
-  static String st0(time) => "Checked at ${time}";
-  static String pm1(minutes) => "Pause for ${minutes} min";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -280,6 +285,16 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "close": MessageLookupByLibrary.simpleMessage("Close"),
     "closeAll": MessageLookupByLibrary.simpleMessage("Close All"),
+    "coalThemeMode": MessageLookupByLibrary.simpleMessage("Coal Black Theme"),
+    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
+      "Coal-black surfaces with pink card outlines",
+    ),
+    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage(
+      "Coal Turquoise Theme",
+    ),
+    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
+      "Coal-black surfaces with turquoise card outlines",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("Color"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("Color Schemes"),
     "columns": MessageLookupByLibrary.simpleMessage("Columns"),
@@ -584,6 +599,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Node health check timeout",
     ),
     "heapObjects": MessageLookupByLibrary.simpleMessage("Objects"),
+    "hiddenUnavailableCount": m5,
+    "hideUnavailable": MessageLookupByLibrary.simpleMessage("Hide unavailable"),
     "highPriority": MessageLookupByLibrary.simpleMessage("High Priority"),
     "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "Increase priority of main process and core process",
@@ -606,7 +623,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Control app via keyboard",
     ),
     "hourGlass": MessageLookupByLibrary.simpleMessage("Hourglass"),
-    "hours": m5,
+    "hours": m6,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage(
       "HTTP Port Sniffing",
     ),
@@ -654,7 +671,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Allow IPv6 inbound",
     ),
     "isp": MessageLookupByLibrary.simpleMessage("ISP"),
-    "itemsCount": m6,
+    "itemsCount": m7,
     "just": MessageLookupByLibrary.simpleMessage("Just now"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP keep-alive interval",
@@ -693,6 +710,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Loose"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("Refresh IP"),
+    "manualSort": MessageLookupByLibrary.simpleMessage("Manual"),
     "maximize": MessageLookupByLibrary.simpleMessage("Maximize"),
     "mediaUnlock": MessageLookupByLibrary.simpleMessage("Connectivity Test"),
     "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
@@ -740,11 +758,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "Override default exit behavior",
     ),
-    "minutes": m7,
+    "minutes": m8,
     "mixedPort": MessageLookupByLibrary.simpleMessage("Mixed Port"),
     "mode": MessageLookupByLibrary.simpleMessage("Mode"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("Monochrome"),
-    "months": m8,
+    "months": m9,
     "more": MessageLookupByLibrary.simpleMessage("More"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("More IP Information"),
     "name": MessageLookupByLibrary.simpleMessage("Name"),
@@ -844,8 +862,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "No profile. Please add one.",
     ),
-    "nullTip": m9,
-    "numberTip": m10,
+    "nullTip": m10,
+    "numberTip": m11,
     "oneColumn": MessageLookupByLibrary.simpleMessage("1 Column"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("Online Panel"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("Icon Only"),
@@ -923,6 +941,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "password": MessageLookupByLibrary.simpleMessage("Password"),
     "paste": MessageLookupByLibrary.simpleMessage("Paste"),
+    "pause": MessageLookupByLibrary.simpleMessage("Pause"),
+    "pauseForMinutes": m12,
     "pianoWave": MessageLookupByLibrary.simpleMessage("Piano Wave"),
     "pin": MessageLookupByLibrary.simpleMessage("Pin"),
     "pleaseBindWebDAV": MessageLookupByLibrary.simpleMessage(
@@ -950,7 +970,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "Please enter a different port",
     ),
-    "portTip": m11,
+    "portTip": m13,
     "pouringHourGlass": MessageLookupByLibrary.simpleMessage(
       "Pouring Hourglass",
     ),
@@ -975,7 +995,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "Profile modified. Disable auto-update?",
     ),
-    "profileImportFailed": m12,
+    "profileImportFailed": m14,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "Please enter a profile name",
     ),
@@ -1086,6 +1106,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "View recent request logs",
     ),
     "reset": MessageLookupByLibrary.simpleMessage("Reset"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage(
+      "Reset manual sort",
+    ),
     "resetTip": MessageLookupByLibrary.simpleMessage(
       "Are you sure you want to reset?",
     ),
@@ -1137,12 +1160,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "secretCopied": MessageLookupByLibrary.simpleMessage(
       "Secret copied to clipboard",
     ),
+    "security": MessageLookupByLibrary.simpleMessage("Security"),
     "selectAll": MessageLookupByLibrary.simpleMessage("Select All"),
     "selectBackupVersion": MessageLookupByLibrary.simpleMessage(
       "Select Backup Version",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
-    "selectedCountTitle": m13,
+    "selectedCountTitle": m15,
     "serviceReady": MessageLookupByLibrary.simpleMessage("Service Ready"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Service Running"),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
@@ -1156,6 +1180,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage(
       "Display independent switch button on the homepage",
     ),
+    "showUnavailable": MessageLookupByLibrary.simpleMessage("Show unavailable"),
     "shrink": MessageLookupByLibrary.simpleMessage("Compact"),
     "silentLaunch": MessageLookupByLibrary.simpleMessage("Silent Launch"),
     "silentLaunchDesc": MessageLookupByLibrary.simpleMessage(
@@ -1219,6 +1244,68 @@ class MessageLookup extends MessageLookupByLibrary {
     "status": MessageLookupByLibrary.simpleMessage("Status"),
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "Uses system DNS when disabled",
+    ),
+    "stealthCheck": MessageLookupByLibrary.simpleMessage("Stealth check"),
+    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
+    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage(
+      "Copy report",
+    ),
+    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
+      "What VPN-detecting apps can see about you",
+    ),
+    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Enable VPN"),
+    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
+      "Turn on the VPN — there is nothing to check without the tunnel",
+    ),
+    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Rerun"),
+    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Run check"),
+    "stealthCheckScore": m16,
+    "stealthCheckedAt": m17,
+    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Could not check"),
+    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
+      "Queries go to the ISP DNS — a leak",
+    ),
+    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
+      "Resolver does not match the ISP DNS",
+    ),
+    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
+    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
+      "DoT unreachable (TCP 853/TLS)",
+    ),
+    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT reachable"),
+    "stealthDotTitle": MessageLookupByLibrary.simpleMessage(
+      "DoT probe (Quad9)",
+    ),
+    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Could not fetch"),
+    "stealthExitOk": MessageLookupByLibrary.simpleMessage(
+      "Traffic exits through the node",
+    ),
+    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Exit IP"),
+    "stealthFix": MessageLookupByLibrary.simpleMessage("Fix"),
+    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage(
+      "IPv6 bypasses the tunnel",
+    ),
+    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
+      "IPv6 is covered by the tunnel",
+    ),
+    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
+      "No IPv6 in the network — nothing to leak",
+    ),
+    "stealthPortsBad": m18,
+    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
+      "Ports are silent — detectors will not spot the proxy",
+    ),
+    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Local ports"),
+    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN interface"),
+    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
+      "The tun interface is visible to all apps, it cannot be hidden without root",
+    ),
+    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage(
+      "VPN network in the system",
+    ),
+    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
+      "Apps can see the active VPN network (TRANSPORT_VPN)",
     ),
     "stop": MessageLookupByLibrary.simpleMessage("Stop"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Stopping..."),
@@ -1364,7 +1451,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Get profile via URL"),
-    "urlTip": m14,
+    "urlTip": m19,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "Use Global Script Override",
     ),
@@ -1410,79 +1497,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "Requires administrator privileges",
     ),
-    "years": m15,
-    "coalThemeMode": MessageLookupByLibrary.simpleMessage("Coal Black Theme"),
-    "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "Coal-black surfaces with pink card outlines",
-    ),
-    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage("Coal Turquoise Theme"),
-    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
-      "Coal-black surfaces with turquoise card outlines",
-    ),
-    "hiddenUnavailableCount": m5,
-    "hideUnavailable": MessageLookupByLibrary.simpleMessage("Hide unavailable"),
-    "showUnavailable": MessageLookupByLibrary.simpleMessage("Show unavailable"),
-    "security": MessageLookupByLibrary.simpleMessage("Security"),
-    "stealthCheck": MessageLookupByLibrary.simpleMessage("Stealth check"),
-    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
-      "What VPN-detecting apps can see about you",
-    ),
-    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
-      "Turn on the VPN — there is nothing to check without the tunnel",
-    ),
-    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Enable VPN"),
-    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Run check"),
-    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Rerun"),
-    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage("Copy report"),
-    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
-    "stealthCheckedAt": st0,
-    "stealthCheckScore": st1,
-    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Local ports"),
-    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
-      "Ports are silent — detectors will not spot the proxy",
-    ),
-    "stealthPortsBad": st2,
-    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN interface"),
-    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
-      "The tun interface is visible to all apps, it cannot be hidden without root",
-    ),
-    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage(
-      "VPN network in the system",
-    ),
-    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
-      "Apps can see the active VPN network (TRANSPORT_VPN)",
-    ),
-    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Could not check"),
-    "pause": MessageLookupByLibrary.simpleMessage("Pause"),
-    "pauseForMinutes": pm1,
-    "resume": MessageLookupByLibrary.simpleMessage("Resume"),
-    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
-    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
-      "Resolver does not match the ISP DNS",
-    ),
-    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
-      "Queries go to the ISP DNS — a leak",
-    ),
-    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Could not check"),
-    "stealthDotTitle": MessageLookupByLibrary.simpleMessage("DoT probe (Quad9)"),
-    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT reachable"),
-    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
-      "DoT unreachable (TCP 853/TLS)",
-    ),
-    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
-      "No IPv6 in the network — nothing to leak",
-    ),
-    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
-      "IPv6 is covered by the tunnel",
-    ),
-    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage("IPv6 bypasses the tunnel"),
-    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Exit IP"),
-    "stealthExitOk": MessageLookupByLibrary.simpleMessage(
-      "Traffic exits through the node",
-    ),
-    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Could not fetch"),
-    "stealthFix": MessageLookupByLibrary.simpleMessage("Fix"),
-    "manualSort": MessageLookupByLibrary.simpleMessage("Manual"),
-    "resetManualSort": MessageLookupByLibrary.simpleMessage("Reset manual sort"),
+    "years": m20,
   };
 }
