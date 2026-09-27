@@ -27,7 +27,16 @@ func tryDecodeBase64(buf []byte) ([]byte, error) {
 	if err != nil {
 		n, err = enc.Decode(dBuf, buf)
 		if err != nil {
-			return nil, err
+			// Часть панелей отдаёт подписки в URL-safe алфавите
+			// (RFC 4648 §5: '-' и '_' вместо '+' и '/'). Пробуем
+			// его, прежде чем отдать исходный текст как есть.
+			n, err = base64.RawURLEncoding.Decode(dBuf, buf)
+			if err != nil {
+				n, err = base64.URLEncoding.Decode(dBuf, buf)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 	return dBuf[:n], nil

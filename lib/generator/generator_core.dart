@@ -1962,6 +1962,11 @@ class GeneratorParams {
   final bool providerMode;
   final String providerUrl;
   final int providerInterval;
+  /// User-Agent для скачивания провайдера. Панели по UA решают, что
+  /// отдавать: v2ray-клиентам — полный список ссылок, clash-подобным —
+  /// часто урезанный clash-набор, неизвестным UA — что попало.
+  /// Пусто — не отправлять заголовок (ядро пошлёт свой глобальный).
+  final String providerUA;
   final List<Map<String, dynamic>> proxies;
   final List<List<String>> chains;
   /// Включённые категории правил (см. kSelectableCategories); «base»
@@ -1981,6 +1986,7 @@ class GeneratorParams {
     this.providerMode = false,
     this.providerUrl = '',
     this.providerInterval = 86400,
+    this.providerUA = kDefaultProviderUA,
     required this.proxies,
     this.chains = const [],
     this.ruleCategories = kSelectableCategories,
@@ -2004,6 +2010,12 @@ class GeneratorParams {
 // выбранная нода, кэш выбора и настройки профиля сохраняются).
 
 const String kGeneratorMarkerLine = '# bettboxr-generator v1';
+
+/// User-Agent по умолчанию для скачивания провайдера. Маскировка под
+/// v2rayNG: панели отдают таким клиентам полный список ссылок, тогда
+/// как clash-подобным и неизвестным UA — часто урезанный набор.
+const String kDefaultProviderUA = 'v2rayNG/1.9.16';
+
 const String kGeneratorParamsPrefix = '# bettboxr-params: ';
 
 /// Обратимая сериализация параметров генератора в JSON.
@@ -2016,6 +2028,7 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
   'providerMode': p.providerMode,
   'providerUrl': p.providerUrl,
   'providerInterval': p.providerInterval,
+  'providerUA': p.providerUA,
   'proxies': p.proxies,
   'chains': p.chains,
   'ruleCategories': p.ruleCategories,
@@ -2061,6 +2074,7 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
     providerMode: json['providerMode'] as bool? ?? false,
     providerUrl: json['providerUrl'] as String? ?? '',
     providerInterval: json['providerInterval'] as int? ?? 86400,
+    providerUA: json['providerUA'] as String? ?? kDefaultProviderUA,
     proxies: _jsonMapList(json['proxies']),
     chains: _jsonStrListList(json['chains']),
     ruleCategories: _jsonStrList(json['ruleCategories']),
@@ -2506,6 +2520,13 @@ String buildConfig(GeneratorParams p) {
         // выравнивает поведение с статическим режимом.
         'override': {'skip-cert-verify': true},
         'health-check': {'enable': true, 'url': urlTest, 'interval': 600},
+        // Явный UA: без него ядро шлёт глобальный
+        // "FlClash/ClashMetaForAndroid/…", и некоторые панели отдают
+        // такому клиенту урезанный clash-набор вместо полного списка.
+        if (p.providerUA.trim().isNotEmpty)
+          'header': {
+            'User-Agent': [p.providerUA.trim()],
+          },
       },
     };
   } else {

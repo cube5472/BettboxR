@@ -115,6 +115,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   final _linksController = TextEditingController();
   final _customRulesController = TextEditingController();
   final _providerUrlController = TextEditingController();
+  final _providerUaController = TextEditingController(
+    text: kDefaultProviderUA,
+  );
   final _urlTestController = TextEditingController(
     text: 'https://www.gstatic.com/generate_204',
   );
@@ -185,6 +188,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _linksController.dispose();
     _customRulesController.dispose();
     _providerUrlController.dispose();
+    _providerUaController.dispose();
     _urlTestController.dispose();
     _mtuController.dispose();
     _defaultNsController.dispose();
@@ -222,6 +226,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerMode': params.providerMode,
       'providerUrl': params.providerUrl,
       'providerInterval': params.providerInterval,
+      'providerUA': params.providerUA,
       'ruUnblock': params.ruUnblock,
       'ruleCategories': List<String>.from(params.ruleCategories),
       'servicePresets': List<String>.from(params.servicePresets),
@@ -702,6 +707,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       providerUrl: _providerUrlController.text,
       providerInterval:
           int.tryParse(_providerIntervalController.text) ?? 86400,
+      providerUA: _providerUaController.text.trim(),
       proxies: _proxies,
       chains: _chains,
       ruleCategories: _ruleCategories.entries
@@ -774,6 +780,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerMode': _providerMode,
       'providerUrl': _providerUrlController.text,
       'providerInterval': _providerIntervalController.text,
+      'providerUA': _providerUaController.text,
       'ruUnblock': _ruUnblock,
       'ruleCategories': _ruleCategories.entries
           .where((e) => e.value)
@@ -801,6 +808,8 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _providerUrlController.text = data['providerUrl']?.toString() ?? '';
       _providerIntervalController.text =
           data['providerInterval']?.toString() ?? '86400';
+      _providerUaController.text =
+          data['providerUA']?.toString() ?? kDefaultProviderUA;
       _ruUnblock = data['ruUnblock'] is bool ? data['ruUnblock'] as bool : true;
       // Совместимость: в шаблонах старой версии ключ назывался
       // providerSets и вёл набор вендоров — категориям оттуда брать
@@ -1420,6 +1429,24 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               decoration: const InputDecoration(
                 labelText: 'Интервал обновления, сек (по умолчанию 86400)',
                 border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _providerUaController,
+              decoration: const InputDecoration(
+                labelText: 'User-Agent (v2rayNG/1.9.16 — полный список)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Панели смотрят на User-Agent: под v2rayNG отдают полный '
+              'список ссылок, под clash-подобными — часто урезанный '
+              'набор. Очистите поле, чтобы ядро слало свой UA.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).hintColor,
               ),
             ),
           ],
