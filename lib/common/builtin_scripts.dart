@@ -3,12 +3,42 @@
 //  - Bag-rules-paranoid: DNS-карантин (источник — download/Bag-rules-paranoid.yaml)
 //  - РФ-БС: схема белых списков (правила + 50 провайдеров + DNS-фолбэки,
 //    источник — scripts/rf_bs_script.js, генерируется из BettboxR-1609-fixed-v2.yaml)
-// При изменении скрипта обновить соответствующую константу.
-// Raw-строки (r'''): JS не обрабатывается Dart-экранированием.
+// При изменении скрипта обновить соответствующую константу И поднять
+// kBuiltinScriptVersion — иначе у пользователей не обновятся ранее засеянные
+// копии. Raw-строки (r'''): JS не обрабатывается Dart-экранированием.
+
+// Версия встроенных скриптов. Сид с маркером более старой версии либо с
+// содержимым, совпадающим с исторической версией (см. ниже), обновляется
+// при старте приложения; правленные вручную копии (иной md5) не трогаются.
+const int kBuiltinScriptVersion = 2;
+
+// md5 содержимого исторических версий скриптов (до введения маркера версии) —
+// позволяет отличить старый автосид от ручной правки пользователя.
+// Новые строки добавлять при выпуске версии, менявшей скрипты.
+const Set<String> kBuiltinScriptLegacyHashes = {
+  // s-ru
+  '773022e0087b34da99682e9a0cb6483c', // @4afbc9dd (AI-группа, без маркера)
+  '1c91d06d9f4f955e04edd6e3dae81614', // @c2211f7a
+  '728c999d90b8a86181513ed7f1f72a35', // @9fcf445a
+  'a6d836deba930fd93bb59a21b2fcc49b', // @1f82b8ce
+  'd9924f1a1269d5c8611cbb91a3cc11a6', // @b3a6dc2c
+  '1f0dbae28908541769cad896bc1058a4', // @820765fa
+  // Bag-rules-paranoid
+  '229419eaac6d189af4245943a8ab7e4e', // @4afbc9dd
+  '85a494e1a8b26b896687d3ba5b617860', // @9fcf445a
+  '613ace402dcc73b111a3da6454893d7c', // @b3a6dc2c
+  '5384b7118c2a9de979f6c4aafa900b56', // @2dde7668
+  // РФ-БС
+  '414f856b7c07665b293fe594ae3d5be5', // @4afbc9dd (AI-правила, без маркера)
+  'ae8be8676404e903e9334eda54ddb70f', // @c2211f7a
+  '90e7caae7f9b36823c84ec55f78cdec1', // @9fcf445a
+  '7917fe01ba6de7258b77b4fd26d0c7ea', // @1f82b8ce
+};
 
 const String kBuiltinSRuScriptLabel = 's-ru';
 
 const String builtinSRuScript = r'''// Compatible_With_Bettbox
+// bettboxr-builtin v2
 //
 // BettboxR — скрипт «s-ru»: правила маршрутизации + фильтр RU-нод в одном.
 //
@@ -329,6 +359,7 @@ function main(config) {
 const String kBuiltinBagRulesParanoidLabel = 'Bag-rules-paranoid';
 
 const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
+// bettboxr-builtin v2
 //
 // BettboxR — скрипт «Bag-rules-paranoid»: DNS-карантин (fail-closed).
 //
@@ -630,6 +661,7 @@ function main(config) {
 const String kBuiltinRFBSScriptLabel = 'РФ-БС';
 
 const String builtinRFBSScript = r'''// Compatible_With_Bettbox
+// bettboxr-builtin v2
 //
 // BettboxR — скрипт «РФ-БС» (РФ — Белые Списки): готовая схема маршрутизации
 // для режима белых списков, накладывается на любой профиль. Прокси скрипт не

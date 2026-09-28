@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -596,9 +597,14 @@ class GlobalState {
   /// фильтр RU-нод), «Bag-rules-paranoid» (DNS-карантин) и «РФ-БС» (схема
   /// белых списков: правила + провайдеры + DNS-фолбэки). Скрипты не
   /// включаются автоматически — их нужно включить тумблером на карточке.
-  /// Если скрипт с таким именем уже есть (в том числе добавленный вручную
-  /// и отредактированный) — не трогаем его. Удалённый встроенный скрипт
-  /// появится снова при следующем запуске — это осознанно: он встроенный.
+  /// УСТАРЕВШИЕ СИДЫ ОБНОВЛЯЮТСЯ: если скрипт с именем встроенного — это
+  /// старый автосид (md5 совпадает с исторической версией из
+  /// kBuiltinScriptLegacyHashes либо маркер версии ниже
+  /// kBuiltinScriptVersion), его содержимое заменяется актуальным, выбор
+  /// нод и customOptions не трогаются. Скрипты, отредактированные вручную
+  /// (md5 не совпадает ни с чем), не обновляются. Удалённый встроенный
+  /// скрипт появится снова при следующем запуске — это осознанно: он
+  /// встроенный.
   void _seedBuiltinScript() {
     const builtins = <(String, String)>[
       (kBuiltinSRuScriptLabel, builtinSRuScript),
@@ -607,10 +613,19 @@ class GlobalState {
     ];
     var next = config.scriptProps.scripts;
     var changed = false;
+    final refreshed = <String>[];
     for (final (label, content) in builtins) {
-      final exists = next.any((script) => script.label == label);
-      if (exists) continue;
-      next = [...next, Script.create(label: label, content: content)];
+      final index = next.indexWhere((script) => script.label == label);
+      if (index == -1) {
+        next = [...next, Script.create(label: label, content: content)];
+        changed = true;
+        continue;
+      }
+      final stored = next[index];
+      if (stored.content == content) continue;
+      if (!_isOutdatedBuiltinSeed(stored.content)) continue;
+      next = [...next]..[index] = stored.copyWith(content: content);
+      refreshed.add(label);
       changed = true;
     }
     if (!changed) return;
@@ -618,6 +633,26 @@ class GlobalState {
       scriptProps: config.scriptProps.copyWith(scripts: next),
     );
     preferences.saveConfig(config);
+    if (refreshed.isNotEmpty) {
+      showNotifier('Встроенные скрипты обновлены: ${refreshed.join(', ')}');
+    }
+  }
+
+  /// Это старый автосид встроенного скрипта? Маркер версии ниже актуальной —
+  /// или содержимое побайтово совпадает с исторической версией (до введения
+  /// маркеров). Ручные правки (иной md5) не считаются сидом.
+  bool _isOutdatedBuiltinSeed(String content) {
+    final match = RegExp(
+      r'bettboxr-builtin\s+v(\d+)',
+    ).firstMatch(content);
+    if (match != null) {
+      final version = int.tryParse(match.group(1) ?? '');
+      return version == null || version < kBuiltinScriptVersion;
+    }
+    if (!content.contains('Compatible_With_Bettbox')) return false;
+    return kBuiltinScriptLegacyHashes.contains(
+      md5.convert(utf8.encode(content)).toString(),
+    );
   }
 
   CoreState getCoreState() {

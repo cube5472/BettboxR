@@ -175,6 +175,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _servicePresets['telegram'] = true;
     _servicePresets['discord'] = true;
     _servicePresets['youtube'] = true;
+    // AI-сервисы по умолчанию: без этого правила `ai -> 🤖 AI` не попадают
+    // в конфиг, и трафик ChatGPT/Claude/Gemini идёт через общий PROXY.
+    _servicePresets['ai'] = true;
     _cdnPresets = {for (final key in kCdnRules.keys) key: false};
     _linksController.addListener(_onLinksChanged);
     _loadTemplates();
