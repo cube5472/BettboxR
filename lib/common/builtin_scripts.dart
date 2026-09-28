@@ -99,6 +99,12 @@ var S_RU_RULES = [
   'RULE-SET,escapefromtarkov,🎮 Игры',
   'RULE-SET,steam,🎮 Игры',
   'RULE-SET,faceit,🎮 Игры',
+  'RULE-SET,ai,PROXY',
+  'RULE-SET,google-deepmind,PROXY',
+  'DOMAIN-SUFFIX,copilot.microsoft.com,PROXY',
+  'DOMAIN-SUFFIX,perplexity.ai,PROXY',
+  'DOMAIN-SUFFIX,x.ai,PROXY',
+  'DOMAIN-SUFFIX,grok.com,PROXY',
   'RULE-SET,twitch,DIRECT',
   'RULE-SET,microsoft,DIRECT',
   'RULE-SET,apple,DIRECT',
@@ -116,8 +122,6 @@ var S_RU_RULES = [
   'RULE-SET,discord_voiceips,PROXY',
   'RULE-SET,discord_vc,PROXY',
   'PROCESS-NAME,Discord.exe,PROXY',
-  'RULE-SET,ai,PROXY',
-  'RULE-SET,google-deepmind,PROXY',
   'DOMAIN-SUFFIX,twitter.com,PROXY',
   'DOMAIN-SUFFIX,x.com,PROXY',
   'DOMAIN-SUFFIX,instagram.com,PROXY',
@@ -184,6 +188,30 @@ function _usedRuleSets(rules) {
   return used;
 }
 
+// AI-правила: цель подменяется на группу «🤖 AI», если она есть в профиле
+// (конфиг генератора с AI-группой); в старых профилях без группы остаётся
+// PROXY — конфиг не ломается.
+var S_RU_AI_RULES = {
+  "RULE-SET,ai,PROXY": true,
+  "RULE-SET,google-deepmind,PROXY": true,
+  "DOMAIN-SUFFIX,copilot.microsoft.com,PROXY": true,
+  "DOMAIN-SUFFIX,perplexity.ai,PROXY": true,
+  "DOMAIN-SUFFIX,x.ai,PROXY": true,
+  "DOMAIN-SUFFIX,grok.com,PROXY": true
+};
+
+function _withAiTargets(rules, aiTarget) {
+  var out = [];
+  for (var i = 0; i < rules.length; i++) {
+    var rule = String(rules[i]);
+    if (aiTarget !== "PROXY" && S_RU_AI_RULES[rule]) {
+      rule = rule.slice(0, -"PROXY".length) + aiTarget;
+    }
+    out.push(rule);
+  }
+  return out;
+}
+
 // Ставит правила, если в профиле есть все нужные ГРУППЫ. Отсутствующие
 // rule-providers обрабатываются мягко: критичные категории заменяются
 // встроенными правилами, остальные RULE-SET пропускаются — схема работает
@@ -197,6 +225,8 @@ function _applyRules(config) {
     if (!providers[name]) missing.push(name);
   }
   var names = _groupNames(config);
+  var aiTarget = names["🤖 AI"] ? "🤖 AI" : "PROXY";
+  var srcRules = _withAiTargets(S_RU_RULES, aiTarget);
   for (var i = 0; i < S_RU_REQUIRED_GROUPS.length; i++) {
     if (!names[S_RU_REQUIRED_GROUPS[i]]) {
       console.warn("s-ru: в профиле нет группы '" + S_RU_REQUIRED_GROUPS[i] + "', правила не применены");
@@ -204,15 +234,15 @@ function _applyRules(config) {
     }
   }
   if (missing.length === 0) {
-    config.rules = S_RU_RULES.slice();
+    config.rules = srcRules;
     return true;
   }
 
   var rules = [];
   var dropped = [];
   var geoipUsed = false;
-  for (var j = 0; j < S_RU_RULES.length; j++) {
-    var rule = S_RU_RULES[j];
+  for (var j = 0; j < srcRules.length; j++) {
+    var rule = srcRules[j];
     var parts = String(rule).split(",");
     if (parts[0] === "RULE-SET" && missing.indexOf(parts[1]) !== -1) {
       if (parts[1] === "private-ips") {
@@ -266,7 +296,7 @@ function _filterRuNodes(config) {
     // 2) группы на провайдерах / include-all — фильтруем через exclude-filter.
     // Ядро применяет exclude-filter к ЛЮБОМУ типу групп (не только к
     // url-test/fallback/load-balance), поэтому select-группы генератора
-    // (🛡️ VPN, 📺 Youtube, 🎮 Игры, 💬 Discord.exe) тоже очищаются
+    // (🛡️ VPN, 📺 Youtube, 🎮 Игры, 💬 Discord.exe, 🤖 AI) тоже очищаются
     var usesProviders =
       group["include-all"] === true ||
       group["include-all-providers"] === true ||
@@ -616,7 +646,8 @@ const String builtinRFBSScript = r'''// Compatible_With_Bettbox
 //     сам (roscomvpn-geosite и др.); провайдер профиля с тем же именем
 //     заменяется — схема самодостаточна. На первый старт ядра нужна
 //     доступность источников списков (cdn.jsdelivr.net/github), дальше они
-//     лежат в кэше. Цели-группы схемы (📺 Youtube, 🎮 Игры, 💬 Discord.exe)
+//     лежат в кэше. Цели-группы схемы (📺 Youtube, 🎮 Игры, 💬 Discord.exe,
+//     🤖 AI)
 //     работают, только если такие группы есть в профиле, иначе трафик уходит
 //     в PROXY. При выключении чекбокса правила схемы удаляются (провайдеры
 //     остаются — их нельзя отличить от профильных).
@@ -680,6 +711,12 @@ var RF_BS_RULES = [
   "DOMAIN-SUFFIX,mtalk.google.com,PROXY",
   "DOMAIN-SUFFIX,identity.apple.com,PROXY",
   "DOMAIN-SUFFIX,deviceenrollment.apple.com,PROXY",
+  "RULE-SET,ai,🤖 AI",
+  "RULE-SET,google-deepmind,🤖 AI",
+  "DOMAIN-SUFFIX,copilot.microsoft.com,🤖 AI",
+  "DOMAIN-SUFFIX,perplexity.ai,🤖 AI",
+  "DOMAIN-SUFFIX,x.ai,🤖 AI",
+  "DOMAIN-SUFFIX,grok.com,🤖 AI",
   "RULE-SET,twitch,DIRECT",
   "RULE-SET,microsoft,DIRECT",
   "RULE-SET,apple,DIRECT",
@@ -706,8 +743,6 @@ var RF_BS_RULES = [
   "RULE-SET,discord_voiceips,PROXY",
   "RULE-SET,discord_vc,PROXY",
   "PROCESS-NAME,Discord.exe,PROXY",
-  "RULE-SET,ai,PROXY",
-  "RULE-SET,google-deepmind,PROXY",
   "DOMAIN-SUFFIX,twitter.com,PROXY",
   "DOMAIN-SUFFIX,x.com,PROXY",
   "DOMAIN-SUFFIX,instagram.com,PROXY",
