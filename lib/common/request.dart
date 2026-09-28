@@ -14,7 +14,19 @@ import 'package:flutter/cupertino.dart';
 class Request {
   late final Dio _dio;
   late final Dio _clashDio;
+  late final Dio _ipDetailDio;
   String? userAgent;
+
+  /// Проверка IP («IP сети» на дашборде и диалог «Подробнее») не должна
+  /// зависеть от локального mixed-port: порт может быть закрыт файрволом.
+  /// На Android трафик процесса и так входит в TUN, поэтому DIRECT попадает
+  /// в ядро и маршрутизируется правилами профиля (ip-api.com/get.geojs.io —
+  /// зарубежные, уходят через VPN-группу — карточка показывает IP выходной
+  /// ноды, как и раньше). На десктопе TUN может быть выключен — там прежнее
+  /// поведение (через mixed-port).
+  static String _ipCheckFindProxy(Uri uri) => system.isAndroid
+      ? 'DIRECT'
+      : BettboxHttpOverrides.handleFindProxy(uri);
 
   Request() {
     _dio = Dio(BaseOptions(headers: {'User-Agent': browserUa}));
@@ -34,6 +46,15 @@ class Request {
           client.userAgent = globalState.ua;
           return BettboxHttpOverrides.handleFindProxy(uri);
         };
+        return client;
+      },
+    );
+    _ipDetailDio = Dio(BaseOptions(headers: {'User-Agent': browserUa}));
+    _ipDetailDio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.autoUncompress = false;
+        client.findProxy = _ipCheckFindProxy;
         return client;
       },
     );
@@ -328,6 +349,7 @@ class Request {
         final client = HttpClient();
         client.autoUncompress = false;
         client.connectionTimeout = effectiveTimeout;
+        client.findProxy = _ipCheckFindProxy;
         return client;
       },
     );
@@ -610,7 +632,7 @@ class Request {
         : 'http://ip-api.com/json/$ip';
 
     try {
-      final res = await _dio.get<Map<String, dynamic>>(
+      final res = await _ipDetailDio.get<Map<String, dynamic>>(
         url,
         cancelToken: cancelToken,
         options: Options(
