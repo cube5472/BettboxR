@@ -151,6 +151,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   late Map<String, bool> _cdnPresets;
   bool _ruUnblock = true;
   bool _providerMode = false;
+  // Синхронизация удаления мёртвых нод (dead_nodes): exclude-filter
+  // основного провайдера в режиме provider. В форме не отображается;
+  // заполняется из маркера при пересборке, сбрасывается шаблонами.
+  String _providerExclude = '';
   final _providerIntervalController = TextEditingController(text: '86400');
 
   // --- Резерв (fallback), раздел 8 ---
@@ -261,6 +265,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           .map((r) => '${r['type']},${r['value']},${r['action']}')
           .join('\n'),
     });
+    // После _applyTemplateData: она сбрасывает исключения удаления
+    // (шаблон = сборка с нуля), пересборка же восстанавливает их из
+    // маркера. Работает и для providerMode — до её early-return.
+    _providerExclude = params.providerExclude;
     if (params.providerMode) return;
     // _lastParsedText обновляем ДО смены текста: слушатель
     // _onLinksChanged сработает синхронно и не запланирует разбор.
@@ -789,6 +797,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       proxyServerNameserver: _proxyNsController.text,
       mtu: _mtuController.text.trim(),
       providerMode: _providerMode,
+      providerExclude: _providerExclude,
       providerUrl: _providerUrlController.text,
       providerInterval:
           int.tryParse(_providerIntervalController.text) ?? 86400,
@@ -896,6 +905,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
 
   void _applyTemplateData(Map<String, dynamic> data) {
     setState(() {
+      // Шаблон = сборка с нуля: исключения из удаления мёртвых нод
+      // (dead_nodes) не наследуются. Пересборка ставит их обратно
+      // сразу после этого вызова (см. _hydrateForRebuild).
+      _providerExclude = '';
       _urlTestController.text = data['urlTest']?.toString() ?? '';
       _defaultNsController.text = data['defaultNameserver']?.toString() ?? '';
       _nameserverController.text = data['nameserver']?.toString() ?? '';

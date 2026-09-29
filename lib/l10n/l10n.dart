@@ -6044,6 +6044,80 @@ class AppLocalizations {
     );
   }
 
+  /// `Delete unavailable nodes`
+  String get deleteUnavailable {
+    return Intl.message(
+      'Delete unavailable nodes',
+      name: 'deleteUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No unavailable nodes. Run a delay test first.`
+  String get deleteUnavailableEmpty {
+    return Intl.message(
+      'No unavailable nodes. Run a delay test first.',
+      name: 'deleteUnavailableEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nodes to be removed from the profile config: {count}. Unavailable
+  /// subscription nodes are hidden via exclude-filter.`
+  String deleteUnavailableBody(Object count) {
+    return Intl.message(
+      'Nodes to be removed from the profile config: $count. '
+      'Unavailable subscription nodes are hidden via exclude-filter.',
+      name: 'deleteUnavailableBody',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `…and {count} more`
+  String deleteUnavailableMore(Object count) {
+    return Intl.message(
+      '…and $count more',
+      name: 'deleteUnavailableMore',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Removed: {count}`
+  String deleteUnavailableDone(Object count) {
+    return Intl.message(
+      'Removed: $count',
+      name: 'deleteUnavailableDone',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Profile is linked to a subscription — its next update will restore the
+  /// removed nodes.`
+  String get deleteUnavailableAutoUpdateNote {
+    return Intl.message(
+      'Profile is linked to a subscription — its next update will restore '
+      'the removed nodes.',
+      name: 'deleteUnavailableAutoUpdateNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This would remove all static nodes — keep at least one.`
+  String get deleteUnavailableLastStatic {
+    return Intl.message(
+      'This would remove all static nodes — keep at least one.',
+      name: 'deleteUnavailableLastStatic',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Manual`
   String get manualSort {
     return Intl.message('Manual', name: 'manualSort', desc: '', args: []);

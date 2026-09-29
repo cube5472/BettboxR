@@ -68,8 +68,24 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m20(count) =>
       "${Intl.plural(count, one: 'year', other: 'years')}";
 
+  static String dn1(count) => "Nodes to be removed from the profile config: ${count}. Unavailable subscription nodes are hidden via exclude-filter.";
+
+  static String dn2(count) => "…and ${count} more";
+
+  static String dn3(count) => "Removed: ${count}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "deleteUnavailable": MessageLookupByLibrary.simpleMessage("Delete unavailable nodes"),
+    "deleteUnavailableAutoUpdateNote": MessageLookupByLibrary.simpleMessage(
+        "Profile is linked to a subscription — its next update will restore the removed nodes."),
+    "deleteUnavailableBody": dn1,
+    "deleteUnavailableDone": dn3,
+    "deleteUnavailableEmpty": MessageLookupByLibrary.simpleMessage(
+        "No unavailable nodes. Run a delay test first."),
+    "deleteUnavailableLastStatic": MessageLookupByLibrary.simpleMessage(
+        "This would remove all static nodes — keep at least one."),
+    "deleteUnavailableMore": dn2,
     "about": MessageLookupByLibrary.simpleMessage("About"),
     "accessControl": MessageLookupByLibrary.simpleMessage("Access Control"),
     "accessControlAllowDesc": MessageLookupByLibrary.simpleMessage(

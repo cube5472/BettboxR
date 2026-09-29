@@ -70,8 +70,24 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m20(count) =>
       "${Intl.plural(count, one: 'год', few: 'года', many: 'лет', other: 'лет')}";
 
+  static String dn1(count) => "Нод будет удалено из конфига профиля: ${count}. Ноды подписок (provider) скрываются через exclude-filter.";
+
+  static String dn2(count) => "…и ещё ${count}";
+
+  static String dn3(count) => "Удалено нод: ${count}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "deleteUnavailable": MessageLookupByLibrary.simpleMessage("Удалить недоступные ноды"),
+    "deleteUnavailableAutoUpdateNote": MessageLookupByLibrary.simpleMessage(
+        "Профиль привязан к подписке — её обновление вернёт удалённые ноды."),
+    "deleteUnavailableBody": dn1,
+    "deleteUnavailableDone": dn3,
+    "deleteUnavailableEmpty": MessageLookupByLibrary.simpleMessage(
+        "Недоступных нод нет. Сначала запусти проверку задержки."),
+    "deleteUnavailableLastStatic": MessageLookupByLibrary.simpleMessage(
+        "Так удалятся все статические ноды — оставь хотя бы одну."),
+    "deleteUnavailableMore": dn2,
     "about": MessageLookupByLibrary.simpleMessage("О программе"),
     "accessControl": MessageLookupByLibrary.simpleMessage(
       "Маршрутизация приложений",

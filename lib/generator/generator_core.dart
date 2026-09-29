@@ -1961,6 +1961,11 @@ class GeneratorParams {
   final String? mtu;
   final bool providerMode;
   final String providerUrl;
+  /// Режим provider: exclude-filter основного провайдера 'subscription'.
+  /// В форме не отображается; заполняется синхронизацией при удалении
+  /// мёртвых нод (dead_nodes), чтобы «Пересобрать» не вернул вырезанные
+  /// ноды. Пусто — фильтра нет.
+  final String providerExclude;
   final int providerInterval;
   /// User-Agent для скачивания провайдера. Панели по UA решают, что
   /// отдавать: v2ray-клиентам — полный список ссылок, clash-подобным —
@@ -1995,6 +2000,7 @@ class GeneratorParams {
     this.mtu,
     this.providerMode = false,
     this.providerUrl = '',
+    this.providerExclude = '',
     this.providerInterval = 86400,
     this.providerUA = kDefaultProviderUA,
     required this.proxies,
@@ -2022,6 +2028,9 @@ class GeneratorParams {
 // достаются из шапки, прогоняются через актуальный buildConfig и
 // результат заменяет содержимое того же профиля (ID не меняется —
 // выбранная нода, кэш выбора и настройки профиля сохраняются).
+// Удаление мёртвых нод (dead_nodes.dart) синхронизирует params с
+// внесённым удалением (proxies/exclude подписок/providerExclude) и
+// перезаписывает шапку — иначе «Пересобрать» вернул бы мёртвые ноды.
 
 const String kGeneratorMarkerLine = '# bettboxr-generator v1';
 
@@ -2045,6 +2054,7 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
   'proxyServerNameserver': p.proxyServerNameserver,
   'mtu': p.mtu,
   'providerMode': p.providerMode,
+  'providerExclude': p.providerExclude,
   'providerUrl': p.providerUrl,
   'providerInterval': p.providerInterval,
   'providerUA': p.providerUA,
@@ -2095,6 +2105,7 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
     proxyServerNameserver: json['proxyServerNameserver'] as String? ?? '',
     mtu: json['mtu'] as String?,
     providerMode: json['providerMode'] as bool? ?? false,
+    providerExclude: json['providerExclude'] as String? ?? '',
     providerUrl: json['providerUrl'] as String? ?? '',
     providerInterval: json['providerInterval'] as int? ?? 86400,
     providerUA: json['providerUA'] as String? ?? kDefaultProviderUA,
@@ -2652,6 +2663,10 @@ String buildConfig(GeneratorParams p) {
         'url': p.providerUrl.trim(),
         'interval': p.providerInterval,
         'path': './provider/proxies.yaml',
+        // Синхронизация удаления мёртвых нод (dead_nodes): выжившие
+        // исключения основного провайдера переживают пересборку.
+        if (p.providerExclude.trim().isNotEmpty)
+          'exclude-filter': p.providerExclude.trim(),
         // Панели часто отдают share-ссылки с self-signed сертификатами,
         // а конвертер ядра мапит insecure → skip-cert-verify не для всех
         // протоколов (например, для tuic не мапит вовсе). Явный override

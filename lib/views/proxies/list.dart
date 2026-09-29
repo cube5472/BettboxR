@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
 import 'common.dart';
+import 'dead_nodes.dart';
 import 'reorder.dart';
 
 class ProxiesListView extends ConsumerWidget {
@@ -229,6 +230,10 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     }
   }
 
+  Future<void> _handleDeleteDead(Group group) {
+    return deleteDeadNodesFlow(context, ref, group);
+  }
+
   void _handleToggle(String groupName) {
     final tempUnfoldSet = Set<String>.from(widget.currentUnfoldSet);
     if (tempUnfoldSet.contains(groupName)) {
@@ -421,6 +426,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
                           _scrollToSelected(item.group.name),
                       isHideDead: _hideDeadGroups.contains(item.group.name),
                       onToggleHideDead: () => _handleToggleHideDead(item.group),
+                      onDeleteDead: () => _handleDeleteDead(item.group),
                     );
                   } else if (item is _SpacingItem) {
                     return SizedBox(height: item.height);
@@ -529,6 +535,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
                             isHideDead: _hideDeadGroups.contains(group.name),
                             onToggleHideDead: () =>
                                 _handleToggleHideDead(group),
+                            onDeleteDead: () => _handleDeleteDead(group),
                           ),
                         ),
                       ),
@@ -589,6 +596,7 @@ class _GroupHeader extends ConsumerWidget {
   final VoidCallback? onScrollToSelected;
   final bool isHideDead;
   final VoidCallback? onToggleHideDead;
+  final VoidCallback? onDeleteDead;
 
   const _GroupHeader({
     super.key,
@@ -600,6 +608,7 @@ class _GroupHeader extends ConsumerWidget {
     this.onScrollToSelected,
     this.isHideDead = false,
     this.onToggleHideDead,
+    this.onDeleteDead,
   });
 
   @override
@@ -678,6 +687,13 @@ class _GroupHeader extends ConsumerWidget {
                     ? appLocalizations.showUnavailable
                     : appLocalizations.hideUnavailable,
               ),
+              if (isHideDead && onDeleteDead != null)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.delete_sweep_outlined),
+                  onPressed: onDeleteDead,
+                  tooltip: appLocalizations.deleteUnavailable,
+                ),
               AnimatedBuilder(
                 animation: delayTestCoordinator,
                 builder: (_, _) {

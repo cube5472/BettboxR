@@ -61,8 +61,24 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m20(count) => "${Intl.plural(count, other: '年')}";
 
+  static String dn1(count) => "將從設定檔中刪除 ${count} 個節點。訂閱節點將透過 exclude-filter 隱藏。";
+
+  static String dn2(count) => "…還有 ${count} 個";
+
+  static String dn3(count) => "已刪除：${count}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "deleteUnavailable": MessageLookupByLibrary.simpleMessage("刪除不可用節點"),
+    "deleteUnavailableAutoUpdateNote": MessageLookupByLibrary.simpleMessage(
+        "設定檔已關聯訂閱，下次更新會恢復被刪除的節點。"),
+    "deleteUnavailableBody": dn1,
+    "deleteUnavailableDone": dn3,
+    "deleteUnavailableEmpty": MessageLookupByLibrary.simpleMessage(
+        "沒有不可用節點，請先進行延遲測試。"),
+    "deleteUnavailableLastStatic": MessageLookupByLibrary.simpleMessage(
+        "這樣會刪除所有靜態節點，請至少保留一個。"),
+    "deleteUnavailableMore": dn2,
     "about": MessageLookupByLibrary.simpleMessage("關於"),
     "accessControl": MessageLookupByLibrary.simpleMessage("存取控制"),
     "accessControlAllowDesc": MessageLookupByLibrary.simpleMessage(
