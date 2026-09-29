@@ -1976,6 +1976,16 @@ class GeneratorParams {
   final List<String> cdnPresets;
   final bool ruUnblock;
   final List<Map<String, String>> customRules;
+  /// --- Резерв (fallback) ---
+  /// Включить блок резерва: группа «🆘 Резерв» + proxy-providers.
+  final bool reserveEnabled;
+  /// Подписки резерва: {url, interval}; порядок списка = приоритет.
+  final List<Map<String, String>> reserveSubscriptions;
+  /// Основная нода (приоритет 1); имя должно совпадать с одной из
+  /// proxies, иначе молча пропускается. '' — не использовать.
+  final String reservePrimaryNode;
+  /// Интервал активных health-check подписок, сек.
+  final int reserveHealthInterval;
 
   const GeneratorParams({
     required this.urlTest,
@@ -1994,6 +2004,10 @@ class GeneratorParams {
     this.cdnPresets = const [],
     this.ruUnblock = true,
     this.customRules = const [],
+    this.reserveEnabled = false,
+    this.reserveSubscriptions = const [],
+    this.reservePrimaryNode = '',
+    this.reserveHealthInterval = 300,
   });
 }
 
@@ -2016,6 +2030,11 @@ const String kGeneratorMarkerLine = '# bettboxr-generator v1';
 /// как clash-подобным и неизвестным UA — часто урезанный набор.
 const String kDefaultProviderUA = 'v2rayNG/1.9.16';
 
+/// Имя группы резерва (fallback), генерируемой при включённом разделе
+/// «Резерв». Вставляется первой в список «🛡️ VPN», чтобы стать
+/// выбором по умолчанию.
+const String kReserveGroupName = '🆘 Резерв';
+
 const String kGeneratorParamsPrefix = '# bettboxr-params: ';
 
 /// Обратимая сериализация параметров генератора в JSON.
@@ -2036,6 +2055,10 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
   'cdnPresets': p.cdnPresets,
   'ruUnblock': p.ruUnblock,
   'customRules': p.customRules,
+  'reserveEnabled': p.reserveEnabled,
+  'reserveSubscriptions': p.reserveSubscriptions,
+  'reservePrimaryNode': p.reservePrimaryNode,
+  'reserveHealthInterval': p.reserveHealthInterval,
 };
 
 List<Map<String, dynamic>> _jsonMapList(dynamic v) => v is List
@@ -2082,6 +2105,10 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
     cdnPresets: _jsonStrList(json['cdnPresets']),
     ruUnblock: json['ruUnblock'] as bool? ?? true,
     customRules: _jsonStrMapList(json['customRules']),
+    reserveEnabled: json['reserveEnabled'] as bool? ?? false,
+    reserveSubscriptions: _jsonStrMapList(json['reserveSubscriptions']),
+    reservePrimaryNode: json['reservePrimaryNode'] as String? ?? '',
+    reserveHealthInterval: json['reserveHealthInterval'] as int? ?? 300,
   );
 }
 
@@ -2316,6 +2343,88 @@ String buildConfig(GeneratorParams p) {
     }
   }
 
+  // --- резерв (fallback): «🆘 Резерв» + proxy-providers подписок ---
+  // Явные ноды идут в группе первыми (приоритет), затем ноды подписок
+  // в порядке их добавления; fallback берёт первую живую. Правила не
+  // трогаются: группа доступна через выбор в «🛡️ VPN».
+  final reserveProviders = <String, dynamic>{};
+  if (p.reserveEnabled) {
+    final healthInterval = p.reserveHealthInterval > 0
+        ? p.reserveHealthInterval
+        : 300;
+    final reserveProxies = <String>[];
+    final primary = p.reservePrimaryNode.trim();
+    if (primary.isNotEmpty &&
+        proxyList.any((proxy) => proxy['name'] == primary)) {
+      reserveProxies.add(primary);
+    }
+    var subIndex = 0;
+    for (final sub in p.reserveSubscriptions) {
+      final url = (sub['url'] ?? '').trim();
+      if (url.isEmpty) continue;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        throw Exception(
+          'Резерв: URL подписки должен начинаться '
+          'с http:// или https://',
+        );
+      }
+      subIndex++;
+      final name = 'sub$subIndex';
+      final parsed = int.tryParse((sub['interval'] ?? '').trim());
+      reserveProviders[name] = <String, dynamic>{
+        'type': 'http',
+        'url': url,
+        'interval': parsed != null && parsed > 0 ? parsed : 86400,
+        'path': './provider/reserve_$name.yaml',
+        // Аналогично основному провайдеру: выравнивает поведение
+        // панелей с self-signed сертификатами между режимами.
+        'override': {'skip-cert-verify': true},
+        'health-check': {
+          'enable': true,
+          'url': urlTest,
+          'interval': healthInterval,
+        },
+        if (p.providerUA.trim().isNotEmpty)
+          'header': {
+            'User-Agent': [p.providerUA.trim()],
+          },
+      };
+      // ВАЖНО: ключ провайдера (sub1..subN) попадает только в 'use'.
+      // В 'proxies' группы могут быть только имена реально существующих
+      // нод/групп: ссылка на неизвестное имя валит запуск ядра.
+    }
+    if (reserveProviders.isEmpty) {
+      throw Exception(
+        'Резерв: добавьте хотя бы одну подписку с непустым URL',
+      );
+    }
+    final reserveGroup = <String, dynamic>{
+      'name': kReserveGroupName,
+      'type': 'fallback',
+      if (reserveProxies.isNotEmpty) 'proxies': reserveProxies,
+      'use': reserveProviders.keys.toList(),
+      'url': urlTest,
+      'interval': healthInterval,
+    };
+    final vpnIndex = groups.indexWhere(
+      (g) => g is Map<String, dynamic> && g['name'] == '🛡️ VPN',
+    );
+    if (vpnIndex != -1) {
+      final vpn = groups[vpnIndex] as Map<String, dynamic>;
+      final vpnProxies = (vpn['proxies'] as List).cast<String>().toList();
+      // Дефолтный выбор группы «🛡️ VPN» — первая нода в списке.
+      vpnProxies.insert(0, kReserveGroupName);
+      vpn['proxies'] = vpnProxies;
+    }
+    final autoIndex = groups.indexWhere(
+      (g) => g is Map<String, dynamic> && g['name'] == '⚡️ Авто',
+    );
+    groups.insert(
+      autoIndex != -1 ? autoIndex + 1 : groups.length,
+      reserveGroup,
+    );
+  }
+
   // --- rule-providers и правила (категорный универсальный набор) ---
   // Провайдеры набираются из включённых категорий/пресетов; правила
   // добавляются в жёстком порядке (категории по kCategoryOrder, пресеты
@@ -2534,6 +2643,17 @@ String buildConfig(GeneratorParams p) {
       throw Exception('Нет прокси: вставьте ссылки или импортируйте конфиг.');
     }
     config['proxies'] = proxyList;
+  }
+
+  // Подписки резерва сосуществуют с основным провайдером режима
+  // provider: ключи разные ('subscription' vs sub1..subN).
+  if (reserveProviders.isNotEmpty) {
+    final existing = config['proxy-providers'];
+    if (existing is Map<String, dynamic>) {
+      existing.addAll(reserveProviders);
+    } else {
+      config['proxy-providers'] = reserveProviders;
+    }
   }
 
   return yamlDump(config);

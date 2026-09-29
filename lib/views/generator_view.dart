@@ -153,6 +153,15 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   bool _providerMode = false;
   final _providerIntervalController = TextEditingController(text: '86400');
 
+  // --- Резерв (fallback), раздел 8 ---
+  bool _reserveEnabled = false;
+  // Подписки резерва: url + интервал обновления. Порядок в списке =
+  // приоритет fallback (первая строка перебирается раньше).
+  final List<Map<String, TextEditingController>> _reserveSubs = [];
+  // Основная нода (приоритет 1): имя из _proxies; '' — не использовать.
+  String _reservePrimary = '';
+  final _reserveHealthController = TextEditingController(text: '300');
+
   List<Map<String, dynamic>> _proxies = [];
   // Кэш разобранных подписок (URL -> прокси): правки локального текста и
   // неудачные обновления не должны «стирать» уже скачанные ноды.
@@ -198,6 +207,11 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _nameserverController.dispose();
     _proxyNsController.dispose();
     _providerIntervalController.dispose();
+    _reserveHealthController.dispose();
+    for (final sub in _reserveSubs) {
+      sub['url']?.dispose();
+      sub['interval']?.dispose();
+    }
     _dio.close();
     super.dispose();
   }
@@ -230,6 +244,14 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerUrl': params.providerUrl,
       'providerInterval': params.providerInterval,
       'providerUA': params.providerUA,
+      'reserveEnabled': params.reserveEnabled,
+      'reserveSubscriptions': params.reserveSubscriptions,
+      'reservePrimaryNode': params.proxies.any(
+            (proxy) => '${proxy['name']}' == params.reservePrimaryNode,
+          )
+          ? params.reservePrimaryNode
+          : '',
+      'reserveHealthInterval': params.reserveHealthInterval,
       'ruUnblock': params.ruUnblock,
       'ruleCategories': List<String>.from(params.ruleCategories),
       'servicePresets': List<String>.from(params.servicePresets),
@@ -686,15 +708,58 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         '${now.minute.toString().padLeft(2, '0')}';
   }
 
+  // ---------------- Резерв (fallback): подписки ----------------
+
+  List<String> get _staticProxyNames =>
+      _proxies.map((proxy) => '${proxy['name']}').toList();
+
+  void _addReserveSub() {
+    setState(() {
+      _reserveSubs.add({
+        'url': TextEditingController(),
+        'interval': TextEditingController(text: '86400'),
+      });
+    });
+  }
+
+  void _removeReserveSub(int index) {
+    final removed = _reserveSubs.removeAt(index);
+    setState(() {});
+    // Контроллеры утилизируем после того, как кадр без этих полей
+    // будет собран: dispose контроллера живого TextField запрещён.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      removed['url']?.dispose();
+      removed['interval']?.dispose();
+    });
+  }
+
   // ---------------- Форма: валидация и сборка ----------------
 
   String? _validateForm() {
     if (_providerMode && _providerUrlController.text.trim().isEmpty) {
-      return 'Укажите URL подписки в разделе 7 (режим provider).';
+      return 'Укажите URL подписки в разделе 9 (режим provider).';
     }
     if (!_providerMode && _proxies.isEmpty) {
       return 'Нет прокси: вставьте ссылки или URL подписки в раздел 1 '
           'и нажмите «Разобрать».';
+    }
+    if (_reserveEnabled) {
+      final hasSub = _reserveSubs.any(
+        (sub) => (sub['url']?.text ?? '').trim().isNotEmpty,
+      );
+      if (!hasSub) {
+        return 'Резерв включён (раздел 8), но не указан URL ни одной '
+            'подписки.';
+      }
+      for (final sub in _reserveSubs) {
+        final url = (sub['url']?.text ?? '').trim();
+        if (url.isNotEmpty &&
+            !url.startsWith('http://') &&
+            !url.startsWith('https://')) {
+          return 'Резерв (раздел 8): URL подписки должен начинаться '
+              'с http:// или https://.';
+        }
+      }
     }
     return null;
   }
@@ -711,6 +776,18 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       providerInterval:
           int.tryParse(_providerIntervalController.text) ?? 86400,
       providerUA: _providerUaController.text.trim(),
+      reserveEnabled: _reserveEnabled,
+      reserveSubscriptions: _reserveSubs
+          .map(
+            (sub) => <String, String>{
+              'url': sub['url']?.text ?? '',
+              'interval': sub['interval']?.text ?? '',
+            },
+          )
+          .toList(),
+      reservePrimaryNode: _reservePrimary,
+      reserveHealthInterval:
+          int.tryParse(_reserveHealthController.text) ?? 300,
       proxies: _proxies,
       chains: _chains,
       ruleCategories: _ruleCategories.entries
@@ -834,6 +911,27 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _servicePresets.updateAll((key, _) => servicePresets.contains(key));
       _cdnPresets.updateAll((key, _) => cdnPresets.contains(key));
       _customRulesController.text = data['customRules']?.toString() ?? '';
+      // Резерв применяется только когда данные его несут (пересборка
+      // профиля — вызов из initState, живых виджетов ещё нет). Шаблоны
+      // настроек резерв не сохраняют и его не трогают.
+      if (data.containsKey('reserveEnabled')) {
+        _reserveEnabled = data['reserveEnabled'] == true;
+        _reserveHealthController.text =
+            data['reserveHealthInterval']?.toString() ?? '300';
+        _reservePrimary = data['reservePrimaryNode']?.toString() ?? '';
+        _reserveSubs.clear();
+        if (data['reserveSubscriptions'] is List) {
+          for (final item
+              in (data['reserveSubscriptions'] as List).whereType<Map>()) {
+            _reserveSubs.add({
+              'url': TextEditingController(text: '${item['url'] ?? ''}'),
+              'interval': TextEditingController(
+                text: '${item['interval'] ?? '86400'}',
+              ),
+            });
+          }
+        }
+      }
       for (final field in const [
         _kFieldDefaultNs,
         _kFieldNameserver,
@@ -1394,7 +1492,140 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 'https://8.8.8.8/dns-query#skip-cert-verify=true',
           ),
         ]),
-        _section('8. Настройки', [
+        _section('8. Резерв (fallback)', [
+          Text(
+            'Группа «🆘 Резерв» (тип fallback): ядро само держит первую '
+            'живую ноду по приоритету «основная нода → подписки по '
+            'порядку» и переключается при отвале (пассивная проверка '
+            'при ошибке дайла + периодические пробы). В «🛡️ VPN» она '
+            'станет выбором по умолчанию, «⚡️ Авто» останется рядом. '
+            'Правила конфига не меняются.',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Включить резерв'),
+            subtitle: const Text('Выключено — конфиг собирается как раньше'),
+            value: _reserveEnabled,
+            onChanged: (value) {
+              setState(() => _reserveEnabled = value);
+            },
+          ),
+          if (_reserveEnabled) ...[
+            const SizedBox(height: 4),
+            if (_reserveSubs.isEmpty)
+              Text(
+                'Подписок пока нет — добавьте хотя бы одну.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            for (var i = 0; i < _reserveSubs.length; i++) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _reserveSubs[i]['url'],
+                          keyboardType: TextInputType.url,
+                          decoration: InputDecoration(
+                            labelText: 'Подписка ${i + 1} — URL (YAML)',
+                            border: const OutlineInputBorder(),
+                            helperText:
+                                'Приоритет ${i + 1}: порядок строк = '
+                                'порядок перебора',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _reserveSubs[i]['interval'],
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText:
+                                'Интервал обновления, сек (86400 = сутки)',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Удалить подписку',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _removeReserveSub(i),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            OutlinedButton.icon(
+              onPressed: _addReserveSub,
+              icon: const Icon(Icons.add),
+              label: const Text('Добавить подписку'),
+            ),
+            const SizedBox(height: 12),
+            if (!_providerMode && _proxies.isNotEmpty) ...[
+              InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Основная нода — приоритет 1 (опционально)',
+                  border: OutlineInputBorder(),
+                  helperText:
+                      'Первая живая: эта нода, затем подписки по порядку',
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _staticProxyNames.contains(_reservePrimary)
+                        ? _reservePrimary
+                        : '',
+                    isExpanded: true,
+                    isDense: true,
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: '',
+                        child: Text('Не использовать'),
+                      ),
+                      ..._staticProxyNames.map(
+                        (name) => DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(name, overflow: TextOverflow.ellipsis),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() => _reservePrimary = value ?? '');
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            TextField(
+              controller: _reserveHealthController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Интервал проверки живости, сек (по умолчанию 300)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            if (_providerMode)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'В режиме provider основная нода недоступна — приоритет '
+                  'начнётся с первой подписки.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).hintColor,
+                  ),
+                ),
+              ),
+          ],
+        ]),
+        _section('9. Настройки', [
           SegmentedButton<bool>(
             segments: const [
               ButtonSegment(value: false, label: Text('Встроить в конфиг')),
@@ -1470,7 +1701,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             ),
           ),
         ]),
-        _section('9. Шаблон', [
+        _section('10. Шаблон', [
           Text(
             'Сохраните текущие галочки, DNS и настройки как шаблон и '
             'применяйте одним тапом. Ссылки и прокси в шаблон не входят.',
