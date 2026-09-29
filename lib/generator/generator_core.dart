@@ -2344,19 +2344,30 @@ String buildConfig(GeneratorParams p) {
   }
 
   // --- резерв (fallback): «🆘 Резерв» + proxy-providers подписок ---
-  // Явные ноды идут в группе первыми (приоритет), затем ноды подписок
-  // в порядке их добавления; fallback берёт первую живую. Правила не
-  // трогаются: группа доступна через выбор в «🛡️ VPN».
+  // Статические ноды всегда идут в цепочке первыми (в порядке списка),
+  // затем ноды подписок по порядку; выбранная «основная нода» становится
+  // приоритетом 1. Fallback берёт первую живую. Цепочки (dialer-proxy)
+  // в резерв не попадают — они для ручного выбора в «🛡️ VPN». В режиме
+  // provider статических нод нет — приоритет начинается с первой
+  // подписки. Правила не трогаются: группа доступна через выбор
+  // в «🛡️ VPN».
   final reserveProviders = <String, dynamic>{};
   if (p.reserveEnabled) {
     final healthInterval = p.reserveHealthInterval > 0
         ? p.reserveHealthInterval
         : 300;
     final reserveProxies = <String>[];
+    final chainNames = chainProxyNames.toSet();
+    final staticNames = proxyList
+        .map((proxy) => '${proxy['name']}')
+        .where((name) => !chainNames.contains(name))
+        .toList();
     final primary = p.reservePrimaryNode.trim();
-    if (primary.isNotEmpty &&
-        proxyList.any((proxy) => proxy['name'] == primary)) {
+    if (primary.isNotEmpty && staticNames.contains(primary)) {
       reserveProxies.add(primary);
+    }
+    for (final name in staticNames) {
+      if (!reserveProxies.contains(name)) reserveProxies.add(name);
     }
     var subIndex = 0;
     for (final sub in p.reserveSubscriptions) {
@@ -2371,11 +2382,15 @@ String buildConfig(GeneratorParams p) {
       subIndex++;
       final name = 'sub$subIndex';
       final parsed = int.tryParse((sub['interval'] ?? '').trim());
+      // exclude-filter: regex по имени ноды; совпавшие выкидываются
+      // ещё на разборе подписки (мусор, инфо-ноды, «剩余/expire» и т.п.).
+      final exclude = (sub['exclude'] ?? '').trim();
       reserveProviders[name] = <String, dynamic>{
         'type': 'http',
         'url': url,
         'interval': parsed != null && parsed > 0 ? parsed : 86400,
         'path': './provider/reserve_$name.yaml',
+        if (exclude.isNotEmpty) 'exclude-filter': exclude,
         // Аналогично основному провайдеру: выравнивает поведение
         // панелей с self-signed сертификатами между режимами.
         'override': {'skip-cert-verify': true},
@@ -2423,6 +2438,20 @@ String buildConfig(GeneratorParams p) {
       autoIndex != -1 ? autoIndex + 1 : groups.length,
       reserveGroup,
     );
+    // Подписочные ноды не заливаются во все списки: в «⚡️ Авто» и
+    // сервисных группах остаются только статические ноды; провайдерные
+    // доступны в «🛡️ VPN» и «🆘 Резерв». Без статических нод (режим
+    // provider) include-all остаётся — иначе группы опустеют.
+    if (proxyList.isNotEmpty) {
+      for (final g in groups) {
+        if (g is! Map<String, dynamic>) continue;
+        if (g['name'] == '🛡️ VPN') continue;
+        if (g['include-all'] == true) {
+          g.remove('include-all');
+          g['include-all-proxies'] = true;
+        }
+      }
+    }
   }
 
   // --- rule-providers и правила (категорный универсальный набор) ---

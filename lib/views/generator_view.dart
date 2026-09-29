@@ -211,6 +211,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     for (final sub in _reserveSubs) {
       sub['url']?.dispose();
       sub['interval']?.dispose();
+      sub['exclude']?.dispose();
     }
     _dio.close();
     super.dispose();
@@ -718,6 +719,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _reserveSubs.add({
         'url': TextEditingController(),
         'interval': TextEditingController(text: '86400'),
+        'exclude': TextEditingController(),
       });
     });
   }
@@ -730,6 +732,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       removed['url']?.dispose();
       removed['interval']?.dispose();
+      removed['exclude']?.dispose();
     });
   }
 
@@ -759,6 +762,20 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           return 'Резерв (раздел 8): URL подписки должен начинаться '
               'с http:// или https://.';
         }
+        // Мягкая проверка regex для exclude-filter: синтаксис Dart и Go
+        // (regexp2) почти совпадает; невалидное ядро отвергло бы целиком.
+        final exclude = (sub['exclude']?.text ?? '').trim();
+        if (exclude.isNotEmpty) {
+          try {
+            RegExp(exclude);
+          } on FormatException catch (_) {
+            return 'Резерв (раздел 8): некорректный regex в поле '
+                '«Исключить» подписки.';
+          } on ArgumentError catch (_) {
+            return 'Резерв (раздел 8): некорректный regex в поле '
+                '«Исключить» подписки.';
+          }
+        }
       }
     }
     return null;
@@ -782,6 +799,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             (sub) => <String, String>{
               'url': sub['url']?.text ?? '',
               'interval': sub['interval']?.text ?? '',
+              'exclude': sub['exclude']?.text ?? '',
             },
           )
           .toList(),
@@ -928,6 +946,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               'interval': TextEditingController(
                 text: '${item['interval'] ?? '86400'}',
               ),
+              'exclude': TextEditingController(text: '${item['exclude'] ?? ''}'),
             });
           }
         }
@@ -1495,11 +1514,12 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         _section('8. Резерв (fallback)', [
           Text(
             'Группа «🆘 Резерв» (тип fallback): ядро само держит первую '
-            'живую ноду по приоритету «основная нода → подписки по '
-            'порядку» и переключается при отвале (пассивная проверка '
-            'при ошибке дайла + периодические пробы). В «🛡️ VPN» она '
-            'станет выбором по умолчанию, «⚡️ Авто» останется рядом. '
-            'Правила конфига не меняются.',
+            'живую ноду и переключается при отвале. Приоритет: твои '
+            'ноды (выбранная «основная» — первой), затем подписки по '
+            'порядку (пассивная проверка при ошибке дайла + периодические '
+            'пробы). В «🛡️ VPN» она станет выбором по умолчанию, '
+            '«⚡️ Авто» и сервисные группы останутся только на твоих '
+            'нодах. Правила конфига не меняются.',
             style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
           ),
           const SizedBox(height: 12),
@@ -1533,7 +1553,8 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                           controller: _reserveSubs[i]['url'],
                           keyboardType: TextInputType.url,
                           decoration: InputDecoration(
-                            labelText: 'Подписка ${i + 1} — URL (YAML)',
+                            labelText: 'Подписка ${i + 1} — URL (YAML / '
+                                'share-ссылки)',
                             border: const OutlineInputBorder(),
                             helperText:
                                 'Приоритет ${i + 1}: порядок строк = '
@@ -1548,6 +1569,18 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                             labelText:
                                 'Интервал обновления, сек (86400 = сутки)',
                             border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _reserveSubs[i]['exclude'],
+                          decoration: const InputDecoration(
+                            labelText:
+                                'Исключить по имени (regex, необязательно)',
+                            border: OutlineInputBorder(),
+                            helperText:
+                                'Ноды с совпавшим именем выкидываются, '
+                                'напр. expire|剩余|官网|traf',
                           ),
                         ),
                       ],
@@ -1574,7 +1607,8 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                   labelText: 'Основная нода — приоритет 1 (опционально)',
                   border: OutlineInputBorder(),
                   helperText:
-                      'Первая живая: эта нода, затем подписки по порядку',
+                      'Приоритет 1: эта нода, затем остальные твои '
+                      'ноды, затем подписки по порядку',
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -1615,8 +1649,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'В режиме provider основная нода недоступна — приоритет '
-                  'начнётся с первой подписки.',
+                  'В режиме provider статических нод нет — приоритет '
+                  'начнётся с первой подписки, а группы (включая '
+                  '«⚡️ Авто») возьмут ноды основного провайдера.',
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context).hintColor,
