@@ -1553,12 +1553,12 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                           controller: _reserveSubs[i]['url'],
                           keyboardType: TextInputType.url,
                           decoration: InputDecoration(
-                            labelText: 'Подписка ${i + 1} — URL (YAML / '
-                                'share-ссылки)',
+                            labelText: 'Подписка ${i + 1} — URL',
                             border: const OutlineInputBorder(),
+                            helperMaxLines: 2,
                             helperText:
-                                'Приоритет ${i + 1}: порядок строк = '
-                                'порядок перебора',
+                                'YAML / share-ссылки. Приоритет ${i + 1}: '
+                                'порядок строк = порядок перебора',
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1566,21 +1566,21 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                           controller: _reserveSubs[i]['interval'],
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
-                            labelText:
-                                'Интервал обновления, сек (86400 = сутки)',
+                            labelText: 'Интервал обновления, сек',
                             border: OutlineInputBorder(),
+                            helperText: 'Пусто — сутки (86400)',
                           ),
                         ),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _reserveSubs[i]['exclude'],
                           decoration: const InputDecoration(
-                            labelText:
-                                'Исключить по имени (regex, необязательно)',
+                            labelText: 'Исключить по имени (regex)',
                             border: OutlineInputBorder(),
+                            helperMaxLines: 3,
                             helperText:
-                                'Ноды с совпавшим именем выкидываются, '
-                                'напр. expire|剩余|官网|traf',
+                                'Ноды, чьё имя совпало, выкидываются из '
+                                'подписки. Напр.: expire|剩余|官网|traf',
                           ),
                         ),
                       ],
@@ -1604,11 +1604,12 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             if (!_providerMode && _proxies.isNotEmpty) ...[
               InputDecorator(
                 decoration: const InputDecoration(
-                  labelText: 'Основная нода — приоритет 1 (опционально)',
+                  labelText: 'Основная нода — приоритет 1',
                   border: OutlineInputBorder(),
+                  helperMaxLines: 2,
                   helperText:
-                      'Приоритет 1: эта нода, затем остальные твои '
-                      'ноды, затем подписки по порядку',
+                      'Опционально: эта нода первая, затем твои '
+                      'остальные, затем подписки по порядку',
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -1641,8 +1642,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               controller: _reserveHealthController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Интервал проверки живости, сек (по умолчанию 300)',
+                labelText: 'Интервал проверки, сек',
                 border: OutlineInputBorder(),
+                helperText: 'Пусто — 300 (5 минут)',
               ),
             ),
             if (_providerMode)
@@ -1696,16 +1698,20 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               controller: _providerIntervalController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Интервал обновления, сек (по умолчанию 86400)',
+                labelText: 'Интервал обновления, сек',
                 border: OutlineInputBorder(),
+                helperText: 'Пусто — сутки (86400)',
               ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _providerUaController,
               decoration: const InputDecoration(
-                labelText: 'User-Agent (v2rayNG/1.9.16 — полный список)',
+                labelText: 'User-Agent подписки',
                 border: OutlineInputBorder(),
+                helperMaxLines: 2,
+                helperText:
+                    'Напр. v2rayNG/1.9.16 — панели отдают полный список',
               ),
             ),
             const SizedBox(height: 8),
@@ -1731,8 +1737,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             controller: _mtuController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
-              labelText: 'MTU для TUN (пусто — по умолчанию ядра)',
+              labelText: 'MTU для TUN',
               border: OutlineInputBorder(),
+              helperText: 'Пусто — по умолчанию ядра',
             ),
           ),
         ]),
