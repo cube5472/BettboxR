@@ -1830,11 +1830,15 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               decoration: InputDecoration(
                 labelText: 'User-Agent подписки',
                 border: const OutlineInputBorder(),
-                helperMaxLines: 2,
+                // 3 строки: при увеличенном шрифте хелпер с описанием
+                // пресета занимает до трёх строк — не обрезать.
+                helperMaxLines: 3,
                 helperText: _providerClient.isEmpty
                     ? 'Пусто — ядро шлёт свой UA; выберите клиент выше '
                         'или впишите свой'
-                    : 'Пресет «${kSubSpoofClientLabels[_providerClient] ?? _providerClient}»; '
+                    : 'Пресет «${kSubSpoofClientLabels[_providerClient] ?? _providerClient}»: '
+                        'панель отдаёт полный список ссылок'
+                        '${kSubSpoofHwidClients.contains(_providerClient) ? ' и заголовок X-HWID' : ''}; '
                         'можно вписать и свой UA',
               ),
             ),
@@ -1853,17 +1857,12 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 ),
               ),
             ],
+            // Пояснение про пресеты живёт в helperText поля UA выше:
+            // отдельный Text без отступа снизу наезжал на поле
+            // «URL для проверки доступности» — плавающий лейбл
+            // OutlineInputBorder выступает над верхней рамкой поля,
+            // и при нулевом зазоре он накладывался на текст.
             const SizedBox(height: 8),
-            Text(
-              'Чекбокс — маскировка под клиент: под v2rayNG панели отдают '
-              'полный список ссылок, Happ и Incy дополнительно передают '
-              'X-HWID. Снятие всех чекбоксов или очистка поля UA — ядро '
-              'шлёт свой User-Agent.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).hintColor,
-              ),
-            ),
           ],
           TextField(
             controller: _urlTestController,
