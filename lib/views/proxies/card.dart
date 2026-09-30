@@ -331,7 +331,12 @@ class ProxyCard extends StatelessWidget {
               const Positioned(
                 top: 0,
                 right: 0,
-                child: _ProxyComputedMarkIcon(),
+                child: IgnorePointer(
+                  // Без IgnorePointer бокс иконки перехватывает хит-тест
+                  // (RenderDecoratedBox поглощает попадания) и глушит
+                  // тап/удержание в правом верхнем углу карточки.
+                  child: _ProxyComputedMarkIcon(),
+                ),
               ),
           ],
         );

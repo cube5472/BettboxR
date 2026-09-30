@@ -27,6 +27,7 @@ import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yaml/yaml.dart';
 
@@ -167,6 +168,7 @@ Future<void> deleteDeadNodesFlow(
   WidgetRef ref,
   Group group,
 ) async {
+  HapticFeedback.mediumImpact();
   final deadNames = collectDeadNodeNames(ref, group);
   if (deadNames.isEmpty) {
     globalState.showNotifier(appLocalizations.deleteUnavailableEmpty);
@@ -259,6 +261,8 @@ Future<void> deleteSingleNodeFlow(
   Group group,
   Proxy proxy,
 ) async {
+  // Тактильный отклик: жест удержания распознан, диалог уже открывается.
+  HapticFeedback.mediumImpact();
   final name = proxy.name;
   if (_groupTypeNames.contains(proxy.type.toLowerCase())) {
     globalState.showNotifier(appLocalizations.deleteNodeGroupTip);
