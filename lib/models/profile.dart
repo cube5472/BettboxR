@@ -9,6 +9,7 @@ import 'package:bett_box/enum/enum.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'clash_config.dart';
+import 'sub_spoof.dart';
 
 part 'generated/profile.freezed.dart';
 part 'generated/profile.g.dart';
@@ -190,7 +191,13 @@ extension ProfileExtension on Profile {
   }
 
   Future<Profile> update({bool validate = true}) async {
-    final response = await request.getFileResponseForUrl(url);
+    // Подмена клиента подписки (User-Agent/X-HWID) — настройки хранятся
+    // отдельно от модели профиля (SharedPreferences, ключ sub_spoof_map).
+    final subSpoof = await SubSpoofStore.get(id);
+    final response = await request.getFileResponseForUrl(
+      url,
+      extraHeaders: subSpoof.buildHeaders(),
+    );
     final disposition = response.headers['content-disposition']?.firstOrNull;
     final userinfo = response.headers['subscription-userinfo']?.firstOrNull;
     return await copyWith(

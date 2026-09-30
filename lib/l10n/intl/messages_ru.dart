@@ -144,6 +144,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageKeyGenerateTitle": MessageLookupByLibrary.simpleMessage(
       "Генерация ключа Age",
     ),
+    "subSpoofClientLabel": MessageLookupByLibrary.simpleMessage(
+      "Подменяться клиентом",
+    ),
+    "subSpoofAuto": MessageLookupByLibrary.simpleMessage(
+      "Авто (без подмены)",
+    ),
+    "subSpoofCustomUaLabel": MessageLookupByLibrary.simpleMessage(
+      "Свой User-Agent (необязательно)",
+    ),
+    "subSpoofHwidLabel": MessageLookupByLibrary.simpleMessage(
+      "HWID устройства",
+    ),
+    "subSpoofHwidRegenTooltip": MessageLookupByLibrary.simpleMessage(
+      "Сгенерировать новый HWID",
+    ),
+    "subSpoofHwidInvalid": MessageLookupByLibrary.simpleMessage(
+      "HWID: 10–64 символа (A-Z a-z 0-9 = -)",
+    ),
+    "subSpoofHint": MessageLookupByLibrary.simpleMessage(
+      "При обновлении этой подписки приложение будет представляться выбранным клиентом (заголовки User-Agent и HWID). Панель провайдера должна отдавать конфиг в формате Clash/Mihomo.",
+    ),
     "ageKeyPairGeneratedSuccess": MessageLookupByLibrary.simpleMessage(
       "Пара ключей X25519 создана, сохраните её в надёжном месте",
     ),

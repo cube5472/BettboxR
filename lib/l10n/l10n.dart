@@ -5404,6 +5404,69 @@ class AppLocalizations {
     );
   }
 
+  String get subSpoofClientLabel {
+    return Intl.message(
+      'Spoof client',
+      name: 'subSpoofClientLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get subSpoofAuto {
+    return Intl.message(
+      'Auto (no spoofing)',
+      name: 'subSpoofAuto',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get subSpoofCustomUaLabel {
+    return Intl.message(
+      'Custom User-Agent (optional)',
+      name: 'subSpoofCustomUaLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get subSpoofHwidLabel {
+    return Intl.message(
+      'Device HWID',
+      name: 'subSpoofHwidLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get subSpoofHwidRegenTooltip {
+    return Intl.message(
+      'Generate a new HWID',
+      name: 'subSpoofHwidRegenTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get subSpoofHwidInvalid {
+    return Intl.message(
+      'HWID: 10-64 characters (A-Z a-z 0-9 = -)',
+      name: 'subSpoofHwidInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get subSpoofHint {
+    return Intl.message(
+      'When updating this subscription, the app will identify itself as the selected client (User-Agent and HWID headers). The panel must serve the config in Clash/Mihomo format.',
+      name: 'subSpoofHint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Age Private Key`
   String get agePrivateKeyLabel {
     return Intl.message(

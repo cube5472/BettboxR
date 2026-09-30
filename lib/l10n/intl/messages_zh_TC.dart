@@ -119,6 +119,27 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "advancedSettings": MessageLookupByLibrary.simpleMessage("進階設定"),
     "ageKeyGenerateTitle": MessageLookupByLibrary.simpleMessage("Age Key 生成"),
+    "subSpoofClientLabel": MessageLookupByLibrary.simpleMessage(
+      "偽裝用戶端",
+    ),
+    "subSpoofAuto": MessageLookupByLibrary.simpleMessage(
+      "自動（不偽裝）",
+    ),
+    "subSpoofCustomUaLabel": MessageLookupByLibrary.simpleMessage(
+      "自訂 User-Agent（可選）",
+    ),
+    "subSpoofHwidLabel": MessageLookupByLibrary.simpleMessage(
+      "裝置 HWID",
+    ),
+    "subSpoofHwidRegenTooltip": MessageLookupByLibrary.simpleMessage(
+      "重新產生 HWID",
+    ),
+    "subSpoofHwidInvalid": MessageLookupByLibrary.simpleMessage(
+      "HWID：10-64 個字元（A-Z a-z 0-9 = -）",
+    ),
+    "subSpoofHint": MessageLookupByLibrary.simpleMessage(
+      "更新此訂閱時，應用將以所選用戶端的身份自報（User-Agent 和 HWID 標頭）。面板需以 Clash/Mihomo 格式回傳設定。",
+    ),
     "ageKeyPairGeneratedSuccess": MessageLookupByLibrary.simpleMessage(
       "已生成 X25519 金鑰對，請妥善保存",
     ),

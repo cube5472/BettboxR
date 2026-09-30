@@ -117,6 +117,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "adminAutoLaunchDesc": MessageLookupByLibrary.simpleMessage("使用管理员模式开机自启动"),
     "advancedSettings": MessageLookupByLibrary.simpleMessage("进阶设置"),
     "ageKeyGenerateTitle": MessageLookupByLibrary.simpleMessage("Age Key 生成"),
+    "subSpoofClientLabel": MessageLookupByLibrary.simpleMessage(
+      "伪装客户端",
+    ),
+    "subSpoofAuto": MessageLookupByLibrary.simpleMessage(
+      "自动（不伪装）",
+    ),
+    "subSpoofCustomUaLabel": MessageLookupByLibrary.simpleMessage(
+      "自定义 User-Agent（可选）",
+    ),
+    "subSpoofHwidLabel": MessageLookupByLibrary.simpleMessage(
+      "设备 HWID",
+    ),
+    "subSpoofHwidRegenTooltip": MessageLookupByLibrary.simpleMessage(
+      "重新生成 HWID",
+    ),
+    "subSpoofHwidInvalid": MessageLookupByLibrary.simpleMessage(
+      "HWID：10-64 个字符（A-Z a-z 0-9 = -）",
+    ),
+    "subSpoofHint": MessageLookupByLibrary.simpleMessage(
+      "更新此订阅时，应用将以所选客户端的身份自报（User-Agent 和 HWID 头）。面板需以 Clash/Mihomo 格式返回配置。",
+    ),
     "ageKeyPairGeneratedSuccess": MessageLookupByLibrary.simpleMessage(
       "已生成 X25519 密钥对，请妥善保存",
     ),

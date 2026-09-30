@@ -183,8 +183,9 @@ class Request {
 
   Future<Response> _getResponseForUrl(
     String url,
-    ResponseType responseType,
-  ) async {
+    ResponseType responseType, {
+    Map<String, String>? extraHeaders,
+  }) async {
     if (url.isFileUrl) {
       return _getFileResponseForUrl(url, responseType);
     }
@@ -216,6 +217,9 @@ class Request {
     if (userInfo != null && userInfo.isNotEmpty) {
       final auth = base64Encode(utf8.encode(userInfo));
       headers['Authorization'] = 'Basic $auth';
+    }
+    if (extraHeaders != null && extraHeaders.isNotEmpty) {
+      headers.addAll(extraHeaders);
     }
 
     final response = await _clashDio.get(
@@ -252,12 +256,26 @@ class Request {
     }
   }
 
-  Future<Response> getFileResponseForUrl(String url) async {
-    return _getResponseForUrl(url, ResponseType.bytes);
+  Future<Response> getFileResponseForUrl(
+    String url, {
+    Map<String, String>? extraHeaders,
+  }) async {
+    return _getResponseForUrl(
+      url,
+      ResponseType.bytes,
+      extraHeaders: extraHeaders,
+    );
   }
 
-  Future<Response> getTextResponseForUrl(String url) async {
-    return _getResponseForUrl(url, ResponseType.plain);
+  Future<Response> getTextResponseForUrl(
+    String url, {
+    Map<String, String>? extraHeaders,
+  }) async {
+    return _getResponseForUrl(
+      url,
+      ResponseType.plain,
+      extraHeaders: extraHeaders,
+    );
   }
 
   Future<MemoryImage?> getImage(String url) async {

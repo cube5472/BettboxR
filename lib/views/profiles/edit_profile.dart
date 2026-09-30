@@ -36,6 +36,9 @@ class EditProfileViewState extends State<EditProfileView> {
   late TextEditingController ageSecretKeyController;
   FocusNode? urlFocusNode;
   bool _obscureAgeSecretKey = true;
+  final subSpoofUaController = TextEditingController();
+  final subSpoofHwidController = TextEditingController();
+  String _spoofClient = '';
   String? rawText;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final fileInfoNotifier = ValueNotifier<FileInfo?>(null);
@@ -55,6 +58,16 @@ class EditProfileViewState extends State<EditProfileView> {
     ageSecretKeyController = TextEditingController(
       text: widget.profile.ageSecretKey,
     );
+    SubSpoofStore.get(widget.profile.id).then((spoof) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spoofClient = spoof.client;
+        subSpoofUaController.text = spoof.customUa;
+        subSpoofHwidController.text = spoof.hwid;
+      });
+    });
     if (widget.isNew) {
       urlFocusNode = FocusNode();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,12 +89,24 @@ class EditProfileViewState extends State<EditProfileView> {
     urlController.dispose();
     autoUpdateDurationController.dispose();
     ageSecretKeyController.dispose();
+    subSpoofUaController.dispose();
+    subSpoofHwidController.dispose();
     urlFocusNode?.dispose();
     super.dispose();
   }
 
   Future<void> _handleConfirm() async {
     if (!_formKey.currentState!.validate()) return;
+    try {
+      await SubSpoofStore.save(
+        widget.profile.id,
+        SubSpoof(
+          client: _spoofClient,
+          customUa: subSpoofUaController.text.trim(),
+          hwid: subSpoofHwidController.text.trim(),
+        ),
+      );
+    } catch (_) {}
     final appController = globalState.appController;
     Profile profile = this.profile.copyWith(
       url: urlController.text,
@@ -168,6 +193,23 @@ class EditProfileViewState extends State<EditProfileView> {
     if (autoUpdate == value) return;
     setState(() {
       autoUpdate = value;
+    });
+  }
+
+  void _setSpoofClient(String value) {
+    if (_spoofClient == value) return;
+    setState(() {
+      _spoofClient = value;
+      if (kSubSpoofHwidClients.contains(value) &&
+          subSpoofHwidController.text.trim().isEmpty) {
+        subSpoofHwidController.text = generateSubSpoofHwid();
+      }
+    });
+  }
+
+  void _regenerateSpoofHwid() {
+    setState(() {
+      subSpoofHwidController.text = generateSubSpoofHwid();
     });
   }
 
@@ -394,6 +436,95 @@ class EditProfileViewState extends State<EditProfileView> {
               },
             ),
           ),
+        ListItem(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InputDecorator(
+                decoration: InputDecoration(
+                  labelText: appLocalizations.subSpoofClientLabel,
+                  border: const OutlineInputBorder(),
+                ),
+                child: DropdownButton<String>(
+                  value: _spoofClient,
+                  isExpanded: true,
+                  isDense: true,
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    DropdownMenuItem(
+                      value: '',
+                      child: Text(
+                        appLocalizations.subSpoofAuto,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    for (final client in kSubSpoofClients.keys)
+                      DropdownMenuItem(
+                        value: client,
+                        child: Text(
+                          kSubSpoofClientLabels[client] ?? client,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) => _setSpoofClient(value ?? ''),
+                ),
+              ),
+              if (_spoofClient.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  textInputAction: TextInputAction.next,
+                  controller: subSpoofUaController,
+                  maxLines: 1,
+                  minLines: 1,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: appLocalizations.subSpoofCustomUaLabel,
+                    hintText: kSubSpoofClients[_spoofClient],
+                  ),
+                ),
+              ],
+              if (kSubSpoofHwidClients.contains(_spoofClient)) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  textInputAction: TextInputAction.next,
+                  controller: subSpoofHwidController,
+                  maxLines: 1,
+                  minLines: 1,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: appLocalizations.subSpoofHwidLabel,
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: appLocalizations.subSpoofHwidRegenTooltip,
+                      onPressed: _regenerateSpoofHwid,
+                    ),
+                  ),
+                  validator: (String? value) {
+                    final v = value?.trim() ?? '';
+                    if (v.isEmpty) {
+                      return null;
+                    }
+                    if (v.length < 10 ||
+                        v.length > 64 ||
+                        !RegExp(r'^[a-zA-Z0-9=-]+$').hasMatch(v)) {
+                      return appLocalizations.subSpoofHwidInvalid;
+                    }
+                    return null;
+                  },
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                appLocalizations.subSpoofHint,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
       if (!widget.isNew)
         ValueListenableBuilder<FileInfo?>(

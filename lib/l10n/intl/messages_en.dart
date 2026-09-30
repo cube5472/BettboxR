@@ -140,6 +140,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageKeyGenerateTitle": MessageLookupByLibrary.simpleMessage(
       "Age Key Generation",
     ),
+    "subSpoofClientLabel": MessageLookupByLibrary.simpleMessage(
+      "Spoof client",
+    ),
+    "subSpoofAuto": MessageLookupByLibrary.simpleMessage(
+      "Auto (no spoofing)",
+    ),
+    "subSpoofCustomUaLabel": MessageLookupByLibrary.simpleMessage(
+      "Custom User-Agent (optional)",
+    ),
+    "subSpoofHwidLabel": MessageLookupByLibrary.simpleMessage(
+      "Device HWID",
+    ),
+    "subSpoofHwidRegenTooltip": MessageLookupByLibrary.simpleMessage(
+      "Generate a new HWID",
+    ),
+    "subSpoofHwidInvalid": MessageLookupByLibrary.simpleMessage(
+      "HWID: 10-64 characters (A-Z a-z 0-9 = -)",
+    ),
+    "subSpoofHint": MessageLookupByLibrary.simpleMessage(
+      "When updating this subscription, the app will identify itself as the selected client (User-Agent and HWID headers). The panel must serve the config in Clash/Mihomo format.",
+    ),
     "ageKeyPairGeneratedSuccess": MessageLookupByLibrary.simpleMessage(
       "X25519 Key pair generated, please keep it safe",
     ),
