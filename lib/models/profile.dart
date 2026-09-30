@@ -191,12 +191,13 @@ extension ProfileExtension on Profile {
   }
 
   Future<Profile> update({bool validate = true}) async {
-    // Подмена клиента подписки (User-Agent/X-HWID) — настройки хранятся
-    // отдельно от модели профиля (SharedPreferences, ключ sub_spoof_map).
+    // Подмена клиента подписки (User-Agent/X-Hwid + device-заголовки) —
+    // настройки хранятся отдельно от модели профиля
+    // (SharedPreferences, ключ sub_spoof_map).
     final subSpoof = await SubSpoofStore.get(id);
     final response = await request.getFileResponseForUrl(
       url,
-      extraHeaders: subSpoof.buildHeaders(),
+      extraHeaders: await subSpoof.resolveHeaders(),
     );
     final disposition = response.headers['content-disposition']?.firstOrNull;
     final userinfo = response.headers['subscription-userinfo']?.firstOrNull;

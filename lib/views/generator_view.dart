@@ -116,12 +116,18 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   final _customRulesController = TextEditingController();
   final _providerUrlController = TextEditingController();
   final _providerUaController = TextEditingController();
-  /// X-HWID для пресетов Happ/Incy (см. kSubSpoofHwidClients).
+  /// X-Hwid для пресетов (см. kSubSpoofHwidClients).
   final _providerHwidController = TextEditingController();
   /// Выбранный пресет маскировки UA: '' (нет) или ключ kSubSpoofClients
-  /// ('happ' / 'incy' / 'v2rayng'). Один чекбокс; ручной UA сбрасывает
+  /// ('happ' / 'v2raytun' / 'incy'). Один чекбокс; ручной UA сбрасывает
   /// выбор в «свой UA».
   String _providerClient = '';
+  /// Сведения об устройстве для device-заголовков отпечатка.
+  /// Резолвятся один раз лениво (см. _ensureDeviceContext).
+  SpoofDeviceContext? _deviceCtx;
+  Future<void> _ensureDeviceContext() async {
+    _deviceCtx ??= await resolveSpoofDeviceContext();
+  }
   final _urlTestController = TextEditingController(
     text: 'https://www.gstatic.com/generate_204',
   );
@@ -255,6 +261,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerInterval': params.providerInterval,
       'providerUA': params.providerUA,
       'providerHwid': params.providerHwid,
+      'providerClient': params.providerClient,
       'reserveEnabled': params.reserveEnabled,
       'reserveSubscriptions': params.reserveSubscriptions,
       'reservePrimaryNode': params.proxies.any(
@@ -609,6 +616,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     loading.value = true;
     String yaml;
     try {
+      // Device-заголовки отпечатка резолвятся до сборки (синхронный
+      // buildConfig их получает из params).
+      await _ensureDeviceContext();
       yaml = _buildYamlConfig();
     } on Object catch (e) {
       if (!mounted) return;
@@ -686,6 +696,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     loading.value = true;
     appController.setProfile(profile.copyWith(isUpdating: true));
     try {
+      await _ensureDeviceContext();
       final yaml = _buildYamlConfig();
       final oldFile = await profile.getFile();
       final oldContent = await oldFile.readAsString();
@@ -795,10 +806,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     return null;
   }
 
-  /// Тап по чекбоксу пресета маскировки (Happ / Incy / v2rayNG).
+  /// Тап по чекбоксу пресета маскировки (Happ / v2RayTun / Incy).
   /// Чекбоксы работают как одиночный выбор: тап по выбранному снимает
   /// его («свой UA»), тап по другому — переключает. Выбор проставляет
-  /// пресетный UA; для Happ/Incy один раз генерируется X-HWID.
+  /// пресетный UA; X-Hwid генерируется один раз (нужен всем пресетам).
   void _handleProviderClientTap(String client) {
     setState(() {
       if (_providerClient == client) {
@@ -813,8 +824,8 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           _providerHwidController.text = generateSubSpoofHwid();
         }
       } else {
-        // Пресет без hwid (v2rayNG): заголовок не должен остаться
-        // от предыдущего выбора — панель его не читает.
+        // Пресет без hwid: заголовок не должен остаться от
+        // предыдущего выбора — панель его не читает.
         _providerHwidController.clear();
       }
     });
@@ -833,15 +844,25 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   }
 
   /// Восстановление пресета из шаблона/маркера: сначала по сохранённому
-  /// ключу, затем по совпадению UA со значением пресета (старые маркеры
-  /// ключа не содержат).
+  /// ключу (с миграцией старых имён), затем по совпадению UA — и с
+  /// актуальными пресетами, и со старыми их строками (маркеры прежних
+  /// версий хранят «Happ/4.6.1/», «v2rayNG/2.3.9», «INCY/1.0.0»).
   String _restoreProviderClient(String client, String ua) {
-    if (kSubSpoofClients.containsKey(client)) {
-      return client;
+    final normalized = normalizeSubSpoofClient(client);
+    if (normalized.isNotEmpty) {
+      return normalized;
     }
+    final trimmed = ua.trim();
     for (final entry in kSubSpoofClients.entries) {
-      if (entry.value.trim() == ua.trim()) {
+      if (entry.value.trim() == trimmed) {
         return entry.key;
+      }
+    }
+    // Старые пресетные UA тоже опознаём — «Пересобрать» и шаблоны
+    // не должны терять маскировку после обновления приложения.
+    for (final entry in kSubSpoofLegacyUa.entries) {
+      if (entry.key == trimmed) {
+        return entry.value;
       }
     }
     return '';
@@ -861,6 +882,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           int.tryParse(_providerIntervalController.text) ?? 86400,
       providerUA: _providerUaController.text.trim(),
       providerHwid: _providerHwidController.text.trim(),
+      providerClient: _providerClient,
+      providerDeviceModel: _deviceCtx?.model ?? '',
+      providerVerOs: _deviceCtx?.sdkInt ?? 0,
+      providerDeviceLocale: _deviceCtx?.localeName ?? '',
       reserveEnabled: _reserveEnabled,
       reserveSubscriptions: _reserveSubs
           .map(
@@ -988,6 +1013,17 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         data['providerClient']?.toString() ?? '',
         _providerUaController.text,
       );
+      // Автообновление пресетного UA: маркеры/шаблоны прежних версий
+      // хранят устаревшие строки (Happ/4.6.1/ и т.п.) — подменяем
+      // актуальным пресетом, чтобы отпечаток не отставал от реального
+      // клиента. Кастомный UA (пресет снят) не трогаем.
+      if (_providerClient.isNotEmpty &&
+          _providerUaController.text.trim() !=
+              (kSubSpoofClients[_providerClient] ?? '').trim() &&
+          kSubSpoofLegacyUa[_providerUaController.text.trim()] ==
+              _providerClient) {
+        _providerUaController.text = kSubSpoofClients[_providerClient] ?? '';
+      }
       _ruUnblock = data['ruUnblock'] is bool ? data['ruUnblock'] as bool : true;
       // Совместимость: в шаблонах старой версии ключ назывался
       // providerSets и вёл набор вендоров — категориям оттуда брать
@@ -1785,8 +1821,8 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             ),
             const SizedBox(height: 8),
             // Маскировка под клиент: одиночный выбор чекбоксами.
-            // Выбранный пресет подставляет свой UA в поле ниже; у Happ
-            // и Incy панель дополнительно читает X-HWID.
+            // Выбранный пресет подставляет свой UA в поле ниже и задаёт
+            // device-заголовки отпечатка; X-Hwid нужен всем пресетам.
             // Wrap (не Row): при увеличенном масштабе текста три
             // чекбокса не влезают в строку — переносим на следующую.
             Wrap(
@@ -1837,9 +1873,8 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                     ? 'Пусто — ядро шлёт свой UA; выберите клиент выше '
                         'или впишите свой'
                     : 'Пресет «${kSubSpoofClientLabels[_providerClient] ?? _providerClient}»: '
-                        'панель отдаёт полный список ссылок'
-                        '${kSubSpoofHwidClients.contains(_providerClient) ? ' и заголовок X-HWID' : ''}; '
-                        'можно вписать и свой UA',
+                        'панель отдаёт полный список ссылок и заголовок '
+                        'X-Hwid; можно вписать и свой UA',
               ),
             ),
             if (kSubSpoofHwidClients.contains(_providerClient)) ...[
@@ -1847,7 +1882,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               TextField(
                 controller: _providerHwidController,
                 decoration: const InputDecoration(
-                  labelText: 'X-HWID подписки',
+                  labelText: 'X-Hwid подписки',
                   border: OutlineInputBorder(),
                   helperMaxLines: 2,
                   helperText: 'Идентификатор устройства для панелей с '
