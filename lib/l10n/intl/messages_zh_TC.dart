@@ -67,8 +67,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String dn3(count) => "已刪除：${count}";
 
+  static String dn4(name) => "將從設定檔中刪除節點：${name}。";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "deleteNodeBody": dn4,
+    "deleteNodeGroupTip": MessageLookupByLibrary.simpleMessage(
+        "無法刪除分組，只能刪除節點。"),
+    "deleteNodeSelectedTip": MessageLookupByLibrary.simpleMessage(
+        "已選中的節點不會被刪除。"),
+    "deleteNodeTitle": MessageLookupByLibrary.simpleMessage("刪除節點"),
     "deleteUnavailable": MessageLookupByLibrary.simpleMessage("刪除不可用節點"),
     "deleteUnavailableAutoUpdateNote": MessageLookupByLibrary.simpleMessage(
         "設定檔已關聯訂閱，下次更新會恢復被刪除的節點。"),

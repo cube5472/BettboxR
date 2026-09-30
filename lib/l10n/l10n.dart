@@ -6118,6 +6118,46 @@ class AppLocalizations {
     );
   }
 
+  /// `Delete node`
+  String get deleteNodeTitle {
+    return Intl.message(
+      'Delete node',
+      name: 'deleteNodeTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Node will be removed from the profile config: {name}.`
+  String deleteNodeBody(Object name) {
+    return Intl.message(
+      'Node will be removed from the profile config: $name.',
+      name: 'deleteNodeBody',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Groups cannot be deleted — only nodes.`
+  String get deleteNodeGroupTip {
+    return Intl.message(
+      'Groups cannot be deleted — only nodes.',
+      name: 'deleteNodeGroupTip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The selected node is not deleted.`
+  String get deleteNodeSelectedTip {
+    return Intl.message(
+      'The selected node is not deleted.',
+      name: 'deleteNodeSelectedTip',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Manual`
   String get manualSort {
     return Intl.message('Manual', name: 'manualSort', desc: '', args: []);

@@ -234,6 +234,13 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     return deleteDeadNodesFlow(context, ref, group);
   }
 
+  /// Удаление одной ноды по удержанию карточки (см. deleteSingleNodeFlow).
+  /// В режиме ручной сортировки удержание занято drag'ом — коллбэк
+  /// не передаётся в карточку (см. сборку _RowItem).
+  Future<void> _handleDeleteNode(Group group, Proxy proxy) {
+    return deleteSingleNodeFlow(context, ref, group, proxy);
+  }
+
   void _handleToggle(String groupName) {
     final tempUnfoldSet = Set<String>.from(widget.currentUnfoldSet);
     if (tempUnfoldSet.contains(groupName)) {
@@ -464,6 +471,12 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
                                 type: widget.cardType,
                                 groupType: item.group.type,
                                 testUrl: item.group.testUrl,
+                                onLongPress: _dragEnabled
+                                    ? null
+                                    : () => _handleDeleteNode(
+                                          item.group,
+                                          proxy,
+                                        ),
                               ),
                             ),
                           ),
@@ -637,13 +650,22 @@ class _GroupHeader extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  EmojiText(group.name, style: context.textTheme.titleMedium),
+                  EmojiText(
+                    group.name,
+                    style: context.textTheme.titleMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
-                        group.type.name,
-                        style: context.textTheme.labelMedium?.toLight,
+                      Flexible(
+                        child: Text(
+                          group.type.name,
+                          style: context.textTheme.labelMedium?.toLight,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                       if (selectedProxyName.isNotEmpty) ...[
                         Text(
@@ -673,12 +695,24 @@ class _GroupHeader extends ConsumerWidget {
             if (isExpand) ...[
               IconButton(
                 visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+                iconSize: 20,
                 icon: const Icon(Icons.adjust),
                 onPressed: onScrollToSelected,
                 tooltip: appLocalizations.locate,
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+                iconSize: 20,
                 icon: Icon(
                   isHideDead ? Icons.visibility : Icons.visibility_off,
                 ),
@@ -690,6 +724,12 @@ class _GroupHeader extends ConsumerWidget {
               if (isHideDead && onDeleteDead != null)
                 IconButton(
                   visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  iconSize: 20,
                   icon: const Icon(Icons.delete_sweep_outlined),
                   onPressed: onDeleteDead,
                   tooltip: appLocalizations.deleteUnavailable,
@@ -701,6 +741,12 @@ class _GroupHeader extends ConsumerWidget {
                       .isTestingGroup(group.name);
                   return IconButton(
                     visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    iconSize: 20,
                     icon: isTestingThisGroup
                         ? const SizedBox.square(
                             dimension: 18,
@@ -717,6 +763,11 @@ class _GroupHeader extends ConsumerWidget {
             ],
             IconButton.filledTonal(
               visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(
+                minWidth: 34,
+                minHeight: 34,
+              ),
               icon: CommonExpandIcon(expand: isExpand),
               onPressed: onToggle,
               style: ButtonStyle(
@@ -739,7 +790,7 @@ class _GroupHeader extends ConsumerWidget {
     const iconSize = 40.0;
     if (style == ProxiesIconStyle.standard) {
       return Container(
-        margin: const EdgeInsets.only(right: 16),
+        margin: const EdgeInsets.only(right: 12),
         width: iconSize,
         height: iconSize,
         alignment: Alignment.center,
@@ -753,7 +804,7 @@ class _GroupHeader extends ConsumerWidget {
       );
     }
     return Container(
-      margin: const EdgeInsets.only(right: 16),
+      margin: const EdgeInsets.only(right: 12),
       width: iconSize,
       height: iconSize,
       alignment: Alignment.center,

@@ -14,6 +14,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../models/common.dart';
 import 'card.dart';
 import 'common.dart';
+import 'dead_nodes.dart';
 import 'reorder.dart';
 
 typedef ProxyGroupViewKeyMap =
@@ -527,6 +528,14 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
                   type: widget.cardType,
                   proxy: proxy,
                   groupName: widget.group.name,
+                  onLongPress: _dragEnabled
+                      ? null
+                      : () => deleteSingleNodeFlow(
+                            context,
+                            ref,
+                            widget.group,
+                            proxy,
+                          ),
                 ),
               );
             },

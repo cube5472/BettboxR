@@ -76,8 +76,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String dn3(count) => "Удалено нод: ${count}";
 
+  static String dn4(name) => "Нода будет удалена из конфига профиля: ${name}.";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "deleteNodeBody": dn4,
+    "deleteNodeGroupTip": MessageLookupByLibrary.simpleMessage(
+        "Группы удалять нельзя — только ноды."),
+    "deleteNodeSelectedTip": MessageLookupByLibrary.simpleMessage(
+        "Выбранная нода не удаляется."),
+    "deleteNodeTitle": MessageLookupByLibrary.simpleMessage("Удалить ноду"),
     "deleteUnavailable": MessageLookupByLibrary.simpleMessage("Удалить недоступные ноды"),
     "deleteUnavailableAutoUpdateNote": MessageLookupByLibrary.simpleMessage(
         "Профиль привязан к подписке — её обновление вернёт удалённые ноды."),

@@ -47,6 +47,7 @@ class ProxyCard extends StatelessWidget {
   final GroupType groupType;
   final ProxyCardType type;
   final String? testUrl;
+  final VoidCallback? onLongPress;
 
   const ProxyCard({
     super.key,
@@ -55,6 +56,7 @@ class ProxyCard extends StatelessWidget {
     required this.proxy,
     required this.groupType,
     required this.type,
+    this.onLongPress,
   });
 
   Measure get measure => globalState.measure;
@@ -251,6 +253,7 @@ class ProxyCard extends StatelessWidget {
               onPressed: () {
                 _changeProxy(ref);
               },
+              onLongPress: onLongPress,
               isSelected: isSelected,
               child: Container(
                 alignment: Alignment.centerLeft,

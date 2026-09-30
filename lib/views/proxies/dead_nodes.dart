@@ -243,6 +243,90 @@ class _DeleteResult {
   const _DeleteResult(this.removed, this.misses);
 }
 
+/// Удаление ОДНОЙ ноды по удержанию карточки: работает и для живых нод,
+/// не только для мёртвых. Защиты те же, что у массового удаления:
+/// группы и выбранная нода не трогаются; при подтверждении тот же
+/// механизм ([_deleteDeadNodesFromProfile]) с синком маркера генератора.
+///
+/// В режиме ручной сортировки удержание занято перетаскиванием — там
+/// удаление недоступно (коллбэк просто не передаётся из списка).
+Future<void> deleteSingleNodeFlow(
+  BuildContext context,
+  WidgetRef ref,
+  Group group,
+  Proxy proxy,
+) async {
+  final name = proxy.name;
+  if (_groupTypeNames.contains(proxy.type.toLowerCase())) {
+    globalState.showNotifier(appLocalizations.deleteNodeGroupTip);
+    return;
+  }
+  final selectedNames = ref.read(selectedMapProvider).values.toSet();
+  final now = group.now;
+  if (now != null && now.isNotEmpty) {
+    selectedNames.add(now);
+  }
+  if (selectedNames.contains(name)) {
+    globalState.showNotifier(appLocalizations.deleteNodeSelectedTip);
+    return;
+  }
+  final profile = ref.read(currentProfileProvider);
+  final isSubLinked = (profile?.url.isNotEmpty ?? false);
+
+  final confirmed = await globalState.showCommonDialog<bool>(
+    child: CommonDialog(
+      title: appLocalizations.deleteNodeTitle,
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context, rootNavigator: true).pop(false);
+          },
+          child: Text(appLocalizations.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context, rootNavigator: true).pop(true);
+          },
+          child: Text(appLocalizations.delete),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          EmojiText(
+            appLocalizations.deleteNodeBody(name),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (isSubLinked) ...[
+            const SizedBox(height: 8),
+            Text(
+              appLocalizations.deleteUnavailableAutoUpdateNote,
+              style: Theme.of(context).textTheme.labelSmall?.toLight,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+  if (confirmed != true || !context.mounted) {
+    return;
+  }
+
+  try {
+    final result = await _deleteDeadNodesFromProfile(ref, [name]);
+    var message = appLocalizations.deleteUnavailableDone(result.removed);
+    if (result.misses.isNotEmpty) {
+      message += ' · ${result.misses.first}';
+    }
+    globalState.showNotifier(message);
+  } on Object catch (e) {
+    globalState.showNotifier(e.formatError);
+  }
+}
+
+
 Future<_DeleteResult> _deleteDeadNodesFromProfile(
   WidgetRef ref,
   List<String> deadNames,
