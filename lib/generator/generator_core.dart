@@ -1970,8 +1970,15 @@ class GeneratorParams {
   /// User-Agent для скачивания провайдера. Панели по UA решают, что
   /// отдавать: v2ray-клиентам — полный список ссылок, clash-подобным —
   /// часто урезанный clash-набор, неизвестным UA — что попало.
-  /// Пусто — не отправлять заголовок (ядро пошлёт свой глобальный).
+  /// Заполняется пресетом клиента (см. kSubSpoofClients в
+  /// models/sub_spoof.dart) или вручную; пусто — не отправлять заголовок
+  /// (ядро пошлёт свой глобальный).
   final String providerUA;
+  /// X-HWID для провайдера: передаётся вместе с UA пресетов Happ/Incy
+  /// (панели с лимитом устройств считают обновления тем же устройством).
+  /// Генерируется один раз и хранится в маркере — «Пересобрать» сохраняет
+  /// тот же идентификатор. Пусто — заголовок не отправляется.
+  final String providerHwid;
   final List<Map<String, dynamic>> proxies;
   final List<List<String>> chains;
   /// Включённые категории правил (см. kSelectableCategories); «base»
@@ -2002,7 +2009,8 @@ class GeneratorParams {
     this.providerUrl = '',
     this.providerExclude = '',
     this.providerInterval = 86400,
-    this.providerUA = kDefaultProviderUA,
+    this.providerUA = '',
+    this.providerHwid = '',
     required this.proxies,
     this.chains = const [],
     this.ruleCategories = kSelectableCategories,
@@ -2034,10 +2042,10 @@ class GeneratorParams {
 
 const String kGeneratorMarkerLine = '# bettboxr-generator v1';
 
-/// User-Agent по умолчанию для скачивания провайдера. Маскировка под
-/// v2rayNG: панели отдают таким клиентам полный список ссылок, тогда
-/// как clash-подобным и неизвестным UA — часто урезанный набор.
-const String kDefaultProviderUA = 'v2rayNG/1.9.16';
+/// User-Agent по умолчанию НЕ задан принудительно: выбор маскировки
+/// (Happ / Incy / v2rayNG) — явный, чекбоксами в разделе «Настройки»
+/// генератора; пресеты UA и правило «кому нужен X-HWID» живут в
+/// models/sub_spoof.dart (kSubSpoofClients / kSubSpoofHwidClients).
 
 /// Имя группы резерва (fallback), генерируемой при включённом разделе
 /// «Резерв». Вставляется первой в список «🛡️ VPN», чтобы стать
@@ -2058,6 +2066,7 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
   'providerUrl': p.providerUrl,
   'providerInterval': p.providerInterval,
   'providerUA': p.providerUA,
+  'providerHwid': p.providerHwid,
   'proxies': p.proxies,
   'chains': p.chains,
   'ruleCategories': p.ruleCategories,
@@ -2108,7 +2117,8 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
     providerExclude: json['providerExclude'] as String? ?? '',
     providerUrl: json['providerUrl'] as String? ?? '',
     providerInterval: json['providerInterval'] as int? ?? 86400,
-    providerUA: json['providerUA'] as String? ?? kDefaultProviderUA,
+    providerUA: json['providerUA'] as String? ?? '',
+    providerHwid: json['providerHwid'] as String? ?? '',
     proxies: _jsonMapList(json['proxies']),
     chains: _jsonStrListList(json['chains']),
     ruleCategories: _jsonStrList(json['ruleCategories']),
@@ -2410,9 +2420,13 @@ String buildConfig(GeneratorParams p) {
           'url': urlTest,
           'interval': healthInterval,
         },
-        if (p.providerUA.trim().isNotEmpty)
+        if (p.providerUA.trim().isNotEmpty ||
+            p.providerHwid.trim().isNotEmpty)
           'header': {
-            'User-Agent': [p.providerUA.trim()],
+            if (p.providerUA.trim().isNotEmpty)
+              'User-Agent': [p.providerUA.trim()],
+            if (p.providerHwid.trim().isNotEmpty)
+              'X-HWID': [p.providerHwid.trim()],
           },
       };
       // ВАЖНО: ключ провайдера (sub1..subN) попадает только в 'use'.
@@ -2676,9 +2690,15 @@ String buildConfig(GeneratorParams p) {
         // Явный UA: без него ядро шлёт глобальный
         // "FlClash/ClashMetaForAndroid/…", и некоторые панели отдают
         // такому клиенту урезанный clash-набор вместо полного списка.
-        if (p.providerUA.trim().isNotEmpty)
+        // X-HWID идёт только пресетам, у которых панель его читает
+        // (Happ/Incy — см. kSubSpoofHwidClients).
+        if (p.providerUA.trim().isNotEmpty ||
+            p.providerHwid.trim().isNotEmpty)
           'header': {
-            'User-Agent': [p.providerUA.trim()],
+            if (p.providerUA.trim().isNotEmpty)
+              'User-Agent': [p.providerUA.trim()],
+            if (p.providerHwid.trim().isNotEmpty)
+              'X-HWID': [p.providerHwid.trim()],
           },
       },
     };

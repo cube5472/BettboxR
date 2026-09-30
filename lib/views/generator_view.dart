@@ -115,9 +115,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   final _linksController = TextEditingController();
   final _customRulesController = TextEditingController();
   final _providerUrlController = TextEditingController();
-  final _providerUaController = TextEditingController(
-    text: kDefaultProviderUA,
-  );
+  final _providerUaController = TextEditingController();
+  /// X-HWID для пресетов Happ/Incy (см. kSubSpoofHwidClients).
+  final _providerHwidController = TextEditingController();
+  /// Выбранный пресет маскировки UA: '' (нет) или ключ kSubSpoofClients
+  /// ('happ' / 'incy' / 'v2rayng'). Один чекбокс; ручной UA сбрасывает
+  /// выбор в «свой UA».
+  String _providerClient = '';
   final _urlTestController = TextEditingController(
     text: 'https://www.gstatic.com/generate_204',
   );
@@ -205,6 +209,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _customRulesController.dispose();
     _providerUrlController.dispose();
     _providerUaController.dispose();
+    _providerHwidController.dispose();
     _urlTestController.dispose();
     _mtuController.dispose();
     _defaultNsController.dispose();
@@ -249,6 +254,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerUrl': params.providerUrl,
       'providerInterval': params.providerInterval,
       'providerUA': params.providerUA,
+      'providerHwid': params.providerHwid,
       'reserveEnabled': params.reserveEnabled,
       'reserveSubscriptions': params.reserveSubscriptions,
       'reservePrimaryNode': params.proxies.any(
@@ -789,6 +795,58 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     return null;
   }
 
+  /// Тап по чекбоксу пресета маскировки (Happ / Incy / v2rayNG).
+  /// Чекбоксы работают как одиночный выбор: тап по выбранному снимает
+  /// его («свой UA»), тап по другому — переключает. Выбор проставляет
+  /// пресетный UA; для Happ/Incy один раз генерируется X-HWID.
+  void _handleProviderClientTap(String client) {
+    setState(() {
+      if (_providerClient == client) {
+        _providerClient = '';
+        _providerHwidController.clear();
+        return;
+      }
+      _providerClient = client;
+      _providerUaController.text = kSubSpoofClients[client] ?? '';
+      if (kSubSpoofHwidClients.contains(client)) {
+        if (_providerHwidController.text.trim().isEmpty) {
+          _providerHwidController.text = generateSubSpoofHwid();
+        }
+      } else {
+        // Пресет без hwid (v2rayNG): заголовок не должен остаться
+        // от предыдущего выбора — панель его не читает.
+        _providerHwidController.clear();
+      }
+    });
+  }
+
+  /// Ручная правка UA снимает выбор пресета, если текст перестал
+  /// совпадать с пресетным (поле становится «своим UA»).
+  void _handleProviderUaChanged(String value) {
+    final client = _providerClient;
+    if (client.isEmpty) {
+      return;
+    }
+    if (value.trim() != (kSubSpoofClients[client] ?? '').trim()) {
+      setState(() => _providerClient = '');
+    }
+  }
+
+  /// Восстановление пресета из шаблона/маркера: сначала по сохранённому
+  /// ключу, затем по совпадению UA со значением пресета (старые маркеры
+  /// ключа не содержат).
+  String _restoreProviderClient(String client, String ua) {
+    if (kSubSpoofClients.containsKey(client)) {
+      return client;
+    }
+    for (final entry in kSubSpoofClients.entries) {
+      if (entry.value.trim() == ua.trim()) {
+        return entry.key;
+      }
+    }
+    return '';
+  }
+
   String _buildYamlConfig() {
     final params = GeneratorParams(
       urlTest: _urlTestController.text,
@@ -802,6 +860,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       providerInterval:
           int.tryParse(_providerIntervalController.text) ?? 86400,
       providerUA: _providerUaController.text.trim(),
+      providerHwid: _providerHwidController.text.trim(),
       reserveEnabled: _reserveEnabled,
       reserveSubscriptions: _reserveSubs
           .map(
@@ -888,6 +947,8 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerUrl': _providerUrlController.text,
       'providerInterval': _providerIntervalController.text,
       'providerUA': _providerUaController.text,
+      'providerClient': _providerClient,
+      'providerHwid': _providerHwidController.text,
       'ruUnblock': _ruUnblock,
       'ruleCategories': _ruleCategories.entries
           .where((e) => e.value)
@@ -920,7 +981,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _providerIntervalController.text =
           data['providerInterval']?.toString() ?? '86400';
       _providerUaController.text =
-          data['providerUA']?.toString() ?? kDefaultProviderUA;
+          data['providerUA']?.toString() ?? '';
+      _providerHwidController.text =
+          data['providerHwid']?.toString() ?? '';
+      _providerClient = _restoreProviderClient(
+        data['providerClient']?.toString() ?? '',
+        _providerUaController.text,
+      );
       _ruUnblock = data['ruUnblock'] is bool ? data['ruUnblock'] as bool : true;
       // Совместимость: в шаблонах старой версии ключ назывался
       // providerSets и вёл набор вендоров — категориям оттуда брать
@@ -1717,21 +1784,81 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               ),
             ),
             const SizedBox(height: 8),
+            // Маскировка под клиент: одиночный выбор чекбоксами.
+            // Выбранный пресет подставляет свой UA в поле ниже; у Happ
+            // и Incy панель дополнительно читает X-HWID.
+            // Wrap (не Row): при увеличенном масштабе текста три
+            // чекбокса не влезают в строку — переносим на следующую.
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text(
+                  'Маскировка:',
+                  style: TextStyle(fontSize: 13),
+                ),
+                const SizedBox(width: 4),
+                for (final client in kSubSpoofClients.keys)
+                  InkWell(
+                    onTap: () => _handleProviderClientTap(client),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: _providerClient == client,
+                            onChanged: (_) =>
+                                _handleProviderClientTap(client),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Text(
+                            kSubSpoofClientLabels[client] ?? client,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
             TextField(
               controller: _providerUaController,
-              decoration: const InputDecoration(
+              onChanged: _handleProviderUaChanged,
+              decoration: InputDecoration(
                 labelText: 'User-Agent подписки',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 helperMaxLines: 2,
-                helperText:
-                    'Напр. v2rayNG/1.9.16 — панели отдают полный список',
+                helperText: _providerClient.isEmpty
+                    ? 'Пусто — ядро шлёт свой UA; выберите клиент выше '
+                        'или впишите свой'
+                    : 'Пресет «${kSubSpoofClientLabels[_providerClient] ?? _providerClient}»; '
+                        'можно вписать и свой UA',
               ),
             ),
+            if (kSubSpoofHwidClients.contains(_providerClient)) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _providerHwidController,
+                decoration: const InputDecoration(
+                  labelText: 'X-HWID подписки',
+                  border: OutlineInputBorder(),
+                  helperMaxLines: 2,
+                  helperText: 'Идентификатор устройства для панелей с '
+                      'лимитом устройств; генерируется сам и хранится '
+                      'в конфиге',
+                  suffixIcon: Icon(Icons.badge_outlined),
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             Text(
-              'Панели смотрят на User-Agent: под v2rayNG отдают полный '
-              'список ссылок, под clash-подобными — часто урезанный '
-              'набор. Очистите поле, чтобы ядро слало свой UA.',
+              'Чекбокс — маскировка под клиент: под v2rayNG панели отдают '
+              'полный список ссылок, Happ и Incy дополнительно передают '
+              'X-HWID. Снятие всех чекбоксов или очистка поля UA — ядро '
+              'шлёт свой User-Agent.',
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).hintColor,
