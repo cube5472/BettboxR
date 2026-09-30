@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:yaml/yaml.dart';
 
+import '../models/sub_spoof.dart';
 import 'generator_data.dart';
 
 // ---------------- JSON-данные ----------------
