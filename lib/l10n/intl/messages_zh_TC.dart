@@ -74,8 +74,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteNodeBody": dn4,
     "deleteNodeGroupTip": MessageLookupByLibrary.simpleMessage(
         "無法刪除分組，只能刪除節點。"),
-    "deleteNodeSelectedTip": MessageLookupByLibrary.simpleMessage(
-        "已選中的節點不會被刪除。"),
+    "deleteNodeSelectedNote": MessageLookupByLibrary.simpleMessage(
+        "該節點當前已被選中，刪除後其所在分組的選擇將重置。"),
     "deleteNodeTitle": MessageLookupByLibrary.simpleMessage("刪除節點"),
     "deleteUnavailable": MessageLookupByLibrary.simpleMessage("刪除不可用節點"),
     "deleteUnavailableAutoUpdateNote": MessageLookupByLibrary.simpleMessage(

@@ -522,6 +522,12 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
                 onDragStart: () => _autoScroller.start(),
                 onDragUpdate: _autoScroller.update,
                 onDragEnd: () => _autoScroller.stop(),
+                onHoldNoMove: () => deleteSingleNodeFlow(
+                      context,
+                      ref,
+                      widget.group,
+                      proxy,
+                    ),
                 child: ProxyCard(
                   testUrl: widget.group.testUrl,
                   groupType: widget.group.type,

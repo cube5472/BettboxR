@@ -462,6 +462,8 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
                               onDragStart: () => _autoScroller.start(),
                               onDragUpdate: _autoScroller.update,
                               onDragEnd: () => _autoScroller.stop(),
+                              onHoldNoMove: () =>
+                                  _handleDeleteNode(item.group, proxy),
                               child: ProxyCard(
                                 key: ValueKey(
                                   '${item.group.name}.${proxy.name}',

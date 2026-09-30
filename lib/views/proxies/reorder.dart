@@ -6,10 +6,16 @@ import 'package:flutter/material.dart';
 /// Обёртка карточки ноды: включает перетаскивание долгим нажатием.
 ///
 /// Порядок применяется в момент drop: при наведении подсвечивается цель,
-/// после отпускания вызывается [onReorder] (откуда, куда) и список
-/// перестраивается. Вне режима ручной сортировки ([enabled] == false)
+/// после отпускания вызывается [ProxyDragTile.onReorder] (откуда, куда) и
+/// список перестраивается. Вне режима ручной сортировки ([enabled] == false)
 /// ведёт себя как обычная карточка.
-class ProxyDragTile extends StatelessWidget {
+///
+/// [ProxyDragTile.onHoldNoMove]: «удержание без движения» — drag стартует по
+/// долгому нажатию, но если палец отпущен на месте (в пределах дрожания
+/// руки), это трактуется как долгое нажатие на карточку, а не как
+/// перетаскивание. Так в режиме ручной сортировки уживаются drag (удержал
+/// и повёл) и удаление ноды (удержал и отпустил).
+class ProxyDragTile extends StatefulWidget {
   final String proxyName;
   final Widget child;
   final bool enabled;
@@ -17,6 +23,7 @@ class ProxyDragTile extends StatelessWidget {
   final VoidCallback? onDragStart;
   final VoidCallback? onDragEnd;
   final ValueChanged<Offset>? onDragUpdate;
+  final VoidCallback? onHoldNoMove;
 
   const ProxyDragTile({
     super.key,
@@ -27,12 +34,35 @@ class ProxyDragTile extends StatelessWidget {
     this.onDragStart,
     this.onDragEnd,
     this.onDragUpdate,
+    this.onHoldNoMove,
   });
 
   @override
+  State<ProxyDragTile> createState() => _ProxyDragTileState();
+}
+
+class _ProxyDragTileState extends State<ProxyDragTile> {
+  /// Порог «палец не двигался»: отпускание ближе этого расстояния от точки
+  /// нажатия считается удержанием на месте (жест удаления), а не переносом.
+  static const double _holdSlop = 12.0;
+
+  Offset? _downPosition;
+
+  void _handleDragFinished(Offset globalPosition) {
+    widget.onDragEnd?.call();
+    final down = _downPosition;
+    final onHoldNoMove = widget.onHoldNoMove;
+    if (down != null &&
+        onHoldNoMove != null &&
+        (globalPosition - down).distance < _holdSlop) {
+      onHoldNoMove();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (!enabled) {
-      return child;
+    if (!widget.enabled) {
+      return widget.child;
     }
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -42,15 +72,16 @@ class ProxyDragTile extends StatelessWidget {
             ? Size(constraints.maxWidth, constraints.maxHeight)
             : null;
         return DragTarget<String>(
-          onWillAcceptWithDetails: (details) => details.data != proxyName,
+          onWillAcceptWithDetails: (details) =>
+              details.data != widget.proxyName,
           onAcceptWithDetails: (details) =>
-              onReorder?.call(details.data, proxyName),
+              widget.onReorder?.call(details.data, widget.proxyName),
           builder: (context, candidateData, rejectedData) {
             final isHovered = candidateData.isNotEmpty;
             final tile = isHovered
                 ? Stack(
                     children: [
-                      child,
+                      widget.child,
                       Positioned.fill(
                         child: IgnorePointer(
                           child: Container(
@@ -67,31 +98,37 @@ class ProxyDragTile extends StatelessWidget {
                       ),
                     ],
                   )
-                : child;
-            Widget wrap(Widget widget) {
-              if (tileSize == null) return widget;
-              return SizedBox.fromSize(size: tileSize, child: widget);
+                : widget.child;
+            Widget wrap(Widget w) {
+              if (tileSize == null) return w;
+              return SizedBox.fromSize(size: tileSize, child: w);
             }
 
             return LongPressDraggable<String>(
-              data: proxyName,
+              data: widget.proxyName,
               maxSimultaneousDrags: 1,
               dragAnchorStrategy: childDragAnchorStrategy,
-              onDragStarted: onDragStart,
+              onDragStarted: widget.onDragStart,
               onDragUpdate: (details) =>
-                  onDragUpdate?.call(details.globalPosition),
-              onDragEnd: (_) => onDragEnd?.call(),
-              onDraggableCanceled: (_, _) => onDragEnd?.call(),
+                  widget.onDragUpdate?.call(details.globalPosition),
+              onDragEnd: (details) => _handleDragFinished(details.offset),
+              onDraggableCanceled: (_, offset) =>
+                  _handleDragFinished(offset),
               feedback: wrap(
                 Material(
                   color: Colors.transparent,
                   child: _DragFeedbackShadow(
-                    child: Opacity(opacity: 0.95, child: child),
+                    child: Opacity(opacity: 0.95, child: widget.child),
                   ),
                 ),
               ),
-              childWhenDragging: wrap(Opacity(opacity: 0.45, child: child)),
-              child: wrap(tile),
+              childWhenDragging: wrap(
+                Opacity(opacity: 0.45, child: widget.child),
+              ),
+              child: Listener(
+                onPointerDown: (event) => _downPosition = event.position,
+                child: wrap(tile),
+              ),
             );
           },
         );

@@ -6148,11 +6148,13 @@ class AppLocalizations {
     );
   }
 
-  /// `The selected node is not deleted.`
-  String get deleteNodeSelectedTip {
+  /// `The node is currently selected — after deletion the selection in its
+  /// group will reset.`
+  String get deleteNodeSelectedNote {
     return Intl.message(
-      'The selected node is not deleted.',
-      name: 'deleteNodeSelectedTip',
+      'The node is currently selected — after deletion the selection in '
+      'its group will reset.',
+      name: 'deleteNodeSelectedNote',
       desc: '',
       args: [],
     );

@@ -81,8 +81,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteNodeBody": dn4,
     "deleteNodeGroupTip": MessageLookupByLibrary.simpleMessage(
         "Groups cannot be deleted — only nodes."),
-    "deleteNodeSelectedTip": MessageLookupByLibrary.simpleMessage(
-        "The selected node is not deleted."),
+    "deleteNodeSelectedNote": MessageLookupByLibrary.simpleMessage(
+        "The node is currently selected — after deletion the selection in its group will reset."),
     "deleteNodeTitle": MessageLookupByLibrary.simpleMessage("Delete node"),
     "deleteUnavailable": MessageLookupByLibrary.simpleMessage("Delete unavailable nodes"),
     "deleteUnavailableAutoUpdateNote": MessageLookupByLibrary.simpleMessage(

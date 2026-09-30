@@ -244,12 +244,15 @@ class _DeleteResult {
 }
 
 /// Удаление ОДНОЙ ноды по удержанию карточки: работает и для живых нод,
-/// не только для мёртвых. Защиты те же, что у массового удаления:
-/// группы и выбранная нода не трогаются; при подтверждении тот же
-/// механизм ([_deleteDeadNodesFromProfile]) с синком маркера генератора.
+/// не только для мёртвых. Группы не удаляются (это другой механизм);
+/// выбранная нода удаляется с предупреждением — после удаления выбор
+/// в группах, где была выбрана эта нода, сбрасывается. При подтверждении
+/// тот же механизм ([_deleteDeadNodesFromProfile]) с синком маркера
+/// генератора.
 ///
-/// В режиме ручной сортировки удержание занято перетаскиванием — там
-/// удаление недоступно (коллбэк просто не передаётся из списка).
+/// В режиме ручной сортировки удаление срабатывает по «удержанию без
+/// движения» (см. ProxyDragTile.onHoldNoMove), а в остальных режимах —
+/// по обычному долгому нажатию на карточку.
 Future<void> deleteSingleNodeFlow(
   BuildContext context,
   WidgetRef ref,
@@ -266,10 +269,7 @@ Future<void> deleteSingleNodeFlow(
   if (now != null && now.isNotEmpty) {
     selectedNames.add(now);
   }
-  if (selectedNames.contains(name)) {
-    globalState.showNotifier(appLocalizations.deleteNodeSelectedTip);
-    return;
-  }
+  final isSelected = selectedNames.contains(name);
   final profile = ref.read(currentProfileProvider);
   final isSubLinked = (profile?.url.isNotEmpty ?? false);
 
@@ -299,6 +299,13 @@ Future<void> deleteSingleNodeFlow(
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
           ),
+          if (isSelected) ...[
+            const SizedBox(height: 8),
+            Text(
+              appLocalizations.deleteNodeSelectedNote,
+              style: Theme.of(context).textTheme.labelSmall?.toLight,
+            ),
+          ],
           if (isSubLinked) ...[
             const SizedBox(height: 8),
             Text(
@@ -316,6 +323,15 @@ Future<void> deleteSingleNodeFlow(
 
   try {
     final result = await _deleteDeadNodesFromProfile(ref, [name]);
+    if (result.removed > 0 && isSelected) {
+      // Выбор в группах, где была выбрана удалённая нода, сбрасываем,
+      // иначе UI будет показывать выделение несуществующей карточки.
+      ref.read(selectedMapProvider).forEach((groupName, selectedName) {
+        if (selectedName == name) {
+          globalState.appController.updateCurrentSelectedMap(groupName, '');
+        }
+      });
+    }
     var message = appLocalizations.deleteUnavailableDone(result.removed);
     if (result.misses.isNotEmpty) {
       message += ' · ${result.misses.first}';
