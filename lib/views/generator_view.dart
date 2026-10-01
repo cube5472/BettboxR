@@ -912,6 +912,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       providerHwid: _providerHwidController.text.trim(),
       providerClient: _providerClient,
       providerDeviceModel: _deviceCtx?.model ?? '',
+      providerDeviceModelShort: _deviceCtx?.modelShort ?? '',
       providerVerOs: _deviceCtx?.sdkInt ?? 0,
       providerDeviceLocale: _deviceCtx?.localeName ?? '',
       reserveEnabled: _reserveEnabled,
