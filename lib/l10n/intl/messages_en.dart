@@ -159,7 +159,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "HWID: 10-64 characters (A-Z a-z 0-9 = -)",
     ),
     "subSpoofHint": MessageLookupByLibrary.simpleMessage(
-      "When updating this subscription, the app will identify itself as the selected client (User-Agent and HWID headers). The panel must serve the config in Clash/Mihomo format.",
+      "When updating this subscription, the app identifies itself as the selected client (User-Agent and X-Hwid headers). If the panel binds devices by X-Hwid and the limit is reached, paste the X-Hwid of a client that already works on this panel (e.g. neko+) or reset devices in the bot/panel.",
     ),
     "ageKeyPairGeneratedSuccess": MessageLookupByLibrary.simpleMessage(
       "X25519 Key pair generated, please keep it safe",
