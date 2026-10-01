@@ -115,19 +115,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   final _linksController = TextEditingController();
   final _customRulesController = TextEditingController();
   final _providerUrlController = TextEditingController();
-  final _providerUaController = TextEditingController();
-  /// X-Hwid для пресетов (см. kSubSpoofHwidClients).
-  final _providerHwidController = TextEditingController();
-  /// Выбранный пресет маскировки UA: '' (нет) или ключ kSubSpoofClients
-  /// ('happ' / 'v2raytun' / 'incy'). Один чекбокс; ручной UA сбрасывает
-  /// выбор в «свой UA».
-  String _providerClient = '';
-  /// Сведения об устройстве для device-заголовков отпечатка.
-  /// Резолвятся один раз лениво (см. _ensureDeviceContext).
-  SpoofDeviceContext? _deviceCtx;
-  Future<void> _ensureDeviceContext() async {
-    _deviceCtx ??= await resolveSpoofDeviceContext();
-  }
   final _urlTestController = TextEditingController(
     text: 'https://www.gstatic.com/generate_204',
   );
@@ -214,8 +201,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _linksController.dispose();
     _customRulesController.dispose();
     _providerUrlController.dispose();
-    _providerUaController.dispose();
-    _providerHwidController.dispose();
     _urlTestController.dispose();
     _mtuController.dispose();
     _defaultNsController.dispose();
@@ -259,9 +244,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerMode': params.providerMode,
       'providerUrl': params.providerUrl,
       'providerInterval': params.providerInterval,
-      'providerUA': params.providerUA,
-      'providerHwid': params.providerHwid,
-      'providerClient': params.providerClient,
       'reserveEnabled': params.reserveEnabled,
       'reserveSubscriptions': params.reserveSubscriptions,
       'reservePrimaryNode': params.proxies.any(
@@ -344,46 +326,54 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   }
 
   Future<String> _fetchText(String url) async {
-    // Маскировка скачивания подписок из раздела 1: применяем ТЕКУЩИЙ
-    // выбор раздела «Настройки» — пресет (UA), X-Hwid и device-заголовки
-    // — ровно тот же отпечаток, что уходит в провайдер
-    // (buildProviderSpoofHeaders). Раньше сюда уходил захардкоженный
-    // clash UA: панели с проверкой клиента отвечали статическому режиму
-    // отказом, и «ноды не загружались», хотя provider-режим работал.
+    // Подмена клиента — настройка ПРИЛОЖЕНИЯ (Настройки → Общие →
+    // «Подмена клиента подписок»), генератор для неё отдельного UI не
+    // имеет. Включённая глобальная подмена действует и на скачивание
+    // подписок здесь; выключенная — обычный clash-запрос.
     var headers = <String, String>{'User-Agent': 'clash.meta/1.19.0'};
     try {
-      await _ensureDeviceContext();
-      final ua = _providerUaController.text.trim();
-      if (ua.isNotEmpty) {
-        headers['User-Agent'] = ua;
-      }
-      final client = _providerClient;
-      var hwid = formatSubSpoofHwid(
-        client,
-        _providerHwidController.text.trim(),
-      );
-      if (hwid.isEmpty && kSubSpoofHwidClients.contains(client)) {
-        hwid = formatSubSpoofHwid(client, await generateSubSpoofHwid());
-      }
-      if (hwid.isNotEmpty) {
-        headers['X-Hwid'] = hwid;
-      }
-      final dev = _deviceCtx;
-      if (client.isNotEmpty &&
-          (dev?.model.isNotEmpty ?? false) &&
-          (dev?.sdkInt ?? 0) > 0) {
-        headers.addAll(buildSpoofExtraHeaders(client, dev!));
+      final globalSpoof = await SubSpoofStore.getGlobal();
+      final spoofHeaders = await globalSpoof.resolveHeaders();
+      if (spoofHeaders != null) {
+        headers = spoofHeaders;
       }
     } catch (_) {}
-    final response = await _dio.get<String>(
-      url,
-      options: Options(
-        responseType: ResponseType.plain,
-        followRedirects: true,
-        validateStatus: (code) => code != null && code >= 200 && code < 400,
-        headers: headers,
-      ),
-    );
+    Response<String> response;
+    try {
+      response = await _dio.get<String>(
+        url,
+        options: Options(
+          responseType: ResponseType.plain,
+          followRedirects: true,
+          validateStatus: (code) => code != null && code >= 200 && code < 400,
+          headers: headers,
+        ),
+      );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        rethrow;
+      }
+      // Резервный путь: прямой защищённый фетч мимо туннеля
+      // (VpnService.protect) — как в request.dart. Обычный путь может
+      // упасть на сети/DNS ядра; подписка должна скачиваться всегда.
+      final native = await protectedFetchNative(url, headers);
+      if (native == null || native['error'] != null) {
+        rethrow;
+      }
+      final status = (native['status'] as num?)?.toInt() ?? 0;
+      if (status < 200 || status >= 400) {
+        rethrow;
+      }
+      final body = utf8.decode(
+        base64Decode('${native['body'] ?? ''}'),
+        allowMalformed: true,
+      );
+      response = Response<String>(
+        requestOptions: RequestOptions(path: url),
+        data: body,
+        statusCode: status,
+      );
+    }
     final body = response.data ?? '';
     if (body.trim().isEmpty) {
       throw Exception('сервер вернул пустой ответ');
@@ -643,14 +633,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _showError(error);
       return;
     }
-    await _ensureProviderHwidFilled();
     final loading = ref.read(loadingProvider.notifier);
     loading.value = true;
     String yaml;
     try {
-      // Device-заголовки отпечатка резолвятся до сборки (синхронный
-      // buildConfig их получает из params).
-      await _ensureDeviceContext();
       yaml = _buildYamlConfig();
     } on Object catch (e) {
       if (!mounted) return;
@@ -713,7 +699,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _showError(error);
       return;
     }
-    await _ensureProviderHwidFilled();
     final confirmed = await globalState.showMessage(
       title: 'Пересобрать конфиг?',
       message: TextSpan(
@@ -729,7 +714,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     loading.value = true;
     appController.setProfile(profile.copyWith(isUpdating: true));
     try {
-      await _ensureDeviceContext();
       final yaml = _buildYamlConfig();
       final oldFile = await profile.getFile();
       final oldContent = await oldFile.readAsString();
@@ -839,92 +823,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     return null;
   }
 
-  /// Тап по чекбоксу пресета маскировки (Happ / v2RayTun / Incy).
-  /// Чекбоксы работают как одиночный выбор: тап по выбранному снимает
-  /// его («свой UA»), тап по другому — переключает. Выбор проставляет
-  /// пресетный UA; X-Hwid генерируется один раз (нужен всем пресетам)
-  /// и СРАЗУ приводится к формату пресета: в поле лежит ГОТОВЫЙ
-  /// заголовок — уйдёт в панель как есть, а ручная правка пользователя
-  /// при отправке не перезапишется.
-  Future<void> _handleProviderClientTap(String client) async {
-    final needsHwid = kSubSpoofHwidClients.contains(client);
-    final auto = needsHwid ? await generateSubSpoofHwid() : '';
-    if (!mounted) return;
-    setState(() {
-      if (_providerClient == client) {
-        _providerClient = '';
-        _providerHwidController.clear();
-        return;
-      }
-      _providerClient = client;
-      _providerUaController.text = kSubSpoofClients[client] ?? '';
-      if (needsHwid) {
-        if (_providerHwidController.text.trim().isEmpty) {
-          _providerHwidController.text = formatSubSpoofHwid(client, auto);
-        }
-      } else {
-        // Пресет без hwid: заголовок не должен остаться от
-        // предыдущего выбора — панель его не читает.
-        _providerHwidController.clear();
-      }
-    });
-  }
-
-  /// Перед сборкой параметров: если выбран пресет с hwid, а поле
-  /// пусто (например, конфиг собран старой версией) — заполняем
-  /// сразу в формате пресета, чтобы X-Hwid гарантированно уехал
-  /// в провайдер.
-  Future<void> _ensureProviderHwidFilled() async {
-    if (_providerClient.isEmpty ||
-        !kSubSpoofHwidClients.contains(_providerClient)) {
-      return;
-    }
-    if (_providerHwidController.text.trim().isNotEmpty) {
-      return;
-    }
-    _providerHwidController.text = formatSubSpoofHwid(
-      _providerClient,
-      await generateSubSpoofHwid(),
-    );
-  }
-
-  /// Ручная правка UA снимает выбор пресета, если текст перестал
-  /// совпадать с пресетным (поле становится «своим UA»).
-  void _handleProviderUaChanged(String value) {
-    final client = _providerClient;
-    if (client.isEmpty) {
-      return;
-    }
-    if (value.trim() != (kSubSpoofClients[client] ?? '').trim()) {
-      setState(() => _providerClient = '');
-    }
-  }
-
-  /// Восстановление пресета из шаблона/маркера: сначала по сохранённому
-  /// ключу (с миграцией старых имён), затем по совпадению UA — и с
-  /// актуальными пресетами, и со старыми их строками (маркеры прежних
-  /// версий хранят «Happ/4.6.1/», «v2rayNG/2.3.9», «INCY/1.0.0»).
-  String _restoreProviderClient(String client, String ua) {
-    final normalized = normalizeSubSpoofClient(client);
-    if (normalized.isNotEmpty) {
-      return normalized;
-    }
-    final trimmed = ua.trim();
-    for (final entry in kSubSpoofClients.entries) {
-      if (entry.value.trim() == trimmed) {
-        return entry.key;
-      }
-    }
-    // Старые пресетные UA тоже опознаём — «Пересобрать» и шаблоны
-    // не должны терять маскировку после обновления приложения.
-    for (final entry in kSubSpoofLegacyUa.entries) {
-      if (entry.key == trimmed) {
-        return entry.value;
-      }
-    }
-    return '';
-  }
-
   String _buildYamlConfig() {
     final params = GeneratorParams(
       urlTest: _urlTestController.text,
@@ -937,13 +835,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       providerUrl: _providerUrlController.text,
       providerInterval:
           int.tryParse(_providerIntervalController.text) ?? 86400,
-      providerUA: _providerUaController.text.trim(),
-      providerHwid: _providerHwidController.text.trim(),
-      providerClient: _providerClient,
-      providerDeviceModel: _deviceCtx?.model ?? '',
-      providerDeviceModelShort: _deviceCtx?.modelShort ?? '',
-      providerVerOs: _deviceCtx?.sdkInt ?? 0,
-      providerDeviceLocale: _deviceCtx?.localeName ?? '',
       reserveEnabled: _reserveEnabled,
       reserveSubscriptions: _reserveSubs
           .map(
@@ -1029,9 +920,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'providerMode': _providerMode,
       'providerUrl': _providerUrlController.text,
       'providerInterval': _providerIntervalController.text,
-      'providerUA': _providerUaController.text,
-      'providerClient': _providerClient,
-      'providerHwid': _providerHwidController.text,
       'ruUnblock': _ruUnblock,
       'ruleCategories': _ruleCategories.entries
           .where((e) => e.value)
@@ -1063,25 +951,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _providerUrlController.text = data['providerUrl']?.toString() ?? '';
       _providerIntervalController.text =
           data['providerInterval']?.toString() ?? '86400';
-      _providerUaController.text =
-          data['providerUA']?.toString() ?? '';
-      _providerHwidController.text =
-          data['providerHwid']?.toString() ?? '';
-      _providerClient = _restoreProviderClient(
-        data['providerClient']?.toString() ?? '',
-        _providerUaController.text,
-      );
-      // Автообновление пресетного UA: маркеры/шаблоны прежних версий
-      // хранят устаревшие строки (Happ/4.6.1/ и т.п.) — подменяем
-      // актуальным пресетом, чтобы отпечаток не отставал от реального
-      // клиента. Кастомный UA (пресет снят) не трогаем.
-      if (_providerClient.isNotEmpty &&
-          _providerUaController.text.trim() !=
-              (kSubSpoofClients[_providerClient] ?? '').trim() &&
-          kSubSpoofLegacyUa[_providerUaController.text.trim()] ==
-              _providerClient) {
-        _providerUaController.text = kSubSpoofClients[_providerClient] ?? '';
-      }
       _ruUnblock = data['ruUnblock'] is bool ? data['ruUnblock'] as bool : true;
       // Совместимость: в шаблонах старой версии ключ назывался
       // providerSets и вёл набор вендоров — категориям оттуда брать
@@ -1877,84 +1746,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 helperText: 'Пусто — сутки (86400)',
               ),
             ),
-            const SizedBox(height: 8),
-            // Маскировка под клиент: одиночный выбор чекбоксами.
-            // Выбранный пресет подставляет свой UA в поле ниже и задаёт
-            // device-заголовки отпечатка; X-Hwid нужен всем пресетам.
-            // Wrap (не Row): при увеличенном масштабе текста три
-            // чекбокса не влезают в строку — переносим на следующую.
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const Text(
-                  'Маскировка:',
-                  style: TextStyle(fontSize: 13),
-                ),
-                const SizedBox(width: 4),
-                for (final client in kSubSpoofClients.keys)
-                  InkWell(
-                    onTap: () => _handleProviderClientTap(client),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Checkbox(
-                            value: _providerClient == client,
-                            onChanged: (_) =>
-                                _handleProviderClientTap(client),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          Text(
-                            kSubSpoofClientLabels[client] ?? client,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            TextField(
-              controller: _providerUaController,
-              onChanged: _handleProviderUaChanged,
-              decoration: InputDecoration(
-                labelText: 'User-Agent подписки',
-                border: const OutlineInputBorder(),
-                // 3 строки: при увеличенном шрифте хелпер с описанием
-                // пресета занимает до трёх строк — не обрезать.
-                helperMaxLines: 3,
-                helperText: _providerClient.isEmpty
-                    ? 'Пусто — ядро шлёт свой UA; выберите клиент выше '
-                        'или впишите свой'
-                    : 'Пресет «${kSubSpoofClientLabels[_providerClient] ?? _providerClient}»: '
-                        'панель отдаёт полный список ссылок и заголовок '
-                        'X-Hwid; можно вписать и свой UA',
-              ),
-            ),
-            if (kSubSpoofHwidClients.contains(_providerClient)) ...[
-              const SizedBox(height: 8),
-              TextField(
-                controller: _providerHwidController,
-                decoration: const InputDecoration(
-                  labelText: 'X-Hwid подписки',
-                  border: OutlineInputBorder(),
-                  helperMaxLines: 3,
-                  helperText: 'Стабильный id устройства (аналог тумблера '
-                      'HWID в neko+). Значение с панели или другого '
-                      'клиента уйдёт без изменений',
-                  suffixIcon: Icon(Icons.badge_outlined),
-                ),
-              ),
-            ],
-            // Пояснение про пресеты живёт в helperText поля UA выше:
-            // отдельный Text без отступа снизу наезжал на поле
-            // «URL для проверки доступности» — плавающий лейбл
-            // OutlineInputBorder выступает над верхней рамкой поля,
-            // и при нулевом зазоре он накладывался на текст.
+            // Заголовки подмены клиента (UA/X-Hwid/device) в генераторе
+            // не настраиваются: подмена — глобальная настройка приложения
+            // (Настройки → Общие → «Подмена клиента подписок») и
+            // применяется ко всем подпискам автоматически.
             const SizedBox(height: 8),
           ],
           TextField(

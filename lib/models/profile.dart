@@ -192,9 +192,9 @@ extension ProfileExtension on Profile {
 
   Future<Profile> update({bool validate = true}) async {
     // Подмена клиента подписки (User-Agent/X-Hwid + device-заголовки) —
-    // настройки хранятся отдельно от модели профиля
-    // (SharedPreferences, ключ sub_spoof_map).
-    final subSpoof = await SubSpoofStore.get(id);
+    // индивидуальная настройка профиля, иначе глобальная клиентская
+    // (Настройки → Общие → «Подмена клиента подписок»).
+    final subSpoof = await resolveEffectiveSubSpoof(id);
     final response = await request.getFileResponseForUrl(
       url,
       extraHeaders: await subSpoof.resolveHeaders(),
@@ -219,6 +219,15 @@ extension ProfileExtension on Profile {
         '(X-Hwid-Max-Devices-Reached). Сбросьте устройства в боте/панели '
         'или впишите в подмене тот же X-Hwid, что у уже работающего '
         'клиента (например neko+)',
+      );
+    }
+    final statusCode = response.statusCode ?? 0;
+    if (statusCode >= 400) {
+      throw Exception(
+        'панель ответила отказом HTTP $statusCode. При включённой '
+        'подмене это обычно значит: пресет клиента не принят '
+        '(попробуйте другой), X-Hwid отклонён (впишите значение '
+        'работающего клиента) либо ссылка недействительна',
       );
     }
     final disposition = response.headers['content-disposition']?.firstOrNull;
@@ -431,7 +440,7 @@ Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
 Future<String> _buildSubProviderWrapper(Profile profile) async {
   Map<String, String>? headers;
   try {
-    final spoof = await SubSpoofStore.get(profile.id);
+    final spoof = await resolveEffectiveSubSpoof(profile.id);
     headers = await spoof.resolveHeaders();
   } catch (_) {}
   final b = StringBuffer()

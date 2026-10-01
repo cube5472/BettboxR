@@ -823,6 +823,41 @@ class GlobalState {
       }
     }
 
+    // Клиентская подмена при скачивании подписок (профиль > глобальная
+    // настройка из Настроек): заголовки проставляются во ВСЕ HTTP-
+    // провайдеры при КАЖДОМ применении профиля — подмена живёт в
+    // настройках клиента, а не в конфиге, и меняется одним тумблером
+    // без пересборки. Вшитые в конфиг заголовки перебираются, когда
+    // подмена реально включена; прочие заголовки провайдера
+    // (например Authorization) сохраняются.
+    try {
+      final spoof = await resolveEffectiveSubSpoof(targetProfile.id);
+      final spoofHeaders = await spoof.resolveHeaders();
+      if (spoofHeaders != null && spoofHeaders.isNotEmpty) {
+        final providers = rawConfig['proxy-providers'];
+        if (providers is Map) {
+          for (final key in providers.keys.toList()) {
+            final provider = providers[key];
+            if (provider is! Map || provider['type'] != 'http') {
+              continue;
+            }
+            final providerUrl = '${provider['url'] ?? ''}';
+            if (!providerUrl.startsWith('http://') &&
+                !providerUrl.startsWith('https://')) {
+              continue;
+            }
+            final headerNode = provider['header'] is Map
+                ? (provider['header'] as Map).cast<String, dynamic>()
+                : <String, dynamic>{};
+            spoofHeaders.forEach((name, value) {
+              headerNode[name] = [value];
+            });
+            provider['header'] = headerNode;
+          }
+        }
+      }
+    } catch (_) {}
+
     if (rawConfig['rule-providers'] != null) {
       final ruleProviders = rawConfig['rule-providers'] as Map;
       for (final key in ruleProviders.keys) {

@@ -6,7 +6,6 @@ import 'dart:math';
 
 import 'package:yaml/yaml.dart';
 
-import '../models/sub_spoof.dart';
 import 'generator_data.dart';
 
 // ---------------- JSON-данные ----------------
@@ -1968,32 +1967,11 @@ class GeneratorParams {
   /// ноды. Пусто — фильтра нет.
   final String providerExclude;
   final int providerInterval;
-  /// User-Agent для скачивания провайдера. Панели по UA решают, что
-  /// отдавать: v2ray-клиентам — полный список ссылок, clash-подобным —
-  /// часто урезанный clash-набор, неизвестным UA — что попало.
-  /// Заполняется пресетом клиента (см. kSubSpoofClients в
-  /// models/sub_spoof.dart) или вручную; пусто — не отправлять заголовок
-  /// (ядро пошлёт свой глобальный).
-  final String providerUA;
-  /// X-Hwid для провайдера: передаётся с пресетами Happ/Incy/v2RayTun
-  /// (панели с лимитом устройств считают обновления тем же устройством).
-  /// Генерируется один раз и хранится в маркере — «Пересобрать» сохраняет
-  /// тот же идентификатор. Пусто — заголовок не отправляется.
-  final String providerHwid;
-  /// Выбранный пресет маскировки (ключ kSubSpoofClients): определяет
-  /// device-заголовки и формат X-Hwid. Пусто — пресет не выбран.
-  final String providerClient;
-  /// Сведения об устройстве для device-заголовков отпечатка
-  /// (X-Device-Model / X-Ver-Os / X-Device-Locale). Резолвятся один раз
-  /// при сборке и хранятся в маркере, чтобы «Пересобрать» давал те же
-  /// заголовки. verOs = 0 — не резолвились (не Android/ошибка).
-  final String providerDeviceModel;
-
-  /// Только модель (Build.MODEL) — референсный клиент шлёт её в
-  /// X-Device-Model для пресета Happ.
-  final String providerDeviceModelShort;
-  final int providerVerOs;
-  final String providerDeviceLocale;
+  // Заголовки подмены клиента (UA / X-Hwid / device) в параметры
+  // генератора НЕ входят: подмена — настройка приложения
+  // (Настройки → Общие → «Подмена клиента подписок»), применяется
+  // ко всем http-провайдерам при применении профиля (state.dart) и к
+  // клиентским скачиваниям подписок (request.dart / profile.dart).
   final List<Map<String, dynamic>> proxies;
   final List<List<String>> chains;
   /// Включённые категории правил (см. kSelectableCategories); «base»
@@ -2024,13 +2002,6 @@ class GeneratorParams {
     this.providerUrl = '',
     this.providerExclude = '',
     this.providerInterval = 86400,
-    this.providerUA = '',
-    this.providerHwid = '',
-    this.providerClient = '',
-    this.providerDeviceModel = '',
-    this.providerDeviceModelShort = '',
-    this.providerVerOs = 0,
-    this.providerDeviceLocale = '',
     required this.proxies,
     this.chains = const [],
     this.ruleCategories = kSelectableCategories,
@@ -2062,65 +2033,10 @@ class GeneratorParams {
 
 const String kGeneratorMarkerLine = '# bettboxr-generator v1';
 
-/// User-Agent по умолчанию НЕ задан принудительно: выбор маскировки
-/// (Happ / v2RayTun / Incy) — явный, чекбоксами в разделе «Настройки»
-/// генератора; пресеты UA, форматы X-Hwid и device-заголовки живут
-/// в models/sub_spoof.dart.
-
 /// Имя группы резерва (fallback), генерируемой при включённом разделе
 /// «Резерв». Вставляется первой в список «🛡️ VPN», чтобы стать
 /// выбором по умолчанию.
 const String kReserveGroupName = '🆘 Резерв';
-
-/// Заголовки proxy-provider по отпечатку референсного клиента:
-/// UA пресета + X-Hwid в формате пресета (см. formatSubSpoofHwid) +
-/// device-заголовки (X-Device-Model/X-Ver-Os/…). Отдаётся в mihomo-
-/// формате: имя -> список значений. Пустой map — не добавлять 'header'.
-Map<String, dynamic> buildProviderSpoofHeaders(GeneratorParams p) {
-  final ua = p.providerUA.trim();
-  final client = p.providerClient;
-  final headers = <String, dynamic>{};
-  if (ua.isNotEmpty) {
-    headers['User-Agent'] = [ua];
-  }
-  final hwid = formatSubSpoofHwid(client, p.providerHwid);
-  if (hwid.isNotEmpty) {
-    headers['X-Hwid'] = [hwid];
-  }
-  final devReady = client.isNotEmpty &&
-      p.providerDeviceModel.isNotEmpty &&
-      p.providerVerOs > 0;
-  if (devReady) {
-    final locale = p.providerDeviceLocale;
-    final language = locale.split('_').first;
-    // Референс для Happ шлёт голую модель (Build.MODEL), для
-    // v2raytun/incy — «производитель модель».
-    final happModel = p.providerDeviceModelShort.isNotEmpty
-        ? p.providerDeviceModelShort
-        : p.providerDeviceModel;
-    if (client == 'happ') {
-      headers['X-Device-Model'] = [happModel];
-      headers['X-Ver-Os'] = ['${p.providerVerOs}'];
-      headers['X-Device-Os'] = ['Android'];
-      headers['X-Device-Locale'] = [language];
-    } else if (client == 'v2raytun') {
-      headers['X-App-Version'] = ['5.25.80'];
-      headers['X-Device-Model'] = [p.providerDeviceModel];
-      headers['X-Ver-Os'] = ['Android ${p.providerVerOs}'];
-      headers['X-Device-Os'] = ['Android'];
-    } else if (client == 'incy') {
-      headers['Accept'] = ['*/*'];
-      headers['Accept-Language'] = [locale.replaceAll('_', '-')];
-      headers['X-Client'] = ['INCY'];
-      headers['X-Device-Locale'] = [locale];
-      headers['X-App-Version'] = ['3.4.3'];
-      headers['X-Device-Model'] = [p.providerDeviceModel];
-      headers['X-Ver-Os'] = ['${p.providerVerOs}'];
-      headers['X-Device-Os'] = ['Android'];
-    }
-  }
-  return headers;
-}
 
 const String kGeneratorParamsPrefix = '# bettboxr-params: ';
 
@@ -2135,13 +2051,6 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
   'providerExclude': p.providerExclude,
   'providerUrl': p.providerUrl,
   'providerInterval': p.providerInterval,
-  'providerUA': p.providerUA,
-  'providerHwid': p.providerHwid,
-  'providerClient': p.providerClient,
-  'providerDeviceModel': p.providerDeviceModel,
-  'providerDeviceModelShort': p.providerDeviceModelShort,
-  'providerVerOs': p.providerVerOs,
-  'providerDeviceLocale': p.providerDeviceLocale,
   'proxies': p.proxies,
   'chains': p.chains,
   'ruleCategories': p.ruleCategories,
@@ -2192,15 +2101,6 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
     providerExclude: json['providerExclude'] as String? ?? '',
     providerUrl: json['providerUrl'] as String? ?? '',
     providerInterval: json['providerInterval'] as int? ?? 86400,
-    providerUA: json['providerUA'] as String? ?? '',
-    providerHwid: json['providerHwid'] as String? ?? '',
-    providerClient:
-        normalizeSubSpoofClient('${json['providerClient'] ?? ''}'),
-    providerDeviceModel: json['providerDeviceModel'] as String? ?? '',
-    providerDeviceModelShort:
-        json['providerDeviceModelShort'] as String? ?? '',
-    providerVerOs: json['providerVerOs'] as int? ?? 0,
-    providerDeviceLocale: json['providerDeviceLocale'] as String? ?? '',
     proxies: _jsonMapList(json['proxies']),
     chains: _jsonStrListList(json['chains']),
     ruleCategories: _jsonStrList(json['ruleCategories']),
@@ -2502,9 +2402,6 @@ String buildConfig(GeneratorParams p) {
           'url': urlTest,
           'interval': healthInterval,
         },
-        if (p.providerUA.trim().isNotEmpty ||
-            p.providerHwid.trim().isNotEmpty)
-          'header': buildProviderSpoofHeaders(p),
       };
       // ВАЖНО: ключ провайдера (sub1..subN) попадает только в 'use'.
       // В 'proxies' группы могут быть только имена реально существующих
@@ -2764,14 +2661,9 @@ String buildConfig(GeneratorParams p) {
         // выравнивает поведение с статическим режимом.
         'override': {'skip-cert-verify': true},
         'health-check': {'enable': true, 'url': urlTest, 'interval': 600},
-        // Явный UA: без него ядро шлёт глобальный
-        // "FlClash/ClashMetaForAndroid/…", и некоторые панели отдают
-        // такому клиенту урезанный clash-набор вместо полного списка.
-        // X-Hwid и device-заголовки собираются по отпечатку
-        // референсного клиента (см. buildProviderSpoofHeaders).
-        if (p.providerUA.trim().isNotEmpty ||
-            p.providerHwid.trim().isNotEmpty)
-          'header': buildProviderSpoofHeaders(p),
+        // Заголовки подмены клиента (UA/X-Hwid/device) сюда не пишутся:
+        // они применяются на уровне приложения ко всем http-провайдерам
+        // при каждом применении профиля (state.dart, patchRawConfig).
       },
     };
   } else {

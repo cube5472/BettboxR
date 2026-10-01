@@ -130,27 +130,38 @@ class SubSpoof {
     return headers;
   }
 
-  /// Полный набор заголовков реального клиента: UA + X-Hwid +
-  /// device-заголовки (модель/SDK/локаль) как в референсе.
+  /// Полный набор заголовков реального клиента: UA + device-заголовки
+  /// (модель/SDK/локаль) + X-Hwid ПОСЛЕДНИМ — порядок 1:1 с референсом
+  /// (buildSubscriptionRequestFingerprint ставит X-Hwid после всех).
   /// Если пресет требует hwid, а значение не задано — подставляется
   /// стабильный id устройства ([generateSubSpoofHwid]): как в
   /// референсе, где HWID включается тумблером и шлётся всегда.
   Future<Map<String, String>?> resolveHeaders() async {
     var spoof = this;
-    if (spoof.isEnabled &&
-        spoof.needsHwid &&
+    if (!spoof.isEnabled) {
+      return null;
+    }
+    if (spoof.needsHwid &&
         formatSubSpoofHwid(spoof.client, spoof.hwid).isEmpty) {
       spoof = spoof.copyWith(hwid: await generateSubSpoofHwid());
     }
-    final base = spoof.buildHeaders();
-    if (base == null) {
+    var ua = spoof.effectiveUa;
+    if (spoof.client == 'happ' && ua == kSubSpoofLegacyHappUa) {
+      ua = kSubSpoofClients['happ']!;
+    }
+    if (ua.isEmpty) {
       return null;
     }
+    final headers = <String, String>{'User-Agent': ua};
     final dev = await resolveSpoofDeviceContext();
     if (dev != null) {
-      base.addAll(buildSpoofExtraHeaders(spoof.client, dev));
+      headers.addAll(buildSpoofExtraHeaders(spoof.client, dev));
     }
-    return base;
+    final id = formatSubSpoofHwid(spoof.client, spoof.hwid);
+    if (spoof.needsHwid && id.isNotEmpty) {
+      headers['X-Hwid'] = id;
+    }
+    return headers;
   }
 
   SubSpoof copyWith({
@@ -179,6 +190,9 @@ const MethodChannel _deviceChannel = MethodChannel('code_forge/device');
 bool _androidIdResolved = false;
 String _cachedAndroidId = '';
 
+/// Ключ хранения резервного id устройства (когда android_id недоступен).
+const _kSubSpoofFallbackDeviceKey = 'sub_spoof_fallback_device';
+
 /// android_id этого приложения (Settings.Secure.ANDROID_ID) через
 /// нативный канал; пусто — если система не отдала (редкий случай).
 Future<String> _resolveAndroidId() async {
@@ -202,6 +216,32 @@ String _randomHwid32() {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
 
+/// Стабильный id устройства для формулы hwid: android_id, а если он
+/// недоступен — резервное значение, сгенерированное ОДИН раз и
+/// сохранённое в настройках. Резерв обязан быть стабильным: панели с
+/// привязкой по X-Hwid считают каждый новый id новым устройством, и
+/// «случайный на каждый запрос» выглядел бы для панели как новое
+/// устройство при каждом обновлении подписки.
+Future<String> _resolveStableDeviceId() async {
+  final androidId = await _resolveAndroidId();
+  if (androidId.isNotEmpty) {
+    return androidId;
+  }
+  try {
+    final prefs = await preferences.sharedPreferencesCompleter.future;
+    if (prefs != null) {
+      final saved = prefs.getString(_kSubSpoofFallbackDeviceKey);
+      if (saved != null && saved.isNotEmpty) {
+        return saved;
+      }
+      final generated = _randomHwid32();
+      await prefs.setString(_kSubSpoofFallbackDeviceKey, generated);
+      return generated;
+    }
+  } catch (_) {}
+  return _randomHwid32();
+}
+
 /// Стабильный hwid устройства — SHA-256(android_id + суффикс),
 /// первые 32 hex: у этого приложения на этом устройстве значение
 /// ОДНО И ТО ЖЕ всегда, панели с device-limit видят каждый запрос
@@ -212,14 +252,36 @@ String _randomHwid32() {
 /// впишите его X-Hwid вручную — пользовательское значение уходит
 /// без изменений.
 Future<String> generateSubSpoofHwid() async {
-  final androidId = await _resolveAndroidId();
-  if (androidId.isEmpty) {
-    return _randomHwid32();
-  }
+  final deviceId = await _resolveStableDeviceId();
   return sha256
-      .convert(utf8.encode('$androidId$kSubSpoofHwidAppSuffix'))
+      .convert(utf8.encode('$deviceId$kSubSpoofHwidAppSuffix'))
       .toString()
       .substring(0, 32);
+}
+
+/// Прямой защищённый фетч нативной стороной (VpnService.protect):
+/// сокет выводится из-под собственного TUN до connect, DNS системный.
+/// Используется как резерв, когда обычный путь (через ядро) упал —
+/// запрос тогда неотличим от запроса обычного приложения без VPN.
+/// Возвращает {status:int, headers:{name:value}, body:base64} или
+/// {error: string} при неудаче; null — канал недоступен.
+Future<Map<String, dynamic>?> protectedFetchNative(
+  String url,
+  Map<String, String> headers,
+) async {
+  try {
+    final res = await _deviceChannel
+        .invokeMethod<Map<Object?, Object?>>(
+      'protectedFetch',
+      {'url': url, 'headers': headers},
+    );
+    if (res == null) {
+      return null;
+    }
+    return res.cast<String, Object?>();
+  } catch (_) {
+    return null;
+  }
 }
 
 /// Формат X-Hwid под пресет — как в референсном клиенте:
@@ -350,6 +412,11 @@ Map<String, String> buildSpoofExtraHeaders(
 }
 
 class SubSpoofStore {
+  /// Ключ глобальной клиентской подмены (Настройки → Общие →
+  /// «Подмена клиента подписок»). Не может совпасть с id профиля:
+  /// id профиля — миллисекунды timestamp.
+  static const globalKey = '__global__';
+
   static Future<Map<String, dynamic>> _readRawMap() async {
     final prefs = await preferences.sharedPreferencesCompleter.future;
     final raw = prefs?.getString(kSubSpoofStoreKey);
@@ -399,4 +466,21 @@ class SubSpoofStore {
       await prefs.setString(kSubSpoofStoreKey, json.encode(rawMap));
     }
   }
+
+  /// Глобальная клиентская подмена: действует для ВСЕХ подписок,
+  /// где не задана индивидуальная настройка профиля.
+  static Future<SubSpoof> getGlobal() => get(globalKey);
+
+  static Future<void> saveGlobal(SubSpoof spoof) =>
+      save(globalKey, spoof);
+}
+
+/// Эффективная подмена профиля: индивидуальная настройка профиля
+/// сильнее; при её отсутствии применяется глобальная клиентская.
+Future<SubSpoof> resolveEffectiveSubSpoof(String profileId) async {
+  final own = await SubSpoofStore.get(profileId);
+  if (own.isEnabled) {
+    return own;
+  }
+  return SubSpoofStore.getGlobal();
 }

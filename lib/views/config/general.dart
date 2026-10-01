@@ -803,6 +803,7 @@ List<Widget> get generalItems => generateSection(
   items: [
     const LogLevelItem(),
     const UaItem(),
+    const SubSpoofGlobalItem(),
     if (system.isDesktop) const KeepAliveIntervalItem(),
     const TestUrlItem(),
     const PortItem(),
@@ -822,6 +823,218 @@ class GeneralListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return generateListView(generalItems);
+  }
+}
+
+/// Глобальная клиентская подмена при скачивании подписок — аналог
+/// тумблера «HWID Support» в настройках подписки референсного клиента:
+/// включается в настройках приложения и действует для всех профилей
+/// (индивидуальная настройка профиля сильнее). Заголовки проставляются
+/// при каждом применении профиля — пересборка конфига не нужна.
+class SubSpoofGlobalItem extends ConsumerStatefulWidget {
+  const SubSpoofGlobalItem({super.key});
+
+  @override
+  ConsumerState<SubSpoofGlobalItem> createState() =>
+      _SubSpoofGlobalItemState();
+}
+
+class _SubSpoofGlobalItemState extends ConsumerState<SubSpoofGlobalItem> {
+  SubSpoof _spoof = const SubSpoof();
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SubSpoofStore.getGlobal().then((value) {
+      if (mounted) {
+        setState(() {
+          _spoof = value;
+          _loaded = true;
+        });
+      }
+    });
+  }
+
+  Future<void> _edit() async {
+    final result = await globalState.showCommonDialog<SubSpoof>(
+      child: _SubSpoofGlobalDialog(spoof: _spoof),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    await SubSpoofStore.saveGlobal(result);
+    setState(() => _spoof = result);
+    // Активный профиль переприменяется: инъекция заголовков в
+    // провайдеры выполняется при каждом применении конфига, поэтому
+    // новая подмена действует сразу, без пересборки.
+    try {
+      await globalState.appController.applyProfile(silence: true);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hwidNote = _spoof.needsHwid
+        ? ' + HWID'
+        : '';
+    final stateText = !_loaded
+        ? '…'
+        : _spoof.isEnabled
+            ? 'Вкл: ${kSubSpoofClientLabels[_spoof.client] ?? _spoof.client}$hwidNote'
+            : 'Выкл';
+    return ListItem(
+      leading: const Icon(Icons.fingerprint),
+      title: const Text('Подмена клиента подписок'),
+      subtitle: Text(stateText),
+      onTap: _edit,
+    );
+  }
+}
+
+class _SubSpoofGlobalDialog extends ConsumerStatefulWidget {
+  final SubSpoof spoof;
+
+  const _SubSpoofGlobalDialog({required this.spoof});
+
+  @override
+  ConsumerState<_SubSpoofGlobalDialog> createState() =>
+      _SubSpoofGlobalDialogState();
+}
+
+class _SubSpoofGlobalDialogState
+    extends ConsumerState<_SubSpoofGlobalDialog> {
+  late String _client = widget.spoof.client;
+  late final TextEditingController _hwidController =
+      TextEditingController(text: widget.spoof.hwid);
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _hwidController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectClient(String value) async {
+    setState(() => _client = value);
+    if (value.isNotEmpty &&
+        _hwidController.text.trim().isEmpty &&
+        kSubSpoofHwidClients.contains(value)) {
+      final auto = formatSubSpoofHwid(value, await generateSubSpoofHwid());
+      if (mounted) {
+        setState(() => _hwidController.text = auto);
+      }
+    }
+  }
+
+  void _save() {
+    if (_formKey.currentState?.validate() == false) return;
+    Navigator.of(context, rootNavigator: true).pop(
+      SubSpoof(
+        client: _client,
+        customUa: '',
+        hwid: _hwidController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: 'Подмена клиента подписок',
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+          child: const Text('Отмена'),
+        ),
+        TextButton(onPressed: _save, child: const Text('Сохранить')),
+      ],
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Приложение представляется выбранным клиентом при '
+              'скачивании подписок: действует для всех профилей, '
+              'включая собранные генератором.',
+            ),
+            const SizedBox(height: 12),
+            InputDecorator(
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Имитация приложения',
+              ),
+              child: DropdownButton<String>(
+                value: _client,
+                isExpanded: true,
+                isDense: true,
+                underline: const SizedBox.shrink(),
+                items: [
+                  const DropdownMenuItem(
+                    value: '',
+                    child: Text('Нет (не представляться)'),
+                  ),
+                  for (final client in kSubSpoofClients.keys)
+                    DropdownMenuItem(
+                      value: client,
+                      child: Text(
+                        kSubSpoofClientLabels[client] ?? client,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+                onChanged: (value) => _selectClient(value ?? ''),
+              ),
+            ),
+            if (kSubSpoofHwidClients.contains(_client)) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _hwidController,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: 'X-Hwid (пусто — стабильный id устройства)',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () async {
+                      final value = formatSubSpoofHwid(
+                        _client,
+                        await generateSubSpoofHwid(),
+                      );
+                      if (mounted) {
+                        setState(() => _hwidController.text = value);
+                      }
+                    },
+                  ),
+                ),
+                validator: (String? value) {
+                  final v = value?.trim() ?? '';
+                  if (v.isEmpty) {
+                    return null;
+                  }
+                  if (v.length < 10 ||
+                      v.length > 64 ||
+                      !RegExp(r'^[a-zA-Z0-9=-]+$').hasMatch(v)) {
+                    return 'допустимы латиница, цифры, - и =, длина 10–64';
+                  }
+                  return null;
+                },
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              'Настройка в свойствах конкретного профиля имеет приоритет '
+              'над этой.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).hintColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

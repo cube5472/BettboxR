@@ -222,37 +222,112 @@ class Request {
       headers.addAll(extraHeaders);
     }
 
-    final response = await _clashDio.get(
-      requestUrl,
-      options: Options(responseType: ResponseType.bytes, headers: headers),
-    );
+    Response dioResponse;
+    try {
+      dioResponse = await _clashDio.get(
+        requestUrl,
+        options: Options(responseType: ResponseType.bytes, headers: headers),
+      );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        rethrow;
+      }
+      // Резервный путь: прямой защищённый фетч мимо собственного
+      // туннеля (VpnService.protect). Нужен, когда обычный путь упал
+      // на сети/в ядре (DNS профиля недоступен, mixed-port закрыт,
+      // ядро вернуло отказ на resolve/dial) — подписка не должна
+      // зависеть от здоровья маршрута ядра. Не удался и резерв —
+      // пробрасываем исходную ошибку.
+      final rescued = await _protectedFetchFallback(
+        requestUrl,
+        headers.cast<String, String>(),
+        responseType,
+      );
+      if (rescued == null) {
+        rethrow;
+      }
+      dioResponse = rescued;
+    }
 
-    final rawBytes = _bytesFromResponse(response);
-    final decompressedBytes = _decompressIfNeeded(rawBytes, response.headers);
+    final rawBytes = _bytesFromResponse(dioResponse);
+    final decompressedBytes = _decompressIfNeeded(
+      rawBytes,
+      dioResponse.headers,
+    );
 
     if (responseType == ResponseType.plain) {
       final text = utf8.decode(decompressedBytes, allowMalformed: true);
       return Response(
-        requestOptions: response.requestOptions,
+        requestOptions: dioResponse.requestOptions,
         data: text,
-        statusCode: response.statusCode,
-        statusMessage: response.statusMessage,
-        isRedirect: response.isRedirect,
-        redirects: response.redirects,
-        extra: response.extra,
-        headers: response.headers,
+        statusCode: dioResponse.statusCode,
+        statusMessage: dioResponse.statusMessage,
+        isRedirect: dioResponse.isRedirect,
+        redirects: dioResponse.redirects,
+        extra: dioResponse.extra,
+        headers: dioResponse.headers,
       );
     } else {
       return Response(
-        requestOptions: response.requestOptions,
+        requestOptions: dioResponse.requestOptions,
         data: decompressedBytes,
-        statusCode: response.statusCode,
-        statusMessage: response.statusMessage,
-        isRedirect: response.isRedirect,
-        redirects: response.redirects,
-        extra: response.extra,
-        headers: response.headers,
+        statusCode: dioResponse.statusCode,
+        statusMessage: dioResponse.statusMessage,
+        isRedirect: dioResponse.isRedirect,
+        redirects: dioResponse.redirects,
+        extra: dioResponse.extra,
+        headers: dioResponse.headers,
       );
+    }
+  }
+
+  /// Резервный фетч нативной стороной (см. protectedFetchNative):
+  /// возвращает dio-Response либо null (резерв недоступен/упал).
+  /// Content-Encoding нативная сторона вычищает — тело приходит уже
+  /// распакованным, повторная распаковка не нужна.
+  Future<Response?> _protectedFetchFallback(
+    String url,
+    Map<String, String> headers,
+    ResponseType responseType,
+  ) async {
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return null;
+    }
+    try {
+      final native = await protectedFetchNative(url, headers);
+      if (native == null || native['error'] != null) {
+        return null;
+      }
+      final status = (native['status'] as num?)?.toInt() ?? 0;
+      final bodyB64 = '${native['body'] ?? ''}';
+      if (status < 200) {
+        return null;
+      }
+      final rawBody = base64Decode(bodyB64);
+      final nativeHeaders = (native['headers'] as Map?)?.cast<String, dynamic>()
+              ?? const <String, dynamic>{};
+      final requestOption = RequestOptions(path: url);
+      final responseHeaders = Headers.fromMap(
+        nativeHeaders.map(
+          (key, value) => MapEntry(key.toLowerCase(), ['$value']),
+        ),
+      );
+      if (responseType == ResponseType.plain) {
+        return Response<String>(
+          requestOptions: requestOption,
+          data: utf8.decode(rawBody, allowMalformed: true),
+          statusCode: status,
+          headers: responseHeaders,
+        );
+      }
+      return Response(
+        requestOptions: requestOption,
+        data: Uint8List.fromList(rawBody),
+        statusCode: status,
+        headers: responseHeaders,
+      );
+    } catch (_) {
+      return null;
     }
   }
 
