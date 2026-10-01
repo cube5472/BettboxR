@@ -4,10 +4,8 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
-import android.os.ParcelFileDescriptor
 import android.provider.Settings
 import android.util.Base64
 import android.util.Log
@@ -18,6 +16,7 @@ import com.appshub.bettbox.plugins.AppPlugin
 import com.appshub.bettbox.plugins.ServicePlugin
 import com.appshub.bettbox.plugins.TilePlugin
 import com.appshub.bettbox.plugins.VpnPlugin
+import com.appshub.bettbox.services.BettboxVpnService
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineGroup
@@ -187,11 +186,13 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun protectSocket(socket: Socket) {
-        runCatching {
-            val pfd = ParcelFileDescriptor.fromSocket(socket)
-            runCatching { VpnService.protect(pfd.fd) }
-            runCatching { pfd.close() }
-        }
+        // ВАЖНО: protect() — метод ЭКЗЕМПЛЯРА VpnService (статического
+        // не существует, компиляция через VpnService.protect валится
+        // с "Unresolved reference 'protect'"). Берём живой BettboxVpnService;
+        // пока VPN выключен, экземпляра нет и сокет без того идёт
+        // напрямую — защита не нужна. protect(Socket) обязан вызываться
+        // ДО connect — вызов стоит сразу после создания сокета.
+        runCatching { BettboxVpnService.current?.protect(socket) }
     }
 
     private fun readCrLfLine(input: BufferedInputStream): String {

@@ -29,6 +29,14 @@ import kotlinx.coroutines.launch
 class BettboxVpnService : VpnService(), BaseServiceInterface {
     companion object {
         private const val TAG = "BettboxVpnService"
+
+        // Живой экземпляр VPN-сервиса: нужен MainActivity для
+        // VpnService.protect(socket) в защищённом фетче подписок
+        // (protect — метод ЭКЗЕМПЛЯРА, статического нет). Пока VPN
+        // выключен, экземпляра нет — защита не требуется, сокет и так
+        // идёт напрямую.
+        @Volatile
+        var current: BettboxVpnService? = null
     }
 
     @Volatile
@@ -54,6 +62,8 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
     override fun onCreate() {
         super.onCreate()
+        // Экземпляр доступен для защищённого фетча (MainActivity.protectSocket).
+        current = this
         GlobalState.initServiceEngine()
 
         unlockReceiver = object : BroadcastReceiver() {
@@ -328,6 +338,8 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onRevoke() {
+        // VPN отозван системой — защищённый фетч больше невозможен.
+        current = null
         runCatching {
             VpnPlugin.handleStop()
             getSystemService(android.app.NotificationManager::class.java)
@@ -338,6 +350,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onDestroy() {
+        current = null
         stop()
         unlockReceiver?.let {
             unregisterReceiver(it)
