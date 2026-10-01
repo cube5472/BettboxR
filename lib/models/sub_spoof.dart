@@ -107,11 +107,16 @@ class SubSpoof {
 
   /// Заголовки для запроса подписки; null — подмена выключена.
   /// Без device-заголовков (они добавляются в [resolveHeaders]).
+  /// Как в референсе: устаревший UA старого Happ заменяется текущим
+  /// пресетом (нормализация [kSubSpoofLegacyHappUa]).
   Map<String, String>? buildHeaders() {
     if (!isEnabled) {
       return null;
     }
-    final ua = effectiveUa;
+    var ua = effectiveUa;
+    if (client == 'happ' && ua == kSubSpoofLegacyHappUa) {
+      ua = kSubSpoofClients['happ']!;
+    }
     if (ua.isEmpty) {
       return null;
     }
@@ -150,6 +155,10 @@ class SubSpoof {
   }
 }
 
+/// Устаревший UA старого Happ: референс заменяет его на актуальный
+/// пресет при отправке (normalizeSpoofUserAgent).
+const kSubSpoofLegacyHappUa = 'Happ/3.17.0/Android/17756505247711753599';
+
 /// UUID v4 без дефисов (32 hex-символа) — проходит валидацию hwid
 /// панелей (Remnawave: ^[a-zA-Z0-9=-]{10,64}$) и не раскрывает
 /// реальное устройство.
@@ -165,15 +174,23 @@ String generateSubSpoofHwid() {
 ///  - happ: 16 строчных hex;
 ///  - v2raytun: 16 ВЕРХНИХ hex;
 ///  - incy: UUID-формат (8-4-4-4-12) из 32 hex, ВЕРХНИЙ.
-/// Сырьё — сохранённый 32-hex идентификатор профиля.
+///
+/// Форматирование применяется ТОЛЬКО к автосгенерированному
+/// 32-hex идентификатору. Всё, что пользователь вписал вручную
+/// (например X-Hwid, снятый с уже зарегистрированного на панели
+/// клиента — neko+, Happ), уходит ВЕРБАТИМНО: панели проверяют
+/// точное значение заголовка, и любая «нормализация» сделала бы
+/// перенос отпечатка невозможным.
 String formatSubSpoofHwid(String client, String rawHwid) {
-  final hex = rawHwid
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^0-9a-f]'), '');
-  if (hex.isEmpty) {
+  final trimmed = rawHwid.trim();
+  if (trimmed.isEmpty) {
     return '';
   }
+  // Автогенерация — ровно 32 hex-символа без разделителей.
+  if (!RegExp(r'^[0-9a-fA-F]{32}$').hasMatch(trimmed)) {
+    return trimmed;
+  }
+  final hex = trimmed.toLowerCase();
   switch (client) {
     case 'happ':
       return hex.padRight(16, '0').substring(0, 16);
@@ -190,7 +207,11 @@ String formatSubSpoofHwid(String client, String rawHwid) {
 
 /// Сведения об устройстве для device-заголовков реального клиента.
 class SpoofDeviceContext {
+  /// «производитель модель» — как референс шлёт для v2raytun/incy.
   final String model;
+
+  /// Только модель (Build.MODEL) — референс шлёт её для Happ.
+  final String modelShort;
   final int sdkInt;
   final String language;
   final String languageTag;
@@ -198,6 +219,7 @@ class SpoofDeviceContext {
 
   const SpoofDeviceContext({
     required this.model,
+    required this.modelShort,
     required this.sdkInt,
     required this.language,
     required this.languageTag,
@@ -224,6 +246,7 @@ Future<SpoofDeviceContext?> resolveSpoofDeviceContext() async {
     final languageTag = parts.length > 1 ? '$language-${parts[1]}' : language;
     return SpoofDeviceContext(
       model: fullModel.isEmpty ? 'Android' : fullModel,
+      modelShort: model,
       sdkInt: info.version.sdkInt,
       language: language,
       languageTag: languageTag,
@@ -235,10 +258,11 @@ Future<SpoofDeviceContext?> resolveSpoofDeviceContext() async {
 }
 
 /// Device-заголовки реальных клиентов — наборы 1:1 из референса:
-///  - Happ: модель, SDK-число, ОС, язык;
-///  - v2RayTun: версия приложения 5.25.80, модель, «Android <SDK>», ОС;
+///  - Happ: модель (Build.MODEL, без производителя), SDK-число, ОС, язык;
+///  - v2RayTun: версия приложения 5.25.80, «производитель модель»,
+///    «Android <SDK>», ОС;
 ///  - Incy: Accept/Accept-Language, X-Client, локаль ru_RU,
-///    версия 3.4.3, модель, SDK-число, ОС.
+///    версия 3.4.3, «производитель модель», SDK-число, ОС.
 Map<String, String> buildSpoofExtraHeaders(
   String client,
   SpoofDeviceContext dev,
@@ -246,7 +270,7 @@ Map<String, String> buildSpoofExtraHeaders(
   switch (client) {
     case 'happ':
       return <String, String>{
-        'X-Device-Model': dev.model,
+        'X-Device-Model': dev.modelShort.isNotEmpty ? dev.modelShort : dev.model,
         'X-Ver-Os': '${dev.sdkInt}',
         'X-Device-Os': 'Android',
         'X-Device-Locale': dev.language,

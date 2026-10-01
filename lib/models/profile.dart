@@ -199,6 +199,28 @@ extension ProfileExtension on Profile {
       url,
       extraHeaders: await subSpoof.resolveHeaders(),
     );
+    // HWID-панели (3x-ui и форки) отвечают отказом HTTP 404 с маркерами
+    // X-Hwid-Not-Supported / X-Hwid-Max-Devices-Reached; без проверки
+    // пользователь увидит криптическую ошибку валидатора вместо причины.
+    final hwidUnsupported =
+        response.headers['x-hwid-not-supported']?.firstOrNull;
+    if (hwidUnsupported != null) {
+      throw Exception(
+        'панель не поддерживает HWID-подмену для этой подписки '
+        '(X-Hwid-Not-Supported) — отключите подмену X-Hwid или смените '
+        'пресет клиента',
+      );
+    }
+    final hwidMaxDevices =
+        response.headers['x-hwid-max-devices-reached']?.firstOrNull;
+    if (hwidMaxDevices != null) {
+      throw Exception(
+        'у панели исчерпан лимит устройств для этой подписки '
+        '(X-Hwid-Max-Devices-Reached). Сбросьте устройства в боте/панели '
+        'или впишите в подмене тот же X-Hwid, что у уже работающего '
+        'клиента (например neko+)',
+      );
+    }
     final disposition = response.headers['content-disposition']?.firstOrNull;
     final userinfo = response.headers['subscription-userinfo']?.firstOrNull;
     return await copyWith(
@@ -375,6 +397,21 @@ Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
     throw Exception(
       'сервер вернул HTML-страницу вместо подписки — панель отклонила '
       'запрос (проверьте срок действия ссылки и подмену клиента)',
+    );
+  }
+  // Отказ панели текстом (без HTTP-ошибки на уровне запроса): «Not found»
+  // у HWID-панелей 3x-ui означает «устройство не найдено/лимит слотов»,
+  // русское сообщение — «ключ перевыпущен/подписка кончилась».
+  final lowered = trimmed.toLowerCase();
+  if (trimmed.length <= 256 &&
+      (lowered == 'not found' ||
+          lowered.startsWith('ссылка на подписку') ||
+          lowered.startsWith('the subscription link'))) {
+    throw Exception(
+      'панель отказала в выдаче подписки: ответ «$trimmed». Если панель '
+      'привязывает устройства по X-Hwid — впишите в подмене тот же '
+      'X-Hwid, что у работающего клиента (например neko+), или сбросьте '
+      'устройства в боте/панели (см. README пакета)',
     );
   }
   if (_isMihomoConfigBody(trimmed)) {
