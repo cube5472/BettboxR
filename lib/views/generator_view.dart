@@ -358,10 +358,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         headers['User-Agent'] = ua;
       }
       final client = _providerClient;
-      final hwid = formatSubSpoofHwid(
+      var hwid = formatSubSpoofHwid(
         client,
         _providerHwidController.text.trim(),
       );
+      if (hwid.isEmpty && kSubSpoofHwidClients.contains(client)) {
+        hwid = formatSubSpoofHwid(client, await generateSubSpoofHwid());
+      }
       if (hwid.isNotEmpty) {
         headers['X-Hwid'] = hwid;
       }
@@ -640,6 +643,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _showError(error);
       return;
     }
+    await _ensureProviderHwidFilled();
     final loading = ref.read(loadingProvider.notifier);
     loading.value = true;
     String yaml;
@@ -709,6 +713,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _showError(error);
       return;
     }
+    await _ensureProviderHwidFilled();
     final confirmed = await globalState.showMessage(
       title: 'Пересобрать конфиг?',
       message: TextSpan(
@@ -837,8 +842,14 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   /// Тап по чекбоксу пресета маскировки (Happ / v2RayTun / Incy).
   /// Чекбоксы работают как одиночный выбор: тап по выбранному снимает
   /// его («свой UA»), тап по другому — переключает. Выбор проставляет
-  /// пресетный UA; X-Hwid генерируется один раз (нужен всем пресетам).
-  void _handleProviderClientTap(String client) {
+  /// пресетный UA; X-Hwid генерируется один раз (нужен всем пресетам)
+  /// и СРАЗУ приводится к формату пресета: в поле лежит ГОТОВЫЙ
+  /// заголовок — уйдёт в панель как есть, а ручная правка пользователя
+  /// при отправке не перезапишется.
+  Future<void> _handleProviderClientTap(String client) async {
+    final needsHwid = kSubSpoofHwidClients.contains(client);
+    final auto = needsHwid ? await generateSubSpoofHwid() : '';
+    if (!mounted) return;
     setState(() {
       if (_providerClient == client) {
         _providerClient = '';
@@ -847,9 +858,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       }
       _providerClient = client;
       _providerUaController.text = kSubSpoofClients[client] ?? '';
-      if (kSubSpoofHwidClients.contains(client)) {
+      if (needsHwid) {
         if (_providerHwidController.text.trim().isEmpty) {
-          _providerHwidController.text = generateSubSpoofHwid();
+          _providerHwidController.text = formatSubSpoofHwid(client, auto);
         }
       } else {
         // Пресет без hwid: заголовок не должен остаться от
@@ -857,6 +868,24 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         _providerHwidController.clear();
       }
     });
+  }
+
+  /// Перед сборкой параметров: если выбран пресет с hwid, а поле
+  /// пусто (например, конфиг собран старой версией) — заполняем
+  /// сразу в формате пресета, чтобы X-Hwid гарантированно уехал
+  /// в провайдер.
+  Future<void> _ensureProviderHwidFilled() async {
+    if (_providerClient.isEmpty ||
+        !kSubSpoofHwidClients.contains(_providerClient)) {
+      return;
+    }
+    if (_providerHwidController.text.trim().isNotEmpty) {
+      return;
+    }
+    _providerHwidController.text = formatSubSpoofHwid(
+      _providerClient,
+      await generateSubSpoofHwid(),
+    );
   }
 
   /// Ручная правка UA снимает выбор пресета, если текст перестал
@@ -1913,10 +1942,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 decoration: const InputDecoration(
                   labelText: 'X-Hwid подписки',
                   border: OutlineInputBorder(),
-                  helperMaxLines: 2,
-                  helperText: 'Идентификатор устройства для панелей с '
-                      'лимитом устройств; генерируется сам и хранится '
-                      'в конфиге',
+                  helperMaxLines: 3,
+                  helperText: 'Стабильный id устройства (аналог тумблера '
+                      'HWID в neko+). Значение с панели или другого '
+                      'клиента уйдёт без изменений',
                   suffixIcon: Icon(Icons.badge_outlined),
                 ),
               ),

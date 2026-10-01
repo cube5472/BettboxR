@@ -98,12 +98,23 @@ class EditProfileViewState extends State<EditProfileView> {
   Future<void> _handleConfirm() async {
     if (!_formKey.currentState!.validate()) return;
     try {
+      var hwid = subSpoofHwidController.text.trim();
+      if (hwid.isEmpty && kSubSpoofHwidClients.contains(_spoofClient)) {
+        // Пустое поле при включённой подмене = запрос без X-Hwid,
+        // такие панели с device-limit отклоняют. Автозначение —
+        // как тумблер HWID в neko+.
+        hwid = formatSubSpoofHwid(
+          _spoofClient,
+          await generateSubSpoofHwid(),
+        );
+        subSpoofHwidController.text = hwid;
+      }
       await SubSpoofStore.save(
         widget.profile.id,
         SubSpoof(
           client: _spoofClient,
           customUa: subSpoofUaController.text.trim(),
-          hwid: subSpoofHwidController.text.trim(),
+          hwid: hwid,
         ),
       );
     } catch (_) {}
@@ -196,20 +207,31 @@ class EditProfileViewState extends State<EditProfileView> {
     });
   }
 
-  void _setSpoofClient(String value) {
+  Future<void> _setSpoofClient(String value) async {
     if (_spoofClient == value) return;
+    final needsAuto = kSubSpoofHwidClients.contains(value) &&
+        subSpoofHwidController.text.trim().isEmpty;
+    // Авто-значение сразу в формате пресета — уйдёт вербатимно.
+    final auto = needsAuto
+        ? formatSubSpoofHwid(value, await generateSubSpoofHwid())
+        : '';
+    if (!mounted) return;
     setState(() {
       _spoofClient = value;
-      if (kSubSpoofHwidClients.contains(value) &&
-          subSpoofHwidController.text.trim().isEmpty) {
-        subSpoofHwidController.text = generateSubSpoofHwid();
+      if (auto.isNotEmpty) {
+        subSpoofHwidController.text = auto;
       }
     });
   }
 
-  void _regenerateSpoofHwid() {
+  Future<void> _regenerateSpoofHwid() async {
+    final value = formatSubSpoofHwid(
+      _spoofClient,
+      await generateSubSpoofHwid(),
+    );
+    if (!mounted) return;
     setState(() {
-      subSpoofHwidController.text = generateSubSpoofHwid();
+      subSpoofHwidController.text = value;
     });
   }
 
@@ -494,6 +516,8 @@ class EditProfileViewState extends State<EditProfileView> {
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     labelText: appLocalizations.subSpoofHwidLabel,
+                    helperText: 'значение с панели/другого клиента '
+                        'уйдёт без изменений',
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.refresh),
                       tooltip: appLocalizations.subSpoofHwidRegenTooltip,

@@ -25,7 +25,9 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bett_box/common/common.dart';
+import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/services.dart';
 
 const kSubSpoofStoreKey = 'sub_spoof_map';
 
@@ -130,14 +132,23 @@ class SubSpoof {
 
   /// Полный набор заголовков реального клиента: UA + X-Hwid +
   /// device-заголовки (модель/SDK/локаль) как в референсе.
+  /// Если пресет требует hwid, а значение не задано — подставляется
+  /// стабильный id устройства ([generateSubSpoofHwid]): как в
+  /// референсе, где HWID включается тумблером и шлётся всегда.
   Future<Map<String, String>?> resolveHeaders() async {
-    final base = buildHeaders();
+    var spoof = this;
+    if (spoof.isEnabled &&
+        spoof.needsHwid &&
+        formatSubSpoofHwid(spoof.client, spoof.hwid).isEmpty) {
+      spoof = spoof.copyWith(hwid: await generateSubSpoofHwid());
+    }
+    final base = spoof.buildHeaders();
     if (base == null) {
       return null;
     }
     final dev = await resolveSpoofDeviceContext();
     if (dev != null) {
-      base.addAll(buildSpoofExtraHeaders(client, dev));
+      base.addAll(buildSpoofExtraHeaders(spoof.client, dev));
     }
     return base;
   }
@@ -159,15 +170,56 @@ class SubSpoof {
 /// пресет при отправке (normalizeSpoofUserAgent).
 const kSubSpoofLegacyHappUa = 'Happ/3.17.0/Android/17756505247711753599';
 
-/// UUID v4 без дефисов (32 hex-символа) — проходит валидацию hwid
-/// панелей (Remnawave: ^[a-zA-Z0-9=-]{10,64}$) и не раскрывает
-/// реальное устройство.
-String generateSubSpoofHwid() {
+/// Суффикс приложения в формуле hwid: SHA-256(android_id + суффикс) —
+/// та же схема, что в референсе (…+ "NekoBoxPlus"); суффикс свой,
+/// т.к. android_id всё равно индивидуален для подписи приложения.
+const kSubSpoofHwidAppSuffix = 'BettboxR';
+
+const MethodChannel _deviceChannel = MethodChannel('code_forge/device');
+bool _androidIdResolved = false;
+String _cachedAndroidId = '';
+
+/// android_id этого приложения (Settings.Secure.ANDROID_ID) через
+/// нативный канал; пусто — если система не отдала (редкий случай).
+Future<String> _resolveAndroidId() async {
+  if (_androidIdResolved) {
+    return _cachedAndroidId;
+  }
+  _androidIdResolved = true;
+  try {
+    final value = await _deviceChannel.invokeMethod<String>('getAndroidId');
+    _cachedAndroidId = value ?? '';
+  } catch (_) {
+    _cachedAndroidId = '';
+  }
+  return _cachedAndroidId;
+}
+
+/// Fallback: случайный валидный 32-hex (когда android_id недоступен).
+String _randomHwid32() {
   final rnd = Random.secure();
   final bytes = List<int>.generate(16, (_) => rnd.nextInt(256));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+}
+
+/// Стабильный hwid устройства — SHA-256(android_id + суффикс),
+/// первые 32 hex: у этого приложения на этом устройстве значение
+/// ОДНО И ТО ЖЕ всегда, панели с device-limit видят каждый запрос
+/// одним и тем же «устройством» (аналог тумблера HWID Support
+/// референса). «Сырые» 32 hex; формат пресета (16 hex / 16 HEX /
+/// UUID) применяет [formatSubSpoofHwid]. Чтобы панель пустила
+/// подписку там, где она уже работает в другом клиенте (neko+),
+/// впишите его X-Hwid вручную — пользовательское значение уходит
+/// без изменений.
+Future<String> generateSubSpoofHwid() async {
+  final androidId = await _resolveAndroidId();
+  if (androidId.isEmpty) {
+    return _randomHwid32();
+  }
+  return sha256
+      .convert(utf8.encode('$androidId$kSubSpoofHwidAppSuffix'))
+      .toString()
+      .substring(0, 32);
 }
 
 /// Формат X-Hwid под пресет — как в референсном клиенте:

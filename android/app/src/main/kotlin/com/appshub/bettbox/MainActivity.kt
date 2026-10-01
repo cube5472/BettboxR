@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -75,6 +76,8 @@ class MainActivity : FlutterActivity() {
 
         setupHapticsChannel(flutterEngine)
 
+        setupDeviceChannel(flutterEngine)
+
         GlobalState.flutterEngine = flutterEngine
     }
 
@@ -104,6 +107,31 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    // android_id для стабильного X-Hwid (lib/models/sub_spoof.dart):
+    // Settings.Secure.ANDROID_ID индивидуален для подписи приложения.
+    // Ошибки глушим null-ом — подмена не должна ломать работу.
+    private fun setupDeviceChannel(flutterEngine: FlutterEngine) {
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "code_forge/device"
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "getAndroidId") {
+                try {
+                    result.success(
+                        Settings.Secure.getString(
+                            contentResolver,
+                            Settings.Secure.ANDROID_ID
+                        )
+                    )
+                } catch (e: Exception) {
+                    result.success(null)
+                }
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 
     override fun shouldDestroyEngineWithHost(): Boolean = false
