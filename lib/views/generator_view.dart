@@ -344,13 +344,41 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   }
 
   Future<String> _fetchText(String url) async {
+    // Маскировка скачивания подписок из раздела 1: применяем ТЕКУЩИЙ
+    // выбор раздела «Настройки» — пресет (UA), X-Hwid и device-заголовки
+    // — ровно тот же отпечаток, что уходит в провайдер
+    // (buildProviderSpoofHeaders). Раньше сюда уходил захардкоженный
+    // clash UA: панели с проверкой клиента отвечали статическому режиму
+    // отказом, и «ноды не загружались», хотя provider-режим работал.
+    var headers = <String, String>{'User-Agent': 'clash.meta/1.19.0'};
+    try {
+      await _ensureDeviceContext();
+      final ua = _providerUaController.text.trim();
+      if (ua.isNotEmpty) {
+        headers['User-Agent'] = ua;
+      }
+      final client = _providerClient;
+      final hwid = formatSubSpoofHwid(
+        client,
+        _providerHwidController.text.trim(),
+      );
+      if (hwid.isNotEmpty) {
+        headers['X-Hwid'] = hwid;
+      }
+      final dev = _deviceCtx;
+      if (client.isNotEmpty &&
+          (dev?.model.isNotEmpty ?? false) &&
+          (dev?.sdkInt ?? 0) > 0) {
+        headers.addAll(buildSpoofExtraHeaders(client, dev!));
+      }
+    } catch (_) {}
     final response = await _dio.get<String>(
       url,
       options: Options(
         responseType: ResponseType.plain,
         followRedirects: true,
         validateStatus: (code) => code != null && code >= 200 && code < 400,
-        headers: {'User-Agent': 'clash.meta/1.19.0'},
+        headers: headers,
       ),
     );
     final body = response.data ?? '';

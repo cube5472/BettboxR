@@ -218,6 +218,7 @@ extension ProfileExtension on Profile {
         }
       } catch (_) {}
     }
+    content = await _convertSubBodyIfNeeded(this, content);
     content = utils.patchYamlConfig(content);
     if (validate) {
       final message =
@@ -253,6 +254,7 @@ extension ProfileExtension on Profile {
         }
       } catch (_) {}
     }
+    content = await _convertSubBodyIfNeeded(this, content);
     content = utils.patchYamlConfig(content);
     final message =
         await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
@@ -274,4 +276,158 @@ extension ProfileExtension on Profile {
     await file.writeAsString(content);
     return copyWith(lastUpdateDate: DateTime.now());
   }
+}
+
+// ---------------- Тело подписки в формате реального клиента ----------------
+//
+// Панели, проверяющие клиента (UA/X-Hwid), отвечают «подменным»
+// запросам телом в формате реального приложения: построчные
+// share-ссылки (vless://, ss://, trojan://, …), часто с #-шапкой
+// (profile-title, subscription-userinfo), либо base64-блобом. Раньше
+// такое тело сохранялось «как есть», и валидация ядра падала («это не
+// YAML-конфиг») — профиль не создавался и «ноды не загружались», хотя
+// в v2ray-клиентах (NekoBox+, Happ, …) та же подписка работала.
+// Теперь тело распознаётся и оборачивается в минимальный mihomo-конфиг
+// с proxy-provider на исходный URL: ядро само скачает и разберёт
+// список ссылок (тот же конвертер, что обрабатывает провайдер
+// генератора), а подмена профиля (UA/X-Hwid/device-заголовки) из
+// SubSpoofStore переносится в заголовки провайдера.
+
+final RegExp _subSchemeLineRe = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*://');
+final RegExp _subHtmlRe = RegExp(
+  r'^\s*(<!DOCTYPE|<html)',
+  caseSensitive: false,
+);
+
+/// Похоже ли тело на готовый mihomo-конфиг (YAML или JSON).
+bool _isMihomoConfigBody(String body) {
+  final trimmed = body.trimLeft();
+  if (trimmed.startsWith('{')) {
+    // JSON-конфиг: ядро принимает JSON, не трогаем.
+    return true;
+  }
+  return RegExp(
+    r'^\s*(proxies|proxy-providers|proxy-groups|rule-providers)\s*:',
+    multiLine: true,
+  ).hasMatch(body);
+}
+
+/// Первая содержательная строка-ссылка (схема://…), либо null.
+/// #-строки (шапка v2raytun/Happ-подписок) и пустые пропускаются.
+String? _firstShareLinkLine(String body) {
+  for (final raw in body.split('\n')) {
+    final line = raw.trim();
+    if (line.isEmpty || line.startsWith('#')) continue;
+    if (_subSchemeLineRe.hasMatch(line)) return line;
+    return null;
+  }
+  return null;
+}
+
+/// base64-блоб (v2ray-подписка), внутри которого share-ссылки.
+bool _base64BodyHasShareLinks(String body) {
+  final compact = body.replaceAll(RegExp(r'\s'), '');
+  if (compact.length < 16) return false;
+  if (!RegExp(r'^[A-Za-z0-9+/=\-_]+$').hasMatch(compact)) return false;
+  try {
+    final normalized = compact.replaceAll('-', '+').replaceAll('_', '/');
+    final padding = (4 - normalized.length % 4) % 4;
+    final decoded = utf8.decode(
+      base64.decode(normalized + '=' * padding),
+      allowMalformed: true,
+    );
+    return _firstShareLinkLine(decoded) != null;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// YAML-строка в двойных кавычках с экранированием спецсимволов.
+/// Значения динамические (URL, UA, hwid, модель) — кавычим всегда.
+String _subYamlQuote(String value) {
+  final escaped = value
+      .replaceAll('\\', '\\\\')
+      .replaceAll('"', '\\"')
+      .replaceAll('\n', '\\n')
+      .replaceAll('\t', '\\t')
+      .replaceAll('\r', '\\r');
+  return '"$escaped"';
+}
+
+/// Распознаёт тело-«не конфиг» (share-ссылки / base64) и оборачивает
+/// в конфиг с proxy-provider. YAML/JSON-конфиги и всё нераспознанное
+/// проходят без изменений (их валидирует ядро как раньше). Осмысленно
+/// распознанный отказ панели (HTML вместо подписки) даёт понятную
+/// ошибку вместо криптики валидатора.
+Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
+  final url = profile.url.trim();
+  // Обёртка осмысленна только для URL-профилей: телу нужна ссылка
+  // для proxy-provider. Файловые профили и вставки не трогаем.
+  if (url.isEmpty ||
+      (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    return content;
+  }
+  final trimmed = content.trim();
+  if (trimmed.isEmpty) {
+    return content;
+  }
+  if (_subHtmlRe.hasMatch(trimmed)) {
+    throw Exception(
+      'сервер вернул HTML-страницу вместо подписки — панель отклонила '
+      'запрос (проверьте срок действия ссылки и подмену клиента)',
+    );
+  }
+  if (_isMihomoConfigBody(trimmed)) {
+    return content;
+  }
+  final isLinkList = _firstShareLinkLine(trimmed) != null;
+  if (!isLinkList && !_base64BodyHasShareLinks(trimmed)) {
+    return content;
+  }
+  return _buildSubProviderWrapper(profile);
+}
+
+/// Минимальный рабочий конфиг: provider с исходным URL + заголовки
+/// подмены профиля + одна select-группа + MATCH-правило. Секции
+/// tun/dns ядро и приложение дополняют при запуске, как и для любого
+/// другого профиля.
+Future<String> _buildSubProviderWrapper(Profile profile) async {
+  Map<String, String>? headers;
+  try {
+    final spoof = await SubSpoofStore.get(profile.id);
+    headers = await spoof.resolveHeaders();
+  } catch (_) {}
+  final b = StringBuffer()
+    ..writeln('# bettboxr-sub-wrap: тело подписки (share-ссылки/base64)')
+    ..writeln('# обёрнуто в proxy-provider — ядро скачивает и разбирает')
+    ..writeln('# его само; заголовки подмены профиля сохранены.')
+    ..writeln('mode: rule')
+    ..writeln('log-level: silent')
+    ..writeln('ipv6: true')
+    ..writeln('proxy-providers:')
+    ..writeln('  subscription:')
+    ..writeln('    type: http')
+    ..writeln('    url: ${_subYamlQuote(profile.url.trim())}')
+    ..writeln('    interval: 86400')
+    ..writeln('    path: ./provider/bettboxr_sub_${profile.id}.yaml')
+    ..writeln('    override:')
+    ..writeln('      skip-cert-verify: true')
+    ..writeln('    health-check:')
+    ..writeln('      enable: true')
+    ..writeln('      url: https://www.gstatic.com/generate_204')
+    ..writeln('      interval: 600');
+  if (headers != null && headers.isNotEmpty) {
+    b.writeln('    header:');
+    headers.forEach((name, value) {
+      b.writeln('      $name: [${_subYamlQuote(value)}]');
+    });
+  }
+  b
+    ..writeln('proxy-groups:')
+    ..writeln('  - name: PROXY')
+    ..writeln('    type: select')
+    ..writeln('    use: [subscription]')
+    ..writeln('rules:')
+    ..writeln('  - MATCH,PROXY');
+  return b.toString();
 }
