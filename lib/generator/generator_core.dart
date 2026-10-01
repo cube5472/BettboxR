@@ -1988,6 +1988,10 @@ class GeneratorParams {
   /// при сборке и хранятся в маркере, чтобы «Пересобрать» давал те же
   /// заголовки. verOs = 0 — не резолвились (не Android/ошибка).
   final String providerDeviceModel;
+
+  /// Только модель (Build.MODEL) — референсный клиент шлёт её в
+  /// X-Device-Model для пресета Happ.
+  final String providerDeviceModelShort;
   final int providerVerOs;
   final String providerDeviceLocale;
   final List<Map<String, dynamic>> proxies;
@@ -2024,6 +2028,7 @@ class GeneratorParams {
     this.providerHwid = '',
     this.providerClient = '',
     this.providerDeviceModel = '',
+    this.providerDeviceModelShort = '',
     this.providerVerOs = 0,
     this.providerDeviceLocale = '',
     required this.proxies,
@@ -2088,8 +2093,13 @@ Map<String, dynamic> buildProviderSpoofHeaders(GeneratorParams p) {
   if (devReady) {
     final locale = p.providerDeviceLocale;
     final language = locale.split('_').first;
+    // Референс для Happ шлёт голую модель (Build.MODEL), для
+    // v2raytun/incy — «производитель модель».
+    final happModel = p.providerDeviceModelShort.isNotEmpty
+        ? p.providerDeviceModelShort
+        : p.providerDeviceModel;
     if (client == 'happ') {
-      headers['X-Device-Model'] = [p.providerDeviceModel];
+      headers['X-Device-Model'] = [happModel];
       headers['X-Ver-Os'] = ['${p.providerVerOs}'];
       headers['X-Device-Os'] = ['Android'];
       headers['X-Device-Locale'] = [language];
@@ -2129,6 +2139,7 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
   'providerHwid': p.providerHwid,
   'providerClient': p.providerClient,
   'providerDeviceModel': p.providerDeviceModel,
+  'providerDeviceModelShort': p.providerDeviceModelShort,
   'providerVerOs': p.providerVerOs,
   'providerDeviceLocale': p.providerDeviceLocale,
   'proxies': p.proxies,
@@ -2186,6 +2197,8 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
     providerClient:
         normalizeSubSpoofClient('${json['providerClient'] ?? ''}'),
     providerDeviceModel: json['providerDeviceModel'] as String? ?? '',
+    providerDeviceModelShort:
+        json['providerDeviceModelShort'] as String? ?? '',
     providerVerOs: json['providerVerOs'] as int? ?? 0,
     providerDeviceLocale: json['providerDeviceLocale'] as String? ?? '',
     proxies: _jsonMapList(json['proxies']),
