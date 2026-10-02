@@ -885,11 +885,37 @@ class GlobalState {
     // provider.ProxySchema») либо отказом — на работу это больше не
     // влияет, все решения видны в журнале (строки SubPreload).
     try {
-      await preloadProxyProviderFiles(
+      final covered = await preloadProxyProviderFiles(
         rawConfig,
         targetProfile.id,
         spoofHeaders,
       );
+      // Провайдеры, чей файл подготовило приложение, ядро больше НЕ
+      // перекачивает само: interval уводится за горизонт планировщика,
+      // иначе при каждом обновлении/первом запуске ядро качает панель
+      // своим UA и получает неразборчивый формат (тот самый «!!seq»).
+      // Свежесть файла и обновление остаются на приложении: оно
+      // перекачивает подписку при каждом применении конфига, когда
+      // файл старше исходного interval провайдера.
+      if (covered.isNotEmpty) {
+        final providers = rawConfig['proxy-providers'];
+        var hidden = 0;
+        if (providers is Map) {
+          for (final key in covered) {
+            final provider = providers[key];
+            if (provider is Map && provider['type'] == 'http') {
+              provider['interval'] = 2000000000;
+              hidden++;
+            }
+          }
+        }
+        if (hidden > 0) {
+          commonPrint.log(
+            'SubPreload: для $hidden провайдер(ов) обновление берёт на себя '
+            'приложение — ядро читает локальный файл',
+          );
+        }
+      }
     } catch (e) {
       commonPrint.log('SubPreload: предзагрузка провайдеров прервана: $e');
     }
@@ -1928,15 +1954,20 @@ final mediaUnlockState = MediaUnlockStateNotifier();
 /// обращений при каждом применении конфига. Ошибка одного провайдера
 /// не мешает остальным и не ломает запуск: ядро в этом случае качает
 /// его само, как раньше.
-Future<void> preloadProxyProviderFiles(
+///
+/// Возвращает множество ключей «покрытых» провайдеров — тех, чей файл
+/// готов к запуску ядра (записан сейчас или свежий локальный): для них
+/// patchRawConfig убирает собственную перекачку ядра.
+Future<Set<String>> preloadProxyProviderFiles(
   Map<dynamic, dynamic> rawConfig,
   String profileId,
   Map<String, String>? spoofHeaders,
 ) async {
   final providers = rawConfig['proxy-providers'];
   if (providers is! Map || providers.isEmpty) {
-    return;
+    return {};
   }
+  final covered = <String>{};
   final jobs = <Future<void>>[];
   for (final key in providers.keys.toList()) {
     final provider = providers[key];
@@ -1952,16 +1983,27 @@ Future<void> preloadProxyProviderFiles(
       path = await appPath.getProvidersFilePath(profileId, 'proxies', url);
     }
     jobs.add(
-      _preloadProxyProvider('$key', url, path, provider, spoofHeaders),
+      _preloadProxyProvider(
+        '$key',
+        url,
+        path,
+        provider,
+        spoofHeaders,
+      ).then((ok) {
+        if (ok) {
+          covered.add('$key');
+        }
+      }),
     );
   }
   if (jobs.isEmpty) {
-    return;
+    return {};
   }
   await Future.wait(jobs);
+  return covered;
 }
 
-Future<void> _preloadProxyProvider(
+Future<bool> _preloadProxyProvider(
   String key,
   String url,
   String path,
@@ -1979,20 +2021,109 @@ Future<void> _preloadProxyProvider(
           'SubPreload["$key"]: локальный файл провайдера свежий '
           '(${age.inMinutes} мин) — обращение к панели не требуется',
         );
-        return;
+        return true;
       }
     }
+    // Попытка 1: заголовки подмены (или обычный запрос, когда подмена
+    // выключена). Попытка 2 (только если тело/статус непригодны):
+    // проверенный «нейтральный» клиент v2rayNG — под него панели
+    // отдают полный plain-список ссылок, который ядро разбирает само,
+    // и обычно не требуют X-Hwid.
+    if (await _fetchAndStoreProviderBody(key, url, path, spoofHeaders)) {
+      return true;
+    }
+    final fallbackHeaders = <String, String>{
+      'User-Agent': kSubSpoofFallbackUa,
+    };
+    return await _fetchAndStoreProviderBody(
+      key,
+      url,
+      path,
+      fallbackHeaders,
+      isFallback: true,
+    );
+  } catch (e) {
+    commonPrint.log(
+      'SubPreload["$key"]: не удалось предзагрузить ($e) — скачает ядро',
+    );
+    return false;
+  }
+}
+
+/// Причина отказа HWID-панели по заголовкам ответа — маркеры те же,
+/// что читает референс (neko+, RawUpdater.doUpdate):
+/// x-hwid-not-supported / x-hwid-max-devices-reached / x-hwid-limit.
+/// Без их разбора в журнале видна только «тело не распознано»,
+/// а реальная причина — отказ панели по устройствам. Текст для
+/// журнала; null — маркеров отказа нет.
+String? _hwidRefusalReason(Headers headers) {
+  String? marker(String name) {
+    final values = headers[name];
+    if (values == null) {
+      return null;
+    }
+    final value = values.isEmpty ? null : values.first;
+    return value?.trim().toLowerCase();
+  }
+
+  if (marker('x-hwid-not-supported') == 'true') {
+    return 'панель не поддерживает HWID для этого клиента '
+        '(x-hwid-not-supported) — смените пресет клиента или отключите '
+        'подмену';
+  }
+  if (marker('x-hwid-max-devices-reached') == 'true' ||
+      marker('x-hwid-limit') == 'true') {
+    return 'исчерпан лимит устройств для этой подписки '
+        '(x-hwid-max-devices-reached/x-hwid-limit) — впишите в поле '
+        'подмены X-Hwid клиента, где подписка уже работает (например '
+        'neko+), либо сбросьте устройства в панели/боте';
+  }
+  return null;
+}
+
+/// Одна попытка скачать тело провайдера заданными заголовками,
+/// нормализовать и записать в файл. true — файл готов для ядра.
+Future<bool> _fetchAndStoreProviderBody(
+  String key,
+  String url,
+  String path,
+  Map<String, String>? headers, {
+  bool isFallback = false,
+}) async {
+  try {
+    final uaLabel = headers?['User-Agent'] ?? 'по умолчанию';
+    final hwid = headers?['X-Hwid'];
+    await SpoofReport.write(
+      'ПРОВАЙДЕР $key | GET $url | ${isFallback ? 'резерв' : 'основная'} '
+      'попытка | UA: $uaLabel | X-Hwid: ${hwid ?? 'НЕТ'}',
+    );
     final response = await request
-        .getTextResponseForUrl(url, extraHeaders: spoofHeaders)
-        .timeout(const Duration(seconds: 15));
+        .getTextResponseForUrl(url, extraHeaders: headers)
+        .timeout(Duration(seconds: isFallback ? 10 : 15));
     final status = response.statusCode ?? 0;
     final body = response.data?.toString() ?? '';
     if (status < 200 || status >= 300) {
       commonPrint.log(
-        'SubPreload["$key"]: панель ответила HTTP $status — '
-        'предзагрузка пропущена, скачает ядро',
+        'SubPreload["$key"]: панель ответила HTTP $status (UA: $uaLabel) — '
+        '${isFallback ? 'предзагрузка не удалась' : 'пробую резервный UA'}',
       );
-      return;
+      await SpoofReport.write(
+        '  ОТВЕТ: HTTP $status | '
+        '${response.headers['content-type']?.join(', ') ?? '-'}',
+      );
+      return false;
+    }
+    // Отказ HWID-панели приходит с HTTP 200/404 и заголовками-маркерами
+    // x-hwid-*: без их разбора пользователь видит «тело не распознано»
+    // вместо реальной причины (лимит устройств / HWID не поддерживается).
+    final hwidRefusal = _hwidRefusalReason(response.headers);
+    if (hwidRefusal != null) {
+      commonPrint.log(
+        'SubPreload["$key"]: панель отказала по HWID (UA: $uaLabel) — '
+        '$hwidRefusal. ${isFallback ? 'Предзагрузка не удалась' : 'Пробую резервный UA'}.',
+      );
+      await SpoofReport.write('  ОТВЕТ: HTTP $status | отказ: $hwidRefusal');
+      return false;
     }
     final normalized = normalizeSubProviderBody(body);
     if (normalized == null) {
@@ -2003,21 +2134,37 @@ Future<void> _preloadProxyProvider(
       );
       commonPrint.log(
         'SubPreload["$key"]: тело подписки не распознано '
-        '(HTTP $status, начало: "$preview") — предзагрузка пропущена',
+        '(HTTP $status, UA: $uaLabel, начало: "$preview") — '
+        '${isFallback ? 'предзагрузка не удалась' : 'пробую резервный UA'}',
       );
-      return;
+      await SpoofReport.write(
+        '  ОТВЕТ: HTTP $status | тело НЕ распознано '
+        '(${body.length} байт) | начало: "$preview"',
+      );
+      return false;
     }
+    final file = File(path);
     await file.parent.create(recursive: true);
     await file.writeAsString(normalized.body, flush: true);
     commonPrint.log(
-      'SubPreload["$key"]: подписка получена (HTTP $status, '
+      'SubPreload["$key"]: подписка получена (HTTP $status, UA: $uaLabel, '
       'формат: ${normalized.format}'
       '${normalized.nodes > 0 ? ', нод: ${normalized.nodes}' : ''}), '
       'файл провайдера записан — ядро загрузит подписку локально',
     );
+    await SpoofReport.write(
+      '  ОТВЕТ: HTTP $status | ОК: формат ${normalized.format}, '
+      'нод: ${normalized.nodes}, байт: ${normalized.body.length} — '
+      'файл провайдера записан',
+    );
+    return true;
   } catch (e) {
     commonPrint.log(
-      'SubPreload["$key"]: не удалось предзагрузить ($e) — скачает ядро',
+      'SubPreload["$key"]: запрос не удался (UA: '
+      '${headers?['User-Agent'] ?? 'по умолчанию'}: $e) — '
+      '${isFallback ? 'скачает ядро' : 'пробую резервный UA'}',
     );
+    await SpoofReport.write('  ОШИБКА запроса: $e');
+    return false;
   }
 }

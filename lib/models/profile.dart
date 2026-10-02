@@ -6,9 +6,11 @@ import 'dart:typed_data';
 import 'package:bett_box/clash/core.dart';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
+import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'clash_config.dart';
+import 'spoof_report.dart';
 import 'sub_spoof.dart';
 
 part 'generated/profile.freezed.dart';
@@ -196,6 +198,10 @@ extension ProfileExtension on Profile {
     // (Настройки → Общие → «Подмена клиента подписок»).
     final subSpoof = await resolveEffectiveSubSpoof(id);
     final spoofHeaders = await subSpoof.resolveHeaders();
+    await SpoofReport.write(
+      'ПРОФИЛЬ $id | GET $url | подмена: '
+      '${subSpoof.isEnabled ? subSpoof.client : 'выкл'}',
+    );
     if (spoofHeaders != null && spoofHeaders.isNotEmpty) {
       // Журнал подмены: в debug-логе приложения видно, какой клиент
       // реально представляется при скачивании этой подписки.
@@ -204,10 +210,29 @@ extension ProfileExtension on Profile {
         'User-Agent: ${spoofHeaders['User-Agent']}, '
         'X-Hwid: ${spoofHeaders.containsKey('X-Hwid') ? 'да' : 'нет'}',
       );
+      final hwid = spoofHeaders['X-Hwid'];
+      await SpoofReport.write(
+        '  UA: ${spoofHeaders['User-Agent']} | X-Hwid: '
+        '${hwid == null ? 'НЕТ' : hwid} | прочие: '
+        '${spoofHeaders.entries.where((e) => e.key != 'User-Agent' && e.key != 'X-Hwid').map((e) => '${e.key}: ${e.value}').join('; ')}',
+      );
+    } else {
+      await SpoofReport.write('  заголовки подмены не применены');
     }
-    final response = await request.getFileResponseForUrl(
-      url,
-      extraHeaders: spoofHeaders,
+    Response response;
+    try {
+      response = await request.getFileResponseForUrl(
+        url,
+        extraHeaders: spoofHeaders,
+      );
+    } catch (e) {
+      await SpoofReport.write('  ОШИБКА запроса: $e');
+      rethrow;
+    }
+    await _reportSubResponse(
+      id,
+      response,
+      onlyStatusAndHeaders: false,
     );
     // HWID-панели (3x-ui и форки) отвечают отказом HTTP 404 с маркерами
     // X-Hwid-Not-Supported / X-Hwid-Max-Devices-Reached; без проверки
@@ -365,6 +390,66 @@ String? _firstShareLinkLine(String body) {
   return null;
 }
 
+/// Записывает в отчёт подмены ответ панели: статус, тип тела, размер,
+/// маркеры отказа x-hwid-* и начало тела. По этому блоку в
+/// экспортированном логе видно, приняла панель подмену и ЧТО отдала
+/// (подписка/HTML-страница/отказ), — без этого разбор «не работает»
+/// вслепую: основной журнал держит только последние 256 записей,
+/// и потоки лога ядра вытесняют строки [APP] из выгрузки.
+Future<void> _reportSubResponse(
+  String id,
+  Response response, {
+  required bool onlyStatusAndHeaders,
+}) async {
+  try {
+    final status = response.statusCode ?? 0;
+    final contentType = response.headers['content-type']?.join(', ') ?? '-';
+    final markers = <String>[];
+    for (final name in [
+      'x-hwid-not-supported',
+      'x-hwid-max-devices-reached',
+      'x-hwid-limit',
+      'subscription-userinfo',
+      'profile-title',
+      'content-disposition',
+    ]) {
+      final value = response.headers[name]?.join(', ');
+      if (value != null && value.isNotEmpty) {
+        markers.add('$name: $value');
+      }
+    }
+    await SpoofReport.write(
+      '  ОТВЕТ: HTTP $status | content-type: $contentType'
+      '${markers.isEmpty ? '' : ' | ${markers.join(' | ')}'}',
+    );
+    if (onlyStatusAndHeaders) {
+      return;
+    }
+    final data = response.data;
+    Uint8List bytes;
+    if (data is Uint8List) {
+      bytes = data;
+    } else if (data is List<int>) {
+      bytes = Uint8List.fromList(data);
+    } else if (data is String) {
+      bytes = Uint8List.fromList(utf8.encode(data));
+    } else {
+      await SpoofReport.write('  ТЕЛО: непонятный тип ${data.runtimeType}');
+      return;
+    }
+    final preview = utf8
+        .decode(
+          bytes.length > 120 ? bytes.sublist(0, 120) : bytes,
+          allowMalformed: true,
+        )
+        .replaceAll('\n', ' ')
+        .replaceAll('\r', '');
+    await SpoofReport.write(
+      '  ТЕЛО: ${bytes.length} байт | начало: "$preview"',
+    );
+  } catch (_) {}
+}
+
 /// base64-блоб (v2ray-подписка), внутри которого share-ссылки.
 bool _base64BodyHasShareLinks(String body) {
   final compact = body.replaceAll(RegExp(r'\s'), '');
@@ -436,6 +521,21 @@ Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
   if (_isMihomoConfigBody(trimmed)) {
     return content;
   }
+  // JSON/YAML-СПИСОК (ноды объектами либо массив ссылок): панели
+  // отдают такой формат «чужим» клиентам — ядро его не разбирает
+  // («cannot unmarshal !!seq into provider.ProxySchema»), профиль не
+  // проходил валидацию и не создавался. Оборачиваем в провайдер так
+  // же, как share-ссылки: тело качает приложение (SubPreload) и
+  // нормализует в proxies: до старта ядра.
+  try {
+    final normalized = normalizeSubProviderBody(trimmed);
+    if (normalized != null &&
+        (normalized.format == 'share-links' ||
+            normalized.format == 'yaml-node-list' ||
+            normalized.format == 'client-config')) {
+      return _buildSubProviderWrapper(profile);
+    }
+  } catch (_) {}
   final isLinkList = _firstShareLinkLine(trimmed) != null;
   if (!isLinkList && !_base64BodyHasShareLinks(trimmed)) {
     return content;

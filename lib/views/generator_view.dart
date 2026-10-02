@@ -338,6 +338,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
         headers = spoofHeaders;
       }
     } catch (_) {}
+    await SpoofReport.write(
+      'ГЕНЕРАТОР | GET $url | UA: ${headers['User-Agent']} | '
+      'X-Hwid: ${headers['X-Hwid'] ?? 'НЕТ'}',
+    );
     Response<String> response;
     try {
       response = await _dio.get<String>(
@@ -358,10 +362,17 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       // упасть на сети/DNS ядра; подписка должна скачиваться всегда.
       final native = await protectedFetchNative(url, headers);
       if (native == null || native['error'] != null) {
+        await SpoofReport.write(
+          '  ОШИБКА запроса: $e (резерв: '
+          '${native?['error'] ?? 'недоступен'})',
+        );
         rethrow;
       }
       final status = (native['status'] as num?)?.toInt() ?? 0;
       if (status < 200 || status >= 400) {
+        await SpoofReport.write(
+          '  ОТВЕТ: HTTP $status (резерв) | отказ',
+        );
         rethrow;
       }
       final body = utf8.decode(
@@ -376,8 +387,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     }
     final body = response.data ?? '';
     if (body.trim().isEmpty) {
+      await SpoofReport.write('  ОТВЕТ: HTTP ${response.statusCode ?? 0} | пустое тело');
       throw Exception('сервер вернул пустой ответ');
     }
+    await SpoofReport.write(
+      '  ОТВЕТ: HTTP ${response.statusCode ?? 0} | ОК: '
+      '${body.length} байт | начало: "${body.trim().substring(0, body.trim().length > 100 ? 100 : body.trim().length).replaceAll('\n', ' ')}"',
+    );
     return body;
   }
 

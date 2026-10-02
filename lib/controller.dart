@@ -1924,8 +1924,21 @@ class AppController {
 
   Future<bool> exportLogs() async {
     final logsRaw = _ref.read(logsProvider).list.map((item) => item.toString());
+    // Отчёт подмены (файл): в основной журнал попадают только последние
+    // 256 записей — потоки debug-лога ядра вытесняют строки [APP],
+    // и причины отказов панели теряются из выгрузки. Отчёт досыпается
+    // в конец присланного лога — по нему видно, что ушло на панель
+    // (UA/X-Hwid) и что вернулось (статус/тип тела/маркеры x-hwid-*).
+    final spoofReport = await SpoofReport.readForExport();
     final data = await Isolate.run<List<int>>(() async {
-      final logsRawString = logsRaw.join('\n');
+      var logsRawString = logsRaw.join('\n');
+      if (spoofReport != null && spoofReport.isNotEmpty) {
+        logsRawString = '$logsRawString\n\n'
+            '===== SPOOF REPORT (отчёт подмены подписок; последние '
+            'строки = самые свежие) =====\n'
+            '$spoofReport\n'
+            '===== SPOOF REPORT END =====\n';
+      }
       return utf8.encode(logsRawString);
     });
     return await picker.saveFile(utils.logFile, Uint8List.fromList(data)) !=

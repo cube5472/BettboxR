@@ -994,7 +994,7 @@ class _SubSpoofGlobalDialogState
                 controller: _hwidController,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
-                  labelText: 'X-Hwid (пусто — стабильный id устройства)',
+                  labelText: 'X-Hwid (пусто — авто, как в neko+)',
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.refresh),
                     onPressed: () async {
@@ -1022,6 +1022,19 @@ class _SubSpoofGlobalDialogState
                 },
               ),
             ],
+            const SizedBox(height: 8),
+            Text(
+              'Если панель привязывает подписку к устройствам и она уже '
+              'работает в другом клиенте (например neko+): включите в нём '
+              'HWID, скопируйте его X-Hwid и впишите в поле выше — панель '
+              'сочтёт BettboxR тем же устройством. Пустое поле — '
+              'автоматический hwid по формуле neko+ от android_id этого '
+              'приложения.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).hintColor,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               'Настройка в свойствах конкретного профиля имеет приоритет '
