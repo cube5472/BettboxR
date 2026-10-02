@@ -831,9 +831,10 @@ class GlobalState {
     // подмена реально включена; прочие заголовки провайдера
     // (например Authorization) сохраняются.
     String? spoofGlobalUa;
+    Map<String, String>? spoofHeaders;
     try {
       final spoof = await resolveEffectiveSubSpoof(targetProfile.id);
-      final spoofHeaders = await spoof.resolveHeaders();
+      spoofHeaders = await spoof.resolveHeaders();
       if (spoofHeaders != null && spoofHeaders.isNotEmpty) {
         spoofGlobalUa = spoofHeaders['User-Agent'];
         commonPrint.log(
@@ -872,6 +873,25 @@ class GlobalState {
       }
     } catch (e) {
       commonPrint.log('SubSpoof: инъекция заголовков не удалась: $e');
+    }
+
+    // Предзагрузка proxy-провайдеров Dart-стороной: приложение само
+    // скачивает каждую подписку (с заголовками подмены, когда она
+    // включена; без неё — напрямую), нормализует тело в формат ядра
+    // и записывает в файл провайдера. Ядро стартует на готовом файле
+    // и не зависит от того, что панель отдаёт на запросы mihomo:
+    // некоторым панелям не нравится UA ядра, и они отвечают
+    // непонятным для него форматом («cannot unmarshal !!seq into
+    // provider.ProxySchema») либо отказом — на работу это больше не
+    // влияет, все решения видны в журнале (строки SubPreload).
+    try {
+      await preloadProxyProviderFiles(
+        rawConfig,
+        targetProfile.id,
+        spoofHeaders,
+      );
+    } catch (e) {
+      commonPrint.log('SubPreload: предзагрузка провайдеров прервана: $e');
     }
 
     if (rawConfig['rule-providers'] != null) {
@@ -1898,3 +1918,106 @@ class MediaUnlockStateNotifier {
 }
 
 final mediaUnlockState = MediaUnlockStateNotifier();
+
+/// Предзагрузка HTTP proxy-провайдеров Dart-стороной (см. вызов в
+/// patchRawConfig). Каждый провайдер качается параллельно с таймаутом,
+/// тело нормализуется [normalizeSubProviderBody] и записывается в файл
+/// провайдера — ядро грузит подписку локально и не зависит от ответа
+/// панели на запросы mihomo. Свежий локальный файл (в пределах
+/// interval провайдера) не перекачивается — панель не получает лишних
+/// обращений при каждом применении конфига. Ошибка одного провайдера
+/// не мешает остальным и не ломает запуск: ядро в этом случае качает
+/// его само, как раньше.
+Future<void> preloadProxyProviderFiles(
+  Map<dynamic, dynamic> rawConfig,
+  String profileId,
+  Map<String, String>? spoofHeaders,
+) async {
+  final providers = rawConfig['proxy-providers'];
+  if (providers is! Map || providers.isEmpty) {
+    return;
+  }
+  final jobs = <Future<void>>[];
+  for (final key in providers.keys.toList()) {
+    final provider = providers[key];
+    if (provider is! Map || provider['type'] != 'http') {
+      continue;
+    }
+    final url = '${provider['url'] ?? ''}';
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      continue;
+    }
+    var path = '${provider['path'] ?? ''}';
+    if (path.isEmpty) {
+      path = await appPath.getProvidersFilePath(profileId, 'proxies', url);
+    }
+    jobs.add(
+      _preloadProxyProvider('$key', url, path, provider, spoofHeaders),
+    );
+  }
+  if (jobs.isEmpty) {
+    return;
+  }
+  await Future.wait(jobs);
+}
+
+Future<void> _preloadProxyProvider(
+  String key,
+  String url,
+  String path,
+  Map<dynamic, dynamic> provider,
+  Map<String, String>? spoofHeaders,
+) async {
+  try {
+    final file = File(path);
+    if (await file.exists()) {
+      final intervalSec = int.tryParse('${provider['interval'] ?? ''}') ?? 86400;
+      final modified = await file.lastModified();
+      final age = DateTime.now().difference(modified);
+      if (age.inSeconds < intervalSec) {
+        commonPrint.log(
+          'SubPreload["$key"]: локальный файл провайдера свежий '
+          '(${age.inMinutes} мин) — обращение к панели не требуется',
+        );
+        return;
+      }
+    }
+    final response = await request
+        .getTextResponseForUrl(url, extraHeaders: spoofHeaders)
+        .timeout(const Duration(seconds: 15));
+    final status = response.statusCode ?? 0;
+    final body = response.data?.toString() ?? '';
+    if (status < 200 || status >= 300) {
+      commonPrint.log(
+        'SubPreload["$key"]: панель ответила HTTP $status — '
+        'предзагрузка пропущена, скачает ядро',
+      );
+      return;
+    }
+    final normalized = normalizeSubProviderBody(body);
+    if (normalized == null) {
+      final trimmedBody = body.trim();
+      final preview = trimmedBody.substring(
+        0,
+        trimmedBody.length > 120 ? 120 : trimmedBody.length,
+      );
+      commonPrint.log(
+        'SubPreload["$key"]: тело подписки не распознано '
+        '(HTTP $status, начало: "$preview") — предзагрузка пропущена',
+      );
+      return;
+    }
+    await file.parent.create(recursive: true);
+    await file.writeAsString(normalized.body, flush: true);
+    commonPrint.log(
+      'SubPreload["$key"]: подписка получена (HTTP $status, '
+      'формат: ${normalized.format}'
+      '${normalized.nodes > 0 ? ', нод: ${normalized.nodes}' : ''}), '
+      'файл провайдера записан — ядро загрузит подписку локально',
+    );
+  } catch (e) {
+    commonPrint.log(
+      'SubPreload["$key"]: не удалось предзагрузить ($e) — скачает ядро',
+    );
+  }
+}

@@ -28,6 +28,7 @@ import 'package:bett_box/common/common.dart';
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:yaml/yaml.dart';
 
 const kSubSpoofStoreKey = 'sub_spoof_map';
 
@@ -483,4 +484,105 @@ Future<SubSpoof> resolveEffectiveSubSpoof(String profileId) async {
     return own;
   }
   return SubSpoofStore.getGlobal();
+}
+
+/// Результат нормализации тела подписки/провайдера.
+class SubNormalizedBody {
+  /// Тело в формате, который ядро разбирает в proxy-provider.
+  final String body;
+
+  /// Человекочитаемое имя формата (для журнала).
+  final String format;
+
+  /// Число распознанных нод/ссылок (0 — не подсчитывалось).
+  final int nodes;
+
+  const SubNormalizedBody(this.body, this.format, this.nodes);
+}
+
+final RegExp _spoofSubHtmlRe = RegExp(
+  r'^\s*(<!DOCTYPE|<html)',
+  caseSensitive: false,
+);
+
+/// YAML-значение -> обычные Dart-структуры (для jsonEncode: YamlMap
+/// и YamlList не сериализуются стандартным кодировщиком).
+dynamic _yamlToPlain(dynamic value) {
+  if (value is YamlMap) {
+    return <String, dynamic>{
+      for (final entry in value.entries)
+        '${entry.key}': _yamlToPlain(entry.value),
+    };
+  }
+  if (value is YamlList) {
+    return value.map(_yamlToPlain).toList();
+  }
+  return value;
+}
+
+/// Приводит тело подписки к виду, который ядро (mihomo) разбирает
+/// в proxy-provider: конфиг с proxies:, base64 либо plain-список
+/// share-ссылок. Панели для «чужих» клиентов (включая UA ядра и
+/// некоторые пресеты подмены) могут отдавать YAML/JSON-СПИСОК ссылок
+/// или нод — ядро такой формат не понимает («cannot unmarshal !!seq
+/// into provider.ProxySchema»), поэтому список раскрывается здесь.
+/// null — тело не распознано (HTML-страница, отказ панели,
+/// неизвестная структура): вызывателю стоит залогировать начало тела
+/// и не трогать файл провайдера, оставив ядро работать как раньше.
+SubNormalizedBody? normalizeSubProviderBody(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  if (_spoofSubHtmlRe.hasMatch(trimmed)) {
+    return null;
+  }
+  try {
+    final parsed = loadYaml(trimmed);
+    if (parsed is YamlList) {
+      final items = parsed.toList();
+      if (items.isEmpty) {
+        return null;
+      }
+      final links = items
+          .whereType<String>()
+          .where((item) => item.contains('://'))
+          .toList();
+      if (links.length == items.length) {
+        // Список ссылок -> plain-список: ядро парсит его само.
+        return SubNormalizedBody(links.join('\n'), 'share-links', links.length);
+      }
+      final nodes = items.whereType<YamlMap>().toList();
+      if (nodes.length == items.length) {
+        // Список нод -> конфиг с proxies:. JSON-кодирование даёт
+        // валидный YAML (flow-отображения), экранируя любые значения.
+        final buffer = StringBuffer('proxies:');
+        for (final node in nodes) {
+          buffer.write('\n  - ${jsonEncode(_yamlToPlain(node))}');
+        }
+        return SubNormalizedBody(
+          buffer.toString(),
+          'yaml-node-list',
+          nodes.length,
+        );
+      }
+      return null;
+    }
+    if (parsed is YamlMap) {
+      if (parsed.containsKey('proxies')) {
+        final proxies = parsed['proxies'];
+        return SubNormalizedBody(
+          trimmed,
+          'clash-yaml',
+          proxies is YamlList ? proxies.length : 0,
+        );
+      }
+      // YAML-отображение без proxies — не тело провайдера.
+      return null;
+    }
+  } catch (_) {
+    // Не YAML: share-ссылки построчно / base64 / одиночная ссылка —
+    // ядро разбирает это само (ConvertsV2Ray).
+  }
+  return SubNormalizedBody(trimmed, 'raw', 0);
 }
