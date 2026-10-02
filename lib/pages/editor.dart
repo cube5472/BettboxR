@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart' hide Mode;
 import 'package:bett_box/models/common.dart';
+import 'package:bett_box/models/sub_spoof.dart';
 import 'package:bett_box/plugins/clipboard_ext.dart';
 import 'package:bett_box/providers/app.dart';
 import 'package:bett_box/state.dart';
@@ -290,7 +291,19 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     if (url == null) {
       return;
     }
-    final res = await request.getTextResponseForUrl(url);
+    // Импорт по URL часто используется для подписок, которые панели
+    // отдают только «одобренным» клиентам, — применяем глобальную
+    // клиентскую подмену (Настройки → Общие → «Подмена клиента
+    // подписок»), как в генераторе и при обновлении профиля.
+    Map<String, String>? extraHeaders;
+    try {
+      final spoof = await SubSpoofStore.getGlobal();
+      extraHeaders = await spoof.resolveHeaders();
+    } catch (_) {}
+    final res = await request.getTextResponseForUrl(
+      url,
+      extraHeaders: extraHeaders,
+    );
     _controller.text = res.data;
     widget.onUrlImport?.call(url);
   }

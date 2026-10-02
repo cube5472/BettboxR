@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -25,6 +26,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'common/common.dart';
 import 'controller.dart';
 import 'models/models.dart';
+import 'package:bett_box/services/dns_stats.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
 
@@ -40,7 +42,24 @@ class GlobalState {
   Map<String, String> proxyNetworkMap = {};
   Timer? timer;
   Timer? groupsUpdateTimer;
-  late Config config;
+  Config? _config;
+
+  bool get hasConfig => _config != null;
+
+  Config get config =>
+      _config ??
+      Config(
+        themeProps: defaultThemeProps,
+        patchClashConfig: system.isAndroid
+            ? const ClashConfig(findProcessMode: FindProcessMode.always)
+            : defaultClashConfig,
+        networkProps: defaultNetworkProps,
+        appSetting: defaultAppSettingProps.copyWith(
+          showStartSwitch: _isAndroidTV ?? false,
+        ),
+      );
+
+  set config(Config value) => _config = value;
   late AppState appState;
   bool isPre = true;
   String? coreSHA256;
@@ -66,6 +85,21 @@ class GlobalState {
   Timer? _backgroundCleanupTimer;
   final Lock _scriptEvaluateLock = Lock();
   bool isInit = false;
+
+  bool get hasMediaUnlockWidget {
+    final widgets = system.isAndroid
+        ? config.appSetting.mobileDashboardWidgets
+        : config.appSetting.desktopDashboardWidgets;
+    return widgets.contains(DashboardWidget.mediaUnlock) ||
+        widgets.contains(DashboardWidget.mediaUnlockSmall);
+  }
+
+  bool get hasNetworkDetectionWidget {
+    final widgets = system.isAndroid
+        ? config.appSetting.mobileDashboardWidgets
+        : config.appSetting.desktopDashboardWidgets;
+    return widgets.contains(DashboardWidget.networkDetection);
+  }
 
   bool get isStart => startTime != null && startTime!.isBeforeNow;
 
@@ -104,6 +138,12 @@ class GlobalState {
     await init();
   }
 
+  Future<String?> getOrCalcCoreSHA256() async {
+    if (coreSHA256 != null && coreSHA256!.isNotEmpty) return coreSHA256;
+    coreSHA256 = await _calcCoreSHA256();
+    return coreSHA256;
+  }
+
   Future<String?> _calcCoreSHA256() async {
     try {
       final file = File(appPath.corePath);
@@ -137,15 +177,15 @@ class GlobalState {
           patchClashConfig: system.isAndroid
               ? const ClashConfig(findProcessMode: FindProcessMode.always)
               : defaultClashConfig,
-          networkProps: defaultNetworkProps.copyWith(
-            systemProxy: system.isDesktop,
-          ),
+          networkProps: defaultNetworkProps,
           appSetting: defaultAppSettingProps.copyWith(
             showStartSwitch: _isAndroidTV ?? false,
           ),
         );
     await globalState.migrateOldData(config);
     _seedBuiltinScript();
+    // Пассивная DNS-статистика: грузим флаг и дневные корзины в оба изолята.
+    unawaited(dnsStats.load());
     final locale =
         utils.getLocaleForString(config.appSetting.locale) ??
         utils.getSystemLocale();
@@ -557,9 +597,14 @@ class GlobalState {
   /// фильтр RU-нод), «Bag-rules-paranoid» (DNS-карантин) и «РФ-БС» (схема
   /// белых списков: правила + провайдеры + DNS-фолбэки). Скрипты не
   /// включаются автоматически — их нужно включить тумблером на карточке.
-  /// Если скрипт с таким именем уже есть (в том числе добавленный вручную
-  /// и отредактированный) — не трогаем его. Удалённый встроенный скрипт
-  /// появится снова при следующем запуске — это осознанно: он встроенный.
+  /// УСТАРЕВШИЕ СИДЫ ОБНОВЛЯЮТСЯ: если скрипт с именем встроенного — это
+  /// старый автосид (md5 совпадает с исторической версией из
+  /// kBuiltinScriptLegacyHashes либо маркер версии ниже
+  /// kBuiltinScriptVersion), его содержимое заменяется актуальным, выбор
+  /// нод и customOptions не трогаются. Скрипты, отредактированные вручную
+  /// (md5 не совпадает ни с чем), не обновляются. Удалённый встроенный
+  /// скрипт появится снова при следующем запуске — это осознанно: он
+  /// встроенный.
   void _seedBuiltinScript() {
     const builtins = <(String, String)>[
       (kBuiltinSRuScriptLabel, builtinSRuScript),
@@ -568,10 +613,19 @@ class GlobalState {
     ];
     var next = config.scriptProps.scripts;
     var changed = false;
+    final refreshed = <String>[];
     for (final (label, content) in builtins) {
-      final exists = next.any((script) => script.label == label);
-      if (exists) continue;
-      next = [...next, Script.create(label: label, content: content)];
+      final index = next.indexWhere((script) => script.label == label);
+      if (index == -1) {
+        next = [...next, Script.create(label: label, content: content)];
+        changed = true;
+        continue;
+      }
+      final stored = next[index];
+      if (stored.content == content) continue;
+      if (!_isOutdatedBuiltinSeed(stored.content)) continue;
+      next = [...next]..[index] = stored.copyWith(content: content);
+      refreshed.add(label);
       changed = true;
     }
     if (!changed) return;
@@ -579,6 +633,26 @@ class GlobalState {
       scriptProps: config.scriptProps.copyWith(scripts: next),
     );
     preferences.saveConfig(config);
+    if (refreshed.isNotEmpty) {
+      showNotifier('Встроенные скрипты обновлены: ${refreshed.join(', ')}');
+    }
+  }
+
+  /// Это старый автосид встроенного скрипта? Маркер версии ниже актуальной —
+  /// или содержимое побайтово совпадает с исторической версией (до введения
+  /// маркеров). Ручные правки (иной md5) не считаются сидом.
+  bool _isOutdatedBuiltinSeed(String content) {
+    final match = RegExp(
+      r'bettboxr-builtin\s+v(\d+)',
+    ).firstMatch(content);
+    if (match != null) {
+      final version = int.tryParse(match.group(1) ?? '');
+      return version == null || version < kBuiltinScriptVersion;
+    }
+    if (!content.contains('Compatible_With_Bettbox')) return false;
+    return kBuiltinScriptLegacyHashes.contains(
+      md5.convert(utf8.encode(content)).toString(),
+    );
   }
 
   CoreState getCoreState() {
@@ -604,16 +678,16 @@ class GlobalState {
   Future<void> _writeRunningConfig(Map<String, dynamic> clashConfig) async {
     final content = await encodeCompactYamlTask(clashConfig);
     final configPath = await appPath.configFilePath;
-    final tempFile = File('$configPath.tmp');
+    final tempFile = File('$configPath.${DateTime.now().microsecondsSinceEpoch}.tmp');
+    await tempFile.parent.create(recursive: true);
     await tempFile.writeAsString(content, flush: true);
     try {
       await tempFile.rename(configPath);
     } catch (_) {
-      final targetFile = File(configPath);
-      if (await targetFile.exists()) {
-        await targetFile.delete();
+      if (await tempFile.exists()) {
+        await tempFile.copy(configPath);
+        await tempFile.delete();
       }
-      await tempFile.rename(configPath);
     }
   }
 
@@ -668,7 +742,13 @@ class GlobalState {
     rawConfig['tcp-concurrent'] = realPatchConfig.tcpConcurrent;
     rawConfig['unified-delay'] = realPatchConfig.unifiedDelay;
     rawConfig['ipv6'] = realPatchConfig.ipv6;
-    rawConfig['log-level'] = realPatchConfig.logLevel.name;
+    // Пока включена DNS-статистика — ядро работает минимум на debug,
+    // иначе debug-строки [DNS] в лог не попадают и считать нечего.
+    final effectiveLogLevel =
+        dnsStats.enabled && realPatchConfig.logLevel != LogLevel.debug
+        ? LogLevel.debug
+        : realPatchConfig.logLevel;
+    rawConfig['log-level'] = effectiveLogLevel.name;
     rawConfig['port'] = 0;
     rawConfig['socks-port'] = 0;
     rawConfig['keep-alive-interval'] = realPatchConfig.keepAliveInterval;
@@ -679,6 +759,17 @@ class GlobalState {
     rawConfig['tproxy-port'] = realPatchConfig.tproxyPort;
     rawConfig['find-process-mode'] = realPatchConfig.findProcessMode.name;
     rawConfig['allow-lan'] = realPatchConfig.allowLan;
+    if (realPatchConfig.authentication.isNotEmpty) {
+      rawConfig['authentication'] = realPatchConfig.authentication;
+      if (realPatchConfig.skipAuthPrefixes.isNotEmpty) {
+        rawConfig['skip-auth-prefixes'] = realPatchConfig.skipAuthPrefixes;
+      } else {
+        rawConfig.remove('skip-auth-prefixes');
+      }
+    } else {
+      rawConfig.remove('authentication');
+      rawConfig.remove('skip-auth-prefixes');
+    }
     rawConfig['mode'] = realPatchConfig.mode.name;
     if (rawConfig['tun'] == null) {
       rawConfig['tun'] = {};
@@ -732,6 +823,57 @@ class GlobalState {
       }
     }
 
+    // Клиентская подмена при скачивании подписок (профиль > глобальная
+    // настройка из Настроек): заголовки проставляются во ВСЕ HTTP-
+    // провайдеры при КАЖДОМ применении профиля — подмена живёт в
+    // настройках клиента, а не в конфиге, и меняется одним тумблером
+    // без пересборки. Вшитые в конфиг заголовки перебираются, когда
+    // подмена реально включена; прочие заголовки провайдера
+    // (например Authorization) сохраняются.
+    String? spoofGlobalUa;
+    try {
+      final spoof = await resolveEffectiveSubSpoof(targetProfile.id);
+      final spoofHeaders = await spoof.resolveHeaders();
+      if (spoofHeaders != null && spoofHeaders.isNotEmpty) {
+        spoofGlobalUa = spoofHeaders['User-Agent'];
+        commonPrint.log(
+          'SubSpoof: подмена активна (клиент: ${spoof.client}), '
+          'User-Agent: $spoofGlobalUa, '
+          'X-Hwid: ${spoofHeaders.containsKey('X-Hwid') ? 'да' : 'нет'}',
+        );
+        final providers = rawConfig['proxy-providers'];
+        if (providers is Map) {
+          var patched = 0;
+          for (final key in providers.keys.toList()) {
+            final provider = providers[key];
+            if (provider is! Map || provider['type'] != 'http') {
+              continue;
+            }
+            final providerUrl = '${provider['url'] ?? ''}';
+            if (!providerUrl.startsWith('http://') &&
+                !providerUrl.startsWith('https://')) {
+              continue;
+            }
+            final headerNode = provider['header'] is Map
+                ? (provider['header'] as Map).cast<String, dynamic>()
+                : <String, dynamic>{};
+            spoofHeaders.forEach((name, value) {
+              headerNode[name] = [value];
+            });
+            provider['header'] = headerNode;
+            patched++;
+          }
+          if (patched > 0) {
+            commonPrint.log(
+              'SubSpoof: заголовки проставлены в $patched HTTP-провайдер(ов)',
+            );
+          }
+        }
+      }
+    } catch (e) {
+      commonPrint.log('SubSpoof: инъекция заголовков не удалась: $e');
+    }
+
     if (rawConfig['rule-providers'] != null) {
       final ruleProviders = rawConfig['rule-providers'] as Map;
       for (final key in ruleProviders.keys) {
@@ -756,8 +898,11 @@ class GlobalState {
       rawConfig['profile']['store-fake-ip'] = true;
     }
     rawConfig['geox-url'] = realPatchConfig.geoXUrl.toJson();
-    rawConfig['global-ua'] = realPatchConfig.globalUa;
-    await _applySpoofProviderHeaders(rawConfig);
+    // При включённой подмене global-ua ядра тоже заменяется на UA
+    // мимикрирующего клиента: тогда ЛЮБОЙ запрос ядра (провайдеры без
+    // своих header, health-check) неотличим от реального клиента,
+    // независимо от приоритетов global-ua и provider.header в ядре.
+    rawConfig['global-ua'] = spoofGlobalUa ?? realPatchConfig.globalUa;
     if (rawConfig['hosts'] == null) {
       rawConfig['hosts'] = {};
     }
@@ -1073,46 +1218,6 @@ class GlobalState {
     rawConfig.remove('rule');
     rawConfig['rules'] = rules;
     return rawConfig;
-  }
-
-  /// Вшивает HWID-заголовки («Поддержка HWID») во все proxy-провайдеры
-  /// конфига: mihomo сам скачивает такие подписки, и без заголовков панель
-  /// считает запрос чужим клиентом. Заголовки мержатся в уже существующие
-  /// `header` провайдера, наши ключи имеют приоритет.
-  Future<void> _applySpoofProviderHeaders(
-    Map<String, dynamic> rawConfig,
-  ) async {
-    try {
-      final headers = await SubSpoof.buildProviderHeaders();
-      if (headers.isEmpty) {
-        return;
-      }
-      final providers = rawConfig['proxy-providers'];
-      if (providers is! Map) {
-        return;
-      }
-      for (final provider in providers.values) {
-        if (provider is! Map) continue;
-        final merged = <String, List<String>>{...headers};
-        final existing = provider['header'];
-        if (existing is Map) {
-          for (final entry in existing.entries) {
-            final key = entry.key.toString();
-            if (merged.containsKey(key)) {
-              continue;
-            }
-            final value = entry.value;
-            merged[key] = value is List
-                ? value.map((e) => e.toString()).toList()
-                : [value.toString()];
-          }
-        }
-        provider['header'] = merged;
-      }
-      commonPrint.log('SubSpoof: hwid headers applied to proxy-providers');
-    } catch (e) {
-      commonPrint.log('SubSpoof: provider headers failed: $e');
-    }
   }
 
   Future<Map<String, dynamic>> getProfileConfig(String profileId) async {
@@ -1443,3 +1548,353 @@ class DetectionState {
 }
 
 final detectionState = DetectionState();
+
+/// Оркестратор проверки медиа-разблокировки: держит состояние
+/// (результаты по платформам, что сейчас тестируется) и гоняет
+/// [MediaUnlockChecker] ограниченным пулом параллельных запросов.
+class MediaUnlockStateNotifier {
+  static MediaUnlockStateNotifier? _instance;
+  final _checker = MediaUnlockChecker();
+  int _requestId = 0;
+  Timer? _nodeChangeTimer;
+  static const _nodeChangeDelay = Duration(milliseconds: 800);
+  String? _lastCheckedNodeSignature;
+  bool? _preIsStart;
+
+  String _getNodeSignature() {
+    final profileId = globalState.config.currentProfileId ?? '';
+    final mode = globalState.config.patchClashConfig.mode.name;
+    final selectedMap = globalState.config.currentProfile?.selectedMap ?? {};
+    final sortedEntries = selectedMap.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final selectedStr =
+        sortedEntries.map((e) => '${e.key}:${e.value}').join(';');
+    String activeGroupsStr = '';
+    if (globalState.isInit) {
+      try {
+        final groups = globalState.appController.ref.read(groupsProvider);
+        if (groups.isNotEmpty) {
+          final sortedGroups = groups.toList()
+            ..sort((a, b) => a.name.compareTo(b.name));
+          activeGroupsStr =
+              sortedGroups.map((g) => '${g.name}:${g.realNow}').join(';');
+        }
+      } catch (_) {}
+    }
+    return '$profileId|$mode|$selectedStr|$activeGroupsStr';
+  }
+
+  final state = ValueNotifier<MediaUnlockState>(
+    const MediaUnlockState(),
+  );
+  final Set<MediaPlatform> _batchTestingPlatforms = {};
+
+  bool isBatchChecking([Iterable<MediaPlatform>? platforms]) {
+    if (state.value.isLoading) return true;
+    if (platforms == null) {
+      return state.value.testingPlatforms.any(_batchTestingPlatforms.contains);
+    }
+    return platforms.any(
+      (p) =>
+          state.value.testingPlatforms.contains(p) &&
+          _batchTestingPlatforms.contains(p),
+    );
+  }
+
+  MediaUnlockStateNotifier._internal();
+
+  factory MediaUnlockStateNotifier() {
+    _instance ??= MediaUnlockStateNotifier._internal();
+    return _instance!;
+  }
+
+  List<MediaPlatform> get pinnedPlatforms {
+    final pinned = globalState.config.appSetting.pinnedMediaPlatforms;
+    return (pinned.isNotEmpty ? pinned : defaultPinnedMediaPlatforms)
+        .take(4)
+        .toList();
+  }
+
+  void checkSingle(MediaPlatform platform) async {
+    _batchTestingPlatforms.remove(platform);
+    if (state.value.testingPlatforms.contains(platform)) return;
+    final currentTesting =
+        Set<MediaPlatform>.from(state.value.testingPlatforms)..add(platform);
+    state.value = state.value.copyWith(testingPlatforms: currentTesting);
+
+    try {
+      final res = await _checker.checkPlatform(platform).timeout(
+        const Duration(seconds: 8),
+        onTimeout: () => MediaUnlockResult(
+          platform: platform,
+          status: MediaUnlockStatus.failed,
+        ),
+      );
+      final finalMap =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      finalMap[platform] = res;
+      state.value = state.value.copyWith(
+        results: finalMap,
+        lastChecked: DateTime.now(),
+      );
+    } catch (_) {
+      final finalMap =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      finalMap.putIfAbsent(
+        platform,
+        () => MediaUnlockResult(
+          platform: platform,
+          status: MediaUnlockStatus.failed,
+        ),
+      );
+      state.value = state.value.copyWith(
+        results: finalMap,
+        lastChecked: DateTime.now(),
+      );
+    } finally {
+      final nextTesting =
+          Set<MediaPlatform>.from(state.value.testingPlatforms)
+            ..remove(platform);
+      state.value = state.value.copyWith(testingPlatforms: nextTesting);
+    }
+  }
+
+  void checkPlatforms(
+    List<MediaPlatform> platforms, {
+    bool force = false,
+    bool isFullCheck = false,
+    bool isBatchCheck = false,
+  }) async {
+    final isRunning = globalState.appState.runTime != null;
+    if (!isRunning && !force) return;
+
+    if (force) {
+      _checker.cancel();
+    }
+
+    final targetPlatforms = force
+        ? platforms.toList()
+        : platforms
+            .where((p) => !state.value.testingPlatforms.contains(p))
+            .toList();
+    if (targetPlatforms.isEmpty) return;
+
+    final requestId = ++_requestId;
+    if (isBatchCheck) {
+      _batchTestingPlatforms.addAll(targetPlatforms);
+    }
+    final pendingTesting =
+        Set<MediaPlatform>.from(state.value.testingPlatforms)
+          ..addAll(targetPlatforms);
+
+    state.value = state.value.copyWith(
+      isLoading: isFullCheck ? true : state.value.isLoading,
+      testingPlatforms: pendingTesting,
+    );
+
+    Timer? throttleTimer;
+    final bufferResults = <MediaPlatform, MediaUnlockResult>{};
+
+    void flushUpdates() {
+      throttleTimer?.cancel();
+      throttleTimer = null;
+      if (bufferResults.isEmpty) return;
+      final updates = Map<MediaPlatform, MediaUnlockResult>.from(bufferResults);
+      bufferResults.clear();
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results)
+            ..addAll(updates);
+      final nextTesting =
+          Set<MediaPlatform>.from(state.value.testingPlatforms)
+            ..removeAll(updates.keys);
+      state.value = state.value.copyWith(
+        results: nextResults,
+        testingPlatforms: nextTesting,
+      );
+    }
+
+    try {
+      final results = await _checker.checkAll(
+        platforms: targetPlatforms,
+        onProgress: (res) {
+          if (requestId != _requestId) return;
+          bufferResults[res.platform] = res;
+          throttleTimer ??= Timer(
+            const Duration(milliseconds: 100),
+            flushUpdates,
+          );
+        },
+      ).timeout(
+        Duration(seconds: (targetPlatforms.length / 8).ceil() * 8 + 5),
+        onTimeout: () {
+          _checker.cancel();
+          final timeoutMap = <MediaPlatform, MediaUnlockResult>{};
+          for (final p in targetPlatforms) {
+            timeoutMap[p] = bufferResults[p] ??
+                state.value.results[p] ??
+                MediaUnlockResult(
+                  platform: p,
+                  status: MediaUnlockStatus.failed,
+                );
+          }
+          return timeoutMap;
+        },
+      );
+      if (requestId != _requestId) return;
+      flushUpdates();
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in targetPlatforms) {
+        nextResults[p] = results[p] ??
+            bufferResults[p] ??
+            state.value.results[p] ??
+            MediaUnlockResult(
+              platform: p,
+              status: MediaUnlockStatus.failed,
+            );
+      }
+      _lastCheckedNodeSignature = _getNodeSignature();
+      state.value = state.value.copyWith(
+        isLoading: isFullCheck ? false : state.value.isLoading,
+        results: nextResults,
+        lastChecked: DateTime.now(),
+      );
+    } catch (_) {
+      throttleTimer?.cancel();
+      if (requestId != _requestId) return;
+      flushUpdates();
+      final fallbackResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in targetPlatforms) {
+        fallbackResults.putIfAbsent(
+          p,
+          () => MediaUnlockResult(
+            platform: p,
+            status: MediaUnlockStatus.failed,
+          ),
+        );
+      }
+      _lastCheckedNodeSignature = _getNodeSignature();
+      state.value = state.value.copyWith(
+        isLoading: isFullCheck ? false : state.value.isLoading,
+        results: fallbackResults,
+        lastChecked: DateTime.now(),
+      );
+    } finally {
+      throttleTimer?.cancel();
+      _batchTestingPlatforms.removeAll(targetPlatforms);
+      final nextTesting =
+          Set<MediaPlatform>.from(state.value.testingPlatforms)
+            ..removeAll(targetPlatforms);
+      state.value = state.value.copyWith(
+        isLoading: (requestId == _requestId && isFullCheck)
+            ? false
+            : state.value.isLoading,
+        testingPlatforms: nextTesting,
+      );
+    }
+  }
+
+  void checkPinned({bool force = false, List<MediaPlatform>? platforms}) {
+    checkPlatforms(platforms ?? pinnedPlatforms, force: force);
+  }
+
+  void checkAll({
+    bool force = false,
+    List<MediaPlatform>? platforms,
+  }) {
+    final targets = platforms ?? MediaPlatform.values;
+    final isFull = targets.length >= MediaPlatform.values.length;
+    checkPlatforms(
+      targets,
+      force: force,
+      isFullCheck: isFull,
+      isBatchCheck: true,
+    );
+  }
+
+  void startCheckOnNodeChange() async {
+    final isRunning = globalState.appState.runTime != null;
+    if (!isRunning) {
+      _preIsStart = false;
+      _nodeChangeTimer?.cancel();
+      return;
+    }
+    final isStartup = _preIsStart != true;
+    _preIsStart = true;
+
+    if (!globalState.hasMediaUnlockWidget) return;
+    if (!globalState.config.appSetting.mediaUnlockRefreshOnNodeChange) return;
+
+    if (isStartup) {
+      _nodeChangeTimer?.cancel();
+      _checker.cancel();
+      final requestId = ++_requestId;
+
+      if (globalState.hasNetworkDetectionWidget) {
+        var waited = 0;
+        while (detectionState.state.value.isLoading &&
+            waited < 6000 &&
+            globalState.appState.runTime != null &&
+            requestId == _requestId) {
+          await Future.delayed(const Duration(milliseconds: 150));
+          waited += 150;
+        }
+      } else {
+        await Future.delayed(const Duration(seconds: 2));
+      }
+      if (requestId != _requestId || globalState.appState.runTime == null) return;
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in pinnedPlatforms) {
+        nextResults.remove(p);
+      }
+      state.value = state.value.copyWith(
+        results: nextResults,
+        testingPlatforms: {},
+        isLoading: false,
+      );
+      _lastCheckedNodeSignature = _getNodeSignature();
+      checkPinned(force: true);
+      return;
+    }
+
+    _nodeChangeTimer?.cancel();
+    _nodeChangeTimer = Timer(_nodeChangeDelay, () {
+      if (globalState.appState.runTime == null) return;
+      if (globalState.backgroundMode.value) return;
+
+      final currentSignature = _getNodeSignature();
+      if (_lastCheckedNodeSignature == currentSignature &&
+          state.value.results.isNotEmpty) {
+        return;
+      }
+      _lastCheckedNodeSignature = currentSignature;
+      final nextResults =
+          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
+      for (final p in pinnedPlatforms) {
+        nextResults.remove(p);
+      }
+      state.value = state.value.copyWith(
+        results: nextResults,
+        testingPlatforms: {},
+        isLoading: false,
+      );
+      checkPinned(force: true);
+    });
+  }
+
+  void tryStartCheck() {
+    final isRunning = globalState.appState.runTime != null;
+    if (!isRunning) return;
+    if (!globalState.hasMediaUnlockWidget) return;
+    if (state.value.isLoading || state.value.testingPlatforms.isNotEmpty) return;
+    if (state.value.results.isNotEmpty) return;
+    final needsInitialCheck =
+        pinnedPlatforms.any((p) => !state.value.results.containsKey(p));
+    if (!needsInitialCheck) return;
+    checkPinned();
+  }
+}
+
+final mediaUnlockState = MediaUnlockStateNotifier();
