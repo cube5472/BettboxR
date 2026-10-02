@@ -28,6 +28,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bett_box/common/common.dart';
+import 'package:bett_box/generator/v2ray_json.dart';
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
@@ -555,6 +556,26 @@ SubNormalizedBody? normalizeSubProviderBody(String raw) {
     return null;
   }
   final seenNames = <String>{};
+  // v2ray-JSON (массив полных Xray-конфигов — формат панелей для
+  // happ/v2raytun/INCY, эндпоинт вида /json/<token>): ядро такой
+  // массив не разбирает, а элементы массива — не ноды, а ЦЕЛЫЕ
+  // конфиги (dns/routing/outbounds), поэтому конвертация идёт через
+  // полноценный конвертер [tryParseV2rayJsonSubscription], а не через
+  // convertSubNodeToClash. Результат — тот же вид proxies:-файла,
+  // что и для остальных списков нод ниже.
+  final v2rayNodes = tryParseV2rayJsonSubscription(trimmed);
+  if (v2rayNodes != null && v2rayNodes.isNotEmpty) {
+    final buffer = StringBuffer('proxies:');
+    for (final node in v2rayNodes) {
+      _spoofUniqueNodeName(node, seenNames);
+      buffer.write('\n  - ${jsonEncode(node)}');
+    }
+    return SubNormalizedBody(
+      buffer.toString(),
+      'v2ray-json',
+      v2rayNodes.length,
+    );
+  }
   try {
     final parsed = loadYaml(trimmed);
     if (parsed is YamlList) {

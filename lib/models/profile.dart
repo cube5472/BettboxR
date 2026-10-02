@@ -526,13 +526,16 @@ Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
   // («cannot unmarshal !!seq into provider.ProxySchema»), профиль не
   // проходил валидацию и не создавался. Оборачиваем в провайдер так
   // же, как share-ссылки: тело качает приложение (SubPreload) и
-  // нормализует в proxies: до старта ядра.
+  // нормализует в proxies: до старта ядра. v2ray-json — массив
+  // полных Xray-конфигов (панели happ/v2raytun/INCY), его
+  // нормализатор тоже раскрывает в proxies:.
   try {
     final normalized = normalizeSubProviderBody(trimmed);
     if (normalized != null &&
         (normalized.format == 'share-links' ||
             normalized.format == 'yaml-node-list' ||
-            normalized.format == 'client-config')) {
+            normalized.format == 'client-config' ||
+            normalized.format == 'v2ray-json')) {
       return _buildSubProviderWrapper(profile);
     }
   } catch (_) {}
@@ -554,9 +557,9 @@ Future<String> _buildSubProviderWrapper(Profile profile) async {
     headers = await spoof.resolveHeaders();
   } catch (_) {}
   final b = StringBuffer()
-    ..writeln('# bettboxr-sub-wrap: тело подписки (share-ссылки/base64)')
-    ..writeln('# обёрнуто в proxy-provider — ядро скачивает и разбирает')
-    ..writeln('# его само; заголовки подмены профиля сохранены.')
+    ..writeln('# bettboxr-sub-wrap: тело подписки (share-ссылки/base64/')
+    ..writeln('# v2ray-JSON) обёрнуто в proxy-provider — ядро скачивает и')
+    ..writeln('# разбирает его само; заголовки подмены профиля сохранены.')
     ..writeln('mode: rule')
     ..writeln('log-level: silent')
     ..writeln('ipv6: true')
