@@ -14,19 +14,7 @@ import 'package:flutter/cupertino.dart';
 class Request {
   late final Dio _dio;
   late final Dio _clashDio;
-  late final Dio _ipDetailDio;
   String? userAgent;
-
-  /// Проверка IP («IP сети» на дашборде и диалог «Подробнее») не должна
-  /// зависеть от локального mixed-port: порт может быть закрыт файрволом.
-  /// На Android трафик процесса и так входит в TUN, поэтому DIRECT попадает
-  /// в ядро и маршрутизируется правилами профиля (ip-api.com/get.geojs.io —
-  /// зарубежные, уходят через VPN-группу — карточка показывает IP выходной
-  /// ноды, как и раньше). На десктопе TUN может быть выключен — там прежнее
-  /// поведение (через mixed-port).
-  static String _ipCheckFindProxy(Uri uri) => system.isAndroid
-      ? 'DIRECT'
-      : BettboxHttpOverrides.handleFindProxy(uri);
 
   Request() {
     _dio = Dio(BaseOptions(headers: {'User-Agent': browserUa}));
@@ -49,35 +37,22 @@ class Request {
         return client;
       },
     );
-    _ipDetailDio = Dio(BaseOptions(headers: {'User-Agent': browserUa}));
-    _ipDetailDio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient();
-        client.autoUncompress = false;
-        client.findProxy = _ipCheckFindProxy;
-        return client;
-      },
-    );
   }
 
   Uint8List _decompressIfNeeded(Uint8List bytes, Headers headers) {
     final encodings =
         headers['content-encoding']?.map((e) => e.toLowerCase()).toList() ?? [];
     final encodingStr = encodings.join(', ');
-    var wantGzip = encodingStr.contains('gzip');
-    var wantDeflate = encodingStr.contains('deflate');
+    final wantGzip = encodingStr.contains('gzip');
+    final wantDeflate = encodingStr.contains('deflate');
 
     var current = bytes;
     for (var i = 0; i < 4; i++) {
       final isGzipMagic =
           current.length >= 2 && current[0] == 0x1f && current[1] == 0x8b;
       if (wantGzip || isGzipMagic) {
-        if (!isGzipMagic) {
-          break;
-        }
         try {
           current = Uint8List.fromList(gzip.decode(current));
-          wantGzip = false;
           continue;
         } catch (_) {
           break;
@@ -86,18 +61,9 @@ class Request {
       if (wantDeflate) {
         try {
           current = Uint8List.fromList(zlib.decode(current));
-          wantDeflate = false;
           continue;
         } catch (_) {
-          try {
-            current = Uint8List.fromList(
-              ZLibDecoder(raw: true).convert(current),
-            );
-            wantDeflate = false;
-            continue;
-          } catch (_) {
-            break;
-          }
+          break;
         }
       }
       break;
@@ -111,85 +77,11 @@ class Request {
     return Uint8List.fromList((data as List).cast<int>());
   }
 
-  Future<Response> _getFileResponseForUrl(
-    String url,
-    ResponseType responseType,
-  ) async {
-    final uri = Uri.parse(url);
-    final segments =
-        uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
-    if (segments.isEmpty && uri.host.isEmpty) {
-      throw Exception('Empty file path in file url: $url');
-    }
-
-    final filePath = _buildFilePath(uri, segments);
-    final file = File(filePath);
-
-    if (!await file.exists()) {
-      throw Exception('Local file not found: $filePath');
-    }
-
-    final bytes = await file.readAsBytes();
-    return _buildResponseFromBytes(
-      url: url,
-      bytes: bytes,
-      responseType: responseType,
-      fileName: segments.lastOrNull,
-    );
-  }
-
-  String _buildFilePath(Uri uri, List<String> segments) {
-    if (segments.isNotEmpty && segments.first.contains(':')) {
-      return segments.join('/');
-    }
-    final host = uri.host;
-    if (host.isNotEmpty && host.toLowerCase() != 'localhost') {
-      if (host.length == 1 && RegExp(r'^[a-zA-Z]$').hasMatch(host)) {
-        return '$host:/${segments.join('/')}';
-      }
-      return '//$host/${segments.join('/')}';
-    }
-    return '/${segments.join('/')}';
-  }
-
-  Response _buildResponseFromBytes({
-    required String url,
-    required Uint8List bytes,
-    required ResponseType responseType,
-    String? fileName,
-  }) {
-    final requestOptions = RequestOptions(path: url);
-    final disposition = fileName == null
-        ? null
-        : 'attachment; filename*=UTF-8\'\'${Uri.encodeComponent(fileName)}';
-    final headers = disposition == null
-        ? null
-        : Headers.fromMap({'content-disposition': [disposition]});
-    if (responseType == ResponseType.plain) {
-      return Response(
-        requestOptions: requestOptions,
-        data: utf8.decode(bytes, allowMalformed: true),
-        statusCode: HttpStatus.ok,
-        headers: headers,
-      );
-    }
-    return Response(
-      requestOptions: requestOptions,
-      data: bytes,
-      statusCode: HttpStatus.ok,
-      headers: headers,
-    );
-  }
-
   Future<Response> _getResponseForUrl(
     String url,
     ResponseType responseType, {
-    Map<String, String>? extraHeaders,
+    Map<String, dynamic>? extraHeaders,
   }) async {
-    if (url.isFileUrl) {
-      return _getFileResponseForUrl(url, responseType);
-    }
-
     String? userInfo;
     String requestUrl = url;
 
@@ -222,135 +114,49 @@ class Request {
       headers.addAll(extraHeaders);
     }
 
-    Response dioResponse;
-    try {
-      dioResponse = await _clashDio.get(
-        requestUrl,
-        options: Options(responseType: ResponseType.bytes, headers: headers),
-      );
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
-        rethrow;
-      }
-      // Резервный путь: прямой защищённый фетч мимо собственного
-      // туннеля (VpnService.protect). Нужен, когда обычный путь упал
-      // на сети/в ядре (DNS профиля недоступен, mixed-port закрыт,
-      // ядро вернуло отказ на resolve/dial) — подписка не должна
-      // зависеть от здоровья маршрута ядра. Не удался и резерв —
-      // пробрасываем исходную ошибку.
-      final rescued = await _protectedFetchFallback(
-        requestUrl,
-        headers.cast<String, String>(),
-        responseType,
-      );
-      if (rescued == null) {
-        rethrow;
-      }
-      dioResponse = rescued;
-    }
-
-    final rawBytes = _bytesFromResponse(dioResponse);
-    final decompressedBytes = _decompressIfNeeded(
-      rawBytes,
-      dioResponse.headers,
+    final response = await _clashDio.get(
+      requestUrl,
+      options: Options(responseType: ResponseType.bytes, headers: headers),
     );
+
+    final rawBytes = _bytesFromResponse(response);
+    final decompressedBytes = _decompressIfNeeded(rawBytes, response.headers);
 
     if (responseType == ResponseType.plain) {
       final text = utf8.decode(decompressedBytes, allowMalformed: true);
       return Response(
-        requestOptions: dioResponse.requestOptions,
+        requestOptions: response.requestOptions,
         data: text,
-        statusCode: dioResponse.statusCode,
-        statusMessage: dioResponse.statusMessage,
-        isRedirect: dioResponse.isRedirect,
-        redirects: dioResponse.redirects,
-        extra: dioResponse.extra,
-        headers: dioResponse.headers,
+        statusCode: response.statusCode,
+        statusMessage: response.statusMessage,
+        isRedirect: response.isRedirect,
+        redirects: response.redirects,
+        extra: response.extra,
+        headers: response.headers,
       );
     } else {
       return Response(
-        requestOptions: dioResponse.requestOptions,
+        requestOptions: response.requestOptions,
         data: decompressedBytes,
-        statusCode: dioResponse.statusCode,
-        statusMessage: dioResponse.statusMessage,
-        isRedirect: dioResponse.isRedirect,
-        redirects: dioResponse.redirects,
-        extra: dioResponse.extra,
-        headers: dioResponse.headers,
+        statusCode: response.statusCode,
+        statusMessage: response.statusMessage,
+        isRedirect: response.isRedirect,
+        redirects: response.redirects,
+        extra: response.extra,
+        headers: response.headers,
       );
-    }
-  }
-
-  /// Резервный фетч нативной стороной (см. protectedFetchNative):
-  /// возвращает dio-Response либо null (резерв недоступен/упал).
-  /// Content-Encoding нативная сторона вычищает — тело приходит уже
-  /// распакованным, повторная распаковка не нужна.
-  Future<Response?> _protectedFetchFallback(
-    String url,
-    Map<String, String> headers,
-    ResponseType responseType,
-  ) async {
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      return null;
-    }
-    try {
-      final native = await protectedFetchNative(url, headers);
-      if (native == null || native['error'] != null) {
-        return null;
-      }
-      final status = (native['status'] as num?)?.toInt() ?? 0;
-      final bodyB64 = '${native['body'] ?? ''}';
-      if (status < 200) {
-        return null;
-      }
-      final rawBody = base64Decode(bodyB64);
-      final nativeHeaders = (native['headers'] as Map?)?.cast<String, dynamic>()
-              ?? const <String, dynamic>{};
-      final requestOption = RequestOptions(path: url);
-      final responseHeaders = Headers.fromMap(
-        nativeHeaders.map(
-          (key, value) => MapEntry(key.toLowerCase(), ['$value']),
-        ),
-      );
-      if (responseType == ResponseType.plain) {
-        return Response<String>(
-          requestOptions: requestOption,
-          data: utf8.decode(rawBody, allowMalformed: true),
-          statusCode: status,
-          headers: responseHeaders,
-        );
-      }
-      return Response(
-        requestOptions: requestOption,
-        data: Uint8List.fromList(rawBody),
-        statusCode: status,
-        headers: responseHeaders,
-      );
-    } catch (_) {
-      return null;
     }
   }
 
   Future<Response> getFileResponseForUrl(
     String url, {
-    Map<String, String>? extraHeaders,
+    Map<String, dynamic>? headers,
   }) async {
-    return _getResponseForUrl(
-      url,
-      ResponseType.bytes,
-      extraHeaders: extraHeaders,
-    );
+    return _getResponseForUrl(url, ResponseType.bytes, extraHeaders: headers);
   }
 
-  Future<Response> getTextResponseForUrl(
-    String url, {
-    Map<String, String>? extraHeaders,
-  }) async {
-    return _getResponseForUrl(
-      url,
-      ResponseType.plain,
-      extraHeaders: extraHeaders,
-    );
+  Future<Response> getTextResponseForUrl(String url) async {
+    return _getResponseForUrl(url, ResponseType.plain);
   }
 
   Future<MemoryImage?> getImage(String url) async {
@@ -396,7 +202,7 @@ class Request {
         }
       }
     } catch (e) {
-      commonPrint.log('Check update failed: ${e.formatErrorLog}');
+      commonPrint.log('Check update failed: ${e.formatError}');
     }
     return null;
   }
@@ -410,7 +216,9 @@ class Request {
     ];
   }
 
-  final List<String> _domesticIpSources = ['https://myip.ipip.net/json'];
+  final List<String> _domesticIpSources = [
+    'https://myip.ipip.net/json',
+  ];
 
   final List<String> _cloudflareIpInfoSources = [
     'https://ip.sb/cdn-cgi/trace',
@@ -434,15 +242,12 @@ class Request {
       BaseOptions(
         receiveTimeout: effectiveTimeout,
         connectTimeout: effectiveTimeout,
-        sendTimeout: effectiveTimeout,
       ),
     );
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
         client.autoUncompress = false;
-        client.connectionTimeout = effectiveTimeout;
-        client.findProxy = _ipCheckFindProxy;
         return client;
       },
     );
@@ -486,18 +291,15 @@ class Request {
           .then((res) {
             if (res.statusCode == HttpStatus.ok && res.data != null) {
               try {
-                final text = utf8
-                    .decode(
-                      _decompressIfNeeded(_bytesFromResponse(res), res.headers),
-                      allowMalformed: true,
-                    )
-                    .trim();
+                final text = utf8.decode(
+                  _decompressIfNeeded(_bytesFromResponse(res), res.headers),
+                  allowMalformed: true,
+                ).trim();
                 IpInfo? ipInfo;
                 if (text.startsWith('{')) {
                   final jsonMap = json.decode(text);
                   if (jsonMap is Map<String, dynamic>) {
-                    if (url.contains('ip-api.com') &&
-                        jsonMap['status'] != 'success') {
+                    if (url.contains('ip-api.com') && jsonMap['status'] != 'success') {
                       ipInfo = null;
                     } else {
                       ipInfo = IpInfo.fromJson(jsonMap);
@@ -540,15 +342,7 @@ class Request {
 
     return await firstCompleter.future.timeout(
       effectiveTimeout,
-      onTimeout: () {
-        cleanup();
-        cancelToken?.cancel('timeout');
-        final res = primaryInfo ?? fallbackInfo;
-        if (res != null) {
-          return Result.success(res);
-        }
-        return Result.error('timeout');
-      },
+      onTimeout: () => Result.success(primaryInfo ?? fallbackInfo),
     );
   }
 
@@ -578,6 +372,7 @@ class Request {
     );
   }
 
+  // 备用 Cloudflare 探测接口
   Future<Result<IpInfo?>> checkIpCloudflare({
     CancelToken? cancelToken,
     Duration? timeout,
@@ -589,47 +384,17 @@ class Request {
     CancelToken? cancelToken,
     Duration? timeout,
   }) async {
-    return _checkIpFromSources(
-      _cloudflareDomesticIpSources,
-      cancelToken,
-      timeout,
-    );
+    return _checkIpFromSources(_cloudflareDomesticIpSources, cancelToken, timeout);
   }
 
-  static const _cacheDuration = Duration(days: 30);
-
-  Future<File> _getIpCacheFile() async {
-    final filePath = await appPath.ipCacheFilePath;
-    final file = File(filePath);
-    if (!file.parent.existsSync()) {
-      await file.parent.create(recursive: true);
-    }
-    return file;
-  }
-
-  Future<void> _writeIpCacheFile(File file, Map<String, dynamic> entries) async {
-    try {
-      final tempFile = File('${file.path}.${DateTime.now().microsecondsSinceEpoch}.tmp');
-      await tempFile.parent.create(recursive: true);
-      await tempFile.writeAsString(json.encode(entries), flush: true);
-      try {
-        await tempFile.rename(file.path);
-      } catch (_) {
-        if (await tempFile.exists()) {
-          await tempFile.copy(file.path);
-          await tempFile.delete();
-        }
-      }
-    } catch (_) {}
-  }
+  static const _ipCacheKey = 'ip_detail_cache';
+  static const _cacheDuration = Duration(days: 14);
 
   Future<IpInfo?> _getValidCachedIp(String cacheKey) async {
     try {
-      final file = await _getIpCacheFile();
-      if (!await file.exists()) return null;
-
-      final cacheStr = await file.readAsString();
-      if (cacheStr.isEmpty) return null;
+      final prefs = await preferences.sharedPreferencesCompleter.future;
+      final cacheStr = prefs?.getString(_ipCacheKey);
+      if (cacheStr == null || cacheStr.isEmpty) return null;
 
       final dynamic decoded = json.decode(cacheStr);
       if (decoded is! Map) return null;
@@ -642,6 +407,7 @@ class Request {
       final validEntries = <String, dynamic>{};
       IpInfo? matchedIpInfo;
 
+      // 仅在用户查询时，主动检查并清理所有过期的缓存
       for (final entry in rawMap.entries) {
         final val = entry.value;
         if (val is Map) {
@@ -662,8 +428,9 @@ class Request {
         }
       }
 
+      // 如果有过期的数据被剔除，保存清理后的缓存
       if (hasExpired) {
-        await _writeIpCacheFile(file, validEntries);
+        await prefs?.setString(_ipCacheKey, json.encode(validEntries));
       }
 
       return matchedIpInfo;
@@ -674,20 +441,16 @@ class Request {
 
   Future<void> _saveCachedIp(String cacheKey, IpInfo ipInfo) async {
     try {
-      final file = await _getIpCacheFile();
-      Map<String, dynamic> rawMap = {};
-      if (await file.exists()) {
-        final cacheStr = await file.readAsString();
-        if (cacheStr.isNotEmpty) {
-          try {
-            rawMap = Map<String, dynamic>.from(json.decode(cacheStr) as Map);
-          } catch (_) {}
-        }
-      }
+      final prefs = await preferences.sharedPreferencesCompleter.future;
+      final cacheStr = prefs?.getString(_ipCacheKey);
+      final rawMap = (cacheStr != null && cacheStr.isNotEmpty)
+          ? Map<String, dynamic>.from(json.decode(cacheStr) as Map)
+          : <String, dynamic>{};
 
       final now = DateTime.now().millisecondsSinceEpoch;
       final maxAgeMs = _cacheDuration.inMilliseconds;
 
+      // 清理已过期数据，并插入新数据
       final validEntries = <String, dynamic>{};
       for (final entry in rawMap.entries) {
         final val = entry.value;
@@ -700,9 +463,12 @@ class Request {
         }
       }
 
-      validEntries[cacheKey] = {'timestamp': now, 'data': ipInfo.toJson()};
+      validEntries[cacheKey] = {
+        'timestamp': now,
+        'data': ipInfo.toJson(),
+      };
 
-      await _writeIpCacheFile(file, validEntries);
+      await prefs?.setString(_ipCacheKey, json.encode(validEntries));
     } catch (_) {}
   }
 
@@ -714,6 +480,7 @@ class Request {
     final isZh = Intl.getCurrentLocale().toLowerCase().startsWith('zh');
     final cacheKey = '${ip}_${isZh ? 'zh' : 'en'}';
 
+    // 1. 检查本地缓存并执行过期清理（有效时长7天）
     final cached = await _getValidCachedIp(cacheKey);
     if (cached != null) {
       return Result.success(cached);
@@ -725,7 +492,7 @@ class Request {
         : 'http://ip-api.com/json/$ip';
 
     try {
-      final res = await _ipDetailDio.get<Map<String, dynamic>>(
+      final res = await _dio.get<Map<String, dynamic>>(
         url,
         cancelToken: cancelToken,
         options: Options(
@@ -743,6 +510,7 @@ class Request {
           return Result.error(message);
         }
         final ipInfo = IpInfo.fromJson(data);
+        // 2. 写入 7 天有效期的本地缓存
         await _saveCachedIp(cacheKey, ipInfo);
         return Result.success(ipInfo);
       }
