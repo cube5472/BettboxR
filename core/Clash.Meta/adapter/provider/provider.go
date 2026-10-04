@@ -16,9 +16,9 @@ import (
 	"github.com/metacubex/mihomo/component/age"
 	"github.com/metacubex/mihomo/component/profile/cachefile"
 	"github.com/metacubex/mihomo/component/resource"
+	"github.com/metacubex/mihomo/log"
 	C "github.com/metacubex/mihomo/constant"
 	P "github.com/metacubex/mihomo/constant/provider"
-	"github.com/metacubex/mihomo/log"
 	"github.com/metacubex/mihomo/tunnel/statistic"
 
 	"github.com/dlclark/regexp2"
@@ -384,22 +384,18 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 
 		if err := yaml.Unmarshal(buf, schema); err != nil {
 			proxies, err1 := convert.ConvertsV2Ray(buf)
-			if err1 != nil {
-				return nil, fmt.Errorf("%w, %w", err, err1)
+			// YAML/JSON разобрался, но ключа proxies нет (sing-box JSON,
+			// маппинги без proxies и т.п.) — перед отказом пробуем
+			// share-ссылки: подписка может быть текстовым списком,
+			// который случайно оказался валидным YAML/JSON.
+			if err1 != nil || len(proxies) == 0 {
+				return nil, errors.New("file must have a `proxies` field")
 			}
 			schema.Proxies = proxies
 		}
 
 		if schema.Proxies == nil {
-			// YAML/JSON разобрался, но ключа proxies нет (sing-box JSON,
-			// маппинги без proxies и т.п.) — перед отказом пробуем
-			// share-ссылки: подписка может быть текстовым списком,
-			// который случайно оказался валидным YAML/JSON.
-			proxies, err1 := convert.ConvertsV2Ray(buf)
-			if err1 != nil || len(proxies) == 0 {
-				return nil, errors.New("file must have a `proxies` field")
-			}
-			schema.Proxies = proxies
+			return nil, errors.New("file must have a `proxies` field")
 		}
 
 		proxies := []C.Proxy{}
