@@ -245,8 +245,13 @@ Map<String, dynamic> parseVless(String url) {
     if (wsOpts.isNotEmpty) proxy['ws-opts'] = wsOpts;
     if (!params.has('alpn')) proxy['alpn'] = ['h2', 'http/1.1'];
   }
-  if (params.get('type') == 'grpc' && params.has('path')) {
-    proxy['grpc-opts'] = {'grpc-service-name': params.get('path')};
+  if (params.get('type') == 'grpc') {
+    // v2rayN кладет serviceName в path=; некоторые панели — в serviceName=.
+    // Без него сервер отвечает обрывом (EOF) — узлы FishVPN grpc+reality.
+    final serviceName = params.get('serviceName') ?? params.get('path');
+    if (serviceName != null && serviceName.isNotEmpty) {
+      proxy['grpc-opts'] = {'grpc-service-name': serviceName};
+    }
   }
   // XHTTP / splithttp: ядро знает только network 'xhttp' и ждёт опции в
   // xhttp-opts (path/host/mode). Без них path теряется, ядро стучится
@@ -323,8 +328,12 @@ Map<String, dynamic> parseTrojan(String url) {
     if (wsOpts.isNotEmpty) proxy['ws-opts'] = wsOpts;
     if (!params.has('alpn')) proxy['alpn'] = ['h2', 'http/1.1'];
   }
-  if (params.get('type') == 'grpc' && params.has('path')) {
-    proxy['grpc-opts'] = {'grpc-service-name': params.get('path')};
+  if (params.get('type') == 'grpc') {
+    // v2rayN кладет serviceName в path=; некоторые панели — в serviceName=.
+    final serviceName = params.get('serviceName') ?? params.get('path');
+    if (serviceName != null && serviceName.isNotEmpty) {
+      proxy['grpc-opts'] = {'grpc-service-name': serviceName};
+    }
   }
   final alpn = params.get('alpn');
   if (alpn != null) {
@@ -1142,7 +1151,12 @@ Map<String, dynamic> parseVmess(String url) {
     if (h2Opts.isNotEmpty) proxy['h2-opts'] = h2Opts;
   } else if (net == 'grpc') {
     final grpcOpts = <String, dynamic>{};
-    if (path.isNotEmpty) grpcOpts['grpc-service-name'] = path;
+    final serviceName = '${json['serviceName'] ?? ''}';
+    if (path.isNotEmpty) {
+      grpcOpts['grpc-service-name'] = path;
+    } else if (serviceName.isNotEmpty) {
+      grpcOpts['grpc-service-name'] = serviceName;
+    }
     if (grpcOpts.isNotEmpty) proxy['grpc-opts'] = grpcOpts;
   } else if (net == 'tcp' && '${json['type'] ?? ''}' == 'http') {
     proxy['network'] = 'http';

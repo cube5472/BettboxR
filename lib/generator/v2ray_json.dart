@@ -443,8 +443,21 @@ bool _applyStream(Map<String, dynamic> proxy, Map<dynamic, dynamic> stream) {
       final xs = stream['xhttpSettings'] ?? stream['splithttpSettings'];
       final xhttpOpts = <String, dynamic>{};
       if (xs is Map) {
+        // Панели (например FishVPN/v2raytun) кладут расширенные параметры
+        // во вложенный map 'extra'. Верхний уровень — лишь краткая сводка
+        // (path/host/mode). Сливаем: значения из extra перекрывают верхний
+        // уровень, пустые/null не переносим.
+        final eff = Map<dynamic, dynamic>.from(xs);
+        final extra = xs['extra'];
+        if (extra is Map) {
+          extra.forEach((k, v) {
+            if (v == null || v == '') return;
+            eff[k] = v;
+          });
+        }
+
         void putStr(String from, String to) {
-          final v = xs[from];
+          final v = eff[from];
           if (v is String && v.isNotEmpty) xhttpOpts[to] = v;
         }
 
@@ -452,7 +465,7 @@ bool _applyStream(Map<String, dynamic> proxy, Map<dynamic, dynamic> stream) {
         putStr('host', 'host');
         putStr('mode', 'mode');
         putStr('xPaddingBytes', 'x-padding-bytes');
-        if (xs['xPaddingObfsMode'] == true) {
+        if (eff['xPaddingObfsMode'] == true) {
           xhttpOpts['x-padding-obfs-mode'] = true;
         }
         putStr('xPaddingKey', 'x-padding-key');
@@ -462,14 +475,16 @@ bool _applyStream(Map<String, dynamic> proxy, Map<dynamic, dynamic> stream) {
         putStr('uplinkHTTPMethod', 'uplink-http-method');
         putStr('uplinkDataKey', 'uplink-data-key');
         putStr('uplinkDataPlacement', 'uplink-data-placement');
+        putStr('uplinkChunkSize', 'uplink-chunk-size');
         putStr('seqKey', 'seq-key');
         putStr('seqPlacement', 'seq-placement');
         putStr('sessionIDKey', 'session-key');
         putStr('sessionIDPlacement', 'session-placement');
+        putStr('sessionIDLength', 'session-length');
         putStr('scMaxEachPostBytes', 'sc-max-each-post-bytes');
         putStr('scMinPostsIntervalMs', 'sc-min-posts-interval-ms');
-        if (xs['noGRPCHeader'] == true) xhttpOpts['no-grpc-header'] = true;
-        final xmux = xs['xmux'];
+        if (eff['noGRPCHeader'] == true) xhttpOpts['no-grpc-header'] = true;
+        final xmux = eff['xmux'];
         if (xmux is Map && xmux.isNotEmpty) {
           final reuse = <String, dynamic>{};
           // В ядре эти поля — строки (диапазоны «16-32»), число приводим к
@@ -491,6 +506,35 @@ bool _applyStream(Map<String, dynamic> proxy, Map<dynamic, dynamic> stream) {
           final keepAlive = xmux['hKeepAlivePeriod'];
           if (keepAlive is int) reuse['h-keep-alive-period'] = keepAlive;
           if (reuse.isNotEmpty) xhttpOpts['reuse-settings'] = reuse;
+        }
+
+        // Дефолты, которые Xray проставляет в infra/conf
+        // (transport_method.go Build), а ядро mihomo — НЕТ. Критичен
+        // первый: при uplinkDataPlacement=header без ключа ядро кладёт
+        // данные в заголовки «-0», «-1» — сервер их не находит и молча
+        // держит соединение до таймаута (узлы «От глушилок» FishVPN).
+        final uplPlacement = xhttpOpts['uplink-data-placement'];
+        final uplStr = uplPlacement is String && uplPlacement.isNotEmpty
+            ? uplPlacement
+            : 'body';
+        if (uplStr != 'body' && !xhttpOpts.containsKey('uplink-data-key')) {
+          xhttpOpts['uplink-data-key'] =
+              uplStr == 'cookie' ? 'x_data' : 'X-Data';
+        }
+        final seqPlacement = xhttpOpts['seq-placement'];
+        if (seqPlacement is String &&
+            seqPlacement.isNotEmpty &&
+            seqPlacement != 'path' &&
+            !xhttpOpts.containsKey('seq-key')) {
+          xhttpOpts['seq-key'] = seqPlacement == 'header' ? 'X-Seq' : 'x_seq';
+        }
+        final sessPlacement = xhttpOpts['session-placement'];
+        if (sessPlacement is String &&
+            sessPlacement.isNotEmpty &&
+            sessPlacement != 'path' &&
+            !xhttpOpts.containsKey('session-key')) {
+          xhttpOpts['session-key'] =
+              sessPlacement == 'header' ? 'X-Session' : 'x_session';
         }
       }
       if (xhttpOpts.isNotEmpty) proxy['xhttp-opts'] = xhttpOpts;
