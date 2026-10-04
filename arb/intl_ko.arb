@@ -60,6 +60,8 @@
   "networkSpeedNotificationDesc": "알림 표시줄에 속도 및 구독 정보 표시",
   "alwaysShowTitleBar": "제목 표시줄 버튼",
   "alwaysShowTitleBarDesc": "상단 오른쪽 제목 표시줄 버튼 항상 표시",
+  "keepDockIcon": "Dock에 고정",
+  "keepDockIconDesc": "Dock에 앱 아이콘 유지",
   "trayEnhancement": "트레이 기능 향상",
   "trayEnhancementDesc": "시스템 트레이 메뉴에서 프록시 그룹 제어",
   "trayClickBehavior": "트레이 클릭 동작",
@@ -488,6 +490,7 @@
   "onlyIcon": "아이콘만",
   "noIcon": "아이콘 없음",
   "stackMode": "스택 모드",
+  "congestionController": "혼잡 제어",
   "strictRoute": "엄격한 라우팅",
   "strictRouteDesc": "TUN 엄격한 라우팅 모드 사용",
   "icmpForwarding": "ICMP 포워딩",
@@ -644,6 +647,7 @@
   "openDashboard": "Zashboard 열기",
   "custom": "사용자 지정",
   "customScriptOptions": "커스텀 규칙",
+  "scriptOtherOptions": "기타 설정",
   "wakelock": "화면 켜짐 고정",
   "wakelockDescription": "화면 자동 꺼짐을 방지하는 스크린 웨이크록을 활성화합니다. 백그라운드 작업을 유지할 때 유용합니다.",
   "tunEnableRequireAdmin": "TUN 가상 어댑터 기능을 사용하려면 관리자(ROOT) 권한이 필요합니다",
@@ -712,6 +716,7 @@
   "mediaUnlockDetails": "연결성 테스트 상세",
   "mediaUnlockDisplaySettings": "표시 설정",
   "mediaUnlockMiscSettings": "기타 설정",
+  "mediaUnlockMoreStreamingPlatforms": "더 많은 스트리밍 잠금 해제 항목",
   "mediaUnlockExtraDetails": "IP 상세 정보 더 보기",
   "mediaUnlockRefreshOnNodeChange": "노드 변경 시 자동 새로고침",
   "mediaUnlockColorfulIcons": "기본적으로 컬러 아이콘 표시",
@@ -847,3 +852,17 @@
   "stealthVpnNetTitle": "VPN network in the system",
   "stealthVpnNetWarn": "Apps can see the active VPN network (TRANSPORT_VPN)"
 }
+  "intranetAndGateway": "LAN 및 게이트웨이",
+  "networkType": "네트워크 유형",
+  "defaultGateway": "게이트웨이",
+  "lanSharing": "LAN 공유",
+  "sharedAddress": "공유 주소",
+  "dnsResolution": "DNS 확인",
+  "systemDns": "DNS",
+  "enabled": "사용 중",
+  "disabled": "사용 안 함",
+  "openRouterAdmin": "게이트웨이 열기"
+}
+
+
+

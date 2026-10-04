@@ -60,6 +60,8 @@
   "networkSpeedNotificationDesc": "在通知欄顯示網速和訂閱資訊",
   "alwaysShowTitleBar": "標題按鈕",
   "alwaysShowTitleBarDesc": "始終顯示右上角的標題欄按鈕",
+  "keepDockIcon": "常駐DOCK",
+  "keepDockIconDesc": "在 Dock 欄保留應用圖標",
   "trayEnhancement": "托盤增強",
   "trayEnhancementDesc": "在系統托盤區菜單中控制代理組",
   "trayClickBehavior": "托盤點擊行為",
@@ -488,6 +490,7 @@
   "onlyIcon": "僅圖示",
   "noIcon": "無圖示",
   "stackMode": "堆疊模式",
+  "congestionController": "擁塞控制",
   "strictRoute": "嚴格路由",
   "strictRouteDesc": "使用 TUN 嚴格路由模式",
   "icmpForwarding": "ICMP 轉發",
@@ -644,6 +647,7 @@
   "openDashboard": "打開 Zashboard",
   "custom": "自訂",
   "customScriptOptions": "自訂規則開關",
+  "scriptOtherOptions": "其他設定",
   "wakelock": "亮螢幕鎖",
   "wakelockDescription": "本功能不需要任何特殊權限，因為它僅啟用螢幕喚醒鎖，而不是任何 CPU 喚醒鎖，應用會在後台保持必要的活躍，且螢幕不會自動熄滅，這在一些場景下會很有用",
   "tunEnableRequireAdmin": "啟用 TUN 虛擬網卡功能需要管理員或 Root 權限",
@@ -712,6 +716,7 @@
   "mediaUnlockDetails": "連通性測試詳情",
   "mediaUnlockDisplaySettings": "顯示設定",
   "mediaUnlockMiscSettings": "雜項設定",
+  "mediaUnlockMoreStreamingPlatforms": "更多串流媒體解鎖項目",
   "mediaUnlockExtraDetails": "返回更多 IP 詳細資訊",
   "mediaUnlockRefreshOnNodeChange": "節點變化時自動重新整理檢測",
   "mediaUnlockColorfulIcons": "預設顯示彩色 ICON 圖示",
@@ -847,3 +852,17 @@
   "stealthVpnNetTitle": "系統中的 VPN 網路",
   "stealthVpnNetWarn": "應用能看到活躍的 VPN 網路（TRANSPORT_VPN）"
 }
+  "intranetAndGateway": "內網與閘道",
+  "networkType": "網路類型",
+  "defaultGateway": "閘道",
+  "lanSharing": "區域網路共享",
+  "sharedAddress": "共享位址",
+  "dnsResolution": "DNS 解析",
+  "systemDns": "DNS",
+  "enabled": "已開啟",
+  "disabled": "已關閉",
+  "openRouterAdmin": "開啟後台閘道"
+}
+
+
+

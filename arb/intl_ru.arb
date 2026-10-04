@@ -60,6 +60,8 @@
   "networkSpeedNotificationDesc": "Показывать скорость и подписку в панели уведомлений",
   "alwaysShowTitleBar": "Кнопки заголовка",
   "alwaysShowTitleBarDesc": "Всегда показывать кнопки в правом верхнем углу",
+  "keepDockIcon": "Закрепить в Dock",
+  "keepDockIconDesc": "Сохранять иконку приложения в Dock",
   "trayEnhancement": "Улучшение трея",
   "trayEnhancementDesc": "Управление группами прокси в меню системного трея",
   "trayClickBehavior": "Действие при нажатии на значок",
@@ -488,6 +490,7 @@
   "onlyIcon": "Только иконки",
   "noIcon": "Без иконок",
   "stackMode": "Режим стека",
+  "congestionController": "Управление перегрузкой",
   "strictRoute": "Строгая маршрутизация",
   "strictRouteDesc": "Использовать строгий режим маршрутизации TUN",
   "icmpForwarding": "Пересылка ICMP",
@@ -643,6 +646,7 @@
   "noStatusAvailable": "Статус недоступен",
   "custom": "Пользовательский",
   "customScriptOptions": "Свои правила",
+  "scriptOtherOptions": "Другие настройки",
   "wakelock": "Блокировка сна",
   "wakelockDescription": "Эта функция не требует специальных разрешений, так как использует только блокировку пробуждения экрана, а не CPU. Приложение остаётся активным в фоне, экран не гаснет автоматически, что полезно в некоторых сценариях.",
   "tunEnableRequireAdmin": "Для включения режима TUN требуются права администратора или ROOT.",
@@ -716,6 +720,7 @@
   "mediaUnlockDetails": "Детали проверки доступности",
   "mediaUnlockDisplaySettings": "Настройки отображения",
   "mediaUnlockMiscSettings": "Прочие настройки",
+  "mediaUnlockMoreStreamingPlatforms": "Больше платформ стриминга",
   "mediaUnlockExtraDetails": "Показывать больше сведений об IP",
   "mediaUnlockRefreshOnNodeChange": "Автообновление при смене узла",
   "mediaUnlockColorfulIcons": "Показывать цветные значки по умолчанию",
@@ -860,4 +865,16 @@
   "stealthTunWarn": "Интерфейс tun виден всем приложениям — без root его не скрыть",
   "stealthVpnNetTitle": "VPN-сеть в системе",
   "stealthVpnNetWarn": "Приложения видят активную VPN-сеть (TRANSPORT_VPN)"
+  "intranetAndGateway": "LAN и шлюз",
+  "networkType": "Тип сети",
+  "defaultGateway": "Шлюз",
+  "lanSharing": "Общий доступ в LAN",
+  "sharedAddress": "Общий адрес",
+  "dnsResolution": "Разрешение DNS",
+  "systemDns": "DNS",
+  "enabled": "Включено",
+  "disabled": "Отключено",
+  "openRouterAdmin": "Открыть шлюз"
 }
+
+
