@@ -170,10 +170,7 @@ class AppController {
     }
 
     if (wasRunning) {
-      await globalState.handleStart([
-        updateRunTime,
-        updateTraffic,
-      ]);
+      await globalState.handleStart([updateRunTime, updateTraffic]);
       _scheduleCheckIpRefresh();
       _backgroundLoad();
     }
@@ -346,7 +343,10 @@ class AppController {
       return false;
     }
     await _initCore();
-    await currentProfile.checkAndUpdate();
+    final isFileExists = await currentProfile.check();
+    if (!isFileExists) {
+      await currentProfile.checkAndUpdate();
+    }
     final patchConfig = _ref.read(patchClashConfigProvider);
     final targetTun = enableTun ?? patchConfig.tun.enable;
 
@@ -743,7 +743,12 @@ class AppController {
   Future<void> _applyProfile() async {
     _invalidateCoreReads();
     _ref.read(delayDataSourceProvider.notifier).value = {};
-    unawaited(clashCore.requestGc());
+    unawaited(
+      clashCore.requestGc().then<void>(
+        (_) {},
+        onError: (Object e) => commonPrint.log('requestGc ignored: $e'),
+      ),
+    );
     final configured = await _setupCoreConfig();
     if (!configured) return;
     final providers = await clashCore.getExternalProviders();
@@ -798,7 +803,7 @@ class AppController {
           globalState.showNotifier(err.toString());
         }
       }
-      _ref.read(logsProvider.notifier).value = FixedList(maxLength);
+      _ref.read(logsProvider.notifier).value = FixedList(maxLogLength);
       _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
       globalState.computeHeightMapCache = {};
       addCheckIpNumDebounce();
@@ -1231,8 +1236,12 @@ class AppController {
         final versionWithoutV = tagName.startsWith('v')
             ? tagName.substring(1)
             : tagName;
+        var finalSuffix = assetSuffix;
+        if (appPath.isPortable && system.isWindows) {
+          finalSuffix = 'windows-amd64-compatible-portable.zip';
+        }
         downloadUrl =
-            'https://github.com/$repository/releases/download/$tagName/Bettbox-$versionWithoutV-$assetSuffix';
+            'https://github.com/$repository/releases/download/$tagName/Bettbox-$versionWithoutV-$finalSuffix';
       }
 
       globalState.openUrl(downloadUrl);
@@ -1271,6 +1280,10 @@ class AppController {
   Future<void> _initCore() {
     return _initCoreFuture ??= () async {
       try {
+        if (!await _waitForCoreConnection()) {
+          commonPrint.log('core not connected yet, skipping init');
+          return;
+        }
         final isInit = await clashCore.isInit;
         if (!isInit) {
           await clashCore.init();
@@ -1280,6 +1293,17 @@ class AppController {
         _initCoreFuture = null;
       }
     }();
+  }
+
+  Future<bool> _waitForCoreConnection() async {
+    final completer = clashService?.socketCompleter;
+    if (completer == null || completer.isCompleted) return true;
+    try {
+      await completer.future.timeout(const Duration(seconds: 15));
+      return true;
+    } on TimeoutException {
+      return false;
+    }
   }
 
   void startWakelockAutoRecovery() {
@@ -1391,7 +1415,9 @@ class AppController {
     await updateGroups();
 
     autoLaunch?.updateStatus(_ref.read(appSettingProvider).autoLaunch);
-    autoUpdateProfiles();
+    Future.delayed(const Duration(seconds: 5), () {
+      autoUpdateProfiles();
+    });
     autoCheckUpdate();
 
     final isWindowVisible = await window?.isVisible ?? false;
@@ -2318,7 +2344,8 @@ class AppController {
           final vpnPropsJson = configJson['vpnProps'];
           if (vpnPropsJson != null && vpnPropsJson is Map) {
             final accessControlPropsJson = vpnPropsJson['accessControlProps'];
-            if (accessControlPropsJson != null && accessControlPropsJson is Map) {
+            if (accessControlPropsJson != null &&
+                accessControlPropsJson is Map) {
               accessControl = AccessControl.fromJson(
                 Map<String, dynamic>.from(accessControlPropsJson),
               );

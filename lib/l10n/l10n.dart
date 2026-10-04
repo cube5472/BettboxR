@@ -539,6 +539,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Keep in Dock`
+  String get keepDockIcon {
+    return Intl.message(
+      'Keep in Dock',
+      name: 'keepDockIcon',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Keep the app icon in the Dock`
+  String get keepDockIconDesc {
+    return Intl.message(
+      'Keep the app icon in the Dock',
+      name: 'keepDockIconDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Tray Enhancement`
   String get trayEnhancement {
     return Intl.message(
@@ -4019,6 +4039,16 @@ class AppLocalizations {
     return Intl.message('Stack Mode', name: 'stackMode', desc: '', args: []);
   }
 
+  /// `Congestion Controller`
+  String get congestionController {
+    return Intl.message(
+      'Congestion Controller',
+      name: 'congestionController',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Strict Route`
   String get strictRoute {
     return Intl.message(
@@ -5259,6 +5289,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Other Settings`
+  String get scriptOtherOptions {
+    return Intl.message(
+      'Other Settings',
+      name: 'scriptOtherOptions',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Wakelock`
   String get wakelock {
     return Intl.message('Wakelock', name: 'wakelock', desc: '', args: []);
@@ -5862,6 +5902,16 @@ class AppLocalizations {
     return Intl.message(
       'Misc Settings',
       name: 'mediaUnlockMiscSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `More Streaming Unlock Items`
+  String get mediaUnlockMoreStreamingPlatforms {
+    return Intl.message(
+      'More Streaming Unlock Items',
+      name: 'mediaUnlockMoreStreamingPlatforms',
       desc: '',
       args: [],
     );
@@ -6613,6 +6663,16 @@ class AppLocalizations {
     );
   }
 
+  /// `LAN & Gateway`
+  String get intranetAndGateway {
+    return Intl.message(
+      'LAN & Gateway',
+      name: 'intranetAndGateway',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Checking…`
   String get stealthCheckChecking {
     return Intl.message(
@@ -6623,11 +6683,41 @@ class AppLocalizations {
     );
   }
 
+  /// `Gateway`
+  String get defaultGateway {
+    return Intl.message('Gateway', name: 'defaultGateway', desc: '', args: []);
+  }
+
+  /// `LAN Sharing`
+  String get lanSharing {
+    return Intl.message('LAN Sharing', name: 'lanSharing', desc: '', args: []);
+  }
+
+  /// `Shared Address`
+  String get sharedAddress {
+    return Intl.message(
+      'Shared Address',
+      name: 'sharedAddress',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Copy report`
   String get stealthCheckCopyReport {
     return Intl.message(
       'Copy report',
       name: 'stealthCheckCopyReport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DNS Resolution`
+  String get dnsResolution {
+    return Intl.message(
+      'DNS Resolution',
+      name: 'dnsResolution',
       desc: '',
       args: [],
     );
@@ -6918,6 +7008,31 @@ class AppLocalizations {
     return Intl.message(
       'Apps can see the active VPN network (TRANSPORT_VPN)',
       name: 'stealthVpnNetWarn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DNS`
+  String get systemDns {
+    return Intl.message('DNS', name: 'systemDns', desc: '', args: []);
+  }
+
+  /// `Enabled`
+  String get enabled {
+    return Intl.message('Enabled', name: 'enabled', desc: '', args: []);
+  }
+
+  /// `Disabled`
+  String get disabled {
+    return Intl.message('Disabled', name: 'disabled', desc: '', args: []);
+  }
+
+  /// `Open Gateway`
+  String get openRouterAdmin {
+    return Intl.message(
+      'Open Gateway',
+      name: 'openRouterAdmin',
       desc: '',
       args: [],
     );

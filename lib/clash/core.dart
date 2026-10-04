@@ -176,8 +176,15 @@ class ClashCore {
     }
   }
 
+  void _forget(FutureOr<Object?> request, String name) {
+    Future.value(request).then<void>(
+      (_) {},
+      onError: (Object e) => commonPrint.log('$name ignored: $e'),
+    );
+  }
+
   void closeConnection(String id) {
-    clashInterface.closeConnection(id);
+    _forget(clashInterface.closeConnection(id), 'closeConnection');
   }
 
   Future<void> closeConnections() async {
@@ -185,7 +192,7 @@ class ClashCore {
   }
 
   void resetConnections() {
-    clashInterface.resetConnections();
+    _forget(clashInterface.resetConnections(), 'resetConnections');
   }
 
   Future<List<ExternalProvider>> getExternalProviders() async {
@@ -342,6 +349,50 @@ class ClashCore {
 
   void stopLog() {
     clashInterface.stopLog();
+  }
+
+  Future<List<Log>> getLogs() async {
+    final res = await clashInterface.getLogs();
+    if (res.isEmpty) {
+      return [];
+    }
+    try {
+      final logsRaw = json.decode(res) as List? ?? [];
+      return logsRaw.map((e) => Log.fromJson(e)).toList();
+    } catch (e) {
+      commonPrint.log('Failed to parse logs: $e');
+      return [];
+    }
+  }
+
+  void clearLogs() {
+    _forget(clashInterface.clearLogs(), 'clearLogs');
+  }
+
+  Future<List<TrackerInfo>> getRequests() async {
+    final res = await clashInterface.getRequests();
+    if (res.isEmpty) {
+      return [];
+    }
+    try {
+      final requestsRaw = json.decode(res) as List? ?? [];
+      return requestsRaw.map((e) => TrackerInfo.fromJson(e)).toList();
+    } catch (e) {
+      commonPrint.log('Failed to parse requests: $e');
+      return [];
+    }
+  }
+
+  void startTrackRequests() {
+    clashInterface.startTrackRequests();
+  }
+
+  void stopTrackRequests() {
+    clashInterface.stopTrackRequests();
+  }
+
+  void clearRequests() {
+    _forget(clashInterface.clearRequests(), 'clearRequests');
   }
 
   Future<void> requestGc({bool forceFreeOSMemory = false}) async {

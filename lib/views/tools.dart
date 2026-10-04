@@ -494,6 +494,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
             const ApplicationSettingView(),
           ),
         ),
+      if (system.isMacOS)
+        _SearchItem(
+          title: appLocalizations.keepDockIcon,
+          subtitle: appLocalizations.keepDockIconDesc,
+          category: appCategory,
+          onTap: (context, _) => _pushPage(
+            context,
+            appLocalizations.application,
+            const ApplicationSettingView(),
+          ),
+        ),
       _SearchItem(
         title: appLocalizations.showStartSwitch,
         subtitle: appLocalizations.showStartSwitchDesc,
@@ -590,16 +601,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
             const OtherSettingView(),
           ),
         ),
-      _SearchItem(
-        title: appLocalizations.storeFix,
-        subtitle: appLocalizations.storeFixDesc,
-        category: otherSettingsCategory,
-        onTap: (context, _) => _pushPage(
-          context,
-          appLocalizations.otherSettings,
-          const OtherSettingView(),
+      if (system.isAndroid)
+        _SearchItem(
+          title: appLocalizations.storeFix,
+          subtitle: appLocalizations.storeFixDesc,
+          category: otherSettingsCategory,
+          onTap: (context, _) => _pushPage(
+            context,
+            appLocalizations.otherSettings,
+            const OtherSettingView(),
+          ),
         ),
-      ),
       _SearchItem(
         title: appLocalizations.disableQuic,
         subtitle: appLocalizations.disableQuicDesc,
@@ -790,16 +802,6 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       _SearchItem(
         title: appLocalizations.tcpConcurrent,
         subtitle: appLocalizations.tcpConcurrentDesc,
-        category: generalCategory,
-        onTap: (context, _) => _pushPage(
-          context,
-          appLocalizations.general,
-          const _GeneralListView(),
-        ),
-      ),
-      _SearchItem(
-        title: appLocalizations.geodataLoader,
-        subtitle: appLocalizations.geodataLoaderDesc,
         category: generalCategory,
         onTap: (context, _) => _pushPage(
           context,

@@ -102,7 +102,19 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   final Set<String> _hideDeadGroups = {};
   final ValueNotifier<ProxiesListHeaderSelectorState?> _headerStateNotifier =
       ValueNotifier<ProxiesListHeaderSelectorState?>(null);
+  final Map<String, List<Proxy>> _cachedSortedProxiesMap = {};
   List<double> _headerOffsets = [];
+
+  List<Proxy> _getGroupSortedProxies(Group group) {
+    return _cachedSortedProxiesMap.putIfAbsent(
+      group.name,
+      () => globalState.appController.getSortProxies(
+        proxies: group.all,
+        sortType: widget.sortType,
+        testUrl: group.testUrl,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -120,6 +132,11 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   @override
   void didUpdateWidget(covariant _ProxyGroupsList oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(widget.groups, oldWidget.groups) ||
+        widget.sortType != oldWidget.sortType ||
+        widget.sortNum != oldWidget.sortNum) {
+      _cachedSortedProxiesMap.clear();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _adjustHeader();
     });
@@ -290,12 +307,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     }
 
     final group = widget.groups.firstWhere((g) => g.name == groupName);
-    final sortedProxies = globalState.appController.getSortProxies(
-      proxies: group.all,
-      sortType: widget.sortType,
-      testUrl: group.testUrl,
-      groupName: group.name,
-    );
+    final sortedProxies = _getGroupSortedProxies(group);
     final visibleProxies = _getVisibleProxies(group, sortedProxies);
     final proxyIndex = visibleProxies.indexWhere((p) => p.name == selectedName);
     if (proxyIndex >= 0) {
@@ -334,12 +346,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
 
       final isExpand = widget.currentUnfoldSet.contains(group.name);
       if (isExpand) {
-        final sortedProxies = globalState.appController.getSortProxies(
-          proxies: group.all,
-          sortType: widget.sortType,
-          testUrl: group.testUrl,
-          groupName: group.name,
-        );
+        final sortedProxies = _getGroupSortedProxies(group);
         final visibleProxies = _getVisibleProxies(group, sortedProxies);
         final hiddenCount = sortedProxies.length - visibleProxies.length;
         if (hiddenCount > 0) {
@@ -497,6 +504,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
                     }
 
                     return Padding(
+                      key: ValueKey('row_${item.group.name}_$index'),
                       padding: const EdgeInsets.only(bottom: 8),
                       child: SizedBox(
                         height: itemHeight,

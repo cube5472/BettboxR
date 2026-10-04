@@ -61,9 +61,7 @@ class _ClashContainerState extends ConsumerState<ClashManager>
       prev,
       next,
     ) {
-      if (next) {
-        clashCore.startLog();
-      } else {
+      if (!next) {
         clashCore.stopLog();
       }
     });
