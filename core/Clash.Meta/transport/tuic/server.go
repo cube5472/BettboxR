@@ -174,7 +174,6 @@ func (s *serverHandler) handleStream() (err error) {
 					return s.v5Handler.HandleStream(conn)
 				}
 			}
-			_ = conn.Close()
 			return
 		}()
 	}
