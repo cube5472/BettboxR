@@ -82,9 +82,6 @@ class Vpn {
       'stealthCheck',
     );
   }
-  Future<String?> getCurrentDns() =>
-      methodChannel.invokeMethod<String>('getCurrentDns');
-
 
   Future<void> setSmartStopped(bool value) async {
     await methodChannel.invokeMethod<bool>('setSmartStopped', {'value': value});
@@ -113,19 +110,6 @@ class Vpn {
     await methodChannel.invokeMethod<void>('updateNotificationSpeed', {
       'profileName': profileName,
       'speedInfo': speedInfo,
-    });
-  }
-
-  /// Обновляет флаг страны выбранной ноды рядом с иконкой приложения
-  /// в статус-баре (второе тихое уведомление). Пустой [countryCode]
-  /// убирает флаг.
-  Future<void> updateNotificationFlag(
-    String? countryCode,
-    String nodeName,
-  ) async {
-    await methodChannel.invokeMethod<void>('updateNotificationFlag', {
-      'countryCode': countryCode,
-      'nodeName': nodeName,
     });
   }
 

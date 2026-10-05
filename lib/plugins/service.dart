@@ -86,10 +86,6 @@ class Service {
         const [];
   }
 
-  Future<String?> getCurrentDns() =>
-      methodChannel.invokeMethod<String>('getCurrentDns');
-
-
   Future<bool?> setQuickResponse(bool enabled) async {
     return await methodChannel.invokeMethod<bool>('setQuickResponse', {
       'enabled': enabled,
@@ -108,19 +104,6 @@ class Service {
     await methodChannel.invokeMethod<void>('updateNotificationSpeed', {
       'profileName': profileName,
       'speedInfo': speedInfo,
-    });
-  }
-
-  /// Обновляет флаг страны выбранной ноды рядом с иконкой приложения
-  /// в статус-баре (второе тихое уведомление). Пустой [countryCode]
-  /// убирает флаг.
-  Future<void> updateNotificationFlag(
-    String? countryCode,
-    String nodeName,
-  ) async {
-    await methodChannel.invokeMethod<void>('updateNotificationFlag', {
-      'countryCode': countryCode,
-      'nodeName': nodeName,
     });
   }
 

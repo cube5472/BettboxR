@@ -169,13 +169,8 @@ _Tun _$TunFromJson(Map<String, dynamic> json) => _Tun(
   enable: json['enable'] as bool? ?? false,
   device: json['device'] as String? ?? tunDeviceName,
   autoRoute: json['auto-route'] as bool? ?? false,
-  stack: $enumDecodeNullable(_$TunStackEnumMap, json['stack']) ?? TunStack.mips,
-  congestionController:
-      $enumDecodeNullable(
-        _$CongestionControllerEnumMap,
-        json['congestion-controller'],
-      ) ??
-      CongestionController.bbr3,
+  stack:
+      $enumDecodeNullable(_$TunStackEnumMap, json['stack']) ?? TunStack.mixed,
   dnsHijack:
       (json['dns-hijack'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -203,8 +198,6 @@ Map<String, dynamic> _$TunToJson(_Tun instance) => <String, dynamic>{
   'device': instance.device,
   'auto-route': instance.autoRoute,
   'stack': _$TunStackEnumMap[instance.stack]!,
-  'congestion-controller':
-      _$CongestionControllerEnumMap[instance.congestionController]!,
   'dns-hijack': instance.dnsHijack,
   'route-address': instance.routeAddress,
   'route-exclude-address': instance.routeExcludeAddress,
@@ -219,14 +212,6 @@ const _$TunStackEnumMap = {
   TunStack.gvisor: 'gvisor',
   TunStack.system: 'system',
   TunStack.mixed: 'mixed',
-  TunStack.mips: 'mips',
-};
-
-const _$CongestionControllerEnumMap = {
-  CongestionController.cubic: 'cubic',
-  CongestionController.reno: 'reno',
-  CongestionController.bbr: 'bbr',
-  CongestionController.bbr3: 'bbr3',
 };
 
 _FallbackFilter _$FallbackFilterFromJson(
@@ -441,10 +426,10 @@ _ClashConfigSnippet _$ClashConfigSnippetFromJson(Map<String, dynamic> json) =>
       rule: json['rules'] == null ? const [] : _genRule(json['rules'] as List?),
       ruleProvider: json['rule-providers'] == null
           ? const []
-          : _genRuleProviders(json['rule-providers'] as Map),
+          : _genRuleProviders(json['rule-providers'] as Map<String, dynamic>),
       subRules: json['sub-rules'] == null
           ? const []
-          : _genSubRules(json['sub-rules'] as Map),
+          : _genSubRules(json['sub-rules'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$ClashConfigSnippetToJson(_ClashConfigSnippet instance) =>
@@ -463,16 +448,6 @@ _ClashConfig _$ClashConfigFromJson(Map<String, dynamic> json) => _ClashConfig(
   tproxyPort: (json['tproxy-port'] as num?)?.toInt() ?? 0,
   mode: $enumDecodeNullable(_$ModeEnumMap, json['mode']) ?? Mode.rule,
   allowLan: json['allow-lan'] as bool? ?? false,
-  authentication:
-      (json['authentication'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
-      const [],
-  skipAuthPrefixes:
-      (json['skip-auth-prefixes'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList() ??
-      defaultSkipAuthPrefixes,
   logLevel:
       $enumDecodeNullable(_$LogLevelEnumMap, json['log-level']) ??
       LogLevel.silent,
@@ -551,8 +526,6 @@ Map<String, dynamic> _$ClashConfigToJson(_ClashConfig instance) =>
       'tproxy-port': instance.tproxyPort,
       'mode': _$ModeEnumMap[instance.mode]!,
       'allow-lan': instance.allowLan,
-      'authentication': instance.authentication,
-      'skip-auth-prefixes': instance.skipAuthPrefixes,
       'log-level': _$LogLevelEnumMap[instance.logLevel]!,
       'ipv6': instance.ipv6,
       'find-process-mode': _$FindProcessModeEnumMap[instance.findProcessMode]!,

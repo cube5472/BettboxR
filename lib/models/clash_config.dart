@@ -21,7 +21,6 @@ const defaultGeoXUrl = GeoXUrl();
 
 const defaultMixedPort = 7890;
 const defaultKeepAliveInterval = 30;
-const defaultSkipAuthPrefixes = ['127.0.0.1/8', '::1/128'];
 
 const defaultBypassPrivateRouteAddress = [
   '198.51.100.0/30',
@@ -286,10 +285,7 @@ abstract class Tun with _$Tun {
     @Default(false) bool enable,
     @Default(tunDeviceName) String device,
     @JsonKey(name: 'auto-route') @Default(false) bool autoRoute,
-    @Default(TunStack.mips) TunStack stack,
-    @JsonKey(name: 'congestion-controller')
-    @Default(CongestionController.bbr3)
-    CongestionController congestionController,
+    @Default(TunStack.mixed) TunStack stack,
     @JsonKey(name: 'dns-hijack') @Default(['any:53']) List<String> dnsHijack,
     @JsonKey(name: 'route-address') @Default([]) List<String> routeAddress,
     @JsonKey(name: 'route-exclude-address')
@@ -674,12 +670,12 @@ List<Rule> _genRule(List<dynamic>? rules) {
   return rules.map((item) => Rule.value(item)).toList();
 }
 
-List<RuleProvider> _genRuleProviders(Map json) {
-  return json.entries.map((entry) => RuleProvider(name: entry.key.toString())).toList();
+List<RuleProvider> _genRuleProviders(Map<String, dynamic> json) {
+  return json.entries.map((entry) => RuleProvider(name: entry.key)).toList();
 }
 
-List<SubRule> _genSubRules(Map json) {
-  return json.entries.map((entry) => SubRule(name: entry.key.toString())).toList();
+List<SubRule> _genSubRules(Map<String, dynamic> json) {
+  return json.entries.map((entry) => SubRule(name: entry.key)).toList();
 }
 
 @freezed
@@ -709,10 +705,6 @@ abstract class ClashConfig with _$ClashConfig {
     @Default(0) @JsonKey(name: 'tproxy-port') int tproxyPort,
     @Default(Mode.rule) Mode mode,
     @Default(false) @JsonKey(name: 'allow-lan') bool allowLan,
-    @Default([]) List<String> authentication,
-    @Default(defaultSkipAuthPrefixes)
-    @JsonKey(name: 'skip-auth-prefixes')
-    List<String> skipAuthPrefixes,
     @Default(LogLevel.silent) @JsonKey(name: 'log-level') LogLevel logLevel,
     @Default(false) bool ipv6,
     @Default(FindProcessMode.off)

@@ -80,7 +80,7 @@ final currentNavigationItemsStateProvider =
 // ignore: unused_element
 typedef CurrentNavigationItemsStateRef =
     AutoDisposeProviderRef<NavigationItemsState>;
-String _$coreStateHash() => r'0fa27ce344c4d783bd66f3d828ff116a24fe7279';
+String _$coreStateHash() => r'0fec30a6b2b78e720d08824a11e1cc945c1873bb';
 
 /// See also [coreState].
 @ProviderFor(coreState)
@@ -97,7 +97,7 @@ final coreStateProvider = AutoDisposeProvider<CoreState>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CoreStateRef = AutoDisposeProviderRef<CoreState>;
-String _$updateParamsHash() => r'ecc9f9ab057664a8547e35baacea07280756fdf1';
+String _$updateParamsHash() => r'b8f29f135c32ce73f1541d8c6b8e94b2c254d666';
 
 /// See also [updateParams].
 @ProviderFor(updateParams)
@@ -1851,23 +1851,6 @@ final checkIpProvider = AutoDisposeProvider<VM2<int, bool>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CheckIpRef = AutoDisposeProviderRef<VM2<int, bool>>;
-String _$checkMediaUnlockHash() => r'6487b5f673e9092c48978ec82f79d9a4f0fd078a';
-
-/// See also [checkMediaUnlock].
-@ProviderFor(checkMediaUnlock)
-final checkMediaUnlockProvider = AutoDisposeProvider<VM2<int, bool>>.internal(
-  checkMediaUnlock,
-  name: r'checkMediaUnlockProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$checkMediaUnlockHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef CheckMediaUnlockRef = AutoDisposeProviderRef<VM2<int, bool>>;
 String _$genColorSchemeHash() => r'b18f15c938a8132ee4ed02cdfc02f3b9f01724e2';
 
 /// See also [genColorScheme].

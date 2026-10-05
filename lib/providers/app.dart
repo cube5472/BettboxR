@@ -34,21 +34,13 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
     });
   }
 
-  void setLogs(List<Log> items) {
-    final newList = FixedList<Log>(maxLogLength);
-    for (final item in items) {
-      newList.add(item);
-    }
-    state = newList;
-  }
-
   @override
   onUpdate(value) {
     globalState.appState = globalState.appState.copyWith(logs: value);
   }
 
   void clearLogs() {
-    state = FixedList(maxLogLength);
+    state = FixedList(maxLength);
   }
 }
 
@@ -93,14 +85,6 @@ class Requests extends _$Requests with AutoDisposeNotifierMixin {
     Future.microtask(() {
       state = state.copyWith()..add(value);
     });
-  }
-
-  void setRequests(List<TrackerInfo> items) {
-    final newList = FixedList<TrackerInfo>(maxLength);
-    for (final item in items) {
-      newList.add(item);
-    }
-    state = newList;
   }
 
   void clearRequests() {

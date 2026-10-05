@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart' hide Mode;
 import 'package:bett_box/models/common.dart';
-import 'package:bett_box/models/sub_spoof.dart';
 import 'package:bett_box/plugins/clipboard_ext.dart';
 import 'package:bett_box/providers/app.dart';
 import 'package:bett_box/state.dart';
@@ -17,6 +16,7 @@ import 'package:re_highlight/languages/javascript.dart';
 import 'package:re_highlight/languages/yaml.dart';
 import 'package:re_highlight/re_highlight.dart' show Mode;
 import 'package:re_highlight/styles/atom-one-dark.dart';
+import 'package:re_highlight/styles/atom-one-light.dart';
 
 typedef EditorWidgetBuilder = Widget Function();
 
@@ -24,21 +24,6 @@ const int _kLargeEditableLineThresholdMobile = 5800;
 const int _kLargeEditableLineThresholdDesktop = 5800;
 const Duration _kFindFocusDelay = Duration(milliseconds: 500);
 const Duration _kMinBusyDuration = Duration(milliseconds: 600);
-
-/// «Чёрный редактор конфига»: страница правки YAML/JS всегда оформляется
-/// как тёмный IDE — чисто чёрный фон и светлая палитра подсветки синтаксиса
-/// (atom-one-dark на чёрном), чтобы текст был максимально контрастным
-/// независимо от темы приложения. Базовая палитра — atom-one-dark, у
-/// корневого стиля фон сведён к чёрному, а цвет обычного текста чуть
-/// высветлен относительно дефолтного #ABB2BF.
-final Map<String, TextStyle> kBlackConfigEditorTheme = () {
-  final theme = Map<String, TextStyle>.from(atomOneDarkTheme);
-  theme['root'] = (theme['root'] ?? const TextStyle()).copyWith(
-    backgroundColor: Colors.black,
-    color: const Color(0xFFDFE4EC),
-  );
-  return theme;
-}();
 
 class EditorPage extends ConsumerStatefulWidget {
   final String title;
@@ -291,19 +276,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
     if (url == null) {
       return;
     }
-    // Импорт по URL часто используется для подписок, которые панели
-    // отдают только «одобренным» клиентам, — применяем глобальную
-    // клиентскую подмену (Настройки → Общие → «Подмена клиента
-    // подписок»), как в генераторе и при обновлении профиля.
-    Map<String, String>? extraHeaders;
-    try {
-      final spoof = await SubSpoofStore.getGlobal();
-      extraHeaders = await spoof.resolveHeaders();
-    } catch (_) {}
-    final res = await request.getTextResponseForUrl(
-      url,
-      extraHeaders: extraHeaders,
-    );
+    final res = await request.getTextResponseForUrl(url);
     _controller.text = res.data;
     widget.onUrlImport?.call(url);
   }
@@ -324,6 +297,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   @override
   Widget build(BuildContext context) {
     final isMobileView = ref.watch(isMobileViewProvider);
+    final brightness = Theme.of(context).brightness;
     final readOnly = widget.readOnly || widget.simple;
     final canReplace =
         !readOnly && !_disableSyntaxHighlight && _languageMode() != null;
@@ -410,10 +384,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
         child: AbsorbPointer(
           absorbing: _isBusy || _isLoading,
           child: CommonScaffold(
-            backgroundColor: Colors.black,
             appBar: AppBar(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
               title: TextField(
                 focusNode: _titleFocusNode,
                 enabled: widget.titleEditable && !readOnly,
@@ -431,11 +402,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                   focusedErrorBorder: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
                   hintText: appLocalizations.unnamed,
-                  hintStyle: const TextStyle(color: Colors.white24),
                 ),
-                style: context.textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                ),
+                style: context.textTheme.titleLarge,
                 autofocus: false,
               ),
               actions: genActions([
@@ -525,8 +493,6 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                       enableLocalSuggestions: true,
                       enableKeyboardSuggestions: true,
                       enableMagnifier: true,
-                      tabSize: 2,
-                      useSpaceAsTab: true,
                       language: _languageMode(),
                       languageId: switch (widget.languages.firstOrNull) {
                         Language.yaml => 'yaml',
@@ -534,9 +500,9 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                         _ => null,
                       },
                       blockCommentLabel: appLocalizations.blockComment,
-                      // «Чёрный редактор»: всегда тёмная схема на чистом
-                      // чёрном фоне (см. kBlackConfigEditorTheme).
-                      editorTheme: kBlackConfigEditorTheme,
+                      editorTheme: brightness == Brightness.dark
+                          ? atomOneDarkTheme
+                          : atomOneLightTheme,
                       textStyle: TextStyle(
                         fontFamily: FontFamily.jetBrainsMono.value,
                         fontSize: context.textTheme.bodyLarge?.fontSize?.ap,
@@ -560,7 +526,7 @@ class _EditorPageState extends ConsumerState<EditorPage> {
                 if (_isBusy || _isLoading)
                   Positioned.fill(
                     child: Container(
-                      color: Colors.black.withAlpha(200),
+                      color: context.colorScheme.surface.withAlpha(200),
                       child: Center(
                         child: CircularProgressIndicator(
                           color: context.colorScheme.primary,
