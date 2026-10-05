@@ -174,10 +174,9 @@ func (c *Client) idleCleanup() {
 
 func (c *Client) idleCleanupExpTime(expTime time.Time) {
 	activeCount := 0
-
-	c.idleSessionLock.Lock()
 	sessionToClose := make([]*Session, 0, c.idleSession.Len())
 
+	c.idleSessionLock.Lock()
 	it := c.idleSession.Iterate()
 	for it.IsNotEnd() {
 		session := it.Value()
