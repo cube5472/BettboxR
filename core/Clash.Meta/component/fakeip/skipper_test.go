@@ -10,11 +10,11 @@ import (
 )
 
 func TestSkipper_BlackList(t *testing.T) {
-	var builder trie.DomainSetBuilder
-	assert.NoError(t, builder.Insert("example.com"))
-	assert.False(t, builder.IsEmpty())
+	tree := trie.New[struct{}]()
+	assert.NoError(t, tree.Insert("example.com", struct{}{}))
+	assert.False(t, tree.IsEmpty())
 	skipper := &Skipper{
-		Host: []C.DomainMatcher{builder.Build()},
+		Host: []C.DomainMatcher{tree.NewDomainSet()},
 	}
 	assert.True(t, skipper.ShouldSkipped("example.com"))
 	assert.False(t, skipper.ShouldSkipped("foo.com"))
@@ -22,11 +22,11 @@ func TestSkipper_BlackList(t *testing.T) {
 }
 
 func TestSkipper_WhiteList(t *testing.T) {
-	var builder trie.DomainSetBuilder
-	assert.NoError(t, builder.Insert("example.com"))
-	assert.False(t, builder.IsEmpty())
+	tree := trie.New[struct{}]()
+	assert.NoError(t, tree.Insert("example.com", struct{}{}))
+	assert.False(t, tree.IsEmpty())
 	skipper := &Skipper{
-		Host: []C.DomainMatcher{builder.Build()},
+		Host: []C.DomainMatcher{tree.NewDomainSet()},
 		Mode: C.FilterWhiteList,
 	}
 	assert.False(t, skipper.ShouldSkipped("example.com"))
