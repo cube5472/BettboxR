@@ -47,15 +47,22 @@ class ApplicationState extends ConsumerState<Application>
     var scheme = ref.read(genColorSchemeProvider(brightness));
     if (brightness == Brightness.dark) {
       final props = ref.read(themeSettingProvider);
-      // «Угольная тема» — отдельный переключатель в настройках темы:
-      // угольно-чёрные поверхности и бирюзовая окантовка, акцент — бирюза.
-      // Выключена — обычная тёмная схема (+ «Чистый чёрный», если выбран).
-      if (props.coalTheme) {
+      // «Угольная тема» — два отдельных переключателя в настройках темы
+      // (взаимоисключающие, см. views/theme.dart): бирюзовый и розовый
+      // варианты угольно-чёрных поверхностей. Приоритет — у бирюзы.
+      if (props.coalThemeTurquoise) {
         return ColorScheme.fromSeed(
           seedColor: const Color(kCoalTurquoise),
           brightness: Brightness.dark,
           dynamicSchemeVariant: props.schemeVariant,
         ).toCoalTurquoise();
+      }
+      if (props.coalTheme) {
+        return ColorScheme.fromSeed(
+          seedColor: const Color(kCoalPink),
+          brightness: Brightness.dark,
+          dynamicSchemeVariant: props.schemeVariant,
+        ).toCoalPink();
       }
       scheme = scheme.toPureBlack(props.pureBlack);
     }
@@ -86,10 +93,12 @@ class ApplicationState extends ConsumerState<Application>
       globalState.appController = AppController(currentContext, ref);
     }
     await globalState.appController.init();
-    try {
-      await ExternalControl.start();
-    } catch (e) {
-      commonPrint.log('ExternalControl start failed: $e');
+    if (!appPath.isPortable) {
+      try {
+        await ExternalControl.start();
+      } catch (e) {
+        commonPrint.log('ExternalControl start failed: $e');
+      }
     }
     globalState.appController.initLink();
     if (system.isAndroid) {
@@ -173,7 +182,13 @@ class ApplicationState extends ConsumerState<Application>
         child: ConnectivityManager(
           onConnectivityChanged: (results) async {
             if (!results.contains(ConnectivityResult.vpn)) {
-              clashCore.closeConnections();
+              unawaited(
+                clashCore.closeConnections().then<void>(
+                  (_) {},
+                  onError: (Object e) =>
+                      commonPrint.log('closeConnections ignored: $e'),
+                ),
+              );
             }
             if (system.isMacOS) {
               // Wait for DHCP and the default route to settle before moving the
@@ -251,9 +266,10 @@ class ApplicationState extends ConsumerState<Application>
               locale:
                   utils.getLocaleForString(locale) ?? utils.getSystemLocale(),
               supportedLocales: AppLocalizations.delegate.supportedLocales,
-              // Угольная тема сама по себе тёмная — форсируем тёмный режим,
-              // пока переключатель включён (независимо от системной темы).
-              themeMode: themeProps.coalTheme
+              // Угольная тема (любой вариант) сама по себе тёмная —
+              // форсируем тёмный режим, пока хоть один переключатель
+              // включён (независимо от системной темы).
+              themeMode: themeProps.coalTheme || themeProps.coalThemeTurquoise
                   ? ThemeMode.dark
                   : themeProps.themeMode,
               theme: ThemeData(
