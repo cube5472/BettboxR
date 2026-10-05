@@ -278,7 +278,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
       );
     }
 
-    if (!state.isInit || isDisabled) {
+    if (!state.isInit || isDisabled || isRestarting) {
       return Container(
         padding: const EdgeInsets.all(2),
         child: Center(
@@ -300,24 +300,6 @@ class _StartButtonState extends ConsumerState<StartButton> {
         style: context.textTheme.bodyMedium?.toLight.adjustSize(1),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    if (isRestarting) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: SizedBox(
-          width: 16,
-          height: 16,
-          child: OverflowBox(
-            maxWidth: 30,
-            maxHeight: 16,
-            child: SpinKitThreeBounce(
-              color: context.colorScheme.primary,
-              size: 16,
-            ),
-          ),
-        ),
       );
     }
 

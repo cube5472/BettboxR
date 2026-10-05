@@ -36,6 +36,9 @@ class EditProfileViewState extends State<EditProfileView> {
   late TextEditingController ageSecretKeyController;
   FocusNode? urlFocusNode;
   bool _obscureAgeSecretKey = true;
+  final subSpoofUaController = TextEditingController();
+  final subSpoofHwidController = TextEditingController();
+  String _spoofClient = '';
   String? rawText;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final fileInfoNotifier = ValueNotifier<FileInfo?>(null);
@@ -55,6 +58,16 @@ class EditProfileViewState extends State<EditProfileView> {
     ageSecretKeyController = TextEditingController(
       text: widget.profile.ageSecretKey,
     );
+    SubSpoofStore.get(widget.profile.id).then((spoof) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _spoofClient = spoof.client;
+        subSpoofUaController.text = spoof.customUa;
+        subSpoofHwidController.text = spoof.hwid;
+      });
+    });
     if (widget.isNew) {
       urlFocusNode = FocusNode();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,12 +89,35 @@ class EditProfileViewState extends State<EditProfileView> {
     urlController.dispose();
     autoUpdateDurationController.dispose();
     ageSecretKeyController.dispose();
+    subSpoofUaController.dispose();
+    subSpoofHwidController.dispose();
     urlFocusNode?.dispose();
     super.dispose();
   }
 
   Future<void> _handleConfirm() async {
     if (!_formKey.currentState!.validate()) return;
+    try {
+      var hwid = subSpoofHwidController.text.trim();
+      if (hwid.isEmpty && kSubSpoofHwidClients.contains(_spoofClient)) {
+        // Пустое поле при включённой подмене = запрос без X-Hwid,
+        // такие панели с device-limit отклоняют. Автозначение —
+        // как тумблер HWID в neko+.
+        hwid = formatSubSpoofHwid(
+          _spoofClient,
+          await generateSubSpoofHwid(),
+        );
+        subSpoofHwidController.text = hwid;
+      }
+      await SubSpoofStore.save(
+        widget.profile.id,
+        SubSpoof(
+          client: _spoofClient,
+          customUa: subSpoofUaController.text.trim(),
+          hwid: hwid,
+        ),
+      );
+    } catch (_) {}
     final appController = globalState.appController;
     Profile profile = this.profile.copyWith(
       url: urlController.text,
@@ -168,6 +204,34 @@ class EditProfileViewState extends State<EditProfileView> {
     if (autoUpdate == value) return;
     setState(() {
       autoUpdate = value;
+    });
+  }
+
+  Future<void> _setSpoofClient(String value) async {
+    if (_spoofClient == value) return;
+    final needsAuto = kSubSpoofHwidClients.contains(value) &&
+        subSpoofHwidController.text.trim().isEmpty;
+    // Авто-значение сразу в формате пресета — уйдёт вербатимно.
+    final auto = needsAuto
+        ? formatSubSpoofHwid(value, await generateSubSpoofHwid())
+        : '';
+    if (!mounted) return;
+    setState(() {
+      _spoofClient = value;
+      if (auto.isNotEmpty) {
+        subSpoofHwidController.text = auto;
+      }
+    });
+  }
+
+  Future<void> _regenerateSpoofHwid() async {
+    final value = formatSubSpoofHwid(
+      _spoofClient,
+      await generateSubSpoofHwid(),
+    );
+    if (!mounted) return;
+    setState(() {
+      subSpoofHwidController.text = value;
     });
   }
 
@@ -394,6 +458,97 @@ class EditProfileViewState extends State<EditProfileView> {
               },
             ),
           ),
+        ListItem(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InputDecorator(
+                decoration: InputDecoration(
+                  labelText: appLocalizations.subSpoofClientLabel,
+                  border: const OutlineInputBorder(),
+                ),
+                child: DropdownButton<String>(
+                  value: _spoofClient,
+                  isExpanded: true,
+                  isDense: true,
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    DropdownMenuItem(
+                      value: '',
+                      child: Text(
+                        appLocalizations.subSpoofAuto,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    for (final client in kSubSpoofClients.keys)
+                      DropdownMenuItem(
+                        value: client,
+                        child: Text(
+                          kSubSpoofClientLabels[client] ?? client,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) => _setSpoofClient(value ?? ''),
+                ),
+              ),
+              if (_spoofClient.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  textInputAction: TextInputAction.next,
+                  controller: subSpoofUaController,
+                  maxLines: 1,
+                  minLines: 1,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: appLocalizations.subSpoofCustomUaLabel,
+                    hintText: kSubSpoofClients[_spoofClient],
+                  ),
+                ),
+              ],
+              if (kSubSpoofHwidClients.contains(_spoofClient)) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  textInputAction: TextInputAction.next,
+                  controller: subSpoofHwidController,
+                  maxLines: 1,
+                  minLines: 1,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: appLocalizations.subSpoofHwidLabel,
+                    helperText: 'значение с панели/другого клиента '
+                        'уйдёт без изменений',
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: appLocalizations.subSpoofHwidRegenTooltip,
+                      onPressed: _regenerateSpoofHwid,
+                    ),
+                  ),
+                  validator: (String? value) {
+                    final v = value?.trim() ?? '';
+                    if (v.isEmpty) {
+                      return null;
+                    }
+                    if (v.length < 10 ||
+                        v.length > 64 ||
+                        !RegExp(r'^[a-zA-Z0-9=-]+$').hasMatch(v)) {
+                      return appLocalizations.subSpoofHwidInvalid;
+                    }
+                    return null;
+                  },
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                appLocalizations.subSpoofHint,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
       if (!widget.isNew)
         ValueListenableBuilder<FileInfo?>(
@@ -458,7 +613,9 @@ class EditProfileViewState extends State<EditProfileView> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: ListView.separated(
-              padding: kMaterialListPadding.copyWith(bottom: 72),
+              padding: kMaterialListPadding.copyWith(
+                bottom: 72 + MediaQuery.viewPaddingOf(context).bottom,
+              ),
               itemBuilder: (_, index) {
                 return items[index];
               },

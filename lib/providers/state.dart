@@ -3,6 +3,7 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/state.dart';
+import 'package:bett_box/services/dns_stats.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -133,8 +134,16 @@ NavigationItemsState currentNavigationItemsState(Ref ref) {
 @riverpod
 CoreState coreState(Ref ref) {
   final vpnProps = ref.watch(vpnSettingProvider);
-  final bypassPrivateRoute = ref.watch(
-    networkSettingProvider.select((state) => state.bypassPrivateRoute),
+  final (
+    :bypassPrivateRoute,
+    :bypassDomain,
+  ) = ref.watch(
+    networkSettingProvider.select(
+      (state) => (
+        bypassPrivateRoute: state.bypassPrivateRoute,
+        bypassDomain: state.bypassDomain,
+      ),
+    ),
   );
   final currentProfile = ref.watch(currentProfileProvider);
   final onlyStatisticsProxy = ref.watch(appSettingProvider).onlyStatisticsProxy;
@@ -142,6 +151,7 @@ CoreState coreState(Ref ref) {
     vpnProps: vpnProps.copyWith(bypassPrivateRoute: bypassPrivateRoute),
     onlyStatisticsProxy: onlyStatisticsProxy,
     currentProfileName: currentProfile?.label ?? currentProfile?.id ?? '',
+    bypassDomain: bypassDomain,
   );
 }
 
@@ -158,6 +168,7 @@ UpdateParams updateParams(Ref ref) {
       ),
     ),
   );
+  final dnsStatsEnabled = ref.watch(dnsStatsEnabledProvider);
   return ref.watch(
     patchClashConfigProvider.select(
       (state) => UpdateParams(
@@ -172,7 +183,10 @@ UpdateParams updateParams(Ref ref) {
         allowLan: state.allowLan,
         findProcessMode: state.findProcessMode,
         mode: state.mode,
-        logLevel: state.logLevel,
+        // Пока включена DNS-статистика — ядро минимум на debug.
+        logLevel: dnsStatsEnabled && state.logLevel != LogLevel.debug
+            ? LogLevel.debug
+            : state.logLevel,
         ipv6: state.ipv6,
         tcpConcurrent: state.tcpConcurrent,
         externalController: state.externalController,
@@ -701,6 +715,19 @@ VM2<int, bool> checkIp(Ref ref) {
     ),
   );
   return VM2(a: checkIpNum, b: containsDetection);
+}
+
+@riverpod
+VM2<int, bool> checkMediaUnlock(Ref ref) {
+  final checkIpNum = ref.watch(checkIpNumProvider);
+  final containsMediaUnlock = ref.watch(
+    dashboardStateProvider.select(
+      (state) =>
+          state.dashboardWidgets.contains(DashboardWidget.mediaUnlock) ||
+          state.dashboardWidgets.contains(DashboardWidget.mediaUnlockSmall),
+    ),
+  );
+  return VM2(a: checkIpNum, b: containsMediaUnlock);
 }
 
 @riverpod

@@ -14,7 +14,8 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
 /// Экран «Стелс-проверка»: приложение смотрит на себя глазами детектора VPN —
-/// локальные порты, tun-интерфейс, TRANSPORT_VPN, DNS, IPv6 и выходной IP.
+/// локальные порты, tun-интерфейс, TRANSPORT_VPN, DNS, DoT (Quad9), IPv6
+/// и выходной IP.
 class StealthCheckView extends ConsumerStatefulWidget {
   const StealthCheckView({super.key});
 
@@ -39,6 +40,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   String? _vDns;
   String? _vIpv6;
   String? _vExit;
+  String? _vDot;
 
   String _portsBad = '';
   String _tunNames = '';
@@ -51,6 +53,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
   String _dnsError = '';
   String _exitError = '';
   String _netError = '';
+  String _dotInfo = '';
 
   Future<void> _handleEnableVpn() async {
     try {
@@ -78,17 +81,20 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
       _dnsError = '';
       _exitError = '';
       _netError = '';
+      _dotInfo = '';
       _vPorts = _running;
       _vTun = _running;
       _vVpnNet = _running;
       _vDns = _running;
       _vIpv6 = _running;
       _vExit = _running;
+      _vDot = _running;
     });
     await _checkPorts();
     await _checkSystem();
     await _probeBaseline();
     await _checkDns();
+    await _checkDot();
     _checkIpv6();
     await _checkExit();
     if (!mounted) return;
@@ -368,6 +374,128 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     });
   }
 
+  /// DoT-проба по Quad9: живая DNS-over-TLS-сессия — TCP 853, TLS с проверкой
+  /// сертификата и настоящий DNS-обмен в wire-формате. В отличие от DoH-пробы
+  /// выше здесь проверяется именно транспорт :853, который чаще всего душат
+  /// операторы и сети. Как базовая TCP-проба, идёт системным маршрутом: при
+  /// активном VPN это путь через tun и ноду — ровно то, что доступно клиентам.
+  Future<void> _checkDot() async {
+    var info = '';
+    try {
+      final (ms, byIp) = await _dotProbe();
+      info = '${byIp ? '9.9.9.9' : 'dns.quad9.net'}:853 · $ms ms';
+    } catch (e) {
+      info = _shortError(e.toString());
+    }
+    if (!mounted) return;
+    setState(() {
+      _vDot = info.isEmpty ? _bad : _ok;
+      _dotInfo = info;
+    });
+  }
+
+  /// TLS-соединение до Quad9: сначала по имени (SNI и проверка сертификата —
+  /// dns.quad9.net), при «Failed host lookup» — по IP-литералу 9.9.9.9, чтобы
+  /// проба мерила именно DoT-транспорт, а не упиралась в сломанный DNS.
+  /// Возвращает (сокет, подключение по IP).
+  Future<(SecureSocket, bool)> _dotConnect() async {
+    try {
+      return (
+        await SecureSocket.connect(
+          'dns.quad9.net',
+          853,
+        ).timeout(const Duration(seconds: 6)),
+        false,
+      );
+    } on SocketException catch (e) {
+      if (!e.message.contains('Failed host lookup')) rethrow;
+    }
+    try {
+      return (
+        await SecureSocket.connect(
+          InternetAddress('9.9.9.9'),
+          853,
+        ).timeout(const Duration(seconds: 6)),
+        true,
+      );
+    } catch (e) {
+      throw SocketException(
+        'name lookup failed; 9.9.9.9:853: ${_shortError(e.toString())}',
+      );
+    }
+  }
+
+  /// Одна DoT-сессия; возвращает (длительность полного обмена, мс, по IP).
+  Future<(int, bool)> _dotProbe() async {
+    final sw = Stopwatch()..start();
+    final (tls, byIp) = await _dotConnect();
+    try {
+      await _dotExchange(tls).timeout(const Duration(seconds: 6));
+      return (sw.elapsedMilliseconds, byIp);
+    } finally {
+      tls.destroy();
+    }
+  }
+
+  /// Отправка A-запроса dns.quad9.net и разбор ответа (RFC 1035 4.2.2 —
+  /// 2 байта длины, затем сообщение): совпадение ID, QR=1, RCODE=0, есть
+  /// ответы. Любое расхождение — ошибка пробы.
+  Future<void> _dotExchange(SecureSocket tls) async {
+    final id = DateTime.now().microsecondsSinceEpoch & 0xFFFF;
+    tls.add(_buildDotQuery(id));
+    final buffer = <int>[];
+    await for (final chunk in tls) {
+      buffer.addAll(chunk);
+      if (buffer.length < 2) continue;
+      final len = (buffer[0] << 8) | buffer[1];
+      if (len < 12 || len > 4096) {
+        throw SocketException('dns: bad message length $len');
+      }
+      if (buffer.length >= 2 + len) break;
+    }
+    if (buffer.length < 14) {
+      throw const SocketException('dns: connection closed early');
+    }
+    final len = (buffer[0] << 8) | buffer[1];
+    if (buffer.length < 2 + len) {
+      throw const SocketException('dns: connection closed early');
+    }
+    if (((buffer[2] << 8) | buffer[3]) != id) {
+      throw const SocketException('dns: id mismatch');
+    }
+    if ((buffer[4] & 0x80) == 0) {
+      throw const SocketException('dns: not a response');
+    }
+    final rcode = buffer[5] & 0x0F;
+    if (rcode != 0) {
+      throw SocketException('dns: rcode $rcode');
+    }
+    final ancount = (buffer[8] << 8) | buffer[9];
+    if (ancount == 0) {
+      throw const SocketException('dns: no answer records');
+    }
+  }
+
+  /// Wire-формат запроса: A dns.quad9.net, класс IN, рекурсия желательна.
+  List<int> _buildDotQuery(int id) {
+    final qname = <int>[];
+    for (final label in const ['dns', 'quad9', 'net']) {
+      qname
+        ..add(label.length)
+        ..addAll(ascii.encode(label));
+    }
+    return <int>[
+      (id >> 8) & 0xFF,
+      id & 0xFF, // ID
+      0x01, 0x00, // флаги: RD=1
+      0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // QDCOUNT=1
+      ...qname,
+      0x00, // конец QNAME
+      0x00, 0x01, // QTYPE=A
+      0x00, 0x01, // QCLASS=IN
+    ];
+  }
+
   /// IPv6: если в физической сети есть глобальный v6, а туннель его не
   /// покрывает — часть трафика может уходить мимо VPN.
   void _checkIpv6() {
@@ -505,6 +633,24 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     return '';
   }
 
+  String _dotSubtitle() {
+    switch (_vDot) {
+      case _running:
+        return appLocalizations.stealthCheckChecking;
+      case _ok:
+        return _dotInfo.isNotEmpty
+            ? '${appLocalizations.stealthDotOk} · $_dotInfo'
+            : appLocalizations.stealthDotOk;
+      case _bad:
+        return _dotInfo.isNotEmpty
+            ? '${appLocalizations.stealthDotBad} · $_dotInfo'
+            : appLocalizations.stealthDotBad;
+      case _fail:
+        return appLocalizations.stealthCheckFail;
+    }
+    return '';
+  }
+
   String _ipv6Subtitle() {
     switch (_vIpv6) {
       case _running:
@@ -566,6 +712,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
     addRow(appLocalizations.stealthTunTitle, _tunSubtitle(), _vTun);
     addRow(appLocalizations.stealthVpnNetTitle, _vpnNetSubtitle(), _vVpnNet);
     addRow(appLocalizations.stealthDnsTitle, _dnsSubtitle(), _vDns);
+    addRow(appLocalizations.stealthDotTitle, _dotSubtitle(), _vDot);
     addRow('IPv6', _ipv6Subtitle(), _vIpv6);
     addRow(appLocalizations.stealthExitTitle, _exitSubtitle(), _vExit);
     final techNotes = <String>[];
@@ -858,6 +1005,14 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
             _divider(context),
             _buildRow(
               context,
+              icon: Icons.lock_outline,
+              title: appLocalizations.stealthDotTitle,
+              verdict: _vDot,
+              subtitle: _dotSubtitle(),
+            ),
+            _divider(context),
+            _buildRow(
+              context,
               icon: Icons.travel_explore,
               title: 'IPv6',
               verdict: _vIpv6,
@@ -890,7 +1045,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
         }
       });
     }
-    final verdicts = [_vPorts, _vTun, _vVpnNet, _vDns, _vIpv6, _vExit];
+    final verdicts = [_vPorts, _vTun, _vVpnNet, _vDns, _vDot, _vIpv6, _vExit];
     final closed = verdicts.where((v) => v == _ok).length;
     // Считаем честно: непроверенные пункты остаются в знаменателе,
     // иначе счётчик рискует показать «3 из 3» при трёх сбоях.

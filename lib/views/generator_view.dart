@@ -2,6 +2,7 @@
 // Вставка ссылок/подписок/AWG-конфигов → правила и пресеты → создание профиля.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/generator/generator_core.dart';
@@ -12,6 +13,7 @@ import 'package:bett_box/widgets/widgets.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------- Пресеты DNS (порт «Шаг 1: DNS» веб-генератора) ----------------
 // Значения пресетов 1:1 из https://github.com/cube5472/RKN-gen-mihomo
@@ -25,6 +27,12 @@ const String _kDnsPresetCustom = 'custom';
 const String _kFieldDefaultNs = 'defaultNameserver';
 const String _kFieldNameserver = 'nameserver';
 const String _kFieldProxyNs = 'proxyServerNameserver';
+
+// Ключ SharedPreferences: шаблоны настроек генератора («Мой вариант 1» и т.п.).
+const String _kPrefsTemplatesKey = 'bb.generator.templates.v1';
+
+// Плейсхолдер выпадающего списка шаблонов.
+const String _kNoTemplateLabel = '— Выберите шаблон —';
 
 class _DnsPreset {
   final String key;
@@ -90,7 +98,14 @@ const List<_DnsPreset> _kDnsPresets = [
 ];
 
 class GeneratorView extends ConsumerStatefulWidget {
-  const GeneratorView({super.key});
+  // Режим пересборки: профиль-цель и его текущий YAML (с маркером).
+  // Заданы → генератор открывается с параметрами профиля (пресеты,
+  // DNS, правила, ноды), кнопка внизу пересобирает этот же профиль
+  // вместо создания нового.
+  final Profile? rebuildProfile;
+  final String? rebuildYaml;
+
+  const GeneratorView({super.key, this.rebuildProfile, this.rebuildYaml});
 
   @override
   ConsumerState<GeneratorView> createState() => _GeneratorViewState();
@@ -122,16 +137,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     ),
   );
 
-  // Провайдеры правил
-  final Map<String, bool> _providerSets = {
-    'roscomvpn': true,
-    'davoyan': false,
-    'legiz': false,
-  };
-  static const Map<String, String> _providerLabels = {
-    'roscomvpn': 'RoscomVPN (основной набор)',
-    'davoyan': 'Davoyan (легкий, быстрые обновления)',
-    'legiz': 'Legiz (минимальный)',
+  // Категории правил (универсальный дедуплицированный набор; «base»
+  // всегда включена и чекбокса не имеет — см. kSelectableCategories).
+  final Map<String, bool> _ruleCategories = {
+    for (final key in kSelectableCategories) key: true,
   };
 
   // Пресеты сервисов и CDN
@@ -139,7 +148,20 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   late Map<String, bool> _cdnPresets;
   bool _ruUnblock = true;
   bool _providerMode = false;
+  // Синхронизация удаления мёртвых нод (dead_nodes): exclude-filter
+  // основного провайдера в режиме provider. В форме не отображается;
+  // заполняется из маркера при пересборке, сбрасывается шаблонами.
+  String _providerExclude = '';
   final _providerIntervalController = TextEditingController(text: '86400');
+
+  // --- Резерв (fallback), раздел 8 ---
+  bool _reserveEnabled = false;
+  // Подписки резерва: url + интервал обновления. Порядок в списке =
+  // приоритет fallback (первая строка перебирается раньше).
+  final List<Map<String, TextEditingController>> _reserveSubs = [];
+  // Основная нода (приоритет 1): имя из _proxies; '' — не использовать.
+  String _reservePrimary = '';
+  final _reserveHealthController = TextEditingController(text: '300');
 
   List<Map<String, dynamic>> _proxies = [];
   // Кэш разобранных подписок (URL -> прокси): правки локального текста и
@@ -150,6 +172,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   List<String> _problems = const [];
   List<String> _pendingUrls = const [];
   String _lastParsedText = '';
+
+  // Шаблоны настроек генератора (галочки/DNS/правила, без ссылок и прокси).
+  final List<Map<String, dynamic>> _templates = [];
+  String? _selectedTemplateName;
   Timer? _debounce;
 
   @override
@@ -159,8 +185,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _servicePresets['telegram'] = true;
     _servicePresets['discord'] = true;
     _servicePresets['youtube'] = true;
+    // AI-сервисы по умолчанию: без этого правила `ai -> 🤖 AI` не попадают
+    // в конфиг, и трафик ChatGPT/Claude/Gemini идёт через общий PROXY.
+    _servicePresets['ai'] = true;
     _cdnPresets = {for (final key in kCdnRules.keys) key: false};
     _linksController.addListener(_onLinksChanged);
+    _loadTemplates();
+    if (_isRebuild) _hydrateForRebuild();
   }
 
   @override
@@ -176,8 +207,76 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     _nameserverController.dispose();
     _proxyNsController.dispose();
     _providerIntervalController.dispose();
+    _reserveHealthController.dispose();
+    for (final sub in _reserveSubs) {
+      sub['url']?.dispose();
+      sub['interval']?.dispose();
+      sub['exclude']?.dispose();
+    }
     _dio.close();
     super.dispose();
+  }
+
+  bool get _isRebuild =>
+      widget.rebuildProfile != null && widget.rebuildYaml != null;
+
+  // ---------------- Режим пересборки: загрузка параметров профиля ----------------
+
+  // Заполняет форму параметрами из маркера профиля. Пресеты/DNS/правила
+  // проходят через _applyTemplateData (тот же путь, что и у шаблонов);
+  // ноды восстанавливаются из params.proxies, а в поле «Источники»
+  // подставляется YAML-блок proxies: из самого конфига — тогда правка
+  // текста и повторное нажатие «Разобрать» не теряют ноды.
+  void _hydrateForRebuild() {
+    final yaml = widget.rebuildYaml;
+    if (yaml == null || yaml.isEmpty) return;
+    final params = extractGeneratorParams(yaml);
+    if (params == null) return;
+    final proxiesBlock = params.providerMode
+        ? ''
+        : extractProxiesYamlBlock(yaml);
+    _applyTemplateData(<String, dynamic>{
+      'urlTest': params.urlTest,
+      'defaultNameserver': params.defaultNameserver,
+      'nameserver': params.nameserver,
+      'proxyServerNameserver': params.proxyServerNameserver,
+      'mtu': params.mtu,
+      'providerMode': params.providerMode,
+      'providerUrl': params.providerUrl,
+      'providerInterval': params.providerInterval,
+      'reserveEnabled': params.reserveEnabled,
+      'reserveSubscriptions': params.reserveSubscriptions,
+      'reservePrimaryNode': params.proxies.any(
+            (proxy) => '${proxy['name']}' == params.reservePrimaryNode,
+          )
+          ? params.reservePrimaryNode
+          : '',
+      'reserveHealthInterval': params.reserveHealthInterval,
+      'ruUnblock': params.ruUnblock,
+      'ruleCategories': List<String>.from(params.ruleCategories),
+      'servicePresets': List<String>.from(params.servicePresets),
+      'cdnPresets': List<String>.from(params.cdnPresets),
+      'customRules': params.customRules
+          .map((r) => '${r['type']},${r['value']},${r['action']}')
+          .join('\n'),
+    });
+    // После _applyTemplateData: она сбрасывает исключения удаления
+    // (шаблон = сборка с нуля), пересборка же восстанавливает их из
+    // маркера. Работает и для providerMode — до её early-return.
+    _providerExclude = params.providerExclude;
+    if (params.providerMode) return;
+    // _lastParsedText обновляем ДО смены текста: слушатель
+    // _onLinksChanged сработает синхронно и не запланирует разбор.
+    _lastParsedText = proxiesBlock;
+    setState(() {
+      _proxies = List<Map<String, dynamic>>.from(params.proxies);
+      _chains
+        ..clear()
+        ..addAll(params.chains.map((c) => List<String>.from(c)));
+      if (proxiesBlock.isNotEmpty) {
+        _linksController.text = proxiesBlock;
+      }
+    });
   }
 
   // ---------------- Разбор источников ----------------
@@ -200,20 +299,101 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     }
   }
 
+  // Краткая подпись чекбокса категории: сколько HTTP-списков качается
+  // и их имена (inline-провайдеры не скачиваются и не считаются).
+  String _categoryProvidersSummary(String key) {
+    final category = kRuleCategories[key];
+    final providers = category == null
+        ? const <String>[]
+        : (category['providers'] as List<dynamic>? ?? const [])
+              .cast<String>()
+              .where((name) => kRuleProviders[name] is Map)
+              .where(
+                (name) => kRuleProviders[name]['type'] != 'inline',
+              )
+              .toList();
+    if (providers.isEmpty) return 'списков не скачивает';
+    return '${providers.length} ${_pluralLists(providers.length)}: '
+        '${providers.join(', ')}';
+  }
+
+  String _pluralLists(int n) {
+    if (n % 10 == 1 && n % 100 != 11) return 'список';
+    if ([2, 3, 4].contains(n % 10) && ![12, 13, 14].contains(n % 100)) {
+      return 'списка';
+    }
+    return 'списков';
+  }
+
   Future<String> _fetchText(String url) async {
-    final response = await _dio.get<String>(
-      url,
-      options: Options(
-        responseType: ResponseType.plain,
-        followRedirects: true,
-        validateStatus: (code) => code != null && code >= 200 && code < 400,
-        headers: {'User-Agent': 'clash.meta/1.19.0'},
-      ),
+    // Подмена клиента — настройка ПРИЛОЖЕНИЯ (Настройки → Общие →
+    // «Подмена клиента подписок»), генератор для неё отдельного UI не
+    // имеет. Включённая глобальная подмена действует и на скачивание
+    // подписок здесь; выключенная — обычный clash-запрос.
+    var headers = <String, String>{'User-Agent': 'clash.meta/1.19.0'};
+    try {
+      final globalSpoof = await SubSpoofStore.getGlobal();
+      final spoofHeaders = await globalSpoof.resolveHeaders();
+      if (spoofHeaders != null) {
+        headers = spoofHeaders;
+      }
+    } catch (_) {}
+    await SpoofReport.write(
+      'ГЕНЕРАТОР | GET $url | UA: ${headers['User-Agent']} | '
+      'X-Hwid: ${headers['X-Hwid'] ?? 'НЕТ'}',
     );
+    Response<String> response;
+    try {
+      response = await _dio.get<String>(
+        url,
+        options: Options(
+          responseType: ResponseType.plain,
+          followRedirects: true,
+          validateStatus: (code) => code != null && code >= 200 && code < 400,
+          headers: headers,
+        ),
+      );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        rethrow;
+      }
+      // Резервный путь: прямой защищённый фетч мимо туннеля
+      // (VpnService.protect) — как в request.dart. Обычный путь может
+      // упасть на сети/DNS ядра; подписка должна скачиваться всегда.
+      final native = await protectedFetchNative(url, headers);
+      if (native == null || native['error'] != null) {
+        await SpoofReport.write(
+          '  ОШИБКА запроса: $e (резерв: '
+          '${native?['error'] ?? 'недоступен'})',
+        );
+        rethrow;
+      }
+      final status = (native['status'] as num?)?.toInt() ?? 0;
+      if (status < 200 || status >= 400) {
+        await SpoofReport.write(
+          '  ОТВЕТ: HTTP $status (резерв) | отказ',
+        );
+        rethrow;
+      }
+      final body = utf8.decode(
+        base64Decode('${native['body'] ?? ''}'),
+        allowMalformed: true,
+      );
+      response = Response<String>(
+        requestOptions: RequestOptions(path: url),
+        data: body,
+        statusCode: status,
+      );
+    }
     final body = response.data ?? '';
     if (body.trim().isEmpty) {
+      await SpoofReport.write('  ОТВЕТ: HTTP ${response.statusCode ?? 0} | пустое тело');
       throw Exception('сервер вернул пустой ответ');
     }
+    await SpoofReport.write(
+      '  ОТВЕТ: HTTP ${response.statusCode ?? 0} | ОК: '
+      '${body.length} байт | начало: "${body.trim().substring(0, body.trim().length > 100 ? 100 : body.trim().length).replaceAll('\n', ' ')}"',
+    );
     return body;
   }
 
@@ -464,50 +644,16 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
   }
 
   Future<void> _createProfile() async {
-    if (_providerMode && _providerUrlController.text.trim().isEmpty) {
-      _showError('Укажите URL подписки в разделе 7 (режим provider).');
-      return;
-    }
-    if (!_providerMode && _proxies.isEmpty) {
-      _showError(
-        'Нет прокси: вставьте ссылки или URL подписки в раздел 1 '
-        'и нажмите «Разобрать».',
-      );
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
       return;
     }
     final loading = ref.read(loadingProvider.notifier);
     loading.value = true;
     String yaml;
     try {
-      yaml = buildConfig(
-        GeneratorParams(
-          urlTest: _urlTestController.text,
-          defaultNameserver: _defaultNsController.text,
-          nameserver: _nameserverController.text,
-          proxyServerNameserver: _proxyNsController.text,
-          mtu: _mtuController.text.trim(),
-          providerMode: _providerMode,
-          providerUrl: _providerUrlController.text,
-          providerInterval:
-              int.tryParse(_providerIntervalController.text) ?? 86400,
-          proxies: _proxies,
-          chains: _chains,
-          providerSets: _providerSets.entries
-              .where((e) => e.value)
-              .map((e) => e.key)
-              .toList(),
-          servicePresets: _servicePresets.entries
-              .where((e) => e.value)
-              .map((e) => e.key)
-              .toList(),
-          cdnPresets: _cdnPresets.entries
-              .where((e) => e.value)
-              .map((e) => e.key)
-              .toList(),
-          ruUnblock: _ruUnblock,
-          customRules: _parseCustomRules(),
-        ),
-      );
+      yaml = _buildYamlConfig();
     } on Object catch (e) {
       if (!mounted) return;
       await globalState.showMessage(
@@ -556,12 +702,421 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     }
   }
 
+  // Пересборка существующего профиля (кнопка в режиме _isRebuild):
+  // конфиг собирается из ТЕКУЩЕГО состояния формы (пользователь мог
+  // поменять пресеты), валидируется ядром и записывается в тот же
+  // профиль. ID не меняется — выбранная нода и настройки профиля
+  // сохраняются; активный профиль применяется на лету. Прежняя версия
+  // файла остаётся рядом в «.bak» до следующей пересборки.
+  Future<void> _rebuildProfile() async {
+    final profile = widget.rebuildProfile!;
+    final error = _validateForm();
+    if (error != null) {
+      _showError(error);
+      return;
+    }
+    final confirmed = await globalState.showMessage(
+      title: 'Пересобрать конфиг?',
+      message: TextSpan(
+        text: 'Профиль «${profile.label ?? profile.id}» будет заново '
+            'собран из параметров на этой странице. Ручные правки '
+            'файла будут потеряны; текущая версия сохранится в '
+            'резервную копию рядом с конфигом.',
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final loading = ref.read(loadingProvider.notifier);
+    final appController = globalState.appController;
+    loading.value = true;
+    appController.setProfile(profile.copyWith(isUpdating: true));
+    try {
+      final yaml = _buildYamlConfig();
+      final oldFile = await profile.getFile();
+      final oldContent = await oldFile.readAsString();
+      final backupPath =
+          '${await appPath.getProfilePath(profile.id)}.bak';
+      await File(backupPath).writeAsString(oldContent, flush: true);
+      final updated = await profile.saveFileWithString(yaml);
+      appController.setProfileAndAutoApply(
+        updated.copyWith(isUpdating: false),
+      );
+      if (!mounted) return;
+      final backupName = backupPath.split('/').last;
+      context.showNotifier('Конфиг пересобран (бэкап: $backupName)');
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } on Object catch (e) {
+      appController.setProfile(profile.copyWith(isUpdating: false));
+      if (!mounted) return;
+      await globalState.showMessage(
+        title: 'Генератор BettboxR',
+        message: TextSpan(text: '$e'),
+        cancelable: false,
+      );
+    } finally {
+      loading.value = false;
+    }
+  }
+
   String _suggestedProfileLabel() {
     final now = DateTime.now();
     return 'BettboxR-${now.day.toString().padLeft(2, '0')}.'
         '${now.month.toString().padLeft(2, '0')} '
         '${now.hour.toString().padLeft(2, '0')}:'
         '${now.minute.toString().padLeft(2, '0')}';
+  }
+
+  // ---------------- Резерв (fallback): подписки ----------------
+
+  List<String> get _staticProxyNames =>
+      _proxies.map((proxy) => '${proxy['name']}').toList();
+
+  void _addReserveSub() {
+    setState(() {
+      _reserveSubs.add({
+        'url': TextEditingController(),
+        'interval': TextEditingController(text: '86400'),
+        'exclude': TextEditingController(),
+      });
+    });
+  }
+
+  void _removeReserveSub(int index) {
+    final removed = _reserveSubs.removeAt(index);
+    setState(() {});
+    // Контроллеры утилизируем после того, как кадр без этих полей
+    // будет собран: dispose контроллера живого TextField запрещён.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      removed['url']?.dispose();
+      removed['interval']?.dispose();
+      removed['exclude']?.dispose();
+    });
+  }
+
+  // ---------------- Форма: валидация и сборка ----------------
+
+  String? _validateForm() {
+    if (_providerMode && _providerUrlController.text.trim().isEmpty) {
+      return 'Укажите URL подписки в разделе 9 (режим provider).';
+    }
+    if (!_providerMode && _proxies.isEmpty) {
+      return 'Нет прокси: вставьте ссылки или URL подписки в раздел 1 '
+          'и нажмите «Разобрать».';
+    }
+    if (_reserveEnabled) {
+      final hasSub = _reserveSubs.any(
+        (sub) => (sub['url']?.text ?? '').trim().isNotEmpty,
+      );
+      if (!hasSub) {
+        return 'Резерв включён (раздел 8), но не указан URL ни одной '
+            'подписки.';
+      }
+      for (final sub in _reserveSubs) {
+        final url = (sub['url']?.text ?? '').trim();
+        if (url.isNotEmpty &&
+            !url.startsWith('http://') &&
+            !url.startsWith('https://')) {
+          return 'Резерв (раздел 8): URL подписки должен начинаться '
+              'с http:// или https://.';
+        }
+        // Мягкая проверка regex для exclude-filter: синтаксис Dart и Go
+        // (regexp2) почти совпадает; невалидное ядро отвергло бы целиком.
+        final exclude = (sub['exclude']?.text ?? '').trim();
+        if (exclude.isNotEmpty) {
+          try {
+            RegExp(exclude);
+          } on FormatException catch (_) {
+            return 'Резерв (раздел 8): некорректный regex в поле '
+                '«Исключить» подписки.';
+          } on ArgumentError catch (_) {
+            return 'Резерв (раздел 8): некорректный regex в поле '
+                '«Исключить» подписки.';
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  String _buildYamlConfig() {
+    final params = GeneratorParams(
+      urlTest: _urlTestController.text,
+      defaultNameserver: _defaultNsController.text,
+      nameserver: _nameserverController.text,
+      proxyServerNameserver: _proxyNsController.text,
+      mtu: _mtuController.text.trim(),
+      providerMode: _providerMode,
+      providerExclude: _providerExclude,
+      providerUrl: _providerUrlController.text,
+      providerInterval:
+          int.tryParse(_providerIntervalController.text) ?? 86400,
+      reserveEnabled: _reserveEnabled,
+      reserveSubscriptions: _reserveSubs
+          .map(
+            (sub) => <String, String>{
+              'url': sub['url']?.text ?? '',
+              'interval': sub['interval']?.text ?? '',
+              'exclude': sub['exclude']?.text ?? '',
+            },
+          )
+          .toList(),
+      reservePrimaryNode: _reservePrimary,
+      reserveHealthInterval:
+          int.tryParse(_reserveHealthController.text) ?? 300,
+      proxies: _proxies,
+      chains: _chains,
+      ruleCategories: _ruleCategories.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      servicePresets: _servicePresets.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      cdnPresets: _cdnPresets.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      ruUnblock: _ruUnblock,
+      customRules: _parseCustomRules(),
+    );
+    // Маркер с параметрами сборки в шапке YAML: профиль затем можно
+    // пересобрать одним тапом (меню карточки на странице
+    // «Конфигурации») актуальной версией генератора.
+    return embedGeneratorMarker(buildConfig(params), params);
+  }
+
+  // ---------------- Шаблоны генератора ----------------
+
+  Future<SharedPreferences?> _prefs() =>
+      Preferences().sharedPreferencesCompleter.future;
+
+  Future<void> _loadTemplates() async {
+    try {
+      final prefs = await _prefs();
+      final raw = prefs?.getStringList(_kPrefsTemplatesKey) ?? const [];
+      final loaded = <Map<String, dynamic>>[];
+      for (final item in raw) {
+        try {
+          final decoded = jsonDecode(item);
+          if (decoded is Map<String, dynamic> &&
+              decoded['name'] is String &&
+              decoded['data'] is Map) {
+            loaded.add(decoded);
+          }
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      setState(() {
+        _templates
+          ..clear()
+          ..addAll(loaded);
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _persistTemplates() async {
+    try {
+      final prefs = await _prefs();
+      await prefs?.setStringList(
+        _kPrefsTemplatesKey,
+        _templates.map(jsonEncode).toList(),
+      );
+    } catch (_) {}
+  }
+
+  Map<String, dynamic> _currentTemplateData() {
+    return <String, dynamic>{
+      'urlTest': _urlTestController.text,
+      'defaultNameserver': _defaultNsController.text,
+      'nameserver': _nameserverController.text,
+      'proxyServerNameserver': _proxyNsController.text,
+      'mtu': _mtuController.text,
+      'providerMode': _providerMode,
+      'providerUrl': _providerUrlController.text,
+      'providerInterval': _providerIntervalController.text,
+      'ruUnblock': _ruUnblock,
+      'ruleCategories': _ruleCategories.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      'servicePresets': _servicePresets.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList(),
+      'cdnPresets':
+          _cdnPresets.entries.where((e) => e.value).map((e) => e.key).toList(),
+      'customRules': _customRulesController.text,
+    };
+  }
+
+  void _applyTemplateData(Map<String, dynamic> data) {
+    setState(() {
+      // Шаблон = сборка с нуля: исключения из удаления мёртвых нод
+      // (dead_nodes) не наследуются. Пересборка ставит их обратно
+      // сразу после этого вызова (см. _hydrateForRebuild).
+      _providerExclude = '';
+      _urlTestController.text = data['urlTest']?.toString() ?? '';
+      _defaultNsController.text = data['defaultNameserver']?.toString() ?? '';
+      _nameserverController.text = data['nameserver']?.toString() ?? '';
+      _proxyNsController.text =
+          data['proxyServerNameserver']?.toString() ?? '';
+      _mtuController.text = data['mtu']?.toString() ?? '';
+      _providerMode = data['providerMode'] == true;
+      _providerUrlController.text = data['providerUrl']?.toString() ?? '';
+      _providerIntervalController.text =
+          data['providerInterval']?.toString() ?? '86400';
+      _ruUnblock = data['ruUnblock'] is bool ? data['ruUnblock'] as bool : true;
+      // Совместимость: в шаблонах старой версии ключ назывался
+      // providerSets и вёл набор вендоров — категориям оттуда брать
+      // нечего, поэтому при отсутствии нового ключа категории не трогаем.
+      if (data['ruleCategories'] is List) {
+        final categories = {
+          ...(data['ruleCategories'] as List).whereType<String>(),
+        };
+        _ruleCategories.updateAll((key, _) => categories.contains(key));
+      }
+      final servicePresets = {
+        if (data['servicePresets'] is List)
+          ...(data['servicePresets'] as List).whereType<String>(),
+      };
+      final cdnPresets = {
+        if (data['cdnPresets'] is List)
+          ...(data['cdnPresets'] as List).whereType<String>(),
+      };
+      _servicePresets.updateAll((key, _) => servicePresets.contains(key));
+      _cdnPresets.updateAll((key, _) => cdnPresets.contains(key));
+      _customRulesController.text = data['customRules']?.toString() ?? '';
+      // Резерв применяется только когда данные его несут (пересборка
+      // профиля — вызов из initState, живых виджетов ещё нет). Шаблоны
+      // настроек резерв не сохраняют и его не трогают.
+      if (data.containsKey('reserveEnabled')) {
+        _reserveEnabled = data['reserveEnabled'] == true;
+        _reserveHealthController.text =
+            data['reserveHealthInterval']?.toString() ?? '300';
+        _reservePrimary = data['reservePrimaryNode']?.toString() ?? '';
+        _reserveSubs.clear();
+        if (data['reserveSubscriptions'] is List) {
+          for (final item
+              in (data['reserveSubscriptions'] as List).whereType<Map>()) {
+            _reserveSubs.add({
+              'url': TextEditingController(text: '${item['url'] ?? ''}'),
+              'interval': TextEditingController(
+                text: '${item['interval'] ?? '86400'}',
+              ),
+              'exclude': TextEditingController(text: '${item['exclude'] ?? ''}'),
+            });
+          }
+        }
+      }
+      for (final field in const [
+        _kFieldDefaultNs,
+        _kFieldNameserver,
+        _kFieldProxyNs,
+      ]) {
+        _dnsSelection[field] = _dnsKeyForText(_dnsControllerFor(field).text);
+      }
+    });
+  }
+
+  Future<void> _saveTemplateAs() async {
+    final suggested = 'Мой вариант ${_templates.length + 1}';
+    final name = await globalState.showCommonDialog<String>(
+      dismissible: false,
+      child: _TemplateNameDialog(suggestedName: suggested),
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty || !mounted) return;
+    setState(() {
+      _templates.removeWhere((t) => t['name'] == trimmed);
+      _templates.add({'name': trimmed, 'data': _currentTemplateData()});
+      _selectedTemplateName = trimmed;
+    });
+    await _persistTemplates();
+    if (!mounted) return;
+    context.showNotifier('Шаблон «$trimmed» сохранён');
+  }
+
+  void _onTemplateSelected(String? name) {
+    if (name == null || name == _selectedTemplateName) return;
+    Map<String, dynamic>? tpl;
+    for (final item in _templates) {
+      if (item['name'] == name) {
+        tpl = item;
+        break;
+      }
+    }
+    if (tpl == null) return;
+    _applyTemplateData(Map<String, dynamic>.from(tpl['data'] as Map));
+    setState(() {
+      _selectedTemplateName = name;
+    });
+    context.showNotifier('Шаблон «$name» применён');
+  }
+
+  Future<void> _deleteSelectedTemplate() async {
+    final name = _selectedTemplateName;
+    if (name == null) return;
+    setState(() {
+      _templates.removeWhere((t) => t['name'] == name);
+      _selectedTemplateName = null;
+    });
+    await _persistTemplates();
+    if (!mounted) return;
+    context.showNotifier('Шаблон «$name» удалён');
+  }
+
+  Widget _templateControls() {
+    final items = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(
+        value: '',
+        child: Text(
+          _kNoTemplateLabel,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      for (final tpl in _templates)
+        DropdownMenuItem(
+          value: tpl['name'] as String,
+          child: Text(
+            tpl['name'] as String,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+    ];
+    return Row(
+      children: [
+        Expanded(
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Сохранённые шаблоны',
+              border: OutlineInputBorder(),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedTemplateName ?? '',
+              isExpanded: true,
+              isDense: true,
+              underline: const SizedBox.shrink(),
+              items: items,
+              onChanged: _onTemplateSelected,
+            ),
+          ),
+        ),
+        IconButton(
+          tooltip: 'Сохранить текущие настройки как шаблон',
+          onPressed: _saveTemplateAs,
+          icon: const Icon(Icons.bookmark_add_outlined),
+        ),
+        IconButton(
+          tooltip: 'Удалить выбранный шаблон',
+          onPressed: _selectedTemplateName == null
+              ? null
+              : _deleteSelectedTemplate,
+          icon: const Icon(Icons.bookmark_remove_outlined),
+        ),
+      ],
+    );
   }
 
   void _showError(String message) {
@@ -719,6 +1274,41 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     return ListView(
       padding: const EdgeInsets.only(bottom: 32, top: 4),
       children: [
+        if (_isRebuild)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Card(
+              margin: EdgeInsets.zero,
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.edit_note,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Редактирование профиля '
+                        '«${widget.rebuildProfile!.label ?? widget.rebuildProfile!.id}»: '
+                        'при сохранении конфиг будет пересобран.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         _section('1. Источники прокси', [
           TextField(
             controller: _linksController,
@@ -843,16 +1433,37 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             label: const Text('Добавить цепочку'),
           ),
         ]),
-        _section('3. Провайдеры правил', [
-          for (final entry in _providerSets.entries)
+        _section('3. Категории правил', [
+          Text(
+            'Один дедуплицированный набор списков вместо трёх вендорских '
+            'пакетов. Категория добавляет и провайдеров, и свои правила; '
+            'выключенная категория не качается и не попадает в конфиг.',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+          ),
+          const SizedBox(height: 4),
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.lock_outline, size: 20),
+            title: const Text('База (киллсвитч, приватные сети)'),
+            subtitle: const Text(
+              'Всегда включена: private → DIRECT, блок IPv6 и QUIC',
+            ),
+          ),
+          for (final entry in _ruleCategories.entries)
             CheckboxListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(_providerLabels[entry.key] ?? entry.key),
+              title: Text(kCategoryLabels[entry.key] ?? entry.key),
+              subtitle: Text(
+                _categoryProvidersSummary(entry.key),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               value: entry.value,
               onChanged: (checked) {
                 setState(() {
-                  _providerSets[entry.key] = checked ?? false;
+                  _ruleCategories[entry.key] = checked ?? false;
                 });
               },
             ),
@@ -891,7 +1502,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             contentPadding: EdgeInsets.zero,
             title: const Text('Разблокировка заблокированных RU-ресурсов'),
             subtitle: const Text(
-              'oisd_big, re-filter, ru-inline-banned, inline-blocked-ips',
+              're-filter, ru-inline-banned, inline-blocked-ips',
             ),
             value: _ruUnblock,
             onChanged: (checked) {
@@ -959,7 +1570,158 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
                 'https://8.8.8.8/dns-query#skip-cert-verify=true',
           ),
         ]),
-        _section('8. Настройки', [
+        _section('8. Резерв (fallback)', [
+          Text(
+            'Группа «🆘 Резерв» (тип fallback): ядро само держит первую '
+            'живую ноду и переключается при отвале. Приоритет: твои '
+            'ноды (выбранная «основная» — первой), затем подписки по '
+            'порядку (пассивная проверка при ошибке дайла + периодические '
+            'пробы). В «🛡️ VPN» она станет выбором по умолчанию, '
+            '«⚡️ Авто» и сервисные группы останутся только на твоих '
+            'нодах. Правила конфига не меняются.',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Включить резерв'),
+            subtitle: const Text('Выключено — конфиг собирается как раньше'),
+            value: _reserveEnabled,
+            onChanged: (value) {
+              setState(() => _reserveEnabled = value);
+            },
+          ),
+          if (_reserveEnabled) ...[
+            const SizedBox(height: 4),
+            if (_reserveSubs.isEmpty)
+              Text(
+                'Подписок пока нет — добавьте хотя бы одну.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            for (var i = 0; i < _reserveSubs.length; i++) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _reserveSubs[i]['url'],
+                          keyboardType: TextInputType.url,
+                          decoration: InputDecoration(
+                            labelText: 'Подписка ${i + 1} — URL',
+                            border: const OutlineInputBorder(),
+                            helperMaxLines: 2,
+                            helperText:
+                                'YAML / share-ссылки. Приоритет ${i + 1}: '
+                                'порядок строк = порядок перебора',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _reserveSubs[i]['interval'],
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Интервал обновления, сек',
+                            border: OutlineInputBorder(),
+                            helperText: 'Пусто — сутки (86400)',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _reserveSubs[i]['exclude'],
+                          decoration: const InputDecoration(
+                            labelText: 'Исключить по имени (regex)',
+                            border: OutlineInputBorder(),
+                            helperMaxLines: 3,
+                            helperText:
+                                'Ноды, чьё имя совпало, выкидываются из '
+                                'подписки. Напр.: expire|剩余|官网|traf',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Удалить подписку',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _removeReserveSub(i),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            OutlinedButton.icon(
+              onPressed: _addReserveSub,
+              icon: const Icon(Icons.add),
+              label: const Text('Добавить подписку'),
+            ),
+            const SizedBox(height: 12),
+            if (!_providerMode && _proxies.isNotEmpty) ...[
+              InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Основная нода — приоритет 1',
+                  border: OutlineInputBorder(),
+                  helperMaxLines: 2,
+                  helperText:
+                      'Опционально: эта нода первая, затем твои '
+                      'остальные, затем подписки по порядку',
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _staticProxyNames.contains(_reservePrimary)
+                        ? _reservePrimary
+                        : '',
+                    isExpanded: true,
+                    isDense: true,
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: '',
+                        child: Text('Не использовать'),
+                      ),
+                      ..._staticProxyNames.map(
+                        (name) => DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(name, overflow: TextOverflow.ellipsis),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() => _reservePrimary = value ?? '');
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            TextField(
+              controller: _reserveHealthController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Интервал проверки, сек',
+                border: OutlineInputBorder(),
+                helperText: 'Пусто — 300 (5 минут)',
+              ),
+            ),
+            if (_providerMode)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'В режиме provider статических нод нет — приоритет '
+                  'начнётся с первой подписки, а группы (включая '
+                  '«⚡️ Авто») возьмут ноды основного провайдера.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).hintColor,
+                  ),
+                ),
+              ),
+          ],
+        ]),
+        _section('9. Настройки', [
           SegmentedButton<bool>(
             segments: const [
               ButtonSegment(value: false, label: Text('Встроить в конфиг')),
@@ -995,10 +1757,16 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               controller: _providerIntervalController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Интервал обновления, сек (по умолчанию 86400)',
+                labelText: 'Интервал обновления, сек',
                 border: OutlineInputBorder(),
+                helperText: 'Пусто — сутки (86400)',
               ),
             ),
+            // Заголовки подмены клиента (UA/X-Hwid/device) в генераторе
+            // не настраиваются: подмена — глобальная настройка приложения
+            // (Настройки → Общие → «Подмена клиента подписок») и
+            // применяется ко всем подпискам автоматически.
+            const SizedBox(height: 8),
           ],
           TextField(
             controller: _urlTestController,
@@ -1012,10 +1780,23 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             controller: _mtuController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
-              labelText: 'MTU для TUN (пусто — по умолчанию ядра)',
+              labelText: 'MTU для TUN',
               border: OutlineInputBorder(),
+              helperText: 'Пусто — по умолчанию ядра',
             ),
           ),
+        ]),
+        _section('10. Шаблон', [
+          Text(
+            'Сохраните текущие галочки, DNS и настройки как шаблон и '
+            'применяйте одним тапом. Ссылки и прокси в шаблон не входят.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).hintColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _templateControls(),
         ]),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1023,11 +1804,13 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
             ),
-            onPressed: _createProfile,
-            icon: const Icon(Icons.rocket_launch),
-            label: const Text(
-              'Создать профиль в BettboxR',
-              style: TextStyle(fontSize: 16),
+            onPressed: _isRebuild ? _rebuildProfile : _createProfile,
+            icon: Icon(
+              _isRebuild ? Icons.auto_fix_high : Icons.rocket_launch,
+            ),
+            label: Text(
+              _isRebuild ? 'Пересобрать профиль' : 'Создать профиль в BettboxR',
+              style: const TextStyle(fontSize: 16),
             ),
           ),
         ),
@@ -1092,3 +1875,60 @@ class _ProfileNameDialogState extends State<_ProfileNameDialog> {
     );
   }
 }
+
+// Диалог названия шаблона генератора: предложено «Мой вариант N»,
+// его можно заменить; пустое значение подменяется предложенным.
+class _TemplateNameDialog extends StatefulWidget {
+  final String suggestedName;
+
+  const _TemplateNameDialog({required this.suggestedName});
+
+  @override
+  State<_TemplateNameDialog> createState() => _TemplateNameDialogState();
+}
+
+class _TemplateNameDialogState extends State<_TemplateNameDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.suggestedName,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: 'Название шаблона',
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Отмена'),
+        ),
+        TextButton(
+          onPressed: () {
+            final text = _controller.text.trim();
+            Navigator.of(
+              context,
+            ).pop(text.isEmpty ? widget.suggestedName : text);
+          },
+          child: const Text('Сохранить'),
+        ),
+      ],
+      child: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 40,
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          labelText: 'Название',
+          counterText: '',
+        ),
+      ),
+    );
+  }
+}
+
+
