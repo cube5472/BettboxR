@@ -339,7 +339,6 @@ func (doq *dnsOverQUIC) openConnection(ctx context.Context) (quicConn *quic.Conn
 
 	host, _, err := net.SplitHostPort(doq.addr)
 	if err != nil {
-		_ = packetConn.Close()
 		return nil, err
 	}
 
@@ -355,7 +354,6 @@ func (doq *dnsOverQUIC) openConnection(ctx context.Context) (quicConn *quic.Conn
 		NameCertVerify: doq.nameCertVerify,
 	})
 	if err != nil {
-		_ = packetConn.Close()
 		return nil, err
 	}
 
