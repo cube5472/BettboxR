@@ -121,20 +121,14 @@ extension ColorSchemeExtension on ColorScheme {
       : this;
 }
 
-/// Цвет-акцент «угольной» темы, бирюзовый вариант: окантовка карточек
-/// и общий акцент.
+/// Цвет-акцент «угольной» темы: бирюза (окантовка карточек и общий акцент).
 const kCoalTurquoise = 0xFF40D0C0;
 
-/// Цвет-акцент «угольной» темы, розовый вариант: окантовка карточек
-/// и общий акцент.
-const kCoalPink = 0xFFF06292;
-
-/// «Угольная тема» — два отдельных переключателя в настройках темы
-/// (см. views/theme.dart), применяются в application.dart
-/// (_getAppColorScheme). Бирюзовый вариант: угольно-чёрные поверхности
-/// с холодным подтоном, обводки — приглушённая бирюза
-/// (outline/outlineVariant), общий акцент — бирюза (сид цвета).
-/// Обводка самих карточек — в widgets/card.dart.
+/// «Угольная тема» — включается отдельным переключателем в настройках темы
+/// (см. views/theme.dart) и применяется в application.dart (_getAppColorScheme).
+/// Угольно-чёрные поверхности с холодным подтоном, обводки — приглушённая
+/// бирюза (outline/outlineVariant), общий акцент — бирюза (сид цвета).
+/// Бирюзовая обводка самих карточек — в widgets/card.dart.
 extension CoalThemeExtension on ColorScheme {
   ColorScheme toCoalTurquoise() => copyWith(
     surface: const Color(0xFF070909),
@@ -149,24 +143,6 @@ extension CoalThemeExtension on ColorScheme {
     onSurfaceVariant: const Color(0xFFA0B2AE),
     outline: const Color(0xFF37A093),
     outlineVariant: const Color(0xFF1F544E),
-  );
-
-  /// Розовый вариант: те же угольно-чёрные поверхности, но с
-  /// нейтрально-тёплым подтоном, обводки — приглушённый розовый,
-  /// общий акцент — розовый (сид цвета).
-  ColorScheme toCoalPink() => copyWith(
-    surface: const Color(0xFF080708),
-    surfaceDim: const Color(0xFF050405),
-    surfaceBright: const Color(0xFF191317),
-    surfaceContainerLowest: const Color(0xFF030203),
-    surfaceContainerLow: const Color(0xFF0A0809),
-    surfaceContainer: const Color(0xFF0D0B0C),
-    surfaceContainerHigh: const Color(0xFF121012),
-    surfaceContainerHighest: const Color(0xFF171416),
-    onSurface: const Color(0xFFE8DCE2),
-    onSurfaceVariant: const Color(0xFFB2A1AB),
-    outline: const Color(0xFFA8567A),
-    outlineVariant: const Color(0xFF532940),
   );
 }
 

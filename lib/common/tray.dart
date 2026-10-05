@@ -74,7 +74,6 @@ class Tray {
             globalState.config.themeProps.invertTrayIcon,
       ),
       isTemplate: system.isMacOS && isStart,
-      id: AppIdentity.compactName,
     );
     if (system.isMacOS) {
       await trayManager.setActive(isStart);

@@ -8,7 +8,6 @@ import 'package:bett_box/clash/interface.dart';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
-import 'package:bett_box/services/dns_stats.dart';
 import 'package:bett_box/state.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
@@ -55,7 +54,7 @@ class ClashCore {
 
   Future<bool> init() async {
     await initGeo();
-    if (globalState.config.appSetting.openLogs || dnsStats.enabled) {
+    if (globalState.config.appSetting.openLogs) {
       clashCore.startLog();
     } else {
       clashCore.stopLog();
@@ -176,15 +175,8 @@ class ClashCore {
     }
   }
 
-  void _forget(FutureOr<Object?> request, String name) {
-    Future.value(request).then<void>(
-      (_) {},
-      onError: (Object e) => commonPrint.log('$name ignored: $e'),
-    );
-  }
-
   void closeConnection(String id) {
-    _forget(clashInterface.closeConnection(id), 'closeConnection');
+    clashInterface.closeConnection(id);
   }
 
   Future<void> closeConnections() async {
@@ -192,7 +184,7 @@ class ClashCore {
   }
 
   void resetConnections() {
-    _forget(clashInterface.resetConnections(), 'resetConnections');
+    clashInterface.resetConnections();
   }
 
   Future<List<ExternalProvider>> getExternalProviders() async {
@@ -327,18 +319,6 @@ class ClashCore {
     return int.parse(value);
   }
 
-  Future<CoreStatus?> getCoreStatus() async {
-    final value = await clashInterface.getCoreStatus();
-    if (value.isEmpty) {
-      return null;
-    }
-    try {
-      return CoreStatus.fromJson(jsonDecode(value) as Map<String, dynamic>);
-    } catch (_) {
-      return null;
-    }
-  }
-
   void resetTraffic() {
     clashInterface.resetTraffic();
   }
@@ -349,50 +329,6 @@ class ClashCore {
 
   void stopLog() {
     clashInterface.stopLog();
-  }
-
-  Future<List<Log>> getLogs() async {
-    final res = await clashInterface.getLogs();
-    if (res.isEmpty) {
-      return [];
-    }
-    try {
-      final logsRaw = json.decode(res) as List? ?? [];
-      return logsRaw.map((e) => Log.fromJson(e)).toList();
-    } catch (e) {
-      commonPrint.log('Failed to parse logs: $e');
-      return [];
-    }
-  }
-
-  void clearLogs() {
-    _forget(clashInterface.clearLogs(), 'clearLogs');
-  }
-
-  Future<List<TrackerInfo>> getRequests() async {
-    final res = await clashInterface.getRequests();
-    if (res.isEmpty) {
-      return [];
-    }
-    try {
-      final requestsRaw = json.decode(res) as List? ?? [];
-      return requestsRaw.map((e) => TrackerInfo.fromJson(e)).toList();
-    } catch (e) {
-      commonPrint.log('Failed to parse requests: $e');
-      return [];
-    }
-  }
-
-  void startTrackRequests() {
-    clashInterface.startTrackRequests();
-  }
-
-  void stopTrackRequests() {
-    clashInterface.stopTrackRequests();
-  }
-
-  void clearRequests() {
-    _forget(clashInterface.clearRequests(), 'clearRequests');
   }
 
   Future<void> requestGc({bool forceFreeOSMemory = false}) async {
