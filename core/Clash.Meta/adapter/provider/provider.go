@@ -16,7 +16,6 @@ import (
 	"github.com/metacubex/mihomo/component/age"
 	"github.com/metacubex/mihomo/component/profile/cachefile"
 	"github.com/metacubex/mihomo/component/resource"
-	"github.com/metacubex/mihomo/log"
 	C "github.com/metacubex/mihomo/constant"
 	P "github.com/metacubex/mihomo/constant/provider"
 	"github.com/metacubex/mihomo/tunnel/statistic"
@@ -384,12 +383,8 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 
 		if err := yaml.Unmarshal(buf, schema); err != nil {
 			proxies, err1 := convert.ConvertsV2Ray(buf)
-			// YAML/JSON разобрался, но ключа proxies нет (sing-box JSON,
-			// маппинги без proxies и т.п.) — перед отказом пробуем
-			// share-ссылки: подписка может быть текстовым списком,
-			// который случайно оказался валидным YAML/JSON.
-			if err1 != nil || len(proxies) == 0 {
-				return nil, errors.New("file must have a `proxies` field")
+			if err1 != nil {
+				return nil, fmt.Errorf("%w, %w", err, err1)
 			}
 			schema.Proxies = proxies
 		}
@@ -448,17 +443,12 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 
 				err := override.Apply(mapping)
 				if err != nil {
-					// Одна битая запись не должна ронять весь
-					// провайдер: логируем и пропускаем, как это
-					// делают v2ray-клиенты.
-					log.Warnln("%s: proxy %d override error: %v, skip", pdName, idx, err)
-					continue
+					return nil, fmt.Errorf("proxy %d override error: %w", idx, err)
 				}
 
 				proxy, err := adapter.ParseProxy(mapping, adapter.WithTunnelForAPI(tunnel), adapter.WithProviderName(pdName))
 				if err != nil {
-					log.Warnln("%s: proxy %d error: %v, skip", pdName, idx, err)
-					continue
+					return nil, fmt.Errorf("proxy %d error: %w", idx, err)
 				}
 
 				proxiesSet[name] = struct{}{}
