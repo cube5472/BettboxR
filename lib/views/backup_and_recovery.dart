@@ -14,31 +14,9 @@ import 'package:bett_box/widgets/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:webdav_client/webdav_client.dart' as webdav;
 
-class BackupAndRecovery extends ConsumerStatefulWidget {
+class BackupAndRecovery extends ConsumerWidget {
   const BackupAndRecovery({super.key});
-
-  @override
-  ConsumerState<BackupAndRecovery> createState() => _BackupAndRecoveryState();
-}
-
-class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
-  DAVClient? _client;
-  DAV? _lastDav;
-
-  DAVClient? _getClient(DAV? dav) {
-    if (dav == null) {
-      _client = null;
-      _lastDav = null;
-      return null;
-    }
-    if (_lastDav != dav || _client == null) {
-      _lastDav = dav;
-      _client = DAVClient(dav);
-    }
-    return _client;
-  }
 
   Future<void> _showAddWebDAV(DAV? dav) async {
     await globalState.showCommonDialog<String>(
@@ -66,12 +44,11 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
   Future<void> _recoveryOnWebDAV(
     BuildContext context,
     DAVClient client,
-    String targetFileName,
     RecoveryOption recoveryOption,
   ) async {
     final res = await globalState.appController.safeRun<bool>(
       () async {
-        final data = await client.recovery(targetFileName);
+        final data = await client.recovery();
         await globalState.appController.recoveryData(data, recoveryOption);
         return true;
       },
@@ -90,29 +67,11 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
     BuildContext context,
     DAVClient client,
   ) async {
-    final files = await globalState.appController.safeRun<List<webdav.File>>(
-      () => client.getBackupFiles(),
-      needLoading: true,
-      title: appLocalizations.recovery,
-    );
-    if (!context.mounted) return;
-    if (files == null || files.isEmpty) {
-      globalState.showNotifier(appLocalizations.noBackupFileFound);
-      return;
-    }
-
-    final selectedFile = await globalState.showCommonDialog<webdav.File>(
-      child: BackupVersionsDialog(files: files),
-    );
-    if (selectedFile == null || !context.mounted) return;
-
     final recoveryOption = await globalState.showCommonDialog<RecoveryOption>(
       child: const RecoveryOptionsDialog(),
     );
     if (recoveryOption == null || !context.mounted) return;
-
-    final fileName = selectedFile.name ?? client.fileName;
-    _recoveryOnWebDAV(context, client, fileName, recoveryOption);
+    _recoveryOnWebDAV(context, client, recoveryOption);
   }
 
   Future<void> _backupOnLocal(BuildContext context) async {
@@ -202,9 +161,9 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     final dav = ref.watch(appDAVSettingProvider);
-    final client = _getClient(dav);
+    final client = dav != null ? DAVClient(dav) : null;
     return generateListView([
       ...generateSection(
         title: appLocalizations.remote,
@@ -353,73 +312,6 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
   }
 }
 
-class BackupVersionsDialog extends StatefulWidget {
-  final List<webdav.File> files;
-
-  const BackupVersionsDialog({super.key, required this.files});
-
-  @override
-  State<BackupVersionsDialog> createState() => _BackupVersionsDialogState();
-}
-
-class _BackupVersionsDialogState extends State<BackupVersionsDialog> {
-  late webdav.File _selectedFile;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedFile = widget.files.first;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final displayFiles = widget.files.take(10).toList();
-    return CommonDialog(
-      title: appLocalizations.selectBackupVersion,
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_selectedFile),
-          child: Text(appLocalizations.confirm),
-        ),
-      ],
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 360),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ...displayFiles.map<Widget>((file) {
-                final sizeText = TrafficValue(value: file.size ?? 0).show;
-                final timeText = file.mTime?.lastUpdateTimeDesc ?? '';
-                final subtitle = [
-                  if (sizeText.isNotEmpty) sizeText,
-                  if (timeText.isNotEmpty) timeText,
-                ].join('  ·  ');
-
-                return ListItem<webdav.File>.radio(
-                  title: Text(file.name ?? ''),
-                  subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
-                  delegate: RadioDelegate<webdav.File>(
-                    value: file,
-                    groupValue: _selectedFile,
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selectedFile = val;
-                        });
-                      }
-                    },
-                  ),
-                );
-              }).separated(const Divider(height: 1)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class RecoveryOptionsDialog extends StatefulWidget {
   const RecoveryOptionsDialog({super.key});
 
@@ -528,7 +420,7 @@ class _WebDAVFormDialogState extends ConsumerState<WebDAVFormDialog> {
                 helperText: appLocalizations.addressHelp,
               ),
               validator: (String? value) {
-                if (value == null || value.isEmpty || !value.isHttpUrl) {
+                if (value == null || value.isEmpty || !value.isUrl) {
                   return appLocalizations.addressTip;
                 }
                 return null;

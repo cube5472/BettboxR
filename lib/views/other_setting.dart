@@ -597,27 +597,21 @@ class TraySection extends ConsumerWidget {
             children: [
               Text(appLocalizations.trayEnhancement),
               if (showClickBehaviorSetting) ...[
+                const SizedBox(width: 6),
                 Tooltip(
                   message: appLocalizations.trayClickBehavior,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkResponse(
-                      radius: 16,
-                      highlightShape: BoxShape.circle,
-                      onTap: () => _showTrayClickBehaviorDialog(
-                        context,
-                        ref,
-                        leftBehavior: leftBehavior,
-                        rightBehavior: rightBehavior,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(7),
-                        child: Icon(
-                          Icons.settings_outlined,
-                          size: 18,
-                          color: context.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                  child: InkResponse(
+                    radius: 16,
+                    onTap: () => _showTrayClickBehaviorDialog(
+                      context,
+                      ref,
+                      leftBehavior: leftBehavior,
+                      rightBehavior: rightBehavior,
+                    ),
+                    child: Icon(
+                      Icons.settings_outlined,
+                      size: 18,
+                      color: context.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -770,7 +764,7 @@ class OtherSettingView extends ConsumerWidget {
       const SmartAutoStopSection(),
       if (system.isAndroid) const DozeSuspendItem(),
       if (system.isAndroid) const QuickResponseItem(),
-      if (system.isAndroid) const StoreFixItem(),
+      const StoreFixItem(),
       const DisableQuicSection(),
       if (system.isAndroid) const HighPriorityNotificationItem(),
       if (system.isAndroid) const NetworkSpeedNotificationItem(),

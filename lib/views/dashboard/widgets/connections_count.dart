@@ -15,8 +15,7 @@ class ConnectionsCount extends StatefulWidget {
 }
 
 class _ConnectionsCountState extends State<ConnectionsCount> {
-  static int? _lastCount;
-  int _count = _lastCount ?? 0;
+  int _count = 0;
   late final VoidCallback _tickListener;
   Timer? _initTimer;
   bool _isUpdating = false;
@@ -43,7 +42,6 @@ class _ConnectionsCountState extends State<ConnectionsCount> {
 
     try {
       final connections = await clashCore.getConnections();
-      _lastCount = connections.length;
       if (mounted) {
         setState(() {
           _count = connections.length;

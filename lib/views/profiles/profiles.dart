@@ -2,12 +2,10 @@ import 'dart:ui';
 
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
-import 'package:bett_box/generator/generator_core.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/pages/editor.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
-import 'package:bett_box/views/generator_view.dart';
 import 'package:bett_box/views/profiles/edit_profile.dart';
 import 'package:bett_box/views/profiles/override_profile.dart';
 import 'package:bett_box/views/profiles/scripts.dart';
@@ -278,51 +276,6 @@ class ProfileItem extends StatelessWidget {
     }
   }
 
-  // «Изменить в генераторе»: конфиг открывается в генераторе с
-  // подставленными параметрами из маркера в шапке YAML (пресеты, DNS,
-  // правила, ноды). Пользователь правит что нужно и пересобирает
-  // кнопкой внизу экрана — результат валидируется ядром и записывается
-  // в тот же профиль (бэкап .bak, hot-apply активного профиля —
-  // внутри генератора, см. _rebuildProfile в generator_view.dart).
-  Future<void> _handleRebuild(BuildContext context) async {
-    const title = 'Генератор BettboxR';
-    try {
-      final file = await profile.getFile();
-      final oldContent = await file.readAsString();
-      final params = extractGeneratorParams(oldContent);
-      if (params == null) {
-        await globalState.showMessage(
-          title: title,
-          message: TextSpan(
-            text: 'Этот конфиг создан не генератором — в шапке файла нет '
-                'маркера с параметрами. Редактирование недоступно: '
-                'соберите конфиг заново в генераторе.',
-          ),
-          cancelable: false,
-        );
-        return;
-      }
-      if (!context.mounted) return;
-      showExtend(
-        context,
-        builder: (_, type) => AdaptiveSheetScaffold(
-          type: type,
-          title: 'Генератор BettboxR',
-          body: GeneratorView(
-            rebuildProfile: profile,
-            rebuildYaml: oldContent,
-          ),
-        ),
-      );
-    } on Object catch (e) {
-      await globalState.showMessage(
-        title: title,
-        message: TextSpan(text: '$e'),
-        cancelable: false,
-      );
-    }
-  }
-
   void _handleShowEditExtendPage(BuildContext context) {
     final editKey = GlobalKey<EditProfileViewState>();
     showExtend(
@@ -539,13 +492,6 @@ class ProfileItem extends StatelessWidget {
           },
         ),
       ],
-      PopupMenuItemData(
-        icon: Icons.edit_note,
-        label: 'Изменить в генераторе',
-        onPressed: () {
-          _handleRebuild(context);
-        },
-      ),
       PopupMenuItemData(
         icon: Icons.extension_outlined,
         label: appLocalizations.override,

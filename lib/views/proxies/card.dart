@@ -8,6 +8,7 @@ import 'package:bett_box/widgets/widgets.dart';
 import 'package:emoji_regex/emoji_regex.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 final proxyIconProvider = Provider.family<String, String>((ref, proxyName) {
   if (proxyName.isEmpty) return '';
@@ -47,7 +48,6 @@ class ProxyCard extends StatelessWidget {
   final GroupType groupType;
   final ProxyCardType type;
   final String? testUrl;
-  final VoidCallback? onLongPress;
 
   const ProxyCard({
     super.key,
@@ -56,7 +56,6 @@ class ProxyCard extends StatelessWidget {
     required this.proxy,
     required this.groupType,
     required this.type,
-    this.onLongPress,
   });
 
   Measure get measure => globalState.measure;
@@ -102,11 +101,13 @@ class ProxyCard extends StatelessWidget {
             return SizedBox(
               height: measure.labelSmallHeight,
               width: measure.labelSmallHeight,
-              child: DelayAnimation(
-                type: delayAnimation,
-                size: measure.labelSmallHeight,
-                color: context.colorScheme.primary,
-              ),
+              child: delayAnimation == DelayAnimationType.none
+                  ? const CircularProgressIndicator(strokeWidth: 2)
+                  : _buildDelayAnimation(
+                      delayAnimation,
+                      measure.labelSmallHeight,
+                      context.colorScheme.primary,
+                    ),
             );
           }
 
@@ -137,6 +138,47 @@ class ProxyCard extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Widget _buildDelayAnimation(
+    DelayAnimationType animationType,
+    double size,
+    Color color,
+  ) {
+    return switch (animationType) {
+      DelayAnimationType.none => Icon(Icons.bolt, size: size),
+      DelayAnimationType.rotatingCircle => SpinKitRotatingCircle(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.pulse => SpinKitPulse(color: color, size: size),
+      DelayAnimationType.spinningLines => SpinKitSpinningLines(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.threeInOut => SpinKitThreeInOut(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.threeBounce => SpinKitThreeBounce(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.circle => SpinKitCircle(color: color, size: size),
+      DelayAnimationType.fadingCircle => SpinKitFadingCircle(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.fadingFour => SpinKitFadingFour(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.wave => SpinKitWave(color: color, size: size),
+      DelayAnimationType.doubleBounce => SpinKitDoubleBounce(
+        color: color,
+        size: size,
+      ),
+    };
   }
 
   Widget _buildProxyNameWithIcon(
@@ -250,11 +292,9 @@ class ProxyCard extends StatelessWidget {
         return Stack(
           children: [
             CommonCard(
-              clipBehavior: Clip.none,
               onPressed: () {
                 _changeProxy(ref);
               },
-              onLongPress: onLongPress,
               isSelected: isSelected,
               child: Container(
                 alignment: Alignment.centerLeft,
@@ -332,12 +372,7 @@ class ProxyCard extends StatelessWidget {
               const Positioned(
                 top: 0,
                 right: 0,
-                child: IgnorePointer(
-                  // Без IgnorePointer бокс иконки перехватывает хит-тест
-                  // (RenderDecoratedBox поглощает попадания) и глушит
-                  // тап/удержание в правом верхнем углу карточки.
-                  child: _ProxyComputedMarkIcon(),
-                ),
+                child: _ProxyComputedMarkIcon(),
               ),
           ],
         );
