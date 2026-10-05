@@ -61,8 +61,9 @@ class _VpnContainerState extends ConsumerState<VpnManager> {
         globalState.showNotifier(
           appLocalizations.vpnTip,
           onAction: () async {
-            await globalState.appController.restartCore();
-            globalState.showNotifier(appLocalizations.success);
+            await globalState.appController.updateStatus(false);
+            await Future.delayed(const Duration(milliseconds: 500));
+            await globalState.appController.updateStatus(true);
           },
           actionLabel: appLocalizations.restart,
           showCountdown: true,

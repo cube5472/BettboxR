@@ -114,9 +114,7 @@ enum Network { tcp, udp }
 
 enum ProxiesSortType { none, delay, name, custom }
 
-enum TunStack { gvisor, system, mixed, mips }
-
-enum CongestionController { cubic, reno, bbr, bbr3 }
+enum TunStack { gvisor, system, mixed }
 
 enum AccessControlMode { acceptSelected, rejectSelected }
 
@@ -252,12 +250,6 @@ enum ActionMethod {
   sideLoadExternalProvider,
   startLog,
   stopLog,
-  getLogs,
-  clearLogs,
-  startTrackRequests,
-  stopTrackRequests,
-  getRequests,
-  clearRequests,
   startListener,
   stopListener,
   getCountryCode,
@@ -271,7 +263,6 @@ enum ActionMethod {
   decryptAgeConfig,
   getMode,
   parseExternalProviderContent,
-  getCoreStatus,
 
   ///Android,
   setState,
@@ -345,8 +336,6 @@ enum DashboardWidget {
   providersInfo(GridItem(crossAxisCellCount: 4, child: ProvidersInfo())),
   fcmStatus(GridItem(crossAxisCellCount: 4, child: FcmStatus())),
   onlinePanel(GridItem(crossAxisCellCount: 4, child: OnlinePanel())),
-  mediaUnlock(GridItem(crossAxisCellCount: 8, child: MediaUnlock())),
-  mediaUnlockSmall(GridItem(crossAxisCellCount: 4, child: MediaUnlockSmall())),
   startButton(
     GridItem(crossAxisCellCount: 4, isDeletable: false, child: StartButton()),
   );
@@ -482,24 +471,4 @@ enum DelayAnimationType {
   fadingFour,
   wave,
   doubleBounce,
-  chasingDots,
-  cubeGrid,
-  dancingSquare,
-  dualRing,
-  fadingCube,
-  fadingGrid,
-  foldingCube,
-  hourGlass,
-  pianoWave,
-  pouringHourGlass,
-  pouringHourGlassRefined,
-  pulsingGrid,
-  pumpingHeart,
-  ring,
-  ripple,
-  rotatingPlain,
-  spinningCircle,
-  squareCircle,
-  wanderingCubes,
-  waveSpinner,
 }

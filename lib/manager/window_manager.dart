@@ -25,8 +25,6 @@ class _WindowContainerState extends ConsumerState<WindowManager>
     with WindowListener, WindowExtListener {
   Timer? _renderToggleTimer;
   bool? _pendingRenderResume;
-  Timer? _windowGeometryTimer;
-  int _windowGeometryRevision = 0;
 
   void _scheduleRenderToggle(bool resume) {
     _pendingRenderResume = resume;
@@ -40,50 +38,12 @@ class _WindowContainerState extends ConsumerState<WindowManager>
     });
   }
 
-  void _scheduleWindowGeometryCapture() {
-    final revision = ++_windowGeometryRevision;
-    _windowGeometryTimer?.cancel();
-    _windowGeometryTimer = Timer(const Duration(milliseconds: 125), () async {
-      if (!mounted || revision != _windowGeometryRevision) return;
-      final isAbnormal = (await windowManager.isMaximized()) ||
-          (await windowManager.isFullScreen()) ||
-          (await windowManager.isMinimized());
-      if (isAbnormal) return;
-
-      final bounds = await windowManager.getBounds();
-      if (!bounds.width.isFinite ||
-          !bounds.height.isFinite ||
-          bounds.width <= 0 ||
-          bounds.height <= 0) {
-        return;
-      }
-      if (!bounds.left.isFinite || !bounds.top.isFinite) return;
-
-      ref.read(windowSettingProvider.notifier).updateState(
-            (state) => state.copyWith(
-              width: bounds.width,
-              height: bounds.height,
-              left: bounds.left,
-              top: bounds.top,
-              scaleFactor: windowManager.getDevicePixelRatio(),
-            ),
-          );
-    });
-  }
-
-  void _invalidateWindowGeometryCapture() {
-    _windowGeometryRevision++;
-    _windowGeometryTimer?.cancel();
-    _windowGeometryTimer = null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return widget.child;
   }
 
   ProviderSubscription? _autoLaunchSub;
-  ProviderSubscription? _dockVisibleSub;
 
   @override
   void initState() {
@@ -100,15 +60,6 @@ class _WindowContainerState extends ConsumerState<WindowManager>
     );
     windowExtManager.addListener(this);
     windowManager.addListener(this);
-    if (system.isMacOS) {
-      _dockVisibleSub = ref.listenManual(
-        appSettingProvider.select((state) => state.keepDockIcon),
-        (prev, next) {
-          if (prev == next) return;
-          unawaited(_updateDockIcon(next));
-        },
-      );
-    }
   }
 
   @override
@@ -124,51 +75,25 @@ class _WindowContainerState extends ConsumerState<WindowManager>
   }
 
   @override
-  void onWindowMove() {
-    super.onWindowMove();
-    _scheduleWindowGeometryCapture();
-  }
-
-  @override
-  void onWindowMoved() {
+  Future<void> onWindowMoved() async {
     super.onWindowMoved();
-    _scheduleWindowGeometryCapture();
+    final offset = await windowManager.getPosition();
+    ref
+        .read(windowSettingProvider.notifier)
+        .updateState(
+          (state) => state.copyWith(top: offset.dy, left: offset.dx),
+        );
   }
 
   @override
-  void onWindowResize() {
-    super.onWindowResize();
-    _scheduleWindowGeometryCapture();
-  }
-
-  @override
-  void onWindowResized() {
+  Future<void> onWindowResized() async {
     super.onWindowResized();
-    _scheduleWindowGeometryCapture();
-  }
-
-  @override
-  void onWindowMaximize() {
-    _invalidateWindowGeometryCapture();
-    super.onWindowMaximize();
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    super.onWindowUnmaximize();
-    _scheduleWindowGeometryCapture();
-  }
-
-  @override
-  void onWindowEnterFullScreen() {
-    _invalidateWindowGeometryCapture();
-    super.onWindowEnterFullScreen();
-  }
-
-  @override
-  void onWindowLeaveFullScreen() {
-    super.onWindowLeaveFullScreen();
-    _scheduleWindowGeometryCapture();
+    final size = await windowManager.getSize();
+    ref
+        .read(windowSettingProvider.notifier)
+        .updateState(
+          (state) => state.copyWith(width: size.width, height: size.height),
+        );
   }
 
   @override
@@ -177,17 +102,6 @@ class _WindowContainerState extends ConsumerState<WindowManager>
     _renderToggleTimer?.cancel();
     await globalState.handleBackground();
     super.onWindowMinimize();
-  }
-
-  @override
-  void onWindowFocus() {
-    if (globalState.backgroundMode.value) {
-      globalState.handleForeground();
-      _scheduleRenderToggle(true);
-      unawaited(globalState.resumeForegroundUpdates());
-      unawaited(globalState.appController.syncWakelockIfNeeded());
-    }
-    super.onWindowFocus();
   }
 
   @override
@@ -205,22 +119,12 @@ class _WindowContainerState extends ConsumerState<WindowManager>
     super.onTaskbarCreated();
   }
 
-  Future<void> _updateDockIcon(bool visible) async {
-    try {
-      await windowExtManager.setDockIconVisible(visible);
-    } catch (e) {
-      commonPrint.log('Update dock icon visibility failed: $e');
-    }
-  }
-
   @override
   Future<void> dispose() async {
     _autoLaunchSub?.close();
-    _dockVisibleSub?.close();
     windowManager.removeListener(this);
     windowExtManager.removeListener(this);
     _renderToggleTimer?.cancel();
-    _windowGeometryTimer?.cancel();
     super.dispose();
   }
 }

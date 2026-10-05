@@ -32,35 +32,25 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m6(count) => "${Intl.plural(count, other: '# ساعت')}";
 
-  static String m7(count) => "${count}";
+  static String m7(count) => "${Intl.plural(count, other: '# دقیقه')}";
 
-  static String m8(count) => "${Intl.plural(count, other: '# دقیقه')}";
+  static String m8(count) => "${Intl.plural(count, other: '# ماه')}";
 
-  static String m9(count) => "${Intl.plural(count, other: '# ماه')}";
+  static String m9(label) => "هیچ مورد ${label} یافت نشد";
 
-  static String m10(label) => "هیچ مورد ${label} یافت نشد";
+  static String m10(label) => "${label} باید عدد باشد";
 
-  static String m11(label) => "${label} باید عدد باشد";
-
-  static String m12(minutes) => "Pause for ${minutes} min";
-
-  static String m13(label) =>
+  static String m11(label) =>
       "${label} باید بین ۱۰۲۴ تا ۴۹۱۵۱ باشد (۰ برای غیرفعال)";
 
-  static String m14(statusCode) =>
+  static String m12(statusCode) =>
       "خطا در دریافت پروفایل. لطفاً شبکه خود را بررسی کرده یا لینک را ریست کنید ( کد خطا: ${statusCode} )";
 
-  static String m15(count) => "${count} مورد انتخاب شده";
+  static String m13(count) => "${count} مورد انتخاب شده";
 
-  static String m16(closed, total) => "${closed} of ${total} closed";
+  static String m14(label) => "${label} باید یک URL معتبر باشد";
 
-  static String m17(time) => "Checked at ${time}";
-
-  static String m18(ports) => "Answering ports: ${ports}";
-
-  static String m19(label) => "${label} باید یک URL معتبر باشد";
-
-  static String m20(count) => "${Intl.plural(count, other: '# سال')}";
+  static String m15(count) => "${Intl.plural(count, other: '# سال')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -82,12 +72,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "action_start": MessageLookupByLibrary.simpleMessage("شروع / توقف"),
     "action_tun": MessageLookupByLibrary.simpleMessage("کارت شبکه مجازی (TUN)"),
     "action_view": MessageLookupByLibrary.simpleMessage("نمایش / پنهان"),
-    "activeGoroutines": MessageLookupByLibrary.simpleMessage("Goroutines"),
     "add": MessageLookupByLibrary.simpleMessage("افزودن"),
     "addProfile": MessageLookupByLibrary.simpleMessage("افزودن پروفایل"),
     "addRule": MessageLookupByLibrary.simpleMessage("افزودن قانون"),
     "addTunnel": MessageLookupByLibrary.simpleMessage("افزودن هدایت"),
-    "addUser": MessageLookupByLibrary.simpleMessage("افزودن کاربر"),
     "addedOriginRules": MessageLookupByLibrary.simpleMessage(
       "افزودن به قوانین اصلی",
     ),
@@ -125,7 +113,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "ago": MessageLookupByLibrary.simpleMessage("قبل"),
     "agree": MessageLookupByLibrary.simpleMessage("موافقم"),
     "allApps": MessageLookupByLibrary.simpleMessage("همه برنامه‌ها"),
-    "allocatedMemory": MessageLookupByLibrary.simpleMessage("تخصیص‌یافته"),
     "allowBypass": MessageLookupByLibrary.simpleMessage("اجازه میانبر VPN"),
     "allowBypassDesc": MessageLookupByLibrary.simpleMessage(
       "اجازه به برخی برنامه‌ها برای عبور مستقیم بدون VPN",
@@ -177,9 +164,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoScroll": MessageLookupByLibrary.simpleMessage("پیمایش خودکار"),
     "autoSetSystemDns": MessageLookupByLibrary.simpleMessage(
       "تنظیم خودکار DNS سیستم",
-    ),
-    "autoStickyHeader": MessageLookupByLibrary.simpleMessage(
-      "چسبندگی خودکار سربرگ",
     ),
     "autoUpdate": MessageLookupByLibrary.simpleMessage("بروزرسانی خودکار"),
     "autoUpdateInterval": MessageLookupByLibrary.simpleMessage(
@@ -237,19 +221,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "لغو فیلتر برنامه‌های سیستم",
     ),
     "cancelSelectAll": MessageLookupByLibrary.simpleMessage("لغو انتخاب همه"),
-    "categoryAi": MessageLookupByLibrary.simpleMessage("AI"),
-    "categoryAll": MessageLookupByLibrary.simpleMessage("همه"),
-    "categoryChina": MessageLookupByLibrary.simpleMessage("مستقیم چین"),
-    "categoryCrypto": MessageLookupByLibrary.simpleMessage("ارز دیجیتال"),
-    "categoryDeveloper": MessageLookupByLibrary.simpleMessage("توسعه‌دهندگان"),
-    "categoryGaming": MessageLookupByLibrary.simpleMessage("مرکز بازی"),
-    "categorySocial": MessageLookupByLibrary.simpleMessage(
-      "پلتفرم‌های اجتماعی",
-    ),
-    "categoryStreaming": MessageLookupByLibrary.simpleMessage("رسانه‌های جاری"),
-    "chasingDots": MessageLookupByLibrary.simpleMessage("نقاط تعقیب‌کننده"),
     "checkError": MessageLookupByLibrary.simpleMessage("بررسی ناموفق بود"),
-    "checkFailed": MessageLookupByLibrary.simpleMessage("Timeout"),
     "checkOrAddProfile": MessageLookupByLibrary.simpleMessage(
       "لطفاً ابتدا یک پروفایل اضافه کنید",
     ),
@@ -285,12 +257,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "closeAll": MessageLookupByLibrary.simpleMessage("بستن همه"),
     "coalThemeMode": MessageLookupByLibrary.simpleMessage("تم مشکی ذغالی"),
     "coalThemeModeDesc": MessageLookupByLibrary.simpleMessage(
-      "سطوح مشکی ذغالی با حاشیه صورتی کارت‌ها",
-    ),
-    "coalTurquoiseMode": MessageLookupByLibrary.simpleMessage(
-      "تم مشکی ذغالی فیروزه‌ای",
-    ),
-    "coalTurquoiseModeDesc": MessageLookupByLibrary.simpleMessage(
       "سطوح مشکی ذغالی با حاشیه فیروزه‌ای کارت‌ها",
     ),
     "color": MessageLookupByLibrary.simpleMessage("رنگ"),
@@ -305,9 +271,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "حداکثر تعداد تست همزمان تاخیر",
     ),
     "confirm": MessageLookupByLibrary.simpleMessage("تایید"),
-    "congestionController": MessageLookupByLibrary.simpleMessage(
-      "کنترل ازدحام",
-    ),
     "connection": MessageLookupByLibrary.simpleMessage("اتصال فعال"),
     "connections": MessageLookupByLibrary.simpleMessage("اتصالات"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
@@ -338,14 +301,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "core": MessageLookupByLibrary.simpleMessage("هسته"),
     "coreConnected": MessageLookupByLibrary.simpleMessage("متصل شد"),
     "coreInfo": MessageLookupByLibrary.simpleMessage("اطلاعات هسته"),
-    "coreStatus": MessageLookupByLibrary.simpleMessage("وضعیت هسته"),
     "coreSuspended": MessageLookupByLibrary.simpleMessage("معلق شد"),
     "country": MessageLookupByLibrary.simpleMessage("منطقه"),
     "countryOrRegion": MessageLookupByLibrary.simpleMessage("کشور / منطقه"),
     "crashTest": MessageLookupByLibrary.simpleMessage("تست خرابی"),
     "create": MessageLookupByLibrary.simpleMessage("ایجاد"),
     "creationTime": MessageLookupByLibrary.simpleMessage("زمان ایجاد"),
-    "cubeGrid": MessageLookupByLibrary.simpleMessage("شبکه مکعب‌ها"),
     "custom": MessageLookupByLibrary.simpleMessage("سفارشی"),
     "customDashboardTitle": MessageLookupByLibrary.simpleMessage(
       "عنوان سفارشی",
@@ -355,7 +316,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "customUrl": MessageLookupByLibrary.simpleMessage("آدرس URL سفارشی"),
     "cut": MessageLookupByLibrary.simpleMessage("برش"),
-    "dancingSquare": MessageLookupByLibrary.simpleMessage("مربع رقصان"),
     "dark": MessageLookupByLibrary.simpleMessage("تاریک"),
     "darkIcon": MessageLookupByLibrary.simpleMessage("آیکون تاریک"),
     "darkIconDesc": MessageLookupByLibrary.simpleMessage(
@@ -363,7 +323,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "dashboard": MessageLookupByLibrary.simpleMessage("داشبورد"),
     "days": m0,
-    "defaultGateway": MessageLookupByLibrary.simpleMessage("گیت‌وی"),
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
       "سرور نام پیش‌فرض",
     ),
@@ -385,7 +344,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteTip": m2,
     "deleteTunnel": MessageLookupByLibrary.simpleMessage("حذف هدایت"),
     "desc": MessageLookupByLibrary.simpleMessage(
-      "Bettbox یک کلاینت پروکسی بر پایه هسته قدرتمند و انعطاف‌پذیر Mihomo (Clash.Meta) با هدف تجربه کاربری برتر است. چشم‌انداز ما: Connecting Open Source and AI, Accelerating Innovation",
+      "Bettbox یک کلاینت پروکسی بر پایه هسته قدرتمند و انعطاف‌پذیر Mihomo (Clash.Meta) با هدف تجربه کاربری برتر است. چشم‌انداز ما: Connecting AI, Accelerating Innovation - اتصال هوش مصنوعی، شتاب‌بخشی به نوآوری",
     ),
     "destination": MessageLookupByLibrary.simpleMessage("آدرس مقصد"),
     "destinationGeoIP": MessageLookupByLibrary.simpleMessage(
@@ -418,7 +377,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "disableQuicDesc": MessageLookupByLibrary.simpleMessage(
       "غیرفعال‌سازی QUIC برای رفع مشکلات شبکه",
     ),
-    "disabled": MessageLookupByLibrary.simpleMessage("غیرفعال"),
     "disclaimer": MessageLookupByLibrary.simpleMessage("سلب مسئولیت"),
     "disclaimerDesc": MessageLookupByLibrary.simpleMessage(
       "این نرم‌افزار رایگان و متن‌باز است و صرفاً برای استفاده شخصی و آموزشی ارائه شده است.",
@@ -433,7 +391,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "هدایت استعلام‌های DNS به ماژول داخلی",
     ),
     "dnsMode": MessageLookupByLibrary.simpleMessage("حالت DNS"),
-    "dnsResolution": MessageLookupByLibrary.simpleMessage("تفکیک DNS"),
     "doYouWantToPass": MessageLookupByLibrary.simpleMessage(
       "آیا می‌خواهید مجوز دهید برای:",
     ),
@@ -444,10 +401,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "dozeSuspendDesc": MessageLookupByLibrary.simpleMessage(
       "همگام‌سازی با حالت خواب سیستم (Doze)",
     ),
-    "dualRing": MessageLookupByLibrary.simpleMessage("حلقه دوتایی"),
     "edit": MessageLookupByLibrary.simpleMessage("ویرایش"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("ویرایش هدایت"),
-    "editUser": MessageLookupByLibrary.simpleMessage("ویرایش کاربر"),
     "emptyTip": m3,
     "enableCrashReport": MessageLookupByLibrary.simpleMessage("تحلیل خرابی‌ها"),
     "enableCrashReportDesc": MessageLookupByLibrary.simpleMessage(
@@ -458,7 +413,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "enableTraySpeedDesc": MessageLookupByLibrary.simpleMessage(
       "نمایش سرعت آپلود و دانلود در نوار منو",
     ),
-    "enabled": MessageLookupByLibrary.simpleMessage("فعال"),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "ارتقای NAT",
     ),
@@ -502,9 +456,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "externalLink": MessageLookupByLibrary.simpleMessage("لینک خارجی"),
     "externalResources": MessageLookupByLibrary.simpleMessage("منابع خارجی"),
     "fadingCircle": MessageLookupByLibrary.simpleMessage("حلقه محوشونده"),
-    "fadingCube": MessageLookupByLibrary.simpleMessage("مکعب محوشونده"),
     "fadingFour": MessageLookupByLibrary.simpleMessage("چهار دایره محوشونده"),
-    "fadingGrid": MessageLookupByLibrary.simpleMessage("شبکه محوشونده"),
     "fakeIpFilterMode": MessageLookupByLibrary.simpleMessage(
       "حالت فیلتر FakeIP",
     ),
@@ -548,8 +500,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "findProcessModeDesc": MessageLookupByLibrary.simpleMessage(
       "امکان جستجو و تطبیق پردازش‌ها",
     ),
-    "flagged": MessageLookupByLibrary.simpleMessage("نشانه‌گذاری‌شده"),
-    "foldingCube": MessageLookupByLibrary.simpleMessage("مکعب تاشو"),
     "fontFamily": MessageLookupByLibrary.simpleMessage("فونت"),
     "forceDnsMapping": MessageLookupByLibrary.simpleMessage("نگاشت اجباری DNS"),
     "forceDnsMappingDesc": MessageLookupByLibrary.simpleMessage(
@@ -580,7 +530,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "geodataLoaderDesc": MessageLookupByLibrary.simpleMessage(
       "استفاده از لودر کم‌مصرف داده‌های GEO",
     ),
-    "geodataUse": MessageLookupByLibrary.simpleMessage("بارگذاری GEO"),
     "geoipCode": MessageLookupByLibrary.simpleMessage("کد GeoIP"),
     "getOriginRules": MessageLookupByLibrary.simpleMessage(
       "دریافت قوانین اصلی",
@@ -601,7 +550,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "healthCheckTimeoutDesc": MessageLookupByLibrary.simpleMessage(
       "مهلت زمانی تست سلامت نودها",
     ),
-    "heapObjects": MessageLookupByLibrary.simpleMessage("Objects"),
     "highPriority": MessageLookupByLibrary.simpleMessage("اولویت بالا"),
     "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
       "افزایش اولویت پردازش برنامه و هسته",
@@ -621,7 +569,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "hotkeyManagementDesc": MessageLookupByLibrary.simpleMessage(
       "کنترل برنامه با صفحه کلید",
     ),
-    "hourGlass": MessageLookupByLibrary.simpleMessage("ساعت شنی"),
     "hours": m6,
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage("اسنیف پورت HTTP"),
     "icmpForwarding": MessageLookupByLibrary.simpleMessage("هدایت ICMP"),
@@ -630,9 +577,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "icon": MessageLookupByLibrary.simpleMessage("تصویر"),
     "iconConfiguration": MessageLookupByLibrary.simpleMessage("تنظیمات تصویر"),
-    "iconConfigurationDesc": MessageLookupByLibrary.simpleMessage(
-      "سفارشی‌سازی آیکون‌های ICON گروه پروکسی",
-    ),
     "iconStyle": MessageLookupByLibrary.simpleMessage("سبک آیکون"),
     "import": MessageLookupByLibrary.simpleMessage("وارد کردن"),
     "importFailed": MessageLookupByLibrary.simpleMessage(
@@ -655,9 +599,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "internet": MessageLookupByLibrary.simpleMessage("اینترنت"),
     "interval": MessageLookupByLibrary.simpleMessage("فاصله زمانی"),
-    "intranetAndGateway": MessageLookupByLibrary.simpleMessage(
-      "شبکه محلی و گیت‌وی",
-    ),
     "intranetIP": MessageLookupByLibrary.simpleMessage("IP شبکه محلی"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage(
       "فرمت IP یا CIDR نامعتبر است",
@@ -675,25 +616,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "ورودی IPv6 مجاز باشد",
     ),
     "isp": MessageLookupByLibrary.simpleMessage("ارائه‌دهنده اینترنت"),
-    "itemsCount": m7,
     "just": MessageLookupByLibrary.simpleMessage("همین الان"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "فاصله زمانی TCP Keep-Alive",
     ),
-    "keepDockIcon": MessageLookupByLibrary.simpleMessage("نمایش دائمی در Dock"),
-    "keepDockIconDesc": MessageLookupByLibrary.simpleMessage(
-      "نمایش آیکون برنامه در Dock",
-    ),
     "key": MessageLookupByLibrary.simpleMessage("کلید"),
-    "lanSharing": MessageLookupByLibrary.simpleMessage(
-      "اشتراک‌گذاری در شبکه محلی",
-    ),
     "language": MessageLookupByLibrary.simpleMessage("زبان"),
     "lastEdit": MessageLookupByLibrary.simpleMessage("آخرین ویرایش"),
     "layout": MessageLookupByLibrary.simpleMessage("چیدمان"),
     "leftClickBehavior": MessageLookupByLibrary.simpleMessage("کلیک چپ"),
     "light": MessageLookupByLibrary.simpleMessage("روشن"),
-    "limitedUnlock": MessageLookupByLibrary.simpleMessage("فقط اختصاصی"),
     "lineWrap": MessageLookupByLibrary.simpleMessage("شکستن خطوط"),
     "list": MessageLookupByLibrary.simpleMessage("فهرست"),
     "listen": MessageLookupByLibrary.simpleMessage("شنود"),
@@ -725,43 +657,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "loose": MessageLookupByLibrary.simpleMessage("باز"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("دریافت مجدد IP"),
-    "manualSort": MessageLookupByLibrary.simpleMessage("دستی"),
     "maximize": MessageLookupByLibrary.simpleMessage("بزرگ کردن"),
-    "mediaUnlock": MessageLookupByLibrary.simpleMessage("تست اتصال"),
-    "mediaUnlockColorfulIcons": MessageLookupByLibrary.simpleMessage(
-      "نمایش آیکون‌های رنگی به‌صورت پیش‌فرض",
-    ),
-    "mediaUnlockDetails": MessageLookupByLibrary.simpleMessage(
-      "جزئیات تست اتصال",
-    ),
-    "mediaUnlockDisplaySettings": MessageLookupByLibrary.simpleMessage(
-      "تنظیمات نمایش",
-    ),
-    "mediaUnlockExtraDetails": MessageLookupByLibrary.simpleMessage(
-      "نمایش جزئیات بیشتر IP",
-    ),
-    "mediaUnlockMiscSettings": MessageLookupByLibrary.simpleMessage(
-      "تنظیمات متفرقه",
-    ),
-    "mediaUnlockMoreStreamingPlatforms": MessageLookupByLibrary.simpleMessage(
-      "موارد بیشتر آنلاک استریم",
-    ),
-    "mediaUnlockPinnedSettingsDesc": MessageLookupByLibrary.simpleMessage(
-      "امکان انتخاب حداکثر ۴ مورد برای پین کردن در ویجت",
-    ),
-    "mediaUnlockRefreshByCategory": MessageLookupByLibrary.simpleMessage(
-      "تازه‌سازی جزئی بر اساس دسته‌بندی فعلی",
-    ),
-    "mediaUnlockRefreshOnNodeChange": MessageLookupByLibrary.simpleMessage(
-      "به‌روزرسانی خودکار هنگام تغییر گره",
-    ),
-    "mediaUnlockSelectLimit": MessageLookupByLibrary.simpleMessage(
-      "حداکثر می‌توانید ۴ مورد را انتخاب کنید",
-    ),
-    "mediaUnlocked": MessageLookupByLibrary.simpleMessage("قفل‌گشایی شده"),
-    "memoryAndRuntime": MessageLookupByLibrary.simpleMessage(
-      "حافظه و زمان اجرا",
-    ),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("اطلاعات حافظه"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
       "مقادیر حافظه نشان داده شده صرفاً مربوط به حافظه دینامیک هسته بوده و تمام حافظه برنامه نیست (جهت اطلاع).",
@@ -778,11 +674,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "تغییر رفتار پیش‌فرض بستن окно",
     ),
-    "minutes": m8,
+    "minutes": m7,
     "mixedPort": MessageLookupByLibrary.simpleMessage("پورت ترکیبی (Mixed)"),
     "mode": MessageLookupByLibrary.simpleMessage("حالت"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("تک‌رنگ"),
-    "months": m9,
+    "months": m8,
     "more": MessageLookupByLibrary.simpleMessage("بیشتر"),
     "moreIpInfo": MessageLookupByLibrary.simpleMessage("اطلاعات بیشتر IP"),
     "name": MessageLookupByLibrary.simpleMessage("نام"),
@@ -827,9 +723,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "networkType": MessageLookupByLibrary.simpleMessage("نوع شبکه"),
     "neutralScheme": MessageLookupByLibrary.simpleMessage("خنثی"),
     "noAnimation": MessageLookupByLibrary.simpleMessage("پیش‌فرض"),
-    "noBackupFileFound": MessageLookupByLibrary.simpleMessage(
-      "فایل پشتیبان پیدا نشد",
-    ),
     "noData": MessageLookupByLibrary.simpleMessage("داده‌ای موجود نیست"),
     "noHotKey": MessageLookupByLibrary.simpleMessage("بدون کلید میانبر"),
     "noIcon": MessageLookupByLibrary.simpleMessage("بدون آیکون"),
@@ -862,7 +755,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "notSelectedTip": MessageLookupByLibrary.simpleMessage(
       "گروه پروکسی فعلی قابل انتخاب نیست",
     ),
-    "notUnlocked": MessageLookupByLibrary.simpleMessage("مسدود"),
     "notificationHighPriority": MessageLookupByLibrary.simpleMessage(
       "اولویت بالا",
     ),
@@ -886,8 +778,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "هیچ پروفایلی یافت نشد. لطفاً یکی اضافه کنید",
     ),
-    "nullTip": m10,
-    "numberTip": m11,
+    "nullTip": m9,
+    "numberTip": m10,
     "oneColumn": MessageLookupByLibrary.simpleMessage("۱ ستون"),
     "onlinePanel": MessageLookupByLibrary.simpleMessage("پنل آنلاین"),
     "onlyIcon": MessageLookupByLibrary.simpleMessage("فقط آیکون"),
@@ -901,7 +793,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "محاسبه ترافیک فقط برای پروکسی‌ها",
     ),
     "openDashboard": MessageLookupByLibrary.simpleMessage("باز کردن Zashboard"),
-    "openRouterAdmin": MessageLookupByLibrary.simpleMessage("باز کردن گیت‌وی"),
     "openSettings": MessageLookupByLibrary.simpleMessage("باز کردن تنظیمات"),
     "operatorOrAsn": MessageLookupByLibrary.simpleMessage("سازمان / ASN"),
     "options": MessageLookupByLibrary.simpleMessage("گزینه‌ها"),
@@ -970,9 +861,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "password": MessageLookupByLibrary.simpleMessage("رمز عبور"),
     "paste": MessageLookupByLibrary.simpleMessage("جایگذاری"),
-    "pause": MessageLookupByLibrary.simpleMessage("Pause"),
-    "pauseForMinutes": m12,
-    "pianoWave": MessageLookupByLibrary.simpleMessage("موج پیانو"),
     "pin": MessageLookupByLibrary.simpleMessage("پین"),
     "pleaseBindWebDAV": MessageLookupByLibrary.simpleMessage(
       "لطفاً به WebDAV متصل شوید",
@@ -999,11 +887,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "لطفاً پورت غیرتکراری وارد کنید",
     ),
-    "portTip": m13,
-    "pouringHourGlass": MessageLookupByLibrary.simpleMessage("ساعت شنی روان"),
-    "pouringHourGlassRefined": MessageLookupByLibrary.simpleMessage(
-      "ساعت شنی ظریف",
-    ),
+    "portTip": m11,
     "powerSwitch": MessageLookupByLibrary.simpleMessage("کلید روشن/خاموش"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage(
       "اولویت استفاده از HTTP/3 در DoH",
@@ -1016,7 +900,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "آدرس IP خصوصی / شبکه محلی",
     ),
     "profile": MessageLookupByLibrary.simpleMessage("پروفایل"),
-    "profileAndRules": MessageLookupByLibrary.simpleMessage("پروفایل و قوانین"),
     "profileAutoUpdateIntervalInvalidValidationDesc":
         MessageLookupByLibrary.simpleMessage(
           "لطفاً فرمت زمان معتبری وارد کنید",
@@ -1026,7 +909,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileHasUpdate": MessageLookupByLibrary.simpleMessage(
       "پروفایل تغییر یافته است. آیا بروزرسانی خودکار غیرفعال شود؟",
     ),
-    "profileImportFailed": m14,
+    "profileImportFailed": m12,
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "لطفاً نام پروفایل را وارد کنید",
     ),
@@ -1048,11 +931,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "providers": MessageLookupByLibrary.simpleMessage("ارائه‌دهندگان"),
     "provinceAndCity": MessageLookupByLibrary.simpleMessage("استان / شهر"),
     "proxies": MessageLookupByLibrary.simpleMessage("پروکسی‌ها"),
-    "proxiesCount": MessageLookupByLibrary.simpleMessage("گره‌های پروکسی"),
     "proxiesSetting": MessageLookupByLibrary.simpleMessage("تنظیمات پروکسی"),
     "proxyChains": MessageLookupByLibrary.simpleMessage("زنجیره پروکسی"),
     "proxyGroup": MessageLookupByLibrary.simpleMessage("گروه پروکسی"),
-    "proxyGroupsCount": MessageLookupByLibrary.simpleMessage("گروه‌های پروکسی"),
     "proxyNameserver": MessageLookupByLibrary.simpleMessage("DNS پروکسی"),
     "proxyNameserverDesc": MessageLookupByLibrary.simpleMessage(
       "برای تحلیل دامنه‌های نودهای پروکسی",
@@ -1064,16 +945,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "proxyProviders": MessageLookupByLibrary.simpleMessage(
       "ارائه‌دهندگان پروکسی",
     ),
-    "proxyProvidersCount": MessageLookupByLibrary.simpleMessage(
-      "مجموعه پروکسی",
-    ),
     "pulse": MessageLookupByLibrary.simpleMessage("پالس"),
-    "pulsingGrid": MessageLookupByLibrary.simpleMessage("شبکه تپنده"),
-    "pumpingHeart": MessageLookupByLibrary.simpleMessage("قلب تپنده"),
     "pureBlackMode": MessageLookupByLibrary.simpleMessage("حالت مشکی خالص"),
     "qrcode": MessageLookupByLibrary.simpleMessage("کد QR"),
     "qrcodeDesc": MessageLookupByLibrary.simpleMessage(
-      "اسکن کد QR برای وارد کردن پروفایل",
+      "اسکن کد QR برای دریافت پروفایل",
     ),
     "quicGoDisableEcn": MessageLookupByLibrary.simpleMessage(
       "غیرفعال‌سازی QUIC ECN",
@@ -1094,7 +970,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "rainbowScheme": MessageLookupByLibrary.simpleMessage("رنگین‌کمان"),
     "realTimeSpeed": MessageLookupByLibrary.simpleMessage("سرعت لحظه‌ای"),
-    "reclaimableMemory": MessageLookupByLibrary.simpleMessage("قابل بازیافت"),
     "recovery": MessageLookupByLibrary.simpleMessage("بازیابی"),
     "recoveryAll": MessageLookupByLibrary.simpleMessage("بازیابی تمام داده‌ها"),
     "recoveryProfiles": MessageLookupByLibrary.simpleMessage(
@@ -1141,9 +1016,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "مشاهده تاریخچه درخواست‌های اخیر",
     ),
     "reset": MessageLookupByLibrary.simpleMessage("بازنشانی"),
-    "resetManualSort": MessageLookupByLibrary.simpleMessage(
-      "بازنشانی مرتب‌سازی دستی",
-    ),
     "resetTip": MessageLookupByLibrary.simpleMessage(
       "آیا از بازنشانی اطمینان دارید؟",
     ),
@@ -1171,18 +1043,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "restore": MessageLookupByLibrary.simpleMessage("بازیابی"),
     "retry": MessageLookupByLibrary.simpleMessage("تلاش مجدد"),
     "rightClickBehavior": MessageLookupByLibrary.simpleMessage("کلیک راست"),
-    "ring": MessageLookupByLibrary.simpleMessage("حلقه"),
-    "ripple": MessageLookupByLibrary.simpleMessage("موج آب"),
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("چرخش تک‌دایره"),
-    "rotatingPlain": MessageLookupByLibrary.simpleMessage("صفحه چرخان"),
     "rule": MessageLookupByLibrary.simpleMessage("قوانین"),
     "ruleName": MessageLookupByLibrary.simpleMessage("نام قانون"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage(
       "ارائه‌دهندگان قوانین",
     ),
-    "ruleProvidersCount": MessageLookupByLibrary.simpleMessage("مجموعه قوانین"),
     "ruleTarget": MessageLookupByLibrary.simpleMessage("مقصد قانون"),
-    "rulesCount": MessageLookupByLibrary.simpleMessage("قوانین مسیریابی"),
     "runTime": MessageLookupByLibrary.simpleMessage("مدت زمان اجرا"),
     "runtimeConfig": MessageLookupByLibrary.simpleMessage("پیکربندی زمان اجرا"),
     "save": MessageLookupByLibrary.simpleMessage("ذخیره"),
@@ -1196,25 +1063,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "scriptDesc": MessageLookupByLibrary.simpleMessage(
       "تنظیمات اسکریپت اورراید سراسری",
     ),
-    "scriptOtherOptions": MessageLookupByLibrary.simpleMessage("تنظیمات دیگر"),
     "search": MessageLookupByLibrary.simpleMessage("جستجو"),
     "seconds": MessageLookupByLibrary.simpleMessage("ثانیه"),
     "secretCopied": MessageLookupByLibrary.simpleMessage(
       "رمز عبور در حافظه موقت کپی شد",
     ),
-    "security": MessageLookupByLibrary.simpleMessage("Security"),
     "selectAll": MessageLookupByLibrary.simpleMessage("انتخاب همه"),
-    "selectBackupVersion": MessageLookupByLibrary.simpleMessage(
-      "انتخاب نسخه پشتیبان",
-    ),
     "selected": MessageLookupByLibrary.simpleMessage("انتخاب شده"),
-    "selectedCountTitle": m15,
+    "selectedCountTitle": m13,
     "serviceReady": MessageLookupByLibrary.simpleMessage("سرویس آماده است"),
     "serviceRunning": MessageLookupByLibrary.simpleMessage(
       "سرویس در حال اجرا است",
     ),
     "settings": MessageLookupByLibrary.simpleMessage("تنظیمات"),
-    "sharedAddress": MessageLookupByLibrary.simpleMessage("آدرس اشتراکی"),
     "show": MessageLookupByLibrary.simpleMessage("نمایش"),
     "showHiddenItems": MessageLookupByLibrary.simpleMessage(
       "نمایش موارد پنهان",
@@ -1233,12 +1094,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "size": MessageLookupByLibrary.simpleMessage("اندازه"),
     "skipDomain": MessageLookupByLibrary.simpleMessage("دامنه‌های مستثنی"),
     "skipDstAddress": MessageLookupByLibrary.simpleMessage("IP مقصد مستثنی"),
-    "skipLocalAuth": MessageLookupByLibrary.simpleMessage(
-      "رد شدن از احراز هویت محلی",
-    ),
-    "skipLocalAuthDesc": MessageLookupByLibrary.simpleMessage(
-      "اجازه دسترسی به پروکسی بدون اطلاعات کاربری از سیستم محلی",
-    ),
     "skipSrcAddress": MessageLookupByLibrary.simpleMessage("IP مبدا مستثنی"),
     "smartAutoStop": MessageLookupByLibrary.simpleMessage("توقف هوشمند"),
     "smartAutoStopDesc": MessageLookupByLibrary.simpleMessage(
@@ -1275,9 +1130,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sourceIp": MessageLookupByLibrary.simpleMessage("IP مبدا"),
     "specialProxy": MessageLookupByLibrary.simpleMessage("پروکسی ویژه"),
     "specialRules": MessageLookupByLibrary.simpleMessage("قوانین ویژه"),
-    "spinningCircle": MessageLookupByLibrary.simpleMessage("دایره چرخان"),
     "spinningLines": MessageLookupByLibrary.simpleMessage("خطوط چرخان"),
-    "squareCircle": MessageLookupByLibrary.simpleMessage("مربع و دایره"),
     "stackMode": MessageLookupByLibrary.simpleMessage("حالت پشته"),
     "standard": MessageLookupByLibrary.simpleMessage("استاندارد"),
     "start": MessageLookupByLibrary.simpleMessage("شروع"),
@@ -1286,68 +1139,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "status": MessageLookupByLibrary.simpleMessage("وضعیت"),
     "statusDesc": MessageLookupByLibrary.simpleMessage(
       "در صورت غیرفعال بودن از DNS سیستم استفاده می‌شود",
-    ),
-    "stealthCheck": MessageLookupByLibrary.simpleMessage("Stealth check"),
-    "stealthCheckChecking": MessageLookupByLibrary.simpleMessage("Checking…"),
-    "stealthCheckCopyReport": MessageLookupByLibrary.simpleMessage(
-      "Copy report",
-    ),
-    "stealthCheckDesc": MessageLookupByLibrary.simpleMessage(
-      "What VPN-detecting apps can see about you",
-    ),
-    "stealthCheckEnableVpn": MessageLookupByLibrary.simpleMessage("Enable VPN"),
-    "stealthCheckFail": MessageLookupByLibrary.simpleMessage("Could not check"),
-    "stealthCheckNeedVpn": MessageLookupByLibrary.simpleMessage(
-      "Turn on the VPN — there is nothing to check without the tunnel",
-    ),
-    "stealthCheckRerun": MessageLookupByLibrary.simpleMessage("Rerun"),
-    "stealthCheckRun": MessageLookupByLibrary.simpleMessage("Run check"),
-    "stealthCheckScore": m16,
-    "stealthCheckedAt": m17,
-    "stealthDnsFail": MessageLookupByLibrary.simpleMessage("Could not check"),
-    "stealthDnsLeak": MessageLookupByLibrary.simpleMessage(
-      "Queries go to the ISP DNS — a leak",
-    ),
-    "stealthDnsOk": MessageLookupByLibrary.simpleMessage(
-      "Resolver does not match the ISP DNS",
-    ),
-    "stealthDnsTitle": MessageLookupByLibrary.simpleMessage("DNS queries"),
-    "stealthDotBad": MessageLookupByLibrary.simpleMessage(
-      "DoT unreachable (TCP 853/TLS)",
-    ),
-    "stealthDotOk": MessageLookupByLibrary.simpleMessage("DoT reachable"),
-    "stealthDotTitle": MessageLookupByLibrary.simpleMessage(
-      "DoT probe (Quad9)",
-    ),
-    "stealthExitFail": MessageLookupByLibrary.simpleMessage("Could not fetch"),
-    "stealthExitOk": MessageLookupByLibrary.simpleMessage(
-      "Traffic exits through the node",
-    ),
-    "stealthExitTitle": MessageLookupByLibrary.simpleMessage("Exit IP"),
-    "stealthFix": MessageLookupByLibrary.simpleMessage("Fix"),
-    "stealthIpv6Bad": MessageLookupByLibrary.simpleMessage(
-      "IPv6 bypasses the tunnel",
-    ),
-    "stealthIpv6OkCovered": MessageLookupByLibrary.simpleMessage(
-      "IPv6 is covered by the tunnel",
-    ),
-    "stealthIpv6OkNoV6": MessageLookupByLibrary.simpleMessage(
-      "No IPv6 in the network — nothing to leak",
-    ),
-    "stealthPortsBad": m18,
-    "stealthPortsOk": MessageLookupByLibrary.simpleMessage(
-      "Ports are silent — detectors will not spot the proxy",
-    ),
-    "stealthPortsTitle": MessageLookupByLibrary.simpleMessage("Local ports"),
-    "stealthTunTitle": MessageLookupByLibrary.simpleMessage("VPN interface"),
-    "stealthTunWarn": MessageLookupByLibrary.simpleMessage(
-      "The tun interface is visible to all apps, it cannot be hidden without root",
-    ),
-    "stealthVpnNetTitle": MessageLookupByLibrary.simpleMessage(
-      "VPN network in the system",
-    ),
-    "stealthVpnNetWarn": MessageLookupByLibrary.simpleMessage(
-      "Apps can see the active VPN network (TRANSPORT_VPN)",
     ),
     "stop": MessageLookupByLibrary.simpleMessage("توقف"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("در حال توقف..."),
@@ -1372,7 +1163,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "syncFailed": MessageLookupByLibrary.simpleMessage("همگام‌سازی ناموفق بود"),
     "system": MessageLookupByLibrary.simpleMessage("سیستم"),
     "systemApp": MessageLookupByLibrary.simpleMessage("برنامه‌های سیستم"),
-    "systemDns": MessageLookupByLibrary.simpleMessage("DNS"),
     "systemFont": MessageLookupByLibrary.simpleMessage("فونت سیستم"),
     "systemProxy": MessageLookupByLibrary.simpleMessage("پروکسی سیستم"),
     "systemProxyDesc": MessageLookupByLibrary.simpleMessage(
@@ -1384,7 +1174,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "اجازه به اتصال‌های همزمان TCP",
     ),
     "testUrl": MessageLookupByLibrary.simpleMessage("آدرس تست"),
-    "testing": MessageLookupByLibrary.simpleMessage("در حال بررسی"),
     "textScale": MessageLookupByLibrary.simpleMessage("مقیاس متن"),
     "theme": MessageLookupByLibrary.simpleMessage("پوسته"),
     "themeColor": MessageLookupByLibrary.simpleMessage("رنگ پوسته"),
@@ -1456,33 +1245,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "tunnelTargetHint": MessageLookupByLibrary.simpleMessage(
       "مثال: 114.114.114.114:53",
     ),
-    "tvScanImport": MessageLookupByLibrary.simpleMessage(
-      "اسکن / وارد کردن از شبکه محلی",
-    ),
-    "tvScanImportDesc": MessageLookupByLibrary.simpleMessage(
-      "اسکن کد یا ارسال پروفایل به تلویزیون از شبکه محلی",
-    ),
-    "tvScanManualUrl": MessageLookupByLibrary.simpleMessage(
-      "یا آدرس را مستقیماً در مرورگر گوشی وارد کنید:",
-    ),
-    "tvScanNoNetwork": MessageLookupByLibrary.simpleMessage(
-      "شبکه محلی در دسترس یافت نشد، لطفاً Wi-Fi را بررسی کنید",
-    ),
-    "tvScanStep1": MessageLookupByLibrary.simpleMessage(
-      "مطمئن شوید گوشی و TV به یک شبکه Wi-Fi متصل هستند",
-    ),
-    "tvScanStep2": MessageLookupByLibrary.simpleMessage(
-      "کد QR را با یک دوربین یا مرورگر پشتیبانی‌شده اسکن کنید",
-    ),
-    "tvScanStep3": MessageLookupByLibrary.simpleMessage(
-      "لینک اشتراک را در صفحه وب جای‌گذاری کرده یا فایل پیکربندی را آپلود و ارسال کنید",
-    ),
-    "tvScanSuccess": MessageLookupByLibrary.simpleMessage(
-      "پروفایل دریافت شد، در حال وارد کردن...",
-    ),
-    "tvScanWaiting": MessageLookupByLibrary.simpleMessage(
-      "در انتظار ارسال پروفایل از گوشی...",
-    ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("۲ ستون"),
     "unableToUpdateCurrentProfileDesc": MessageLookupByLibrary.simpleMessage(
       "امکان بروزرسانی پروفایل فعلی وجود ندارد",
@@ -1494,7 +1256,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "حذف تاخیرهای اضافی دست‌تکانی",
     ),
     "unknown": MessageLookupByLibrary.simpleMessage("نامشخص"),
-    "unlocked": MessageLookupByLibrary.simpleMessage("تکمیل شد"),
     "unnamed": MessageLookupByLibrary.simpleMessage("بدون نام"),
     "unpin": MessageLookupByLibrary.simpleMessage("برداشتن پین"),
     "update": MessageLookupByLibrary.simpleMessage("بروزرسانی"),
@@ -1504,21 +1265,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlDesc": MessageLookupByLibrary.simpleMessage(
       "دریافت پروفایل از طریق آدرس URL",
     ),
-    "urlTip": m19,
+    "urlTip": m14,
     "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
       "استفاده از اسکریپت اورراید سراسری",
     ),
     "useHosts": MessageLookupByLibrary.simpleMessage("استفاده از Hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "استفاده از Hosts سیستم",
-    ),
-    "userAuth": MessageLookupByLibrary.simpleMessage("احراز هویت کاربر"),
-    "userAuthEmpty": MessageLookupByLibrary.simpleMessage(
-      "کاربری برای احراز هویت تنظیم نشده، اتصال شبکه محلی نیازی به مشخصات ندارد",
-    ),
-    "username": MessageLookupByLibrary.simpleMessage("نام کاربری"),
-    "usernameCannotContainColon": MessageLookupByLibrary.simpleMessage(
-      "نام کاربری نباید شامل دونقطه (:) باشد",
     ),
     "value": MessageLookupByLibrary.simpleMessage("مقدار"),
     "vibrantScheme": MessageLookupByLibrary.simpleMessage("پررنگ"),
@@ -1530,6 +1283,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "vpnEnableDesc": MessageLookupByLibrary.simpleMessage(
       "هدایت ترافیک سیستم از طریق VpnService",
     ),
+    "vpnSystemProxyConfirmDesc": MessageLookupByLibrary.simpleMessage(
+      "استفاده از پروکسی HTTP در موبایل پیشنهاد نمی‌شود مگر در صورت نیاز",
+    ),
     "vpnSystemProxyDesc": MessageLookupByLibrary.simpleMessage(
       "افزودن پروکسی HTTP به VpnService",
     ),
@@ -1540,9 +1296,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wakelockDescription": MessageLookupByLibrary.simpleMessage(
       "جلوگیری از خاموش شدن خودکار صفحه نمایش برای فعال ماندن برنامه‌ها در پس‌زمینه.",
     ),
-    "wanderingCubes": MessageLookupByLibrary.simpleMessage("مکعب‌های سرگردان"),
     "wave": MessageLookupByLibrary.simpleMessage("موج"),
-    "waveSpinner": MessageLookupByLibrary.simpleMessage("چرخنده موجی"),
     "webDAVConfiguration": MessageLookupByLibrary.simpleMessage(
       "تنظیمات WebDAV",
     ),
@@ -1552,6 +1306,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage(
       "نیازمند دسترسی مدیریت (Admin)",
     ),
-    "years": m20,
+    "years": m15,
+    "manualSort": MessageLookupByLibrary.simpleMessage("دستی"),
+    "resetManualSort": MessageLookupByLibrary.simpleMessage("بازنشانی مرتب‌سازی دستی"),
   };
 }

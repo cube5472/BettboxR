@@ -18,11 +18,7 @@ const helperDefaultTimeout = Duration(seconds: 5);
 
 abstract class HelperTransport {
   Future<String> send(
-    String id,
-    String method,
-    String body,
-    String authPayload,
-    String authKey, {
+    String payload, {
     Duration timeout = helperDefaultTimeout,
   });
 }
@@ -126,7 +122,8 @@ class HelperClient {
     try {
       final response = await _request('helper.ping');
       return response.data == expectedToken;
-    } catch (_) {
+    } catch (e) {
+      commonPrint.log('[HelperClient] ping failed: $e');
       return false;
     }
   }
@@ -202,23 +199,26 @@ class HelperClient {
   }) async {
     await HelperAuthManager.ensureAuthKey();
 
-    final authKey = HelperAuthManager.getAuthKey();
-    if (authKey == null) {
+    final bodyPayload = body == null ? '' : json.encode(body);
+    final authPayload = '$helperProtocolVersion:$method:$bodyPayload';
+    final headers = HelperAuthManager.generateAuthHeaders(authPayload);
+    final timestamp = int.tryParse(headers['X-Timestamp'] ?? '');
+    final signature = headers['X-Signature'];
+    if (timestamp == null || signature == null) {
       throw const HelperRpcException(
         'AUTH_NOT_READY',
         'Helper auth key is not ready',
       );
     }
 
-    final bodyPayload = body == null ? '' : json.encode(body);
-    final authPayload = '$helperProtocolVersion:$method:$bodyPayload';
-
+    final request = HelperRequest(
+      id: _nextId(),
+      method: method,
+      body: bodyPayload,
+      auth: HelperAuth(timestamp: timestamp, signature: signature),
+    );
     final responsePayload = await _transport.send(
-      _nextId(),
-      method,
-      bodyPayload,
-      authPayload,
-      authKey,
+      request.encode(),
       timeout: timeout,
     );
     final response = HelperResponse.decode(responsePayload);
@@ -249,11 +249,7 @@ HelperTransport _createHelperTransport() {
 class _UnsupportedHelperTransport implements HelperTransport {
   @override
   Future<String> send(
-    String id,
-    String method,
-    String body,
-    String authPayload,
-    String authKey, {
+    String payload, {
     Duration timeout = helperDefaultTimeout,
   }) {
     throw UnsupportedError(
@@ -271,47 +267,21 @@ class NamedPipeHelperTransport implements HelperTransport {
 
   @override
   Future<String> send(
-    String id,
-    String method,
-    String body,
-    String authPayload,
-    String authKey, {
+    String payload, {
     Duration timeout = helperDefaultTimeout,
   }) async {
     if (!Platform.isWindows) {
       throw UnsupportedError('Named Pipe helper transport is Windows-only');
     }
     return Isolate.run(
-      () => _sendNamedPipeRequest(
-        pipeName,
-        id,
-        method,
-        body,
-        authPayload,
-        authKey,
-        timeout.inMilliseconds,
-      ),
+      () => _sendNamedPipeRequest(pipeName, payload, timeout.inMilliseconds),
     );
   }
 }
 
-String _sendNamedPipeRequest(
-  String pipeName,
-  String id,
-  String method,
-  String body,
-  String authPayload,
-  String authKey,
-  int timeoutMs,
-) {
+String _sendNamedPipeRequest(String pipeName, String payload, int timeoutMs) {
   final client = _NamedPipeClient(pipeName: pipeName, timeoutMs: timeoutMs);
-  return client.send(
-    id,
-    method,
-    body,
-    authPayload: authPayload,
-    authKey: authKey,
-  );
+  return client.send(payload);
 }
 
 class _NamedPipeClient {
@@ -320,33 +290,9 @@ class _NamedPipeClient {
   final String pipeName;
   final int timeoutMs;
 
-  String send(
-    String id,
-    String method,
-    String body, {
-    required String authPayload,
-    required String authKey,
-  }) {
+  String send(String payload) {
     final handle = _connect();
     try {
-      final headers = HelperAuthManager.generateAuthHeadersWithKey(
-        authPayload,
-        authKey,
-      );
-      final timestamp = int.tryParse(headers['X-Timestamp'] ?? '');
-      final signature = headers['X-Signature'];
-      if (timestamp == null || signature == null) {
-        throw const HelperRpcException(
-          'AUTH_NOT_READY',
-          'Helper auth key is not ready',
-        );
-      }
-      final payload = HelperRequest(
-        id: id,
-        method: method,
-        body: body,
-        auth: HelperAuth(timestamp: timestamp, signature: signature),
-      ).encode();
       final bytes = utf8.encode(payload);
       if (bytes.length > helperMaxFrameSize) {
         throw StateError('Helper request frame is too large');
