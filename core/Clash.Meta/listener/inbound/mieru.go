@@ -156,7 +156,6 @@ func buildMieruServerConfig(option *MieruOption, ports utils.IntRanges[uint16]) 
 	lc := option.ListenConfig()
 	return &mieruserver.ServerConfig{
 		Config: &mierupb.ServerConfig{
-			ListenIPAddress:  proto.String(option.Listen),
 			PortBindings:     portBindings,
 			Users:            users,
 			TrafficPattern:   trafficPattern,
