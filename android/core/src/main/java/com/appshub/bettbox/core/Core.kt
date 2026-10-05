@@ -63,14 +63,4 @@ object Core {
             Log.e("Core", "Error calling suspend: ${it.message}", it)
         }
     }
-
-    fun dozeSuspend(value: Boolean) {
-        runCatching {
-            Log.d("Core", "dozeSuspend called with value: $value")
-            suspend(if (value) 2 else 0)
-            Log.d("Core", "dozeSuspend JNI call completed")
-        }.onFailure {
-            Log.e("Core", "Error calling dozeSuspend: ${it.message}", it)
-        }
-    }
 }

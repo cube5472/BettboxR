@@ -75,11 +75,6 @@ class BettboxService : Service(), BaseServiceInterface {
         val isSuspended = GlobalState.isSmartStopped
         val isHighPriority = GlobalState.isNotificationHighPriority
         ensureNotificationChannel(isSuspended, isHighPriority)
-        // Флаг страны: восстановить из SharedPreferences ДО сборки уведомления
-        // (см. BettboxVpnService.startForeground).
-        if (!isSuspended) {
-            NodeFlagNotification.restore(this)
-        }
         val (title, content) = notificationTitleAndContent(isSuspended)
 
         val builder = createBettboxNotificationBuilder(isSuspended, isHighPriority)
@@ -109,8 +104,6 @@ class BettboxService : Service(), BaseServiceInterface {
     override fun onDestroy() {
         stop()
         fairMemoryHelper.unregister(this)
-        // Флаг страны ноды живёт только вместе с сервисом.
-        NodeFlagNotification.cancel(this)
         super.onDestroy()
     }
 }

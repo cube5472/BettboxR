@@ -80,7 +80,6 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "isSmartStopped" -> result.success(GlobalState.isSmartStopped)
             "getLocalIpAddresses" -> result.success(VpnPlugin.getLocalIpAddresses())
             "getLocalGateways" -> result.success(VpnPlugin.getLocalGateways())
-            "getCurrentDns" -> result.success(VpnPlugin.getCurrentDns())
             "setQuickResponse" -> {
                 VpnPlugin.setQuickResponse(call.argument<Boolean>("enabled") ?: false)
                 result.success(true)
@@ -104,13 +103,6 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 VpnPlugin.handleUpdateNotificationSpeed(
                     call.argument<String>("profileName") ?: "",
                     call.argument<String>("speedInfo") ?: ""
-                )
-                result.success(true)
-            }
-            "updateNotificationFlag" -> {
-                VpnPlugin.handleUpdateNotificationFlag(
-                    call.argument<String>("countryCode"),
-                    call.argument<String>("nodeName")
                 )
                 result.success(true)
             }

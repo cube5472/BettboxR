@@ -64,22 +64,7 @@ class FilesProvider : DocumentsProvider() {
         documentId: String,
         mode: String,
         signal: CancellationSignal?
-    ): ParcelFileDescriptor = ParcelFileDescriptor.open(File(documentId), ParcelFileDescriptor.parseMode(sanitizeMode(mode)))
-
-    private fun sanitizeMode(mode: String): String {
-        val hasR = mode.contains('r')
-        val hasW = mode.contains('w')
-        val hasT = mode.contains('t')
-        val hasA = mode.contains('a')
-        return when {
-            hasR && hasW && hasT -> "rwt"
-            hasR && hasW -> "rw"
-            hasW && hasT -> "wt"
-            hasW && hasA -> "wa"
-            hasW -> "w"
-            else -> "r"
-        }
-    }
+    ): ParcelFileDescriptor = ParcelFileDescriptor.open(File(documentId), ParcelFileDescriptor.parseMode(mode))
 
     private fun includeFile(result: MatrixCursor, file: File) {
         result.newRow().apply {

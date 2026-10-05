@@ -29,14 +29,6 @@ import kotlinx.coroutines.launch
 class BettboxVpnService : VpnService(), BaseServiceInterface {
     companion object {
         private const val TAG = "BettboxVpnService"
-
-        // Живой экземпляр VPN-сервиса: нужен MainActivity для
-        // VpnService.protect(socket) в защищённом фетче подписок
-        // (protect — метод ЭКЗЕМПЛЯРА, статического нет). Пока VPN
-        // выключен, экземпляра нет — защита не требуется, сокет и так
-        // идёт напрямую.
-        @Volatile
-        var current: BettboxVpnService? = null
     }
 
     @Volatile
@@ -62,8 +54,6 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
     override fun onCreate() {
         super.onCreate()
-        // Экземпляр доступен для защищённого фетча (MainActivity.protectSocket).
-        current = this
         GlobalState.initServiceEngine()
 
         unlockReceiver = object : BroadcastReceiver() {
@@ -132,7 +122,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
                 .onFailure { Log.e(TAG, "Invalid DNS: ${options.dnsServerAddress}") }
         }
 
-        setMtu(options.mtu.takeIf { it in 1280..65535 } ?: 9000)
+        setMtu(options.mtu.coerceIn(1280..65535).takeIf { it > 0 } ?: 1480)
 
         val accessControl = options.accessControl
         if (accessControl.enable) {
@@ -234,12 +224,6 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         val isSuspended = GlobalState.isSmartStopped
         val isHighPriority = GlobalState.isNotificationHighPriority
         ensureNotificationChannel(isSuspended, isHighPriority)
-        // Флаг страны выбранной ноды: восстановить из SharedPreferences ДО
-        // сборки уведомления — createBettboxNotificationBuilder читает код
-        // из GlobalState.nodeFlagCountryCode (smallIcon-буквы + largeIcon-флаг).
-        if (!isSuspended) {
-            NodeFlagNotification.restore(this)
-        }
         val (title, content) = notificationTitleAndContent(isSuspended)
 
         lastNotificationText = null
@@ -338,27 +322,21 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onRevoke() {
-        // VPN отозван системой — защищённый фетч больше невозможен.
-        current = null
         runCatching {
             VpnPlugin.handleStop()
             getSystemService(android.app.NotificationManager::class.java)
                 ?.cancel(GlobalState.NOTIFICATION_ID)
         }.onFailure { Log.e(TAG, "onRevoke error: ${it.message}") }
-        NodeFlagNotification.cancel(this)
         super.onRevoke()
     }
 
     override fun onDestroy() {
-        current = null
         stop()
         unlockReceiver?.let {
             unregisterReceiver(it)
             unlockReceiver = null
         }
         fairMemoryHelper.unregister(this)
-        // Флаг страны ноды живёт только вместе с VPN-сервисом.
-        NodeFlagNotification.cancel(this)
         super.onDestroy()
     }
 }
