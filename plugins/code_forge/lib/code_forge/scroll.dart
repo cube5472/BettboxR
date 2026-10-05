@@ -155,7 +155,6 @@ class _CustomScrollbarState extends RawScrollbarState<CustomScrollbar> {
   }
 
   void _onLineNumberChanged() {
-    if (!widget.showLineNumberIndicator) return;
     if (mounted) {
       setState(() {});
     }
@@ -200,7 +199,7 @@ class _CustomThumbBorder extends RoundedRectangleBorder {
   final TextDirection textDirection;
   final double thickness;
 
-  final TextPainter? _lineNumberPainter;
+  late final TextPainter _lineNumberPainter;
 
   _CustomThumbBorder({
     required this.isDragging,
@@ -211,25 +210,21 @@ class _CustomThumbBorder extends RoundedRectangleBorder {
     required this.textDirection,
     required this.thickness,
     required super.borderRadius,
-  })  : _lineNumberPainter = showLineNumberIndicator
-            ? (TextPainter(
-                text: TextSpan(
-                  text: lineNumber.toString(),
-                  style: lineNumberStyle,
-                ),
-              )
-                ..textDirection = textDirection
-                ..layout())
-            : null,
-        super(side: BorderSide.none);
+  }) : super(side: BorderSide.none) {
+    _lineNumberPainter =
+        TextPainter(
+            text: TextSpan(text: lineNumber.toString(), style: lineNumberStyle),
+          )
+          ..textDirection = textDirection
+          ..layout();
+  }
 
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
-    if (!showLineNumberIndicator || _lineNumberPainter == null) return;
-    final painter = _lineNumberPainter;
+    if (!showLineNumberIndicator) return;
 
-    final double w = max(painter.width + 10, 100);
-    final double h = max(painter.height + 3, 30);
+    final double w = max(_lineNumberPainter.width + 10, 100);
+    final double h = max(_lineNumberPainter.height + 3, 30);
 
     final paint = Paint()..color = color;
 
@@ -249,11 +244,11 @@ class _CustomThumbBorder extends RoundedRectangleBorder {
         paint,
       );
 
-      painter.paint(
+      _lineNumberPainter.paint(
         canvas,
         Offset(
-          bubbleRect.left + (bubbleRect.width - painter.width) / 2,
-          bubbleRect.top + (bubbleRect.height - painter.height) / 2,
+          bubbleRect.left + (bubbleRect.width - _lineNumberPainter.width) / 2,
+          bubbleRect.top + (bubbleRect.height - _lineNumberPainter.height) / 2,
         ),
       );
     }
