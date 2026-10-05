@@ -8,12 +8,10 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"regexp"
 	"runtime"
 	"runtime/debug"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/metacubex/mihomo/adapter"
@@ -36,20 +34,13 @@ import (
 	"github.com/metacubex/mihomo/tunnel"
 	"github.com/metacubex/mihomo/tunnel/statistic"
 	"sync"
-	"sync/atomic"
 )
 
 var (
-	isInit              = false
-	externalProviders   = map[string]cp.Provider{}
-	logSubscriber       observable.Subscription[log.Event]
-	ageMutex            sync.Mutex
-	requestHistoryLock  sync.RWMutex
-	requestHistory      []*statistic.TrackerInfo
-	isStreamingRequests atomic.Bool
-	logHistoryLock      sync.RWMutex
-	logHistory          []log.Event
-	isStreamingLogs     atomic.Bool
+	isInit            = false
+	externalProviders = map[string]cp.Provider{}
+	logSubscriber     observable.Subscription[log.Event]
+	ageMutex          sync.Mutex
 )
 
 func handleInitClash(paramsString string) bool {
@@ -62,7 +53,6 @@ func handleInitClash(paramsString string) bool {
 	if !isInit {
 		constant.SetHomeDir(params.HomeDir)
 		isInit = true
-		ensureLogSubscriber()
 	}
 	return isInit
 }
@@ -91,7 +81,6 @@ func handleGetIsInit() bool {
 func handleForceGc(forceFreeOSMemory bool) {
 	go func() {
 		log.Infoln("[APP] Request force GC, forceFreeOSMemory=%t", forceFreeOSMemory)
-		tryUnloadGeoData()
 		runtime.GC()
 		if forceFreeOSMemory {
 			debug.FreeOSMemory()
@@ -102,25 +91,10 @@ func handleForceGc(forceFreeOSMemory bool) {
 func handleShutdown() bool {
 	stopListeners()
 	executor.Shutdown()
-	tryUnloadGeoData()
-	handleClearRequests()
-	handleClearLogs()
-	isStreamingRequests.Store(false)
-	isStreamingLogs.Store(false)
-	if logSubscriber != nil {
-		log.UnSubscribe(logSubscriber)
-		logSubscriber = nil
-	}
 	runtime.GC()
 	debug.FreeOSMemory()
 	isInit = false
 	return true
-}
-
-var shortIDRegexp = regexp.MustCompile(`(?m)(short-id\s*:\s*)([0-9a-fA-F]+)(\s*(?:$|[,\s#\}]))`)
-
-func patchYamlShortID(data []byte) []byte {
-	return shortIDRegexp.ReplaceAll(data, []byte(`${1}"${2}"${3}`))
 }
 
 func handleValidateConfig(params *ValidateConfigParams) string {
@@ -132,8 +106,7 @@ func handleValidateConfig(params *ValidateConfigParams) string {
 		defer age.SetGlobalSecretKeys()
 	}
 
-	data := patchYamlShortID([]byte(params.Data))
-	_, err := config.Parse(data)
+	_, err := config.Parse([]byte(params.Data))
 	if err != nil {
 		return err.Error()
 	}
@@ -323,7 +296,10 @@ func handleCloseConnections() bool {
 
 func closeConnections() {
 	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
-		_ = c.Close()
+		err := c.Close()
+		if err != nil {
+			return false
+		}
 		return true
 	})
 }
@@ -511,32 +487,16 @@ func marshalInlineProviderContent(rawConfig *config.RawConfig, providerName stri
 	return yaml.Marshal(map[string]any{"proxies": payload})
 }
 
-const maxLogHistory = 512
-
-func recordLogHistory(logData log.Event) {
-	logHistoryLock.Lock()
-	defer logHistoryLock.Unlock()
-	if len(logHistory) >= maxLogHistory {
-		logHistory = logHistory[1:]
-	}
-	logHistory = append(logHistory, logData)
-}
-
-func ensureLogSubscriber() {
+func handleStartLog() {
 	if logSubscriber != nil {
-		return
+		log.UnSubscribe(logSubscriber)
+		logSubscriber = nil
 	}
 	logSubscriber = log.Subscribe()
 	go func() {
 		for logData := range logSubscriber {
 			if logData.LogLevel < log.Level() {
 				continue
-			}
-			recordLogHistory(logData)
-			if !isStreamingLogs.Load() {
-				if logData.LogLevel != log.ERROR {
-					continue
-				}
 			}
 			message := &Message{
 				Type: LogMessage,
@@ -547,33 +507,11 @@ func ensureLogSubscriber() {
 	}()
 }
 
-func handleStartLog() {
-	ensureLogSubscriber()
-	isStreamingLogs.Store(true)
-}
-
 func handleStopLog() {
-	isStreamingLogs.Store(false)
-}
-
-func handleGetLogs() string {
-	logHistoryLock.RLock()
-	defer logHistoryLock.RUnlock()
-	if len(logHistory) == 0 {
-		return "[]"
+	if logSubscriber != nil {
+		log.UnSubscribe(logSubscriber)
+		logSubscriber = nil
 	}
-	data, err := json.Marshal(logHistory)
-	if err != nil {
-		return "[]"
-	}
-	return string(data)
-}
-
-func handleClearLogs() bool {
-	logHistoryLock.Lock()
-	defer logHistoryLock.Unlock()
-	logHistory = nil
-	return true
 }
 
 func handleGetCountryCode(ip string, fn func(value string)) {
@@ -591,106 +529,7 @@ func handleGetCountryCode(ip string, fn func(value string)) {
 
 func handleGetMemory(fn func(value string)) {
 	go func() {
-		var m runtime.MemStats
-		runtime.ReadMemStats(&m)
-		var retainedIdle uint64
-		if m.HeapIdle > m.HeapReleased {
-			retainedIdle = m.HeapIdle - m.HeapReleased
-		}
-		mem := m.HeapInuse + retainedIdle + m.StackInuse
-		fn(strconv.FormatUint(mem, 10))
-	}()
-}
-
-func handleGetCoreStatus(fn func(value string)) {
-	go func() {
-		var m runtime.MemStats
-		runtime.ReadMemStats(&m)
-		var retainedIdle uint64
-		if m.HeapIdle > m.HeapReleased {
-			retainedIdle = m.HeapIdle - m.HeapReleased
-		}
-		inUse := m.HeapInuse + m.StackInuse
-		physical := inUse + retainedIdle
-
-		var proxyGroupsCount int
-		proxyNames := make(map[string]struct{})
-		for _, p := range tunnel.Proxies() {
-			if p == nil {
-				continue
-			}
-			if _, ok := p.Adapter().(outboundgroup.ProxyGroup); ok {
-				proxyGroupsCount++
-				continue
-			}
-			switch p.Type() {
-			case constant.Direct, constant.Reject, constant.RejectDrop, constant.Compatible, constant.Pass, constant.PassRule, constant.Rematch, constant.Dns:
-				continue
-			default:
-				proxyNames[p.Name()] = struct{}{}
-			}
-		}
-
-		for name, pr := range tunnel.Providers() {
-			if pr == nil || name == "default" || pr.VehicleType() == cp.Compatible {
-				continue
-			}
-			for _, p := range pr.Proxies() {
-				if p != nil {
-					proxyNames[p.Name()] = struct{}{}
-				}
-			}
-		}
-
-		var ruleProvidersCount int
-		var proxyProvidersCount int
-		if currentRawConfig != nil {
-			ruleProvidersCount = len(currentRawConfig.RuleProvider)
-			proxyProvidersCount = len(currentRawConfig.ProxyProvider)
-		} else {
-			for name, pr := range tunnel.Providers() {
-				if pr == nil || name == "default" || pr.VehicleType() == cp.Compatible {
-					continue
-				}
-				proxyProvidersCount++
-			}
-			ruleProvidersCount = len(tunnel.RuleProviders())
-		}
-
-		hasMMDB, hasSite, hasASN := checkActiveGeoUsage()
-
-		var geodatas []string
-		if hasMMDB {
-			geodatas = append(geodatas, "MMDB")
-		}
-		if hasSite {
-			geodatas = append(geodatas, "Site")
-		}
-		if hasASN {
-			geodatas = append(geodatas, "ASN")
-		}
-
-		geodataUse := "None"
-		if len(geodatas) > 0 {
-			geodataUse = strings.Join(geodatas, ", ")
-		}
-
-		status := map[string]any{
-			"physical":        physical,
-			"in-use":          inUse,
-			"reclaimable":     retainedIdle,
-			"goroutines":      runtime.NumGoroutine(),
-			"heap-objects":    m.HeapObjects,
-			"last-gc":         m.LastGC / 1000000,
-			"rules":           len(tunnel.Rules()),
-			"proxies":         len(proxyNames),
-			"proxy-groups":    proxyGroupsCount,
-			"rule-providers":  ruleProvidersCount,
-			"proxy-providers": proxyProvidersCount,
-			"geodata-use":     geodataUse,
-		}
-		bytes, _ := json.Marshal(status)
-		fn(string(bytes))
+		fn(strconv.FormatUint(statistic.DefaultManager.Memory(), 10))
 	}()
 }
 
@@ -718,7 +557,6 @@ func handleGetConfig(params *GetConfigParams) (*config.RawConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	bytes = patchYamlShortID(bytes)
 	prof, err := config.UnmarshalRawConfig(bytes)
 	if err != nil {
 		return nil, err
@@ -768,9 +606,6 @@ func handleSetupConfig(bytes []byte) string {
 	}
 	clearSuspendedHealthChecks()
 	clearSuspendedWireGuard()
-	suspendModeLock.Lock()
-	currentSuspendMode = 0
-	suspendModeLock.Unlock()
 	err = setupConfig(params)
 	if err != nil {
 		return err.Error()
@@ -778,23 +613,11 @@ func handleSetupConfig(bytes []byte) string {
 	return ""
 }
 
-var (
-	currentSuspendMode = 0
-	suspendModeLock    sync.Mutex
-)
-
-func handleSuspend(mode int) bool {
+func handleSuspend(suspended bool) bool {
 	if !isInit {
 		return false
 	}
-	suspendModeLock.Lock()
-	defer suspendModeLock.Unlock()
-
-	switch mode {
-	case 1:
-		if currentSuspendMode == 1 {
-			return true
-		}
+	if suspended {
 		log.Infoln("[APP] Suspend mode enabled")
 		tunnel.OnSuspend()
 		pauseHealthChecks()
@@ -808,49 +631,25 @@ func handleSuspend(mode int) bool {
 		})
 
 		runtime.GC()
-		currentSuspendMode = 1
-
-	case 2:
-		if currentSuspendMode == 1 || currentSuspendMode == 2 {
-			return true
-		}
-		log.Infoln("[APP] Doze suspend mode enabled")
-		pauseHealthChecks()
-		runtime.GC()
-		currentSuspendMode = 2
-
-	case 0:
-		if currentSuspendMode == 0 {
-			return true
-		}
+	} else {
 		log.Infoln("[APP] Resume from suspend")
-		prevMode := currentSuspendMode
-		currentSuspendMode = 0
+		tunnel.OnRunning()
+		resumeHealthChecks()
+		resumeWireGuard()
 
-		if prevMode == 1 {
-			tunnel.OnRunning()
-			resumeHealthChecks()
-			resumeWireGuard()
-
-			runLock.Lock()
-			cfg := currentConfig
-			runLock.Unlock()
-			if cfg != nil && cfg.NTP != nil && cfg.NTP.Enable {
-				c := cfg.NTP
-				mihomoNtp.ReCreateNTPService(
-					net.JoinHostPort(c.Server, strconv.Itoa(c.Port)),
-					time.Duration(c.Interval),
-					c.DialerProxy,
-					tunnel.Tunnel,
-					c.WriteToSystem,
-				)
-			}
-		} else if prevMode == 2 {
-			resumeHealthChecks()
+		runLock.Lock()
+		cfg := currentConfig
+		runLock.Unlock()
+		if cfg != nil && cfg.NTP != nil && cfg.NTP.Enable {
+			c := cfg.NTP
+			mihomoNtp.ReCreateNTPService(
+				net.JoinHostPort(c.Server, strconv.Itoa(c.Port)),
+				time.Duration(c.Interval),
+				c.DialerProxy,
+				tunnel.Tunnel,
+				c.WriteToSystem,
+			)
 		}
-
-	default:
-		return false
 	}
 	return true
 }
@@ -872,14 +671,9 @@ func init() {
 		})
 	}
 	statistic.DefaultRequestNotify = func(c statistic.Tracker) {
-		info := c.Info()
-		recordRequestHistory(info)
-		if !isStreamingRequests.Load() {
-			return
-		}
 		sendMessage(Message{
 			Type: RequestMessage,
-			Data: info,
+			Data: c.Info(),
 		})
 	}
 	executor.DefaultProviderLoadedHook = func(providerName string) {
@@ -889,45 +683,3 @@ func init() {
 		})
 	}
 }
-
-const maxRequestHistory = 256
-
-func recordRequestHistory(info *statistic.TrackerInfo) {
-	requestHistoryLock.Lock()
-	defer requestHistoryLock.Unlock()
-	if len(requestHistory) >= maxRequestHistory {
-		requestHistory = requestHistory[1:]
-	}
-	requestHistory = append(requestHistory, info)
-}
-
-func handleGetRequests() string {
-	requestHistoryLock.RLock()
-	defer requestHistoryLock.RUnlock()
-	if len(requestHistory) == 0 {
-		return "[]"
-	}
-	data, err := json.Marshal(requestHistory)
-	if err != nil {
-		return "[]"
-	}
-	return string(data)
-}
-
-func handleStartTrackRequests() bool {
-	isStreamingRequests.Store(true)
-	return true
-}
-
-func handleStopTrackRequests() bool {
-	isStreamingRequests.Store(false)
-	return true
-}
-
-func handleClearRequests() bool {
-	requestHistoryLock.Lock()
-	defer requestHistoryLock.Unlock()
-	requestHistory = nil
-	return true
-}
-

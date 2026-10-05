@@ -108,5 +108,5 @@ func stopListener() {
 
 //export suspend
 func suspend(suspended C.int) {
-	handleSuspend(int(suspended))
+	handleSuspend(suspended != 0)
 }

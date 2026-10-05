@@ -134,7 +134,7 @@ func handleStartTun(fd int, callback unsafe.Pointer) {
 		}
 		tunHandler.Store(handler)
 		initTunHook()
-		tunListener, _ := t.Start(fd, currentConfig.General.Tun.Device, currentConfig.General.Tun.Stack, currentConfig.General.Tun.DisableICMPForwarding, uint32(currentConfig.General.Tun.MTU), currentConfig.General.IPv6, currentConfig.General.Tun.CongestionController)
+		tunListener, _ := t.Start(fd, currentConfig.General.Tun.Device, currentConfig.General.Tun.Stack, currentConfig.General.Tun.DisableICMPForwarding, uint32(currentConfig.General.Tun.MTU), currentConfig.General.IPv6)
 		if tunListener != nil {
 			log.Infoln("TUN address: %v", tunListener.Address())
 			handler.listener = tunListener
