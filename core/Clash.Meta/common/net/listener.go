@@ -32,7 +32,6 @@ func (l *handleContextListener) init() {
 						if l.panicLog != nil {
 							l.panicLog(r)
 						}
-						_ = c.Close()
 					}
 				}()
 				if conn, err := l.handle(l.ctx, c); err == nil {
