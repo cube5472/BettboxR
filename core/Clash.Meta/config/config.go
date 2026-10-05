@@ -314,7 +314,6 @@ type RawTun struct {
 	UDPTimeout                            int64          `yaml:"udp-timeout" json:"udp-timeout,omitempty"`
 	ICMPTimeout                           int64          `yaml:"icmp-timeout" json:"icmp-timeout,omitempty"`
 	DisableICMPForwarding                 bool           `yaml:"disable-icmp-forwarding" json:"disable-icmp-forwarding,omitempty"`
-	CongestionController                  string         `yaml:"congestion-controller" json:"congestion-controller,omitempty"`
 	FileDescriptor                        int            `yaml:"file-descriptor" json:"file-descriptor"`
 
 	Inet4RouteAddress        []netip.Prefix `yaml:"inet4-route-address" json:"inet4-route-address,omitempty"`
@@ -325,9 +324,6 @@ type RawTun struct {
 	// darwin special config
 	RecvMsgX bool `yaml:"recvmsgx" json:"recvmsgx,omitempty"`
 	SendMsgX bool `yaml:"sendmsgx" json:"sendmsgx,omitempty"`
-
-	// gvisor special config (Non-public option; do not include it in the document.)
-	ProcessorsPerChannel int `yaml:"processors-per-channel" json:"processors-per-channel,omitempty"`
 }
 
 type RawTuicServer struct {
@@ -542,16 +538,15 @@ func DefaultRawConfig() *RawConfig {
 			Interval:      30,
 		},
 		Tun: RawTun{
-			Enable:               false,
-			Device:               "",
-			Stack:                C.TunMips,
-			DNSHijack:            []string{"0.0.0.0:53"}, // default hijack all dns query
-			AutoRoute:            true,
-			AutoDetectInterface:  true,
-			Inet6Address:         []netip.Prefix{netip.MustParsePrefix("fdfe:dcba:9876::1/126")},
-			RecvMsgX:             true,
-			SendMsgX:             false, // In the current implementation, if enabled, the kernel may freeze during multi-thread downloads, so it is disabled by default.
-			ProcessorsPerChannel: 1,     // For most users, memory usage is more important than peak performance. Setting this to 1 can significantly reduce memory consumption.
+			Enable:              false,
+			Device:              "",
+			Stack:               C.TunGvisor,
+			DNSHijack:           []string{"0.0.0.0:53"}, // default hijack all dns query
+			AutoRoute:           true,
+			AutoDetectInterface: true,
+			Inet6Address:        []netip.Prefix{netip.MustParsePrefix("fdfe:dcba:9876::1/126")},
+			RecvMsgX:            true,
+			SendMsgX:            false, // In the current implementation, if enabled, the kernel may freeze during multi-thread downloads, so it is disabled by default.
 		},
 		TuicServer: RawTuicServer{
 			Enable:                false,
@@ -1253,12 +1248,6 @@ func parseNameServer(servers []string, respectRules bool, preferH3 bool) ([]dns.
 			if addr == "" {
 				err = errors.New("missing Tailscale proxy name")
 			}
-		case "et", "easytier":
-			addr = u.Host
-			dnsNetType = "easytier" // EasyTier overlay DNS via proxy name
-			if addr == "" {
-				err = errors.New("missing EasyTier proxy name")
-			}
 		case "dhcp":
 			addr = server[len("dhcp://"):] // some special notation cannot be parsed by url
 			dnsNetType = "dhcp"            // UDP from DHCP
@@ -1506,14 +1495,14 @@ func parseDNS(rawCfg *RawConfig, ruleProviders map[string]P.RuleProvider) (*DNS,
 	}
 
 	if cfg.EnhancedMode == C.DNSFakeIP {
-		var fakeIPDomainSetBuilder *trie.DomainSetBuilder
-		if cfg.FakeIPFilterMode != C.FilterRule && len(dnsCfg.Fallback) != 0 {
-			fakeIPDomainSetBuilder = &trie.DomainSetBuilder{}
+		var fakeIPTrie *trie.DomainTrie[struct{}]
+		if len(dnsCfg.Fallback) != 0 {
+			fakeIPTrie = trie.New[struct{}]()
 			for _, fb := range dnsCfg.Fallback {
 				if net.ParseIP(fb.Addr) != nil {
 					continue
 				}
-				if err := fakeIPDomainSetBuilder.Insert(fb.Addr); err != nil {
+				if err := fakeIPTrie.Insert(fb.Addr, struct{}{}); err != nil {
 					log.Warnln("skip fallback nameserver in fake-ip filter: %s", err)
 				}
 			}
@@ -1528,7 +1517,7 @@ func parseDNS(rawCfg *RawConfig, ruleProviders map[string]P.RuleProvider) (*DNS,
 			}
 			skipper.Rules = rules
 		} else {
-			host, err := parseDomain(cfg.FakeIPFilter, fakeIPDomainSetBuilder, "dns.fake-ip-filter", ruleProviders)
+			host, err := parseDomain(cfg.FakeIPFilter, fakeIPTrie, "dns.fake-ip-filter", ruleProviders)
 			if err != nil {
 				return nil, err
 			}
@@ -1591,14 +1580,14 @@ func parseDNS(rawCfg *RawConfig, ruleProviders map[string]P.RuleProvider) (*DNS,
 			dnsCfg.FallbackIPFilter = append(dnsCfg.FallbackIPFilter, matcher)
 		}
 		if len(cfg.FallbackFilter.Domain) > 0 {
-			var domainSetBuilder trie.DomainSetBuilder
+			domainTrie := trie.New[struct{}]()
 			for idx, domain := range cfg.FallbackFilter.Domain {
-				err = domainSetBuilder.Insert(domain)
+				err = domainTrie.Insert(domain, struct{}{})
 				if err != nil {
 					return nil, fmt.Errorf("DNS FallbackDomain[%d] format error: %w", idx, err)
 				}
 			}
-			matcher := domainSetBuilder.Build() // dns.fallback-filter.domain
+			matcher := domainTrie.NewDomainSet() // dns.fallback-filter.domain
 			dnsCfg.FallbackDomainFilter = append(dnsCfg.FallbackDomainFilter, matcher)
 		}
 		if len(cfg.FallbackFilter.GeoSite) > 0 {
@@ -1734,7 +1723,6 @@ func parseTun(rawTun RawTun, dns *DNS, general *General) error {
 		UDPTimeout:                            rawTun.UDPTimeout,
 		ICMPTimeout:                           rawTun.ICMPTimeout,
 		DisableICMPForwarding:                 rawTun.DisableICMPForwarding,
-		CongestionController:                  rawTun.CongestionController,
 		FileDescriptor:                        rawTun.FileDescriptor,
 
 		Inet4RouteAddress:        rawTun.Inet4RouteAddress,
@@ -1744,8 +1732,6 @@ func parseTun(rawTun RawTun, dns *DNS, general *General) error {
 
 		RecvMsgX: rawTun.RecvMsgX,
 		SendMsgX: rawTun.SendMsgX,
-
-		ProcessorsPerChannel: rawTun.ProcessorsPerChannel,
 	}
 
 	return nil
@@ -1906,7 +1892,7 @@ func parseIPCIDR(addresses []string, cidrSet *cidr.IpCidrSet, adapterName string
 	return
 }
 
-func parseDomain(domains []string, domainSetBuilder *trie.DomainSetBuilder, adapterName string, ruleProviders map[string]P.RuleProvider) (matchers []C.DomainMatcher, err error) {
+func parseDomain(domains []string, domainTrie *trie.DomainTrie[struct{}], adapterName string, ruleProviders map[string]P.RuleProvider) (matchers []C.DomainMatcher, err error) {
 	var matcher C.DomainMatcher
 	for idx, domain := range domains {
 		domainLower := strings.ToLower(domain)
@@ -1933,17 +1919,17 @@ func parseDomain(domains []string, domainSetBuilder *trie.DomainSetBuilder, adap
 				matchers = append(matchers, matcher)
 			}
 		} else {
-			if domainSetBuilder == nil {
-				domainSetBuilder = &trie.DomainSetBuilder{}
+			if domainTrie == nil {
+				domainTrie = trie.New[struct{}]()
 			}
-			err = domainSetBuilder.Insert(domain)
+			err = domainTrie.Insert(domain, struct{}{})
 			if err != nil {
 				return nil, fmt.Errorf("%s[%d]: %w", adapterName, idx, err)
 			}
 		}
 	}
-	if !domainSetBuilder.IsEmpty() {
-		matcher = domainSetBuilder.Build()
+	if !domainTrie.IsEmpty() {
+		matcher = domainTrie.NewDomainSet()
 		matchers = append(matchers, matcher)
 	}
 	return
