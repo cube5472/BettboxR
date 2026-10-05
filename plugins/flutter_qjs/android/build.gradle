@@ -28,6 +28,10 @@ apply plugin: 'kotlin-android'
 android {
     namespace 'soko.ekibun.flutter_qjs'
     compileSdkVersion 34
+    // NDK совпадает с тем, что ставит CI (Setup Android NDK) и android/app.
+    // Без этой строки AGP берёт свой дефолт 27.0.12077973, которого нет,
+    // и автоустановка NDK из Gradle обрывается («Archive is not a ZIP»).
+    ndkVersion "28.2.13676358"
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
