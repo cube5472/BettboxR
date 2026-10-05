@@ -22,6 +22,10 @@
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <uses-permission
+        android:name="android.permission.INTERACT_ACROSS_USERS"
+        tools:ignore="ProtectedPermissions" />
 
     <application
         android:name=".BettboxApplication"
@@ -31,6 +35,7 @@
         android:roundIcon="@mipmap/ic_launcher_round_light"
         android:label="BettboxR"
         android:banner="@drawable/tv_banner"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:enableOnBackInvokedCallback="false">
         <activity
             android:name="com.appshub.bettbox.MainActivity"
@@ -67,6 +72,7 @@
 
                 <data android:scheme="clash" android:host="install-config" />
                 <data android:scheme="clashmeta" android:host="install-config" />
+                <data android:scheme="flclash" android:host="install-config" />
                 <data android:scheme="bettbox" android:host="install-config" />
             </intent-filter>
         </activity>
@@ -95,6 +101,7 @@
 
                 <data android:scheme="clash" android:host="install-config" />
                 <data android:scheme="clashmeta" android:host="install-config" />
+                <data android:scheme="flclash" android:host="install-config" />
                 <data android:scheme="bettbox" android:host="install-config" />
             </intent-filter>
         </activity-alias>
@@ -125,6 +132,7 @@
 
                 <data android:scheme="clash" android:host="install-config" />
                 <data android:scheme="clashmeta" android:host="install-config" />
+                <data android:scheme="flclash" android:host="install-config" />
                 <data android:scheme="bettbox" android:host="install-config" />
             </intent-filter>
         </activity-alias>
@@ -166,16 +174,6 @@
             <intent-filter>
                 <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
             </intent-filter>
-        </provider>
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileProvider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
         </provider>
 
         <service

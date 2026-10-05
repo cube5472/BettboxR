@@ -10,6 +10,7 @@ import android.app.Service
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.IconCompat
 import com.appshub.bettbox.GlobalState
 import com.appshub.bettbox.R
 import com.appshub.bettbox.models.VpnOptions
@@ -135,10 +136,21 @@ suspend fun Service.createBettboxNotificationBuilder(
         }
         val priority = if (isSuspended || isHighPriority) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_LOW
 
+        // Флаг страны выбранной ноды (только при активном VPN): smallIcon —
+        // монохромный силуэт ISO-кода («SE», «DE» — Android рендерит smallIcon
+        // как альфа-маску без цвета), largeIcon — цветной флаг в шторке.
+        // Без известной страны — обычные иконки приложения.
+        val flagCode = if (isSuspended) null else GlobalState.nodeFlagCountryCode
+
         NotificationCompat.Builder(this@createBettboxNotificationBuilder, channelId).apply {
-            setSmallIcon(R.drawable.ic)
-            if (largeIconBitmap != null) {
-                setLargeIcon(largeIconBitmap)
+            if (flagCode != null) {
+                setSmallIcon(IconCompat.createWithBitmap(FlagPainter.paintSmall(flagCode)))
+                setLargeIcon(FlagPainter.paintLarge(flagCode))
+            } else {
+                setSmallIcon(R.drawable.ic)
+                if (largeIconBitmap != null) {
+                    setLargeIcon(largeIconBitmap)
+                }
             }
             setContentTitle("Bettbox")
             setContentIntent(pendingIntent)

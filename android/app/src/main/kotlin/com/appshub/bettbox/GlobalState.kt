@@ -98,6 +98,13 @@ object GlobalState {
     @Volatile
     var isNotificationHighPriority: Boolean = false
 
+    /// ISO-код страны выбранной ноды для иконок основного уведомления
+    /// (smallIcon — силуэт кода в статус-баре, largeIcon — цветной флаг
+    /// в шторке). null — страна не определена: используются обычные иконки
+    /// приложения. Заполняется из NodeFlagNotification.update/restore.
+    @Volatile
+    var nodeFlagCountryCode: String? = null
+
     /// Активная пауза VPN: epoch-ms момента автовозобновления (0 — паузы нет).
     /// Дублируется в SharedPreferences, чтобы будильник/перезапуск процесса
     /// не потеряли состояние.
