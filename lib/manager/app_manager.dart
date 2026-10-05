@@ -28,6 +28,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
   Timer? _missedUpdateCheckTimer;
   DateTime? _lastMissedUpdateCheck;
   late final VoidCallback _dashboardTickListener;
+  late final VoidCallback _ipInfoFlagListener;
 
   static const _missedUpdateCheckDelay = Duration(seconds: 5);
   static const _missedUpdateCheckThrottle = Duration(seconds: 60);
@@ -43,6 +44,13 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       unawaited(globalState.appController.updateRunTime());
     };
     dashboardRefreshManager.tick1s.addListener(_dashboardTickListener);
+    // Флаг страны ноды: после завершения IP-проверки фолбэк-код страны
+    // выхода мог обновиться — перепостим уведомление флага (внутри кэш
+    // пары «нода+страна», лишних вызовов канала не будет).
+    _ipInfoFlagListener = () {
+      unawaited(globalState.appController.syncNodeFlagNotification());
+    };
+    detectionState.state.addListener(_ipInfoFlagListener);
     ref.listenManual(layoutChangeProvider, (prev, next) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (prev != next) {
@@ -55,6 +63,11 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         detectionState.startCheck();
       }
     });
+    ref.listenManual(checkMediaUnlockProvider, (prev, next) {
+      if (next.b && (prev?.a != next.a)) {
+        mediaUnlockState.startCheckOnNodeChange();
+      }
+    });
     ref.listenManual(configStateProvider, (prev, next) {
       if (prev != next) {
         globalState.appController.savePreferencesDebounce();
@@ -63,6 +76,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateDashboardRefreshState();
       detectionState.tryStartCheck();
+      mediaUnlockState.tryStartCheck();
       globalState.appController.updateGroupsDebounce();
     });
     if (window == null) {
@@ -88,6 +102,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     _dashboardRefreshDebounceTimer?.cancel();
     _missedUpdateCheckTimer?.cancel();
     dashboardRefreshManager.tick1s.removeListener(_dashboardTickListener);
+    detectionState.state.removeListener(_ipInfoFlagListener);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -169,18 +184,17 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       await globalState.resumeForegroundUpdates();
       await globalState.appController.syncWakelockIfNeeded();
       _scheduleMissedUpdateCheck();
-      final isInit = await clashCore.isInit;
-      if (isInit) {
-        globalState.appController.updateGroupsDebounce();
+      try {
+        final isInit = await clashCore.isInit;
+        if (isInit) {
+          await globalState.appController.updateGroups();
+        }
+      } catch (e) {
+        commonPrint.log('foreground core refresh skipped: $e');
       }
 
-      final hasDetection = ref
-          .read(dashboardStateProvider)
-          .dashboardWidgets
-          .contains(DashboardWidget.networkDetection);
-      if (hasDetection) {
-        detectionState.tryStartCheck();
-      }
+      detectionState.checkOnForegroundResume();
+      mediaUnlockState.checkOnForegroundResume();
     }
     if (state == AppLifecycleState.resumed && system.isAndroid) {
       final hidden = ref.read(appSettingProvider.select((s) => s.hidden));
@@ -188,11 +202,6 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       SystemChrome.setSystemUIOverlayStyle(
         globalState.appState.systemUiOverlayStyle,
       );
-    }
-    if (state == AppLifecycleState.inactive) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        detectionState.tryStartCheck();
-      });
     }
     _updateDashboardRefreshState();
   }

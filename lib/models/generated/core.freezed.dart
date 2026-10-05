@@ -894,7 +894,7 @@ $VpnPropsCopyWith<$Res> get vpnProps {
 /// @nodoc
 mixin _$AndroidVpnOptions {
 
- bool get enable; int get port; AccessControl? get accessControl; bool get allowBypass; bool get systemProxy; List<String> get bypassDomain; String get ipv4Address; String get ipv6Address; List<String> get routeAddress; String get routeMode; String get dnsServerAddress; bool get dozeSuspend;
+ bool get enable; int get port; AccessControl? get accessControl; bool get allowBypass; bool get systemProxy; List<String> get bypassDomain; String get ipv4Address; String get ipv6Address; List<String> get routeAddress; String get routeMode; String get dnsServerAddress; bool get dozeSuspend; int get mtu;
 /// Create a copy of AndroidVpnOptions
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -907,16 +907,16 @@ $AndroidVpnOptionsCopyWith<AndroidVpnOptions> get copyWith => _$AndroidVpnOption
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AndroidVpnOptions&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.port, port) || other.port == port)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&const DeepCollectionEquality().equals(other.bypassDomain, bypassDomain)&&(identical(other.ipv4Address, ipv4Address) || other.ipv4Address == ipv4Address)&&(identical(other.ipv6Address, ipv6Address) || other.ipv6Address == ipv6Address)&&const DeepCollectionEquality().equals(other.routeAddress, routeAddress)&&(identical(other.routeMode, routeMode) || other.routeMode == routeMode)&&(identical(other.dnsServerAddress, dnsServerAddress) || other.dnsServerAddress == dnsServerAddress)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AndroidVpnOptions&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.port, port) || other.port == port)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&const DeepCollectionEquality().equals(other.bypassDomain, bypassDomain)&&(identical(other.ipv4Address, ipv4Address) || other.ipv4Address == ipv4Address)&&(identical(other.ipv6Address, ipv6Address) || other.ipv6Address == ipv6Address)&&const DeepCollectionEquality().equals(other.routeAddress, routeAddress)&&(identical(other.routeMode, routeMode) || other.routeMode == routeMode)&&(identical(other.dnsServerAddress, dnsServerAddress) || other.dnsServerAddress == dnsServerAddress)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend)&&(identical(other.mtu, mtu) || other.mtu == mtu));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,port,accessControl,allowBypass,systemProxy,const DeepCollectionEquality().hash(bypassDomain),ipv4Address,ipv6Address,const DeepCollectionEquality().hash(routeAddress),routeMode,dnsServerAddress,dozeSuspend);
+int get hashCode => Object.hash(runtimeType,enable,port,accessControl,allowBypass,systemProxy,const DeepCollectionEquality().hash(bypassDomain),ipv4Address,ipv6Address,const DeepCollectionEquality().hash(routeAddress),routeMode,dnsServerAddress,dozeSuspend,mtu);
 
 @override
 String toString() {
-  return 'AndroidVpnOptions(enable: $enable, port: $port, accessControl: $accessControl, allowBypass: $allowBypass, systemProxy: $systemProxy, bypassDomain: $bypassDomain, ipv4Address: $ipv4Address, ipv6Address: $ipv6Address, routeAddress: $routeAddress, routeMode: $routeMode, dnsServerAddress: $dnsServerAddress, dozeSuspend: $dozeSuspend)';
+  return 'AndroidVpnOptions(enable: $enable, port: $port, accessControl: $accessControl, allowBypass: $allowBypass, systemProxy: $systemProxy, bypassDomain: $bypassDomain, ipv4Address: $ipv4Address, ipv6Address: $ipv6Address, routeAddress: $routeAddress, routeMode: $routeMode, dnsServerAddress: $dnsServerAddress, dozeSuspend: $dozeSuspend, mtu: $mtu)';
 }
 
 
@@ -927,7 +927,7 @@ abstract mixin class $AndroidVpnOptionsCopyWith<$Res>  {
   factory $AndroidVpnOptionsCopyWith(AndroidVpnOptions value, $Res Function(AndroidVpnOptions) _then) = _$AndroidVpnOptionsCopyWithImpl;
 @useResult
 $Res call({
- bool enable, int port, AccessControl? accessControl, bool allowBypass, bool systemProxy, List<String> bypassDomain, String ipv4Address, String ipv6Address, List<String> routeAddress, String routeMode, String dnsServerAddress, bool dozeSuspend
+ bool enable, int port, AccessControl? accessControl, bool allowBypass, bool systemProxy, List<String> bypassDomain, String ipv4Address, String ipv6Address, List<String> routeAddress, String routeMode, String dnsServerAddress, bool dozeSuspend, int mtu
 });
 
 
@@ -944,7 +944,7 @@ class _$AndroidVpnOptionsCopyWithImpl<$Res>
 
 /// Create a copy of AndroidVpnOptions
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? port = null,Object? accessControl = freezed,Object? allowBypass = null,Object? systemProxy = null,Object? bypassDomain = null,Object? ipv4Address = null,Object? ipv6Address = null,Object? routeAddress = null,Object? routeMode = null,Object? dnsServerAddress = null,Object? dozeSuspend = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? port = null,Object? accessControl = freezed,Object? allowBypass = null,Object? systemProxy = null,Object? bypassDomain = null,Object? ipv4Address = null,Object? ipv6Address = null,Object? routeAddress = null,Object? routeMode = null,Object? dnsServerAddress = null,Object? dozeSuspend = null,Object? mtu = null,}) {
   return _then(_self.copyWith(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,port: null == port ? _self.port : port // ignore: cast_nullable_to_non_nullable
@@ -958,7 +958,8 @@ as String,routeAddress: null == routeAddress ? _self.routeAddress : routeAddress
 as List<String>,routeMode: null == routeMode ? _self.routeMode : routeMode // ignore: cast_nullable_to_non_nullable
 as String,dnsServerAddress: null == dnsServerAddress ? _self.dnsServerAddress : dnsServerAddress // ignore: cast_nullable_to_non_nullable
 as String,dozeSuspend: null == dozeSuspend ? _self.dozeSuspend : dozeSuspend // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,mtu: null == mtu ? _self.mtu : mtu // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 /// Create a copy of AndroidVpnOptions
@@ -1055,10 +1056,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  int port,  AccessControl? accessControl,  bool allowBypass,  bool systemProxy,  List<String> bypassDomain,  String ipv4Address,  String ipv6Address,  List<String> routeAddress,  String routeMode,  String dnsServerAddress,  bool dozeSuspend)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  int port,  AccessControl? accessControl,  bool allowBypass,  bool systemProxy,  List<String> bypassDomain,  String ipv4Address,  String ipv6Address,  List<String> routeAddress,  String routeMode,  String dnsServerAddress,  bool dozeSuspend,  int mtu)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AndroidVpnOptions() when $default != null:
-return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_that.systemProxy,_that.bypassDomain,_that.ipv4Address,_that.ipv6Address,_that.routeAddress,_that.routeMode,_that.dnsServerAddress,_that.dozeSuspend);case _:
+return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_that.systemProxy,_that.bypassDomain,_that.ipv4Address,_that.ipv6Address,_that.routeAddress,_that.routeMode,_that.dnsServerAddress,_that.dozeSuspend,_that.mtu);case _:
   return orElse();
 
 }
@@ -1076,10 +1077,10 @@ return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  int port,  AccessControl? accessControl,  bool allowBypass,  bool systemProxy,  List<String> bypassDomain,  String ipv4Address,  String ipv6Address,  List<String> routeAddress,  String routeMode,  String dnsServerAddress,  bool dozeSuspend)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  int port,  AccessControl? accessControl,  bool allowBypass,  bool systemProxy,  List<String> bypassDomain,  String ipv4Address,  String ipv6Address,  List<String> routeAddress,  String routeMode,  String dnsServerAddress,  bool dozeSuspend,  int mtu)  $default,) {final _that = this;
 switch (_that) {
 case _AndroidVpnOptions():
-return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_that.systemProxy,_that.bypassDomain,_that.ipv4Address,_that.ipv6Address,_that.routeAddress,_that.routeMode,_that.dnsServerAddress,_that.dozeSuspend);case _:
+return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_that.systemProxy,_that.bypassDomain,_that.ipv4Address,_that.ipv6Address,_that.routeAddress,_that.routeMode,_that.dnsServerAddress,_that.dozeSuspend,_that.mtu);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1096,10 +1097,10 @@ return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  int port,  AccessControl? accessControl,  bool allowBypass,  bool systemProxy,  List<String> bypassDomain,  String ipv4Address,  String ipv6Address,  List<String> routeAddress,  String routeMode,  String dnsServerAddress,  bool dozeSuspend)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  int port,  AccessControl? accessControl,  bool allowBypass,  bool systemProxy,  List<String> bypassDomain,  String ipv4Address,  String ipv6Address,  List<String> routeAddress,  String routeMode,  String dnsServerAddress,  bool dozeSuspend,  int mtu)?  $default,) {final _that = this;
 switch (_that) {
 case _AndroidVpnOptions() when $default != null:
-return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_that.systemProxy,_that.bypassDomain,_that.ipv4Address,_that.ipv6Address,_that.routeAddress,_that.routeMode,_that.dnsServerAddress,_that.dozeSuspend);case _:
+return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_that.systemProxy,_that.bypassDomain,_that.ipv4Address,_that.ipv6Address,_that.routeAddress,_that.routeMode,_that.dnsServerAddress,_that.dozeSuspend,_that.mtu);case _:
   return null;
 
 }
@@ -1111,7 +1112,7 @@ return $default(_that.enable,_that.port,_that.accessControl,_that.allowBypass,_t
 @JsonSerializable()
 
 class _AndroidVpnOptions implements AndroidVpnOptions {
-  const _AndroidVpnOptions({required this.enable, required this.port, required this.accessControl, required this.allowBypass, required this.systemProxy, required final  List<String> bypassDomain, required this.ipv4Address, required this.ipv6Address, final  List<String> routeAddress = const [], this.routeMode = 'config', required this.dnsServerAddress, this.dozeSuspend = false}): _bypassDomain = bypassDomain,_routeAddress = routeAddress;
+  const _AndroidVpnOptions({required this.enable, required this.port, required this.accessControl, required this.allowBypass, required this.systemProxy, required final  List<String> bypassDomain, required this.ipv4Address, required this.ipv6Address, final  List<String> routeAddress = const [], this.routeMode = 'config', required this.dnsServerAddress, this.dozeSuspend = false, this.mtu = 9000}): _bypassDomain = bypassDomain,_routeAddress = routeAddress;
   factory _AndroidVpnOptions.fromJson(Map<String, dynamic> json) => _$AndroidVpnOptionsFromJson(json);
 
 @override final  bool enable;
@@ -1138,6 +1139,7 @@ class _AndroidVpnOptions implements AndroidVpnOptions {
 @override@JsonKey() final  String routeMode;
 @override final  String dnsServerAddress;
 @override@JsonKey() final  bool dozeSuspend;
+@override@JsonKey() final  int mtu;
 
 /// Create a copy of AndroidVpnOptions
 /// with the given fields replaced by the non-null parameter values.
@@ -1152,16 +1154,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AndroidVpnOptions&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.port, port) || other.port == port)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&const DeepCollectionEquality().equals(other._bypassDomain, _bypassDomain)&&(identical(other.ipv4Address, ipv4Address) || other.ipv4Address == ipv4Address)&&(identical(other.ipv6Address, ipv6Address) || other.ipv6Address == ipv6Address)&&const DeepCollectionEquality().equals(other._routeAddress, _routeAddress)&&(identical(other.routeMode, routeMode) || other.routeMode == routeMode)&&(identical(other.dnsServerAddress, dnsServerAddress) || other.dnsServerAddress == dnsServerAddress)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AndroidVpnOptions&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.port, port) || other.port == port)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&const DeepCollectionEquality().equals(other._bypassDomain, _bypassDomain)&&(identical(other.ipv4Address, ipv4Address) || other.ipv4Address == ipv4Address)&&(identical(other.ipv6Address, ipv6Address) || other.ipv6Address == ipv6Address)&&const DeepCollectionEquality().equals(other._routeAddress, _routeAddress)&&(identical(other.routeMode, routeMode) || other.routeMode == routeMode)&&(identical(other.dnsServerAddress, dnsServerAddress) || other.dnsServerAddress == dnsServerAddress)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend)&&(identical(other.mtu, mtu) || other.mtu == mtu));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,port,accessControl,allowBypass,systemProxy,const DeepCollectionEquality().hash(_bypassDomain),ipv4Address,ipv6Address,const DeepCollectionEquality().hash(_routeAddress),routeMode,dnsServerAddress,dozeSuspend);
+int get hashCode => Object.hash(runtimeType,enable,port,accessControl,allowBypass,systemProxy,const DeepCollectionEquality().hash(_bypassDomain),ipv4Address,ipv6Address,const DeepCollectionEquality().hash(_routeAddress),routeMode,dnsServerAddress,dozeSuspend,mtu);
 
 @override
 String toString() {
-  return 'AndroidVpnOptions(enable: $enable, port: $port, accessControl: $accessControl, allowBypass: $allowBypass, systemProxy: $systemProxy, bypassDomain: $bypassDomain, ipv4Address: $ipv4Address, ipv6Address: $ipv6Address, routeAddress: $routeAddress, routeMode: $routeMode, dnsServerAddress: $dnsServerAddress, dozeSuspend: $dozeSuspend)';
+  return 'AndroidVpnOptions(enable: $enable, port: $port, accessControl: $accessControl, allowBypass: $allowBypass, systemProxy: $systemProxy, bypassDomain: $bypassDomain, ipv4Address: $ipv4Address, ipv6Address: $ipv6Address, routeAddress: $routeAddress, routeMode: $routeMode, dnsServerAddress: $dnsServerAddress, dozeSuspend: $dozeSuspend, mtu: $mtu)';
 }
 
 
@@ -1172,7 +1174,7 @@ abstract mixin class _$AndroidVpnOptionsCopyWith<$Res> implements $AndroidVpnOpt
   factory _$AndroidVpnOptionsCopyWith(_AndroidVpnOptions value, $Res Function(_AndroidVpnOptions) _then) = __$AndroidVpnOptionsCopyWithImpl;
 @override @useResult
 $Res call({
- bool enable, int port, AccessControl? accessControl, bool allowBypass, bool systemProxy, List<String> bypassDomain, String ipv4Address, String ipv6Address, List<String> routeAddress, String routeMode, String dnsServerAddress, bool dozeSuspend
+ bool enable, int port, AccessControl? accessControl, bool allowBypass, bool systemProxy, List<String> bypassDomain, String ipv4Address, String ipv6Address, List<String> routeAddress, String routeMode, String dnsServerAddress, bool dozeSuspend, int mtu
 });
 
 
@@ -1189,7 +1191,7 @@ class __$AndroidVpnOptionsCopyWithImpl<$Res>
 
 /// Create a copy of AndroidVpnOptions
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? enable = null,Object? port = null,Object? accessControl = freezed,Object? allowBypass = null,Object? systemProxy = null,Object? bypassDomain = null,Object? ipv4Address = null,Object? ipv6Address = null,Object? routeAddress = null,Object? routeMode = null,Object? dnsServerAddress = null,Object? dozeSuspend = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? enable = null,Object? port = null,Object? accessControl = freezed,Object? allowBypass = null,Object? systemProxy = null,Object? bypassDomain = null,Object? ipv4Address = null,Object? ipv6Address = null,Object? routeAddress = null,Object? routeMode = null,Object? dnsServerAddress = null,Object? dozeSuspend = null,Object? mtu = null,}) {
   return _then(_AndroidVpnOptions(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,port: null == port ? _self.port : port // ignore: cast_nullable_to_non_nullable
@@ -1203,7 +1205,8 @@ as String,routeAddress: null == routeAddress ? _self._routeAddress : routeAddres
 as List<String>,routeMode: null == routeMode ? _self.routeMode : routeMode // ignore: cast_nullable_to_non_nullable
 as String,dnsServerAddress: null == dnsServerAddress ? _self.dnsServerAddress : dnsServerAddress // ignore: cast_nullable_to_non_nullable
 as String,dozeSuspend: null == dozeSuspend ? _self.dozeSuspend : dozeSuspend // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,mtu: null == mtu ? _self.mtu : mtu // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -4213,6 +4216,302 @@ as ActionMethod,data: freezed == data ? _self.data : data // ignore: cast_nullab
 as dynamic,id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String?,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as ResultType,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$CoreStatus {
+
+ int get physical;@JsonKey(name: 'in-use') int get inUse; int get reclaimable; int get goroutines;@JsonKey(name: 'heap-objects') int get heapObjects;@JsonKey(name: 'last-gc') int get lastGC; int get rules; int get proxies;@JsonKey(name: 'proxy-groups') int get proxyGroups;@JsonKey(name: 'rule-providers') int get ruleProviders;@JsonKey(name: 'proxy-providers') int get proxyProviders;@JsonKey(name: 'geodata-use') String get geodataUse;
+/// Create a copy of CoreStatus
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CoreStatusCopyWith<CoreStatus> get copyWith => _$CoreStatusCopyWithImpl<CoreStatus>(this as CoreStatus, _$identity);
+
+  /// Serializes this CoreStatus to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CoreStatus&&(identical(other.physical, physical) || other.physical == physical)&&(identical(other.inUse, inUse) || other.inUse == inUse)&&(identical(other.reclaimable, reclaimable) || other.reclaimable == reclaimable)&&(identical(other.goroutines, goroutines) || other.goroutines == goroutines)&&(identical(other.heapObjects, heapObjects) || other.heapObjects == heapObjects)&&(identical(other.lastGC, lastGC) || other.lastGC == lastGC)&&(identical(other.rules, rules) || other.rules == rules)&&(identical(other.proxies, proxies) || other.proxies == proxies)&&(identical(other.proxyGroups, proxyGroups) || other.proxyGroups == proxyGroups)&&(identical(other.ruleProviders, ruleProviders) || other.ruleProviders == ruleProviders)&&(identical(other.proxyProviders, proxyProviders) || other.proxyProviders == proxyProviders)&&(identical(other.geodataUse, geodataUse) || other.geodataUse == geodataUse));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,physical,inUse,reclaimable,goroutines,heapObjects,lastGC,rules,proxies,proxyGroups,ruleProviders,proxyProviders,geodataUse);
+
+@override
+String toString() {
+  return 'CoreStatus(physical: $physical, inUse: $inUse, reclaimable: $reclaimable, goroutines: $goroutines, heapObjects: $heapObjects, lastGC: $lastGC, rules: $rules, proxies: $proxies, proxyGroups: $proxyGroups, ruleProviders: $ruleProviders, proxyProviders: $proxyProviders, geodataUse: $geodataUse)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CoreStatusCopyWith<$Res>  {
+  factory $CoreStatusCopyWith(CoreStatus value, $Res Function(CoreStatus) _then) = _$CoreStatusCopyWithImpl;
+@useResult
+$Res call({
+ int physical,@JsonKey(name: 'in-use') int inUse, int reclaimable, int goroutines,@JsonKey(name: 'heap-objects') int heapObjects,@JsonKey(name: 'last-gc') int lastGC, int rules, int proxies,@JsonKey(name: 'proxy-groups') int proxyGroups,@JsonKey(name: 'rule-providers') int ruleProviders,@JsonKey(name: 'proxy-providers') int proxyProviders,@JsonKey(name: 'geodata-use') String geodataUse
+});
+
+
+
+
+}
+/// @nodoc
+class _$CoreStatusCopyWithImpl<$Res>
+    implements $CoreStatusCopyWith<$Res> {
+  _$CoreStatusCopyWithImpl(this._self, this._then);
+
+  final CoreStatus _self;
+  final $Res Function(CoreStatus) _then;
+
+/// Create a copy of CoreStatus
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? physical = null,Object? inUse = null,Object? reclaimable = null,Object? goroutines = null,Object? heapObjects = null,Object? lastGC = null,Object? rules = null,Object? proxies = null,Object? proxyGroups = null,Object? ruleProviders = null,Object? proxyProviders = null,Object? geodataUse = null,}) {
+  return _then(_self.copyWith(
+physical: null == physical ? _self.physical : physical // ignore: cast_nullable_to_non_nullable
+as int,inUse: null == inUse ? _self.inUse : inUse // ignore: cast_nullable_to_non_nullable
+as int,reclaimable: null == reclaimable ? _self.reclaimable : reclaimable // ignore: cast_nullable_to_non_nullable
+as int,goroutines: null == goroutines ? _self.goroutines : goroutines // ignore: cast_nullable_to_non_nullable
+as int,heapObjects: null == heapObjects ? _self.heapObjects : heapObjects // ignore: cast_nullable_to_non_nullable
+as int,lastGC: null == lastGC ? _self.lastGC : lastGC // ignore: cast_nullable_to_non_nullable
+as int,rules: null == rules ? _self.rules : rules // ignore: cast_nullable_to_non_nullable
+as int,proxies: null == proxies ? _self.proxies : proxies // ignore: cast_nullable_to_non_nullable
+as int,proxyGroups: null == proxyGroups ? _self.proxyGroups : proxyGroups // ignore: cast_nullable_to_non_nullable
+as int,ruleProviders: null == ruleProviders ? _self.ruleProviders : ruleProviders // ignore: cast_nullable_to_non_nullable
+as int,proxyProviders: null == proxyProviders ? _self.proxyProviders : proxyProviders // ignore: cast_nullable_to_non_nullable
+as int,geodataUse: null == geodataUse ? _self.geodataUse : geodataUse // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [CoreStatus].
+extension CoreStatusPatterns on CoreStatus {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _CoreStatus value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _CoreStatus() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _CoreStatus value)  $default,){
+final _that = this;
+switch (_that) {
+case _CoreStatus():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _CoreStatus value)?  $default,){
+final _that = this;
+switch (_that) {
+case _CoreStatus() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int physical, @JsonKey(name: 'in-use')  int inUse,  int reclaimable,  int goroutines, @JsonKey(name: 'heap-objects')  int heapObjects, @JsonKey(name: 'last-gc')  int lastGC,  int rules,  int proxies, @JsonKey(name: 'proxy-groups')  int proxyGroups, @JsonKey(name: 'rule-providers')  int ruleProviders, @JsonKey(name: 'proxy-providers')  int proxyProviders, @JsonKey(name: 'geodata-use')  String geodataUse)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _CoreStatus() when $default != null:
+return $default(_that.physical,_that.inUse,_that.reclaimable,_that.goroutines,_that.heapObjects,_that.lastGC,_that.rules,_that.proxies,_that.proxyGroups,_that.ruleProviders,_that.proxyProviders,_that.geodataUse);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int physical, @JsonKey(name: 'in-use')  int inUse,  int reclaimable,  int goroutines, @JsonKey(name: 'heap-objects')  int heapObjects, @JsonKey(name: 'last-gc')  int lastGC,  int rules,  int proxies, @JsonKey(name: 'proxy-groups')  int proxyGroups, @JsonKey(name: 'rule-providers')  int ruleProviders, @JsonKey(name: 'proxy-providers')  int proxyProviders, @JsonKey(name: 'geodata-use')  String geodataUse)  $default,) {final _that = this;
+switch (_that) {
+case _CoreStatus():
+return $default(_that.physical,_that.inUse,_that.reclaimable,_that.goroutines,_that.heapObjects,_that.lastGC,_that.rules,_that.proxies,_that.proxyGroups,_that.ruleProviders,_that.proxyProviders,_that.geodataUse);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int physical, @JsonKey(name: 'in-use')  int inUse,  int reclaimable,  int goroutines, @JsonKey(name: 'heap-objects')  int heapObjects, @JsonKey(name: 'last-gc')  int lastGC,  int rules,  int proxies, @JsonKey(name: 'proxy-groups')  int proxyGroups, @JsonKey(name: 'rule-providers')  int ruleProviders, @JsonKey(name: 'proxy-providers')  int proxyProviders, @JsonKey(name: 'geodata-use')  String geodataUse)?  $default,) {final _that = this;
+switch (_that) {
+case _CoreStatus() when $default != null:
+return $default(_that.physical,_that.inUse,_that.reclaimable,_that.goroutines,_that.heapObjects,_that.lastGC,_that.rules,_that.proxies,_that.proxyGroups,_that.ruleProviders,_that.proxyProviders,_that.geodataUse);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _CoreStatus implements CoreStatus {
+  const _CoreStatus({this.physical = 0, @JsonKey(name: 'in-use') this.inUse = 0, this.reclaimable = 0, this.goroutines = 0, @JsonKey(name: 'heap-objects') this.heapObjects = 0, @JsonKey(name: 'last-gc') this.lastGC = 0, this.rules = 0, this.proxies = 0, @JsonKey(name: 'proxy-groups') this.proxyGroups = 0, @JsonKey(name: 'rule-providers') this.ruleProviders = 0, @JsonKey(name: 'proxy-providers') this.proxyProviders = 0, @JsonKey(name: 'geodata-use') this.geodataUse = 'None'});
+  factory _CoreStatus.fromJson(Map<String, dynamic> json) => _$CoreStatusFromJson(json);
+
+@override@JsonKey() final  int physical;
+@override@JsonKey(name: 'in-use') final  int inUse;
+@override@JsonKey() final  int reclaimable;
+@override@JsonKey() final  int goroutines;
+@override@JsonKey(name: 'heap-objects') final  int heapObjects;
+@override@JsonKey(name: 'last-gc') final  int lastGC;
+@override@JsonKey() final  int rules;
+@override@JsonKey() final  int proxies;
+@override@JsonKey(name: 'proxy-groups') final  int proxyGroups;
+@override@JsonKey(name: 'rule-providers') final  int ruleProviders;
+@override@JsonKey(name: 'proxy-providers') final  int proxyProviders;
+@override@JsonKey(name: 'geodata-use') final  String geodataUse;
+
+/// Create a copy of CoreStatus
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CoreStatusCopyWith<_CoreStatus> get copyWith => __$CoreStatusCopyWithImpl<_CoreStatus>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CoreStatusToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CoreStatus&&(identical(other.physical, physical) || other.physical == physical)&&(identical(other.inUse, inUse) || other.inUse == inUse)&&(identical(other.reclaimable, reclaimable) || other.reclaimable == reclaimable)&&(identical(other.goroutines, goroutines) || other.goroutines == goroutines)&&(identical(other.heapObjects, heapObjects) || other.heapObjects == heapObjects)&&(identical(other.lastGC, lastGC) || other.lastGC == lastGC)&&(identical(other.rules, rules) || other.rules == rules)&&(identical(other.proxies, proxies) || other.proxies == proxies)&&(identical(other.proxyGroups, proxyGroups) || other.proxyGroups == proxyGroups)&&(identical(other.ruleProviders, ruleProviders) || other.ruleProviders == ruleProviders)&&(identical(other.proxyProviders, proxyProviders) || other.proxyProviders == proxyProviders)&&(identical(other.geodataUse, geodataUse) || other.geodataUse == geodataUse));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,physical,inUse,reclaimable,goroutines,heapObjects,lastGC,rules,proxies,proxyGroups,ruleProviders,proxyProviders,geodataUse);
+
+@override
+String toString() {
+  return 'CoreStatus(physical: $physical, inUse: $inUse, reclaimable: $reclaimable, goroutines: $goroutines, heapObjects: $heapObjects, lastGC: $lastGC, rules: $rules, proxies: $proxies, proxyGroups: $proxyGroups, ruleProviders: $ruleProviders, proxyProviders: $proxyProviders, geodataUse: $geodataUse)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CoreStatusCopyWith<$Res> implements $CoreStatusCopyWith<$Res> {
+  factory _$CoreStatusCopyWith(_CoreStatus value, $Res Function(_CoreStatus) _then) = __$CoreStatusCopyWithImpl;
+@override @useResult
+$Res call({
+ int physical,@JsonKey(name: 'in-use') int inUse, int reclaimable, int goroutines,@JsonKey(name: 'heap-objects') int heapObjects,@JsonKey(name: 'last-gc') int lastGC, int rules, int proxies,@JsonKey(name: 'proxy-groups') int proxyGroups,@JsonKey(name: 'rule-providers') int ruleProviders,@JsonKey(name: 'proxy-providers') int proxyProviders,@JsonKey(name: 'geodata-use') String geodataUse
+});
+
+
+
+
+}
+/// @nodoc
+class __$CoreStatusCopyWithImpl<$Res>
+    implements _$CoreStatusCopyWith<$Res> {
+  __$CoreStatusCopyWithImpl(this._self, this._then);
+
+  final _CoreStatus _self;
+  final $Res Function(_CoreStatus) _then;
+
+/// Create a copy of CoreStatus
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? physical = null,Object? inUse = null,Object? reclaimable = null,Object? goroutines = null,Object? heapObjects = null,Object? lastGC = null,Object? rules = null,Object? proxies = null,Object? proxyGroups = null,Object? ruleProviders = null,Object? proxyProviders = null,Object? geodataUse = null,}) {
+  return _then(_CoreStatus(
+physical: null == physical ? _self.physical : physical // ignore: cast_nullable_to_non_nullable
+as int,inUse: null == inUse ? _self.inUse : inUse // ignore: cast_nullable_to_non_nullable
+as int,reclaimable: null == reclaimable ? _self.reclaimable : reclaimable // ignore: cast_nullable_to_non_nullable
+as int,goroutines: null == goroutines ? _self.goroutines : goroutines // ignore: cast_nullable_to_non_nullable
+as int,heapObjects: null == heapObjects ? _self.heapObjects : heapObjects // ignore: cast_nullable_to_non_nullable
+as int,lastGC: null == lastGC ? _self.lastGC : lastGC // ignore: cast_nullable_to_non_nullable
+as int,rules: null == rules ? _self.rules : rules // ignore: cast_nullable_to_non_nullable
+as int,proxies: null == proxies ? _self.proxies : proxies // ignore: cast_nullable_to_non_nullable
+as int,proxyGroups: null == proxyGroups ? _self.proxyGroups : proxyGroups // ignore: cast_nullable_to_non_nullable
+as int,ruleProviders: null == ruleProviders ? _self.ruleProviders : ruleProviders // ignore: cast_nullable_to_non_nullable
+as int,proxyProviders: null == proxyProviders ? _self.proxyProviders : proxyProviders // ignore: cast_nullable_to_non_nullable
+as int,geodataUse: null == geodataUse ? _self.geodataUse : geodataUse // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

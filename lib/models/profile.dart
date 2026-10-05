@@ -6,9 +6,12 @@ import 'dart:typed_data';
 import 'package:bett_box/clash/core.dart';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
+import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'clash_config.dart';
+import 'spoof_report.dart';
+import 'sub_spoof.dart';
 
 part 'generated/profile.freezed.dart';
 part 'generated/profile.g.dart';
@@ -27,13 +30,19 @@ abstract class SubscriptionInfo with _$SubscriptionInfo {
   factory SubscriptionInfo.fromJson(Map<String, Object?> json) =>
       _$SubscriptionInfoFromJson(json);
 
+  static int? _parseValue(String? value) {
+    if (value == null) return null;
+    return int.tryParse(value) ?? double.tryParse(value)?.toInt();
+  }
+
   factory SubscriptionInfo.formHString(String? info) {
     if (info == null) return const SubscriptionInfo();
     final list = info.split(';');
     Map<String, int?> map = {};
     for (final i in list) {
       final keyValue = i.trim().split('=');
-      map[keyValue[0]] = int.tryParse(keyValue[1]);
+      if (keyValue.length < 2) continue;
+      map[keyValue[0]] = _parseValue(keyValue[1]);
     }
     return SubscriptionInfo(
       upload: map['upload'] ?? 0,
@@ -184,7 +193,78 @@ extension ProfileExtension on Profile {
   }
 
   Future<Profile> update({bool validate = true}) async {
-    final response = await request.getFileResponseForUrl(url);
+    // Подмена клиента подписки (User-Agent/X-Hwid + device-заголовки) —
+    // индивидуальная настройка профиля, иначе глобальная клиентская
+    // (Настройки → Общие → «Подмена клиента подписок»).
+    final subSpoof = await resolveEffectiveSubSpoof(id);
+    final spoofHeaders = await subSpoof.resolveHeaders();
+    await SpoofReport.write(
+      'ПРОФИЛЬ $id | GET $url | подмена: '
+      '${subSpoof.isEnabled ? subSpoof.client : 'выкл'}',
+    );
+    if (spoofHeaders != null && spoofHeaders.isNotEmpty) {
+      // Журнал подмены: в debug-логе приложения видно, какой клиент
+      // реально представляется при скачивании этой подписки.
+      commonPrint.log(
+        'SubSpoof[$id]: скачиваю подписку как «${subSpoof.client}», '
+        'User-Agent: ${spoofHeaders['User-Agent']}, '
+        'X-Hwid: ${spoofHeaders.containsKey('X-Hwid') ? 'да' : 'нет'}',
+      );
+      final hwid = spoofHeaders['X-Hwid'];
+      await SpoofReport.write(
+        '  UA: ${spoofHeaders['User-Agent']} | X-Hwid: '
+        '${hwid == null ? 'НЕТ' : hwid} | прочие: '
+        '${spoofHeaders.entries.where((e) => e.key != 'User-Agent' && e.key != 'X-Hwid').map((e) => '${e.key}: ${e.value}').join('; ')}',
+      );
+    } else {
+      await SpoofReport.write('  заголовки подмены не применены');
+    }
+    Response response;
+    try {
+      response = await request.getFileResponseForUrl(
+        url,
+        extraHeaders: spoofHeaders,
+      );
+    } catch (e) {
+      await SpoofReport.write('  ОШИБКА запроса: $e');
+      rethrow;
+    }
+    await _reportSubResponse(
+      id,
+      response,
+      onlyStatusAndHeaders: false,
+    );
+    // HWID-панели (3x-ui и форки) отвечают отказом HTTP 404 с маркерами
+    // X-Hwid-Not-Supported / X-Hwid-Max-Devices-Reached; без проверки
+    // пользователь увидит криптическую ошибку валидатора вместо причины.
+    final hwidUnsupported =
+        response.headers['x-hwid-not-supported']?.firstOrNull;
+    if (hwidUnsupported != null) {
+      throw Exception(
+        'панель не поддерживает HWID-подмену для этой подписки '
+        '(X-Hwid-Not-Supported) — отключите подмену X-Hwid или смените '
+        'пресет клиента',
+      );
+    }
+    final hwidMaxDevices =
+        response.headers['x-hwid-max-devices-reached']?.firstOrNull;
+    if (hwidMaxDevices != null) {
+      throw Exception(
+        'у панели исчерпан лимит устройств для этой подписки '
+        '(X-Hwid-Max-Devices-Reached). Сбросьте устройства в боте/панели '
+        'или впишите в подмене тот же X-Hwid, что у уже работающего '
+        'клиента (например neko+)',
+      );
+    }
+    final statusCode = response.statusCode ?? 0;
+    if (statusCode >= 400) {
+      throw Exception(
+        'панель ответила отказом HTTP $statusCode. При включённой '
+        'подмене это обычно значит: пресет клиента не принят '
+        '(попробуйте другой), X-Hwid отклонён (впишите значение '
+        'работающего клиента) либо ссылка недействительна',
+      );
+    }
     final disposition = response.headers['content-disposition']?.firstOrNull;
     final userinfo = response.headers['subscription-userinfo']?.firstOrNull;
     return await copyWith(
@@ -204,6 +284,8 @@ extension ProfileExtension on Profile {
         }
       } catch (_) {}
     }
+    content = await _convertSubBodyIfNeeded(this, content);
+    content = utils.patchYamlConfig(content);
     if (validate) {
       final message =
           await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
@@ -238,6 +320,8 @@ extension ProfileExtension on Profile {
         }
       } catch (_) {}
     }
+    content = await _convertSubBodyIfNeeded(this, content);
+    content = utils.patchYamlConfig(content);
     final message =
         await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
     if (message.isNotEmpty) {
@@ -258,4 +342,251 @@ extension ProfileExtension on Profile {
     await file.writeAsString(content);
     return copyWith(lastUpdateDate: DateTime.now());
   }
+}
+
+// ---------------- Тело подписки в формате реального клиента ----------------
+//
+// Панели, проверяющие клиента (UA/X-Hwid), отвечают «подменным»
+// запросам телом в формате реального приложения: построчные
+// share-ссылки (vless://, ss://, trojan://, …), часто с #-шапкой
+// (profile-title, subscription-userinfo), либо base64-блобом. Раньше
+// такое тело сохранялось «как есть», и валидация ядра падала («это не
+// YAML-конфиг») — профиль не создавался и «ноды не загружались», хотя
+// в v2ray-клиентах (NekoBox+, Happ, …) та же подписка работала.
+// Теперь тело распознаётся и оборачивается в минимальный mihomo-конфиг
+// с proxy-provider на исходный URL: ядро само скачает и разберёт
+// список ссылок (тот же конвертер, что обрабатывает провайдер
+// генератора), а подмена профиля (UA/X-Hwid/device-заголовки) из
+// SubSpoofStore переносится в заголовки провайдера.
+
+final RegExp _subSchemeLineRe = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*://');
+final RegExp _subHtmlRe = RegExp(
+  r'^\s*(<!DOCTYPE|<html)',
+  caseSensitive: false,
+);
+
+/// Похоже ли тело на готовый mihomo-конфиг (YAML или JSON).
+bool _isMihomoConfigBody(String body) {
+  final trimmed = body.trimLeft();
+  if (trimmed.startsWith('{')) {
+    // JSON-конфиг: ядро принимает JSON, не трогаем.
+    return true;
+  }
+  return RegExp(
+    r'^\s*(proxies|proxy-providers|proxy-groups|rule-providers)\s*:',
+    multiLine: true,
+  ).hasMatch(body);
+}
+
+/// Первая содержательная строка-ссылка (схема://…), либо null.
+/// #-строки (шапка v2raytun/Happ-подписок) и пустые пропускаются.
+String? _firstShareLinkLine(String body) {
+  for (final raw in body.split('\n')) {
+    final line = raw.trim();
+    if (line.isEmpty || line.startsWith('#')) continue;
+    if (_subSchemeLineRe.hasMatch(line)) return line;
+    return null;
+  }
+  return null;
+}
+
+/// Записывает в отчёт подмены ответ панели: статус, тип тела, размер,
+/// маркеры отказа x-hwid-* и начало тела. По этому блоку в
+/// экспортированном логе видно, приняла панель подмену и ЧТО отдала
+/// (подписка/HTML-страница/отказ), — без этого разбор «не работает»
+/// вслепую: основной журнал держит только последние 256 записей,
+/// и потоки лога ядра вытесняют строки [APP] из выгрузки.
+Future<void> _reportSubResponse(
+  String id,
+  Response response, {
+  required bool onlyStatusAndHeaders,
+}) async {
+  try {
+    final status = response.statusCode ?? 0;
+    final contentType = response.headers['content-type']?.join(', ') ?? '-';
+    final markers = <String>[];
+    for (final name in [
+      'x-hwid-not-supported',
+      'x-hwid-max-devices-reached',
+      'x-hwid-limit',
+      'subscription-userinfo',
+      'profile-title',
+      'content-disposition',
+    ]) {
+      final value = response.headers[name]?.join(', ');
+      if (value != null && value.isNotEmpty) {
+        markers.add('$name: $value');
+      }
+    }
+    await SpoofReport.write(
+      '  ОТВЕТ: HTTP $status | content-type: $contentType'
+      '${markers.isEmpty ? '' : ' | ${markers.join(' | ')}'}',
+    );
+    if (onlyStatusAndHeaders) {
+      return;
+    }
+    final data = response.data;
+    Uint8List bytes;
+    if (data is Uint8List) {
+      bytes = data;
+    } else if (data is List<int>) {
+      bytes = Uint8List.fromList(data);
+    } else if (data is String) {
+      bytes = Uint8List.fromList(utf8.encode(data));
+    } else {
+      await SpoofReport.write('  ТЕЛО: непонятный тип ${data.runtimeType}');
+      return;
+    }
+    final preview = utf8
+        .decode(
+          bytes.length > 120 ? bytes.sublist(0, 120) : bytes,
+          allowMalformed: true,
+        )
+        .replaceAll('\n', ' ')
+        .replaceAll('\r', '');
+    await SpoofReport.write(
+      '  ТЕЛО: ${bytes.length} байт | начало: "$preview"',
+    );
+  } catch (_) {}
+}
+
+/// base64-блоб (v2ray-подписка), внутри которого share-ссылки.
+bool _base64BodyHasShareLinks(String body) {
+  final compact = body.replaceAll(RegExp(r'\s'), '');
+  if (compact.length < 16) return false;
+  if (!RegExp(r'^[A-Za-z0-9+/=\-_]+$').hasMatch(compact)) return false;
+  try {
+    final normalized = compact.replaceAll('-', '+').replaceAll('_', '/');
+    final padding = (4 - normalized.length % 4) % 4;
+    final decoded = utf8.decode(
+      base64.decode(normalized + '=' * padding),
+      allowMalformed: true,
+    );
+    return _firstShareLinkLine(decoded) != null;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// YAML-строка в двойных кавычках с экранированием спецсимволов.
+/// Значения динамические (URL, UA, hwid, модель) — кавычим всегда.
+String _subYamlQuote(String value) {
+  final escaped = value
+      .replaceAll('\\', '\\\\')
+      .replaceAll('"', '\\"')
+      .replaceAll('\n', '\\n')
+      .replaceAll('\t', '\\t')
+      .replaceAll('\r', '\\r');
+  return '"$escaped"';
+}
+
+/// Распознаёт тело-«не конфиг» (share-ссылки / base64) и оборачивает
+/// в конфиг с proxy-provider. YAML/JSON-конфиги и всё нераспознанное
+/// проходят без изменений (их валидирует ядро как раньше). Осмысленно
+/// распознанный отказ панели (HTML вместо подписки) даёт понятную
+/// ошибку вместо криптики валидатора.
+Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
+  final url = profile.url.trim();
+  // Обёртка осмысленна только для URL-профилей: телу нужна ссылка
+  // для proxy-provider. Файловые профили и вставки не трогаем.
+  if (url.isEmpty ||
+      (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    return content;
+  }
+  final trimmed = content.trim();
+  if (trimmed.isEmpty) {
+    return content;
+  }
+  if (_subHtmlRe.hasMatch(trimmed)) {
+    throw Exception(
+      'сервер вернул HTML-страницу вместо подписки — панель отклонила '
+      'запрос (проверьте срок действия ссылки и подмену клиента)',
+    );
+  }
+  // Отказ панели текстом (без HTTP-ошибки на уровне запроса): «Not found»
+  // у HWID-панелей 3x-ui означает «устройство не найдено/лимит слотов»,
+  // русское сообщение — «ключ перевыпущен/подписка кончилась».
+  final lowered = trimmed.toLowerCase();
+  if (trimmed.length <= 256 &&
+      (lowered == 'not found' ||
+          lowered.startsWith('ссылка на подписку') ||
+          lowered.startsWith('the subscription link'))) {
+    throw Exception(
+      'панель отказала в выдаче подписки: ответ «$trimmed». Если панель '
+      'привязывает устройства по X-Hwid — впишите в подмене тот же '
+      'X-Hwid, что у работающего клиента (например neko+), или сбросьте '
+      'устройства в боте/панели (см. README пакета)',
+    );
+  }
+  if (_isMihomoConfigBody(trimmed)) {
+    return content;
+  }
+  // JSON/YAML-СПИСОК (ноды объектами либо массив ссылок): панели
+  // отдают такой формат «чужим» клиентам — ядро его не разбирает
+  // («cannot unmarshal !!seq into provider.ProxySchema»), профиль не
+  // проходил валидацию и не создавался. Оборачиваем в провайдер так
+  // же, как share-ссылки: тело качает приложение (SubPreload) и
+  // нормализует в proxies: до старта ядра. v2ray-json — массив
+  // полных Xray-конфигов (панели happ/v2raytun/INCY), его
+  // нормализатор тоже раскрывает в proxies:.
+  try {
+    final normalized = normalizeSubProviderBody(trimmed);
+    if (normalized != null &&
+        (normalized.format == 'share-links' ||
+            normalized.format == 'yaml-node-list' ||
+            normalized.format == 'client-config' ||
+            normalized.format == 'v2ray-json')) {
+      return _buildSubProviderWrapper(profile);
+    }
+  } catch (_) {}
+  final isLinkList = _firstShareLinkLine(trimmed) != null;
+  if (!isLinkList && !_base64BodyHasShareLinks(trimmed)) {
+    return content;
+  }
+  return _buildSubProviderWrapper(profile);
+}
+
+/// Минимальный рабочий конфиг: provider с исходным URL + заголовки
+/// подмены профиля + одна select-группа + MATCH-правило. Секции
+/// tun/dns ядро и приложение дополняют при запуске, как и для любого
+/// другого профиля.
+Future<String> _buildSubProviderWrapper(Profile profile) async {
+  Map<String, String>? headers;
+  try {
+    final spoof = await resolveEffectiveSubSpoof(profile.id);
+    headers = await spoof.resolveHeaders();
+  } catch (_) {}
+  final b = StringBuffer()
+    ..writeln('# bettboxr-sub-wrap: тело подписки (share-ссылки/base64/')
+    ..writeln('# v2ray-JSON) обёрнуто в proxy-provider — ядро скачивает и')
+    ..writeln('# разбирает его само; заголовки подмены профиля сохранены.')
+    ..writeln('mode: rule')
+    ..writeln('log-level: silent')
+    ..writeln('ipv6: true')
+    ..writeln('proxy-providers:')
+    ..writeln('  subscription:')
+    ..writeln('    type: http')
+    ..writeln('    url: ${_subYamlQuote(profile.url.trim())}')
+    ..writeln('    interval: 86400')
+    ..writeln('    path: ./provider/bettboxr_sub_${profile.id}.yaml')
+    ..writeln('    override:')
+    ..writeln('      skip-cert-verify: true')
+    ..writeln('    health-check:')
+    ..writeln('      enable: true')
+    ..writeln('      url: https://www.gstatic.com/generate_204')
+    ..writeln('      interval: 600');
+  if (headers != null && headers.isNotEmpty) {
+    b.writeln('    header:');
+    headers.forEach((name, value) {
+      b.writeln('      $name: [${_subYamlQuote(value)}]');
+    });
+  }
+  b
+    ..writeln('proxy-groups:')
+    ..writeln('  - name: PROXY')
+    ..writeln('    type: select')
+    ..writeln('    use: [subscription]')
+    ..writeln('rules:')
+    ..writeln('  - MATCH,PROXY');
+  return b.toString();
 }
