@@ -8,11 +8,9 @@ import 'package:bett_box/plugins/app.dart';
 import 'package:bett_box/plugins/clipboard_ext.dart';
 import 'package:bett_box/plugins/tile.dart';
 import 'package:bett_box/plugins/vpn.dart';
-import 'package:bett_box/services/dns_stats.dart';
 import 'package:bett_box/state.dart';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:synchronized/synchronized.dart';
@@ -39,16 +37,14 @@ Future<void> main(List<String> args) async {
     exit(0);
   }
 
-  if (system.isMacOS || appPath.isPortable) {
+  if (system.isMacOS) {
     final acquire = await singleInstanceLock.acquire();
     if (!acquire) {
       commonPrint.log(
         'SingleInstanceLock: another instance detected or lock failed, exiting',
       );
-      if (!appPath.isPortable) {
-        await _sendControlCommand('show');
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
+      await _sendControlCommand('show');
+      await Future.delayed(const Duration(milliseconds: 100));
       exit(0);
     }
   }
@@ -96,7 +92,6 @@ Future<void> _runApp() async {
     } catch (e) {
       commonPrint.log('Failed to set high refresh rate: $e');
     }
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
   await android?.init();
 
@@ -241,10 +236,7 @@ Future<void> _service(List<String> flags) async {
           await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
         }
 
-        // DNS-статистика требует поток логов даже при выключенном «Вести логи»;
-        // флаг перечитываем — UI-изолят мог переключить его после старта сервиса.
-        await dnsStats.reloadEnabled();
-        if (globalState.config.appSetting.openLogs || dnsStats.enabled) {
+        if (globalState.config.appSetting.openLogs) {
           await clashLibHandler.invokeAction(
             '{"id": "quickStartLog", "method": "startLog"}',
           );

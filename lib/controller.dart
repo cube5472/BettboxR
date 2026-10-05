@@ -25,8 +25,8 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:yaml/yaml.dart';
 
-import 'common/archive.dart' show restoreBackupFiles;
 import 'common/common.dart';
+import 'common/flclash_database_extractor.dart';
 import 'models/models.dart';
 import 'views/profiles/override_profile.dart';
 
@@ -48,21 +48,10 @@ class AppController {
   int _coreGeneration = 0;
   int _setupGeneration = 0;
   final Set<String> _updatingProfileIds = {};
-  Timer? _idleGcTimer;
-  String? _lastFlagNodeName;
-  String? _lastFlagCountryCode;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
 
   DateTime _lastModeChangeTime = DateTime.fromMillisecondsSinceEpoch(0);
-
-  void scheduleIdleGc({Duration delay = const Duration(seconds: 2)}) {
-    _idleGcTimer?.cancel();
-    _idleGcTimer = Timer(delay, () {
-      _idleGcTimer = null;
-      unawaited(clashCore.requestGc(forceFreeOSMemory: true));
-    });
-  }
 
   void setupClashConfigDebounce() {
     debouncer.call(FunctionTag.setupClashConfig, () async {
@@ -143,8 +132,9 @@ class AppController {
     _invalidateCoreReads();
 
     final wasRunning = _ref.read(runTimeProvider.notifier).isStart;
+    final keepVpnService = system.isAndroid;
     if (wasRunning) {
-      await globalState.handleStop();
+      await globalState.handleStop(!keepVpnService);
       _ref.read(runTimeProvider.notifier).value = null;
     }
     if (system.isAndroid) {
@@ -152,9 +142,6 @@ class AppController {
       await clashCore.flushFakeIP();
       await clashCore.flushDnsCache();
       await clashCore.requestGc(forceFreeOSMemory: true);
-      if (wasRunning) {
-        await Future.delayed(const Duration(milliseconds: 500));
-      }
     }
     if (system.isDesktop) {
       lastProfileModified = null;
@@ -166,11 +153,13 @@ class AppController {
     if (refreshData && configured) {
       await updateGroups();
       await updateProviders();
-      scheduleIdleGc();
     }
 
     if (wasRunning) {
-      await globalState.handleStart([updateRunTime, updateTraffic]);
+      await globalState.handleStart([
+        updateRunTime,
+        updateTraffic,
+      ], !keepVpnService);
       _scheduleCheckIpRefresh();
       _backgroundLoad();
     }
@@ -217,6 +206,7 @@ class AppController {
             return;
           }
           await globalState.handleStart([updateRunTime, updateTraffic]);
+          await updateProviders();
           if (!res.isError) {
             Future.microtask(() async {
               try {
@@ -232,6 +222,7 @@ class AppController {
         } catch (e) {
           commonPrint.log('FastStart macOS auth error: $e');
           await globalState.handleStart([updateRunTime, updateTraffic]);
+          await updateProviders();
           _backgroundLoad();
         }
         _scheduleCheckIpRefresh();
@@ -239,6 +230,7 @@ class AppController {
       }
 
       await globalState.handleStart([updateRunTime, updateTraffic]);
+      await updateProviders();
 
       Future.microtask(() async {
         try {
@@ -273,6 +265,7 @@ class AppController {
 
     _scheduleCheckIpRefresh();
 
+    await updateProviders();
     _backgroundLoad();
   }
 
@@ -288,10 +281,6 @@ class AppController {
 
     Future.microtask(() async {
       try {
-        await updateProviders();
-        if (version != _backgroundLoadVersion) return;
-        if (generation != _coreGeneration) return;
-
         List<Group> groups = [];
         for (var attempt = 0; attempt < 3; attempt++) {
           if (version != _backgroundLoadVersion) return;
@@ -311,7 +300,7 @@ class AppController {
 
         await Future.delayed(const Duration(seconds: 2));
         if (version != _backgroundLoadVersion) return;
-        await clashCore.requestGc(forceFreeOSMemory: true);
+        await clashCore.requestGc();
       } catch (e) {
         commonPrint.log('Background load error: $e');
       }
@@ -342,11 +331,7 @@ class AppController {
     if (currentProfile == null) {
       return false;
     }
-    await _initCore();
-    final isFileExists = await currentProfile.check();
-    if (!isFileExists) {
-      await currentProfile.checkAndUpdate();
-    }
+    await currentProfile.checkAndUpdate();
     final patchConfig = _ref.read(patchClashConfigProvider);
     final targetTun = enableTun ?? patchConfig.tun.enable;
 
@@ -428,13 +413,6 @@ class AppController {
 
     final isScreenOn = globalState.isScreenOn;
 
-    // Флаг страны выбранной ноды в статус-баре — живёт независимо от
-    // «уведомления о скорости», поэтому синхронизируем его до раннего
-    // возврата ниже (внутри — свой кэш, лишних вызовов канала нет).
-    if (system.isAndroid) {
-      await syncNodeFlagNotification();
-    }
-
     if (!shouldUpdateDashboard &&
         !(networkSpeedNotification && isScreenOn) &&
         !enableTraySpeed) {
@@ -466,73 +444,6 @@ class AppController {
         profileName,
         speedInfo,
       );
-    }
-  }
-
-  /// Страна выхода из последней IP-проверки («стелс проверка» на дашборде).
-  ///
-  /// Фолбэк для нод, чьё имя не содержит ни флаг-эмодзи, ни страны/города,
-  /// ни ISO-кода (личные VPS с именем вроде «vps-R»): флаг берём из
-  /// реальной страны выходного IP — она обновляется IP-проверкой, которую
-  /// [syncNodeFlagNotification] запрашивает сама при смене ноды.
-  String? _fallbackFlagCountryCode() {
-    final info = detectionState.rawIpInfo ?? detectionState.state.value.ipInfo;
-    final code = info?.countryCode.trim().toUpperCase();
-    if (code == null || !RegExp(r'^[A-Z]{2}$').hasMatch(code)) {
-      return null;
-    }
-    return code;
-  }
-
-  /// Синхронизирует флаг страны выбранной ноды с уведомлением в статус-баре:
-  /// рядом с иконкой приложения («кубиком») показывается флаг страны ноды,
-  /// выбранной в текущей группе. Пустой результат убирает флаг.
-  ///
-  /// Нода определяется так: в режиме Global — выделение группы GLOBAL,
-  /// иначе — группа [Profile.currentGroupName] (последняя открытая вкладка
-  /// «Прокси»), а без неё — первая группа конфига. Вызов на каждый тик
-  /// трафика безопасен: смены ноды кэшируются и в Dart, и в Kotlin.
-  ///
-  /// Страна: сначала распознавание по имени ноды (эмодзи/слова/ISO-код),
-  /// затем фолбэк — страна выходного IP последней проверки. Кэш обновляется
-  /// ТОЛЬКО после успешной отправки, чтобы сбой канала не «заморозил» флаг.
-  Future<void> syncNodeFlagNotification() async {
-    if (!system.isAndroid) {
-      return;
-    }
-    try {
-      final groups = _ref.read(groupsProvider);
-      Group? group;
-      if (_ref.read(patchClashConfigProvider.select((state) => state.mode)) ==
-          Mode.global) {
-        group = groups.getGroup(GroupName.GLOBAL.name);
-      }
-      if (group == null) {
-        final groupName = _ref.read(currentProfileProvider)?.currentGroupName;
-        group = groupName != null ? groups.getGroup(groupName) : null;
-        group ??= groups.firstOrNull;
-      }
-      final nodeName = group?.realNow ?? '';
-      final byName = detectNodeCountryCode(nodeName);
-      final countryCode = byName ?? _fallbackFlagCountryCode();
-      if (nodeName == _lastFlagNodeName &&
-          countryCode == _lastFlagCountryCode) {
-        return;
-      }
-      await vpn_service.service?.updateNotificationFlag(countryCode, nodeName);
-      _lastFlagNodeName = nodeName;
-      _lastFlagCountryCode = countryCode;
-      // Имя не распознано, но нода выбрана — запросим свежую IP-проверку,
-      // чтобы фолбэк отражал реальную страну выхода (после проверки флаг
-      // перепостится слушателем в app_manager). startCheck уже дебаунсится
-      // через debouncer(FunctionTag.checkIp), повторные тики не штормят канал.
-      if (byName == null &&
-          nodeName.isNotEmpty &&
-          vpn_service.service != null) {
-        detectionState.startCheck();
-      }
-    } catch (e) {
-      commonPrint.log('syncNodeFlagNotification failed: $e');
     }
   }
 
@@ -683,7 +594,6 @@ class AppController {
   }
 
   Future<void> _updateClashConfig() async {
-    await _initCore();
     final updateParams = _ref.read(updateParamsProvider);
     final tunResult = await _requestAdmin(updateParams.tun.enable);
     if (tunResult.isError) return;
@@ -704,7 +614,6 @@ class AppController {
       final prefs = await preferences.sharedPreferencesCompleter.future;
       await prefs?.setBool('is_tun_running', realTunEnable);
     }
-    scheduleIdleGc();
   }
 
   Future<Result<bool>> _requestAdmin(bool enableTun) async {
@@ -732,10 +641,7 @@ class AppController {
   Future<void> setupClashConfig() {
     return _coreLifecycleLock.synchronized(() async {
       await safeRun(() async {
-        final configured = await _setupCoreConfig();
-        if (configured) {
-          scheduleIdleGc();
-        }
+        await _setupCoreConfig();
       }, needLoading: false);
     });
   }
@@ -743,18 +649,12 @@ class AppController {
   Future<void> _applyProfile() async {
     _invalidateCoreReads();
     _ref.read(delayDataSourceProvider.notifier).value = {};
-    unawaited(
-      clashCore.requestGc().then<void>(
-        (_) {},
-        onError: (Object e) => commonPrint.log('requestGc ignored: $e'),
-      ),
-    );
+    unawaited(clashCore.requestGc());
     final configured = await _setupCoreConfig();
     if (!configured) return;
     final providers = await clashCore.getExternalProviders();
     _ref.read(providersProvider.notifier).value = providers;
     await updateGroups(preloadedProviders: providers);
-    scheduleIdleGc();
   }
 
   Future<void> applyProfile({bool silence = false}) {
@@ -803,7 +703,7 @@ class AppController {
           globalState.showNotifier(err.toString());
         }
       }
-      _ref.read(logsProvider.notifier).value = FixedList(maxLogLength);
+      _ref.read(logsProvider.notifier).value = FixedList(maxLength);
       _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
       globalState.computeHeightMapCache = {};
       addCheckIpNumDebounce();
@@ -812,7 +712,7 @@ class AppController {
 
   void _reportCoreRestartFailure(Object error) {
     final message = error.formatError;
-    commonPrint.log('[Core] Restart failed: ${error.formatErrorLog}');
+    commonPrint.log('[Core] Restart failed: $message');
     globalState.showNotifier('${appLocalizations.restartCoreTitle}: $message');
   }
 
@@ -839,7 +739,7 @@ class AppController {
         await updateProfile(profile, validate: false);
       } catch (e) {
         commonPrint.log(
-          '[AutoUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
+          '[AutoUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatError}',
         );
       }
     }
@@ -859,7 +759,7 @@ class AppController {
           updated = true;
         } catch (e) {
           commonPrint.log(
-            '[MissedUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
+            '[MissedUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatError}',
           );
         }
         if (profilesToUpdate.length > 1) {
@@ -1043,9 +943,6 @@ class AppController {
       }
 
       _ref.read(groupsProvider.notifier).value = newGroups;
-      // Группы обновились (в т.ч. автопереключение url-test/отказ групп) —
-      // обновим и флаг страны активной ноды в статус-баре.
-      unawaited(syncNodeFlagNotification());
       _updateGroupsRetryCount = 0;
       _updateGroupsRetryTimer?.cancel();
       _updateGroupsRetryTimer = null;
@@ -1066,7 +963,7 @@ class AppController {
         await updateProfile(profile);
       } catch (e) {
         commonPrint.log(
-          '[UpdateProfiles] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
+          '[UpdateProfiles] Failed to update ${profile.label ?? profile.id}: ${e.formatError}',
         );
       }
     }
@@ -1084,7 +981,7 @@ class AppController {
       ChangeProxyParams(groupName: groupName, proxyName: proxyName),
     );
     if (_ref.read(appSettingProvider).closeConnections) {
-      await clashCore.closeConnections();
+      clashCore.closeConnections();
     }
     addCheckIp();
   }
@@ -1236,12 +1133,8 @@ class AppController {
         final versionWithoutV = tagName.startsWith('v')
             ? tagName.substring(1)
             : tagName;
-        var finalSuffix = assetSuffix;
-        if (appPath.isPortable && system.isWindows) {
-          finalSuffix = 'windows-amd64-compatible-portable.zip';
-        }
         downloadUrl =
-            'https://github.com/$repository/releases/download/$tagName/Bettbox-$versionWithoutV-$finalSuffix';
+            'https://github.com/$repository/releases/download/$tagName/Bettbox-$versionWithoutV-$assetSuffix';
       }
 
       globalState.openUrl(downloadUrl);
@@ -1264,45 +1157,19 @@ class AppController {
     );
     if (res == true) {
       final file = File(await appPath.sharedPreferencesPath);
-      if (await file.exists()) {
+      final isExists = await file.exists();
+      if (isExists) {
         await file.delete();
-      }
-      final configFile = File(await appPath.appConfigPath);
-      if (await configFile.exists()) {
-        await configFile.delete();
       }
     }
     await handleExit();
   }
 
-  Future<void>? _initCoreFuture;
-
-  Future<void> _initCore() {
-    return _initCoreFuture ??= () async {
-      try {
-        if (!await _waitForCoreConnection()) {
-          commonPrint.log('core not connected yet, skipping init');
-          return;
-        }
-        final isInit = await clashCore.isInit;
-        if (!isInit) {
-          await clashCore.init();
-          await clashCore.setState(globalState.getCoreState());
-        }
-      } finally {
-        _initCoreFuture = null;
-      }
-    }();
-  }
-
-  Future<bool> _waitForCoreConnection() async {
-    final completer = clashService?.socketCompleter;
-    if (completer == null || completer.isCompleted) return true;
-    try {
-      await completer.future.timeout(const Duration(seconds: 15));
-      return true;
-    } on TimeoutException {
-      return false;
+  Future<void> _initCore() async {
+    final isInit = await clashCore.isInit;
+    if (!isInit) {
+      await clashCore.init();
+      await clashCore.setState(globalState.getCoreState());
     }
   }
 
@@ -1415,9 +1282,7 @@ class AppController {
     await updateGroups();
 
     autoLaunch?.updateStatus(_ref.read(appSettingProvider).autoLaunch);
-    Future.delayed(const Duration(seconds: 5), () {
-      autoUpdateProfiles();
-    });
+    autoUpdateProfiles();
     autoCheckUpdate();
 
     final isWindowVisible = await window?.isVisible ?? false;
@@ -1637,7 +1502,7 @@ class AppController {
     } on Object catch (e) {
       await globalState.showMessage(
         title: appLocalizations.add,
-        message: TextSpan(text: e.formatError),
+        message: TextSpan(text: _formatErrorMessage(e)),
         cancelable: false,
       );
     } finally {
@@ -1683,7 +1548,7 @@ class AppController {
           if (!context.mounted) break;
           await globalState.showMessage(
             title: '${platformFile.name} (${appLocalizations.add})',
-            message: TextSpan(text: e.formatError),
+            message: TextSpan(text: _formatErrorMessage(e)),
             cancelable: false,
           );
         }
@@ -1950,21 +1815,8 @@ class AppController {
 
   Future<bool> exportLogs() async {
     final logsRaw = _ref.read(logsProvider).list.map((item) => item.toString());
-    // Отчёт подмены (файл): в основной журнал попадают только последние
-    // 256 записей — потоки debug-лога ядра вытесняют строки [APP],
-    // и причины отказов панели теряются из выгрузки. Отчёт досыпается
-    // в конец присланного лога — по нему видно, что ушло на панель
-    // (UA/X-Hwid) и что вернулось (статус/тип тела/маркеры x-hwid-*).
-    final spoofReport = await SpoofReport.readForExport();
     final data = await Isolate.run<List<int>>(() async {
-      var logsRawString = logsRaw.join('\n');
-      if (spoofReport != null && spoofReport.isNotEmpty) {
-        logsRawString = '$logsRawString\n\n'
-            '===== SPOOF REPORT (отчёт подмены подписок; последние '
-            'строки = самые свежие) =====\n'
-            '$spoofReport\n'
-            '===== SPOOF REPORT END =====\n';
-      }
+      final logsRawString = logsRaw.join('\n');
       return utf8.encode(logsRawString);
     });
     return await picker.saveFile(utils.logFile, Uint8List.fromList(data)) !=
@@ -1975,16 +1827,6 @@ class AppController {
     final homeDirPath = await appPath.homeDirPath;
     final profilesPath = await appPath.profilesPath;
     final configJson = globalState.config.toJson();
-    if (configJson['dav'] is Map) {
-      final davMap = Map<String, dynamic>.from(configJson['dav'] as Map);
-      if (davMap['user'] is String) {
-        davMap['user'] = utils.encryptSecret(davMap['user'] as String);
-      }
-      if (davMap['password'] is String) {
-        davMap['password'] = utils.encryptSecret(davMap['password'] as String);
-      }
-      configJson['dav'] = davMap;
-    }
 
     // Get valid profile IDs
     final validProfileIds = globalState.config.profiles
@@ -2222,47 +2064,17 @@ class AppController {
     var tempConfig = Config.compatibleFromJson(
       json.decode(utf8.decode(configContent)),
     );
-    if (tempConfig.dav != null) {
-      tempConfig = tempConfig.copyWith(
-        dav: tempConfig.dav!.copyWith(
-          user: utils.decryptSecret(tempConfig.dav!.user),
-          password: utils.decryptSecret(tempConfig.dav!.password),
-        ),
-      );
+
+    // Restore profile files to disk
+    for (final profile in profiles) {
+      final filePath = join(homeDirPath, profile.name);
+      final file = File(filePath);
+      await file.create(recursive: true);
+      await file.writeAsBytes(profile.content);
     }
 
-    final recoveryStrategy = _ref.read(
-      appSettingProvider.select((state) => state.recoveryStrategy),
-    );
-    if (recoveryStrategy == RecoveryStrategy.override) {
-      await _cleanProfilesDirForOverride();
-    }
-
-    await restoreBackupFiles(profiles, homeDirPath);
-
+    // Apply recovery logic
     _recovery(tempConfig, recoveryOption);
-    await savePreferences();
-    if (globalState.isStart) {
-      await applyProfile(silence: true);
-    }
-  }
-
-  Future<void> _cleanProfilesDirForOverride() async {
-    try {
-      final profilesDirPath = await appPath.profilesPath;
-      final dir = Directory(profilesDirPath);
-      if (await dir.exists()) {
-        await for (final entity in dir.list(followLinks: false)) {
-          try {
-            await entity.delete(recursive: true);
-          } catch (e) {
-            commonPrint.log('Delete profile entity failed: $e');
-          }
-        }
-      }
-    } catch (e) {
-      commonPrint.log('Clean profiles dir for override failed: $e');
-    }
   }
 
   /// Restore legacy
@@ -2298,56 +2110,102 @@ class AppController {
       json.decode(utf8.decode(configContent)),
     );
 
-    final recoveryStrategy = _ref.read(
-      appSettingProvider.select((state) => state.recoveryStrategy),
-    );
-    if (recoveryStrategy == RecoveryStrategy.override) {
-      await _cleanProfilesDirForOverride();
+    // Restore profile files to disk
+    for (final profile in profileFiles) {
+      final filePath = join(homeDirPath, profile.name);
+      final file = File(filePath);
+      await file.create(recursive: true);
+      await file.writeAsBytes(profile.content);
     }
 
-    await restoreBackupFiles(profileFiles, homeDirPath);
-
+    // Extract profiles from backup
     List<Profile> profiles = [];
+    bool extractedFromDatabase = false;
 
-    if (backupConfig.profiles.isNotEmpty) {
-      profiles = backupConfig.profiles;
-    } else {
-      for (final profileFile in profileFiles) {
-        final fileName = profileFile.name.split('/').last;
-        if (fileName.endsWith('.yaml') || fileName.endsWith('.yml')) {
-          final id = fileName.replaceAll(RegExp(r'\.(yaml|yml)$'), '');
-          final label = await _extractLabelFromYaml(profileFile) ?? id;
+    // 1. Try SQLite database first (FlClash backup)
+    final dbFile = archive.files.firstWhereOrNull(
+      (file) => file.name.endsWith('database.sqlite'),
+    );
 
-          profiles.add(
-            Profile(
-              id: id,
-              label: label,
-              autoUpdateDuration: defaultUpdateDuration,
-              url: '',
-            ),
-          );
+    if (dbFile != null && dbFile.content.isNotEmpty) {
+      try {
+        // Save database temporarily
+        final tempDbPath = join(await appPath.tempPath, 'temp_flclash.db');
+        final tempDb = File(tempDbPath);
+        await tempDb.writeAsBytes(dbFile.content);
+
+        // Extract profiles from database
+        profiles = await FlClashDatabaseExtractor.extractProfiles(tempDbPath);
+        extractedFromDatabase = true;
+
+        // Clean up temp file
+        if (await tempDb.exists()) {
+          await tempDb.delete();
+        }
+
+        commonPrint.log(
+          'Extracted ${profiles.length} profiles from FlClash database',
+        );
+      } catch (e) {
+        commonPrint.log(
+          'Failed to extract from database, fallback to file names: $e',
+        );
+        profiles = [];
+        extractedFromDatabase = false;
+      }
+    }
+
+    // 2. Fallback if database extraction failed
+    if (profiles.isEmpty) {
+      // Get from config.json
+      if (backupConfig.profiles.isNotEmpty) {
+        profiles = backupConfig.profiles;
+      } else {
+        // Extract ID from profile file names (FlClash mode)
+        for (final profileFile in profileFiles) {
+          final fileName = profileFile.name.split('/').last;
+          if (fileName.endsWith('.yaml') || fileName.endsWith('.yml')) {
+            final id = fileName.replaceAll(RegExp(r'\.(yaml|yml)$'), '');
+
+            // Try to extract friendly label from YAML
+            final label = await _extractLabelFromYaml(profileFile) ?? id;
+
+            // Create basic Profile object
+            profiles.add(
+              Profile(
+                id: id,
+                label: label,
+                autoUpdateDuration: defaultUpdateDuration,
+                url: '', // Mark empty, user needs to add
+              ),
+            );
+          }
         }
       }
     }
 
+    // Create limited recovery config (subscriptions only)
     Config limitedConfig = globalState.config.copyWith(profiles: profiles);
 
+    // Android: also restore app list
     if (system.isAndroid) {
+      // FlClash uses accessControlProps instead of accessControl
       final vpnProps = backupConfig.vpnProps;
       AccessControl? accessControl;
 
+      // Try to get from vpnProps.accessControl
       try {
         accessControl = vpnProps.accessControl;
       } catch (_) {
+        // Fallback: try accessControlProps from raw JSON
         try {
           final configJson = json.decode(utf8.decode(configFile.content));
           final vpnPropsJson = configJson['vpnProps'];
           if (vpnPropsJson != null && vpnPropsJson is Map) {
             final accessControlPropsJson = vpnPropsJson['accessControlProps'];
-            if (accessControlPropsJson != null &&
-                accessControlPropsJson is Map) {
+            if (accessControlPropsJson != null) {
               accessControl = AccessControl.fromJson(
-                Map<String, dynamic>.from(accessControlPropsJson),
+                accessControlPropsJson as Map<String, dynamic>,
               );
             }
           }
@@ -2361,13 +2219,11 @@ class AppController {
       }
     }
 
+    // Apply limited recovery
     _recoveryLimited(limitedConfig, recoveryOption);
-    await savePreferences();
-    if (globalState.isStart) {
-      await applyProfile(silence: true);
-    }
 
-    _showRecoveryResultMessage(profiles);
+    // Show recovery result message
+    _showRecoveryResultMessage(profiles, extractedFromDatabase);
   }
 
   /// Extract label
@@ -2407,13 +2263,19 @@ class AppController {
   }
 
   /// Show results
-  void _showRecoveryResultMessage(List<Profile> profiles) {
+  void _showRecoveryResultMessage(
+    List<Profile> profiles,
+    bool extractedFromDatabase,
+  ) {
     if (profiles.isEmpty) return;
 
     final hasEmptyUrl = profiles.any((p) => p.url.isEmpty);
 
     String message;
-    if (hasEmptyUrl) {
+    if (extractedFromDatabase) {
+      // Successfully extracted from database
+      message = 'Restored ${profiles.length} subscriptions with URLs.';
+    } else if (hasEmptyUrl) {
       // Partial recovery, missing URLs
       message =
           'Restored ${profiles.length} subscriptions.\n\n'
@@ -2578,8 +2440,8 @@ class AppController {
       final res = await futureFunction();
       return res;
     } on Object catch (e) {
-      commonPrint.log(e.formatErrorLog);
-      final errorMessage = e.formatError;
+      commonPrint.log(e.formatError);
+      final errorMessage = _formatErrorMessage(e);
       if (needLoading) {
         _ref.read(loadingProvider.notifier).value = false;
       }
@@ -2602,5 +2464,20 @@ class AppController {
         _ref.read(loadingProvider.notifier).value = false;
       }
     }
+  }
+
+  String _formatErrorMessage(dynamic error) {
+    final errorStr = error.toString();
+
+    final statusCodeMatch = RegExp(
+      r'status code of (\d+)',
+    ).firstMatch(errorStr);
+    final statusCode = statusCodeMatch?.group(1);
+
+    if (statusCode != null) {
+      return appLocalizations.profileImportFailed(statusCode);
+    }
+
+    return error.formatError;
   }
 }

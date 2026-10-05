@@ -329,9 +329,7 @@ class ListInputPage extends StatelessWidget {
       child: items.isEmpty
           ? NullStatus(label: appLocalizations.noData)
           : ReorderableListView.builder(
-              padding: EdgeInsets.only(
-                bottom: 16 + 64 + MediaQuery.viewPaddingOf(context).bottom,
-              ),
+              padding: const EdgeInsets.only(bottom: 16 + 64),
               buildDefaultDragHandles: false,
               itemCount: items.length,
               itemBuilder: (context, index) {
@@ -474,9 +472,7 @@ class MapInputPage extends StatelessWidget {
       child: items.isEmpty
           ? NullStatus(label: appLocalizations.noData)
           : ReorderableListView.builder(
-              padding: EdgeInsets.only(
-                bottom: 16 + 64 + MediaQuery.viewPaddingOf(context).bottom,
-              ),
+              padding: const EdgeInsets.only(bottom: 16 + 64),
               proxyDecorator: proxyDecorator,
               buildDefaultDragHandles: false,
               itemCount: items.length,

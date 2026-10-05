@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
@@ -27,7 +25,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'common/common.dart';
 import 'controller.dart';
 import 'models/models.dart';
-import 'package:bett_box/services/dns_stats.dart';
 
 typedef UpdateTasks = List<FutureOr Function()>;
 
@@ -43,24 +40,7 @@ class GlobalState {
   Map<String, String> proxyNetworkMap = {};
   Timer? timer;
   Timer? groupsUpdateTimer;
-  Config? _config;
-
-  bool get hasConfig => _config != null;
-
-  Config get config =>
-      _config ??
-      Config(
-        themeProps: defaultThemeProps,
-        patchClashConfig: system.isAndroid
-            ? const ClashConfig(findProcessMode: FindProcessMode.always)
-            : defaultClashConfig,
-        networkProps: defaultNetworkProps,
-        appSetting: defaultAppSettingProps.copyWith(
-          showStartSwitch: _isAndroidTV ?? false,
-        ),
-      );
-
-  set config(Config value) => _config = value;
+  late Config config;
   late AppState appState;
   bool isPre = true;
   String? coreSHA256;
@@ -86,44 +66,6 @@ class GlobalState {
   Timer? _backgroundCleanupTimer;
   final Lock _scriptEvaluateLock = Lock();
   bool isInit = false;
-
-  bool get hasMediaUnlockWidget {
-    final widgets = system.isAndroid
-        ? config.appSetting.mobileDashboardWidgets
-        : config.appSetting.desktopDashboardWidgets;
-    return widgets.contains(DashboardWidget.mediaUnlock) ||
-        widgets.contains(DashboardWidget.mediaUnlockSmall);
-  }
-
-  bool get hasNetworkDetectionWidget {
-    final widgets = system.isAndroid
-        ? config.appSetting.mobileDashboardWidgets
-        : config.appSetting.desktopDashboardWidgets;
-    return widgets.contains(DashboardWidget.networkDetection);
-  }
-
-  String getCurrentNodeSignature() {
-    final profileId = config.currentProfileId ?? '';
-    final mode = config.patchClashConfig.mode.name;
-    final selectedMap = config.currentProfile?.selectedMap ?? {};
-    final sortedEntries = selectedMap.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    final selectedStr =
-        sortedEntries.map((e) => '${e.key}:${e.value}').join(';');
-    String activeGroupsStr = '';
-    if (isInit && _appController != null) {
-      try {
-        final groups = appController.ref.read(groupsProvider);
-        if (groups.isNotEmpty) {
-          final sortedGroups = groups.toList()
-            ..sort((a, b) => a.name.compareTo(b.name));
-          activeGroupsStr =
-              sortedGroups.map((g) => '${g.name}:${g.realNow}').join(';');
-        }
-      } catch (_) {}
-    }
-    return '$profileId|$mode|$selectedStr|$activeGroupsStr';
-  }
 
   bool get isStart => startTime != null && startTime!.isBeforeNow;
 
@@ -153,7 +95,7 @@ class GlobalState {
       version: version,
       viewSize: Size.zero,
       requests: FixedList(maxLength),
-      logs: FixedList(maxLogLength),
+      logs: FixedList(maxLength),
       traffics: FixedList(30),
       totalTraffic: Traffic(),
       systemUiOverlayStyle: const SystemUiOverlayStyle(),
@@ -162,21 +104,12 @@ class GlobalState {
     await init();
   }
 
-  Future<String?> getOrCalcCoreSHA256() async {
-    if (coreSHA256 != null && coreSHA256!.isNotEmpty) return coreSHA256;
-    coreSHA256 = await _calcCoreSHA256();
-    return coreSHA256;
-  }
-
   Future<String?> _calcCoreSHA256() async {
     try {
-      final path = appPath.corePath;
-      final file = File(path);
+      final file = File(appPath.corePath);
       if (!await file.exists()) return null;
-      return await Isolate.run(() async {
-        final digest = await sha256.bind(File(path).openRead()).first;
-        return digest.toString();
-      });
+      final digest = await sha256.bind(file.openRead()).first;
+      return digest.toString();
     } catch (e) {
       commonPrint.log('Failed to calculate core SHA256: $e');
       return null;
@@ -204,15 +137,15 @@ class GlobalState {
           patchClashConfig: system.isAndroid
               ? const ClashConfig(findProcessMode: FindProcessMode.always)
               : defaultClashConfig,
-          networkProps: defaultNetworkProps,
+          networkProps: defaultNetworkProps.copyWith(
+            systemProxy: system.isDesktop,
+          ),
           appSetting: defaultAppSettingProps.copyWith(
             showStartSwitch: _isAndroidTV ?? false,
           ),
         );
     await globalState.migrateOldData(config);
     _seedBuiltinScript();
-    // Пассивная DNS-статистика: грузим флаг и дневные корзины в оба изолята.
-    unawaited(dnsStats.load());
     final locale =
         utils.getLocaleForString(config.appSetting.locale) ??
         utils.getSystemLocale();
@@ -504,11 +437,13 @@ class GlobalState {
           parent: animation,
           curve: Curves.easeOutCubic,
         );
-        return FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: curved.drive(Tween<double>(begin: 0.94, end: 1.0)),
-            child: RepaintBoundary(child: child),
+        return RepaintBoundary(
+          child: FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: curved.drive(Tween<double>(begin: 0.94, end: 1.0)),
+              child: child,
+            ),
           ),
         );
       },
@@ -622,14 +557,9 @@ class GlobalState {
   /// фильтр RU-нод), «Bag-rules-paranoid» (DNS-карантин) и «РФ-БС» (схема
   /// белых списков: правила + провайдеры + DNS-фолбэки). Скрипты не
   /// включаются автоматически — их нужно включить тумблером на карточке.
-  /// УСТАРЕВШИЕ СИДЫ ОБНОВЛЯЮТСЯ: если скрипт с именем встроенного — это
-  /// старый автосид (md5 совпадает с исторической версией из
-  /// kBuiltinScriptLegacyHashes либо маркер версии ниже
-  /// kBuiltinScriptVersion), его содержимое заменяется актуальным, выбор
-  /// нод и customOptions не трогаются. Скрипты, отредактированные вручную
-  /// (md5 не совпадает ни с чем), не обновляются. Удалённый встроенный
-  /// скрипт появится снова при следующем запуске — это осознанно: он
-  /// встроенный.
+  /// Если скрипт с таким именем уже есть (в том числе добавленный вручную
+  /// и отредактированный) — не трогаем его. Удалённый встроенный скрипт
+  /// появится снова при следующем запуске — это осознанно: он встроенный.
   void _seedBuiltinScript() {
     const builtins = <(String, String)>[
       (kBuiltinSRuScriptLabel, builtinSRuScript),
@@ -638,19 +568,10 @@ class GlobalState {
     ];
     var next = config.scriptProps.scripts;
     var changed = false;
-    final refreshed = <String>[];
     for (final (label, content) in builtins) {
-      final index = next.indexWhere((script) => script.label == label);
-      if (index == -1) {
-        next = [...next, Script.create(label: label, content: content)];
-        changed = true;
-        continue;
-      }
-      final stored = next[index];
-      if (stored.content == content) continue;
-      if (!_isOutdatedBuiltinSeed(stored.content)) continue;
-      next = [...next]..[index] = stored.copyWith(content: content);
-      refreshed.add(label);
+      final exists = next.any((script) => script.label == label);
+      if (exists) continue;
+      next = [...next, Script.create(label: label, content: content)];
       changed = true;
     }
     if (!changed) return;
@@ -658,26 +579,6 @@ class GlobalState {
       scriptProps: config.scriptProps.copyWith(scripts: next),
     );
     preferences.saveConfig(config);
-    if (refreshed.isNotEmpty) {
-      showNotifier('Встроенные скрипты обновлены: ${refreshed.join(', ')}');
-    }
-  }
-
-  /// Это старый автосид встроенного скрипта? Маркер версии ниже актуальной —
-  /// или содержимое побайтово совпадает с исторической версией (до введения
-  /// маркеров). Ручные правки (иной md5) не считаются сидом.
-  bool _isOutdatedBuiltinSeed(String content) {
-    final match = RegExp(
-      r'bettboxr-builtin\s+v(\d+)',
-    ).firstMatch(content);
-    if (match != null) {
-      final version = int.tryParse(match.group(1) ?? '');
-      return version == null || version < kBuiltinScriptVersion;
-    }
-    if (!content.contains('Compatible_With_Bettbox')) return false;
-    return kBuiltinScriptLegacyHashes.contains(
-      md5.convert(utf8.encode(content)).toString(),
-    );
   }
 
   CoreState getCoreState() {
@@ -703,41 +604,16 @@ class GlobalState {
   Future<void> _writeRunningConfig(Map<String, dynamic> clashConfig) async {
     final content = await encodeCompactYamlTask(clashConfig);
     final configPath = await appPath.configFilePath;
-    final tempFile =
-        File('$configPath.${DateTime.now().microsecondsSinceEpoch}.tmp');
-    await tempFile.parent.create(recursive: true);
+    final tempFile = File('$configPath.tmp');
+    await tempFile.writeAsString(content, flush: true);
     try {
-      await tempFile.writeAsString(content, flush: true);
-      var success = false;
-      for (var attempt = 0; attempt < 3; attempt++) {
-        try {
-          await tempFile.rename(configPath);
-          success = true;
-          break;
-        } catch (_) {
-          try {
-            await tempFile.copy(configPath);
-            success = true;
-            break;
-          } catch (_) {
-            if (attempt < 2) {
-              await Future.delayed(Duration(milliseconds: 50 * (attempt + 1)));
-            }
-          }
-        }
+      await tempFile.rename(configPath);
+    } catch (_) {
+      final targetFile = File(configPath);
+      if (await targetFile.exists()) {
+        await targetFile.delete();
       }
-      if (!success) {
-        throw FileSystemException(
-          'Failed to write running config after retries',
-          configPath,
-        );
-      }
-    } finally {
-      if (await tempFile.exists()) {
-        try {
-          await tempFile.delete();
-        } catch (_) {}
-      }
+      await tempFile.rename(configPath);
     }
   }
 
@@ -792,13 +668,7 @@ class GlobalState {
     rawConfig['tcp-concurrent'] = realPatchConfig.tcpConcurrent;
     rawConfig['unified-delay'] = realPatchConfig.unifiedDelay;
     rawConfig['ipv6'] = realPatchConfig.ipv6;
-    // Пока включена DNS-статистика — ядро работает минимум на debug,
-    // иначе debug-строки [DNS] в лог не попадают и считать нечего.
-    final effectiveLogLevel =
-        dnsStats.enabled && realPatchConfig.logLevel != LogLevel.debug
-        ? LogLevel.debug
-        : realPatchConfig.logLevel;
-    rawConfig['log-level'] = effectiveLogLevel.name;
+    rawConfig['log-level'] = realPatchConfig.logLevel.name;
     rawConfig['port'] = 0;
     rawConfig['socks-port'] = 0;
     rawConfig['keep-alive-interval'] = realPatchConfig.keepAliveInterval;
@@ -809,17 +679,6 @@ class GlobalState {
     rawConfig['tproxy-port'] = realPatchConfig.tproxyPort;
     rawConfig['find-process-mode'] = realPatchConfig.findProcessMode.name;
     rawConfig['allow-lan'] = realPatchConfig.allowLan;
-    if (realPatchConfig.authentication.isNotEmpty) {
-      rawConfig['authentication'] = realPatchConfig.authentication;
-      if (realPatchConfig.skipAuthPrefixes.isNotEmpty) {
-        rawConfig['skip-auth-prefixes'] = realPatchConfig.skipAuthPrefixes;
-      } else {
-        rawConfig.remove('skip-auth-prefixes');
-      }
-    } else {
-      rawConfig.remove('authentication');
-      rawConfig.remove('skip-auth-prefixes');
-    }
     rawConfig['mode'] = realPatchConfig.mode.name;
     if (rawConfig['tun'] == null) {
       rawConfig['tun'] = {};
@@ -831,8 +690,6 @@ class GlobalState {
         ? const ['any:53']
         : dnsHijack;
     rawConfig['tun']['stack'] = realPatchConfig.tun.stack.name;
-    rawConfig['tun']['congestion-controller'] =
-        realPatchConfig.tun.congestionController.name;
     rawConfig['tun']['route-address'] = realPatchConfig.tun.routeAddress;
     rawConfig['tun']['route-exclude-address'] =
         realPatchConfig.tun.routeExcludeAddress;
@@ -845,7 +702,7 @@ class GlobalState {
     rawConfig['tun']['disable-icmp-forwarding'] =
         realPatchConfig.tun.disableIcmpForwarding;
     rawConfig['tun']['mtu'] = realPatchConfig.tun.mtu;
-    rawConfig['geodata-loader'] = 'memconservative';
+    rawConfig['geodata-loader'] = realPatchConfig.geodataLoader.name;
     rawConfig['geodata-mode'] = false;
     if (rawConfig['sniffer']?['sniff'] != null) {
       for (final value in (rawConfig['sniffer']?['sniff'] as Map).values) {
@@ -875,103 +732,6 @@ class GlobalState {
       }
     }
 
-    // Клиентская подмена при скачивании подписок (профиль > глобальная
-    // настройка из Настроек): заголовки проставляются во ВСЕ HTTP-
-    // провайдеры при КАЖДОМ применении профиля — подмена живёт в
-    // настройках клиента, а не в конфиге, и меняется одним тумблером
-    // без пересборки. Вшитые в конфиг заголовки перебираются, когда
-    // подмена реально включена; прочие заголовки провайдера
-    // (например Authorization) сохраняются.
-    String? spoofGlobalUa;
-    Map<String, String>? spoofHeaders;
-    try {
-      final spoof = await resolveEffectiveSubSpoof(targetProfile.id);
-      spoofHeaders = await spoof.resolveHeaders();
-      if (spoofHeaders != null && spoofHeaders.isNotEmpty) {
-        spoofGlobalUa = spoofHeaders['User-Agent'];
-        commonPrint.log(
-          'SubSpoof: подмена активна (клиент: ${spoof.client}), '
-          'User-Agent: $spoofGlobalUa, '
-          'X-Hwid: ${spoofHeaders.containsKey('X-Hwid') ? 'да' : 'нет'}',
-        );
-        final providers = rawConfig['proxy-providers'];
-        if (providers is Map) {
-          var patched = 0;
-          for (final key in providers.keys.toList()) {
-            final provider = providers[key];
-            if (provider is! Map || provider['type'] != 'http') {
-              continue;
-            }
-            final providerUrl = '${provider['url'] ?? ''}';
-            if (!providerUrl.startsWith('http://') &&
-                !providerUrl.startsWith('https://')) {
-              continue;
-            }
-            final headerNode = provider['header'] is Map
-                ? (provider['header'] as Map).cast<String, dynamic>()
-                : <String, dynamic>{};
-            spoofHeaders.forEach((name, value) {
-              headerNode[name] = [value];
-            });
-            provider['header'] = headerNode;
-            patched++;
-          }
-          if (patched > 0) {
-            commonPrint.log(
-              'SubSpoof: заголовки проставлены в $patched HTTP-провайдер(ов)',
-            );
-          }
-        }
-      }
-    } catch (e) {
-      commonPrint.log('SubSpoof: инъекция заголовков не удалась: $e');
-    }
-
-    // Предзагрузка proxy-провайдеров Dart-стороной: приложение само
-    // скачивает каждую подписку (с заголовками подмены, когда она
-    // включена; без неё — напрямую), нормализует тело в формат ядра
-    // и записывает в файл провайдера. Ядро стартует на готовом файле
-    // и не зависит от того, что панель отдаёт на запросы mihomo:
-    // некоторым панелям не нравится UA ядра, и они отвечают
-    // непонятным для него форматом («cannot unmarshal !!seq into
-    // provider.ProxySchema») либо отказом — на работу это больше не
-    // влияет, все решения видны в журнале (строки SubPreload).
-    try {
-      final covered = await preloadProxyProviderFiles(
-        rawConfig,
-        targetProfile.id,
-        spoofHeaders,
-      );
-      // Провайдеры, чей файл подготовило приложение, ядро больше НЕ
-      // перекачивает само: interval уводится за горизонт планировщика,
-      // иначе при каждом обновлении/первом запуске ядро качает панель
-      // своим UA и получает неразборчивый формат (тот самый «!!seq»).
-      // Свежесть файла и обновление остаются на приложении: оно
-      // перекачивает подписку при каждом применении конфига, когда
-      // файл старше исходного interval провайдера.
-      if (covered.isNotEmpty) {
-        final providers = rawConfig['proxy-providers'];
-        var hidden = 0;
-        if (providers is Map) {
-          for (final key in covered) {
-            final provider = providers[key];
-            if (provider is Map && provider['type'] == 'http') {
-              provider['interval'] = 2000000000;
-              hidden++;
-            }
-          }
-        }
-        if (hidden > 0) {
-          commonPrint.log(
-            'SubPreload: для $hidden провайдер(ов) обновление берёт на себя '
-            'приложение — ядро читает локальный файл',
-          );
-        }
-      }
-    } catch (e) {
-      commonPrint.log('SubPreload: предзагрузка провайдеров прервана: $e');
-    }
-
     if (rawConfig['rule-providers'] != null) {
       final ruleProviders = rawConfig['rule-providers'] as Map;
       for (final key in ruleProviders.keys) {
@@ -996,18 +756,11 @@ class GlobalState {
       rawConfig['profile']['store-fake-ip'] = true;
     }
     rawConfig['geox-url'] = realPatchConfig.geoXUrl.toJson();
-    // При включённой подмене global-ua ядра тоже заменяется на UA
-    // мимикрирующего клиента: тогда ЛЮБОЙ запрос ядра (провайдеры без
-    // своих header, health-check) неотличим от реального клиента,
-    // независимо от приоритетов global-ua и provider.header в ядре.
-    rawConfig['global-ua'] = spoofGlobalUa ?? realPatchConfig.globalUa;
+    rawConfig['global-ua'] = realPatchConfig.globalUa;
     if (rawConfig['hosts'] == null) {
       rawConfig['hosts'] = {};
     }
     for (final host in realPatchConfig.hosts.entries) {
-      if (!system.isAndroid && host.key == 'services.googleapis.cn') {
-        continue;
-      }
       rawConfig['hosts'][host.key] = host.value.splitByMultipleSeparators;
     }
 
@@ -1440,7 +1193,6 @@ class DetectionState {
   bool _isIpMasked = false;
   IpInfo? _rawIpInfo;
   bool _isFirstLaunch = true;
-  String? _lastCheckedNodeSignature;
 
   final state = ValueNotifier<NetworkDetectionState>(
     const NetworkDetectionState(
@@ -1486,7 +1238,6 @@ class DetectionState {
   void _onIpProgress(int requestId, IpInfo info) {
     if (requestId != _requestId) return;
     _rawIpInfo = info;
-    _lastCheckedNodeSignature = globalState.getCurrentNodeSignature();
     state.value = state.value.copyWith(
       isLoading: false,
       ipInfo: _maskIpInfo(_rawIpInfo),
@@ -1538,24 +1289,11 @@ class DetectionState {
   }
 
   void tryStartCheck() {
-    if (!globalState.hasNetworkDetectionWidget) return;
     if (!state.value.isLoading &&
         state.value.ipInfo == null &&
         (_preIsStart == null || state.value.errorMessage != null)) {
       startCheck();
     }
-  }
-
-  void checkOnForegroundResume() {
-    if (!globalState.hasNetworkDetectionWidget) return;
-    final currentSignature = globalState.getCurrentNodeSignature();
-    if (state.value.ipInfo != null &&
-        _lastCheckedNodeSignature == currentSignature &&
-        state.value.errorMessage == null) {
-      return;
-    }
-    _lastCheckedNodeSignature = currentSignature;
-    startCheck(showLoading: state.value.ipInfo == null);
   }
 
   void _cancelPreviousRequest() {
@@ -1586,8 +1324,7 @@ class DetectionState {
     }
 
     if (res.data != null) {
-      _rawIpInfo = res.data;
-      _lastCheckedNodeSignature = globalState.getCurrentNodeSignature();
+      _rawIpInfo ??= res.data;
     }
     state.value = state.value.copyWith(
       isLoading: false,
@@ -1632,7 +1369,7 @@ class DetectionState {
       );
     }
 
-    final timeout = const Duration(seconds: 8);
+    final timeout = const Duration(seconds: 5);
 
     final res = isStart
         ? await request.checkIp(
@@ -1665,587 +1402,3 @@ class DetectionState {
 }
 
 final detectionState = DetectionState();
-
-/// Оркестратор проверки медиа-разблокировки: держит состояние
-/// (результаты по платформам, что сейчас тестируется) и гоняет
-/// [MediaUnlockChecker] ограниченным пулом параллельных запросов.
-class MediaUnlockStateNotifier {
-  static MediaUnlockStateNotifier? _instance;
-  final _checker = MediaUnlockChecker();
-  int _requestId = 0;
-  Timer? _nodeChangeTimer;
-  static const _nodeChangeDelay = Duration(milliseconds: 800);
-  String? _lastCheckedNodeSignature;
-  bool? _preIsStart;
-
-  String _getNodeSignature() {
-    return globalState.getCurrentNodeSignature();
-  }
-
-  final state = ValueNotifier<MediaUnlockState>(
-    const MediaUnlockState(),
-  );
-  final Set<MediaPlatform> _batchTestingPlatforms = {};
-
-  bool isBatchChecking([Iterable<MediaPlatform>? platforms]) {
-    if (state.value.isLoading) return true;
-    if (platforms == null) {
-      return state.value.testingPlatforms.any(_batchTestingPlatforms.contains);
-    }
-    return platforms.any(
-      (p) =>
-          state.value.testingPlatforms.contains(p) &&
-          _batchTestingPlatforms.contains(p),
-    );
-  }
-
-  MediaUnlockStateNotifier._internal();
-
-  factory MediaUnlockStateNotifier() {
-    _instance ??= MediaUnlockStateNotifier._internal();
-    return _instance!;
-  }
-
-  List<MediaPlatform> get pinnedPlatforms {
-    final pinned = globalState.config.appSetting.pinnedMediaPlatforms;
-    return (pinned.isNotEmpty ? pinned : defaultPinnedMediaPlatforms)
-        .take(4)
-        .toList();
-  }
-
-  void checkSingle(MediaPlatform platform) async {
-    _batchTestingPlatforms.remove(platform);
-    if (state.value.testingPlatforms.contains(platform)) return;
-    final currentTesting =
-        Set<MediaPlatform>.from(state.value.testingPlatforms)..add(platform);
-    state.value = state.value.copyWith(testingPlatforms: currentTesting);
-
-    try {
-      final res = await _checker.checkPlatform(platform).timeout(
-        const Duration(seconds: 8),
-        onTimeout: () => MediaUnlockResult(
-          platform: platform,
-          status: MediaUnlockStatus.failed,
-        ),
-      );
-      final finalMap =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
-      finalMap[platform] = res;
-      state.value = state.value.copyWith(
-        results: finalMap,
-        lastChecked: DateTime.now(),
-      );
-    } catch (_) {
-      final finalMap =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
-      finalMap.putIfAbsent(
-        platform,
-        () => MediaUnlockResult(
-          platform: platform,
-          status: MediaUnlockStatus.failed,
-        ),
-      );
-      state.value = state.value.copyWith(
-        results: finalMap,
-        lastChecked: DateTime.now(),
-      );
-    } finally {
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)
-            ..remove(platform);
-      state.value = state.value.copyWith(testingPlatforms: nextTesting);
-    }
-  }
-
-  void checkPlatforms(
-    List<MediaPlatform> platforms, {
-    bool force = false,
-    bool isFullCheck = false,
-    bool isBatchCheck = false,
-  }) async {
-    final isRunning = globalState.appState.runTime != null;
-    if (!isRunning && !force) return;
-
-    if (force) {
-      _checker.cancel();
-    }
-
-    final targetPlatforms = force
-        ? platforms.toList()
-        : platforms
-            .where((p) => !state.value.testingPlatforms.contains(p))
-            .toList();
-    if (targetPlatforms.isEmpty) return;
-
-    final requestId = ++_requestId;
-    if (isBatchCheck) {
-      _batchTestingPlatforms.addAll(targetPlatforms);
-    }
-    final pendingTesting =
-        Set<MediaPlatform>.from(state.value.testingPlatforms)
-          ..addAll(targetPlatforms);
-
-    state.value = state.value.copyWith(
-      isLoading: isFullCheck ? true : state.value.isLoading,
-      testingPlatforms: pendingTesting,
-    );
-
-    Timer? throttleTimer;
-    final bufferResults = <MediaPlatform, MediaUnlockResult>{};
-
-    void flushUpdates() {
-      throttleTimer?.cancel();
-      throttleTimer = null;
-      if (bufferResults.isEmpty) return;
-      final updates = Map<MediaPlatform, MediaUnlockResult>.from(bufferResults);
-      bufferResults.clear();
-      final nextResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results)
-            ..addAll(updates);
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)
-            ..removeAll(updates.keys);
-      state.value = state.value.copyWith(
-        results: nextResults,
-        testingPlatforms: nextTesting,
-      );
-    }
-
-    try {
-      final results = await _checker.checkAll(
-        platforms: targetPlatforms,
-        onProgress: (res) {
-          if (requestId != _requestId) return;
-          bufferResults[res.platform] = res;
-          throttleTimer ??= Timer(
-            const Duration(milliseconds: 100),
-            flushUpdates,
-          );
-        },
-      ).timeout(
-        Duration(seconds: (targetPlatforms.length / 8).ceil() * 8 + 5),
-        onTimeout: () {
-          _checker.cancel();
-          final timeoutMap = <MediaPlatform, MediaUnlockResult>{};
-          for (final p in targetPlatforms) {
-            timeoutMap[p] = bufferResults[p] ??
-                state.value.results[p] ??
-                MediaUnlockResult(
-                  platform: p,
-                  status: MediaUnlockStatus.failed,
-                );
-          }
-          return timeoutMap;
-        },
-      );
-      if (requestId != _requestId) return;
-      flushUpdates();
-      final nextResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
-      for (final p in targetPlatforms) {
-        nextResults[p] = results[p] ??
-            bufferResults[p] ??
-            state.value.results[p] ??
-            MediaUnlockResult(
-              platform: p,
-              status: MediaUnlockStatus.failed,
-            );
-      }
-      _lastCheckedNodeSignature = _getNodeSignature();
-      state.value = state.value.copyWith(
-        isLoading: isFullCheck ? false : state.value.isLoading,
-        results: nextResults,
-        lastChecked: DateTime.now(),
-      );
-    } catch (_) {
-      throttleTimer?.cancel();
-      if (requestId != _requestId) return;
-      flushUpdates();
-      final fallbackResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
-      for (final p in targetPlatforms) {
-        fallbackResults.putIfAbsent(
-          p,
-          () => MediaUnlockResult(
-            platform: p,
-            status: MediaUnlockStatus.failed,
-          ),
-        );
-      }
-      _lastCheckedNodeSignature = _getNodeSignature();
-      state.value = state.value.copyWith(
-        isLoading: isFullCheck ? false : state.value.isLoading,
-        results: fallbackResults,
-        lastChecked: DateTime.now(),
-      );
-    } finally {
-      throttleTimer?.cancel();
-      _batchTestingPlatforms.removeAll(targetPlatforms);
-      final nextTesting =
-          Set<MediaPlatform>.from(state.value.testingPlatforms)
-            ..removeAll(targetPlatforms);
-      state.value = state.value.copyWith(
-        isLoading: (requestId == _requestId && isFullCheck)
-            ? false
-            : state.value.isLoading,
-        testingPlatforms: nextTesting,
-      );
-    }
-  }
-
-  void checkPinned({bool force = false, List<MediaPlatform>? platforms}) {
-    checkPlatforms(platforms ?? pinnedPlatforms, force: force);
-  }
-
-  void checkAll({
-    bool force = false,
-    List<MediaPlatform>? platforms,
-  }) {
-    final showMoreStreaming =
-        globalState.config.appSetting.mediaUnlockMoreStreamingPlatforms;
-    final allAvailable = MediaPlatform.values
-        .where((p) => showMoreStreaming || !moreStreamingPlatforms.contains(p))
-        .toList();
-    final targets = platforms ?? allAvailable;
-    final isFull = targets.length >= allAvailable.length;
-    checkPlatforms(
-      targets,
-      force: force,
-      isFullCheck: isFull,
-      isBatchCheck: true,
-    );
-  }
-
-  void startCheckOnNodeChange() async {
-    final isRunning = globalState.appState.runTime != null;
-    if (!isRunning) {
-      _preIsStart = false;
-      _nodeChangeTimer?.cancel();
-      return;
-    }
-    final isStartup = _preIsStart != true;
-    _preIsStart = true;
-
-    if (!globalState.hasMediaUnlockWidget) return;
-    if (!globalState.config.appSetting.mediaUnlockRefreshOnNodeChange) return;
-
-    if (isStartup) {
-      _nodeChangeTimer?.cancel();
-      _checker.cancel();
-      final requestId = ++_requestId;
-
-      if (globalState.hasNetworkDetectionWidget) {
-        var waited = 0;
-        while (detectionState.state.value.isLoading &&
-            waited < 6000 &&
-            globalState.appState.runTime != null &&
-            requestId == _requestId) {
-          await Future.delayed(const Duration(milliseconds: 150));
-          waited += 150;
-        }
-      } else {
-        await Future.delayed(const Duration(seconds: 2));
-      }
-      if (requestId != _requestId || globalState.appState.runTime == null) return;
-      final nextResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
-      for (final p in pinnedPlatforms) {
-        nextResults.remove(p);
-      }
-      state.value = state.value.copyWith(
-        results: nextResults,
-        testingPlatforms: {},
-        isLoading: false,
-      );
-      _lastCheckedNodeSignature = _getNodeSignature();
-      checkPinned(force: true);
-      return;
-    }
-
-    _nodeChangeTimer?.cancel();
-    _nodeChangeTimer = Timer(_nodeChangeDelay, () {
-      if (globalState.appState.runTime == null) return;
-      if (globalState.backgroundMode.value) return;
-
-      final currentSignature = _getNodeSignature();
-      if (_lastCheckedNodeSignature == currentSignature &&
-          state.value.results.isNotEmpty) {
-        return;
-      }
-      _lastCheckedNodeSignature = currentSignature;
-      final nextResults =
-          Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
-      for (final p in pinnedPlatforms) {
-        nextResults.remove(p);
-      }
-      state.value = state.value.copyWith(
-        results: nextResults,
-        testingPlatforms: {},
-        isLoading: false,
-      );
-      checkPinned(force: true);
-    });
-  }
-
-  void checkOnForegroundResume() {
-    final isRunning = globalState.appState.runTime != null;
-    if (!isRunning) return;
-    if (!globalState.hasMediaUnlockWidget) return;
-    if (!globalState.config.appSetting.mediaUnlockRefreshOnNodeChange) return;
-    final currentSignature = globalState.getCurrentNodeSignature();
-    if (state.value.results.isNotEmpty &&
-        _lastCheckedNodeSignature == currentSignature) {
-      return;
-    }
-    _lastCheckedNodeSignature = currentSignature;
-    final nextResults =
-        Map<MediaPlatform, MediaUnlockResult>.from(state.value.results);
-    for (final p in pinnedPlatforms) {
-      nextResults.remove(p);
-    }
-    state.value = state.value.copyWith(
-      results: nextResults,
-      testingPlatforms: {},
-      isLoading: false,
-    );
-    checkPinned(force: true);
-  }
-
-  void tryStartCheck() {
-    final isRunning = globalState.appState.runTime != null;
-    if (!isRunning) return;
-    if (!globalState.hasMediaUnlockWidget) return;
-    if (state.value.isLoading || state.value.testingPlatforms.isNotEmpty) return;
-    if (state.value.results.isNotEmpty) return;
-    final needsInitialCheck =
-        pinnedPlatforms.any((p) => !state.value.results.containsKey(p));
-    if (!needsInitialCheck) return;
-    checkPinned();
-  }
-}
-
-final mediaUnlockState = MediaUnlockStateNotifier();
-
-/// Предзагрузка HTTP proxy-провайдеров Dart-стороной (см. вызов в
-/// patchRawConfig). Каждый провайдер качается параллельно с таймаутом,
-/// тело нормализуется [normalizeSubProviderBody] и записывается в файл
-/// провайдера — ядро грузит подписку локально и не зависит от ответа
-/// панели на запросы mihomo. Свежий локальный файл (в пределах
-/// interval провайдера) не перекачивается — панель не получает лишних
-/// обращений при каждом применении конфига. Ошибка одного провайдера
-/// не мешает остальным и не ломает запуск: ядро в этом случае качает
-/// его само, как раньше.
-///
-/// Возвращает множество ключей «покрытых» провайдеров — тех, чей файл
-/// готов к запуску ядра (записан сейчас или свежий локальный): для них
-/// patchRawConfig убирает собственную перекачку ядра.
-Future<Set<String>> preloadProxyProviderFiles(
-  Map<dynamic, dynamic> rawConfig,
-  String profileId,
-  Map<String, String>? spoofHeaders,
-) async {
-  final providers = rawConfig['proxy-providers'];
-  if (providers is! Map || providers.isEmpty) {
-    return {};
-  }
-  final covered = <String>{};
-  final jobs = <Future<void>>[];
-  for (final key in providers.keys.toList()) {
-    final provider = providers[key];
-    if (provider is! Map || provider['type'] != 'http') {
-      continue;
-    }
-    final url = '${provider['url'] ?? ''}';
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      continue;
-    }
-    var path = '${provider['path'] ?? ''}';
-    if (path.isEmpty) {
-      path = await appPath.getProvidersFilePath(profileId, 'proxies', url);
-    }
-    jobs.add(
-      _preloadProxyProvider(
-        '$key',
-        url,
-        path,
-        provider,
-        spoofHeaders,
-      ).then((ok) {
-        if (ok) {
-          covered.add('$key');
-        }
-      }),
-    );
-  }
-  if (jobs.isEmpty) {
-    return {};
-  }
-  await Future.wait(jobs);
-  return covered;
-}
-
-Future<bool> _preloadProxyProvider(
-  String key,
-  String url,
-  String path,
-  Map<dynamic, dynamic> provider,
-  Map<String, String>? spoofHeaders,
-) async {
-  try {
-    final file = File(path);
-    if (await file.exists()) {
-      final intervalSec = int.tryParse('${provider['interval'] ?? ''}') ?? 86400;
-      final modified = await file.lastModified();
-      final age = DateTime.now().difference(modified);
-      if (age.inSeconds < intervalSec) {
-        commonPrint.log(
-          'SubPreload["$key"]: локальный файл провайдера свежий '
-          '(${age.inMinutes} мин) — обращение к панели не требуется',
-        );
-        return true;
-      }
-    }
-    // Попытка 1: заголовки подмены (или обычный запрос, когда подмена
-    // выключена). Попытка 2 (только если тело/статус непригодны):
-    // проверенный «нейтральный» клиент v2rayNG — под него панели
-    // отдают полный plain-список ссылок, который ядро разбирает само,
-    // и обычно не требуют X-Hwid.
-    if (await _fetchAndStoreProviderBody(key, url, path, spoofHeaders)) {
-      return true;
-    }
-    final fallbackHeaders = <String, String>{
-      'User-Agent': kSubSpoofFallbackUa,
-    };
-    return await _fetchAndStoreProviderBody(
-      key,
-      url,
-      path,
-      fallbackHeaders,
-      isFallback: true,
-    );
-  } catch (e) {
-    commonPrint.log(
-      'SubPreload["$key"]: не удалось предзагрузить ($e) — скачает ядро',
-    );
-    return false;
-  }
-}
-
-/// Причина отказа HWID-панели по заголовкам ответа — маркеры те же,
-/// что читает референс (neko+, RawUpdater.doUpdate):
-/// x-hwid-not-supported / x-hwid-max-devices-reached / x-hwid-limit.
-/// Без их разбора в журнале видна только «тело не распознано»,
-/// а реальная причина — отказ панели по устройствам. Текст для
-/// журнала; null — маркеров отказа нет.
-String? _hwidRefusalReason(Headers headers) {
-  String? marker(String name) {
-    final values = headers[name];
-    if (values == null) {
-      return null;
-    }
-    final value = values.isEmpty ? null : values.first;
-    return value?.trim().toLowerCase();
-  }
-
-  if (marker('x-hwid-not-supported') == 'true') {
-    return 'панель не поддерживает HWID для этого клиента '
-        '(x-hwid-not-supported) — смените пресет клиента или отключите '
-        'подмену';
-  }
-  if (marker('x-hwid-max-devices-reached') == 'true' ||
-      marker('x-hwid-limit') == 'true') {
-    return 'исчерпан лимит устройств для этой подписки '
-        '(x-hwid-max-devices-reached/x-hwid-limit) — впишите в поле '
-        'подмены X-Hwid клиента, где подписка уже работает (например '
-        'neko+), либо сбросьте устройства в панели/боте';
-  }
-  return null;
-}
-
-/// Одна попытка скачать тело провайдера заданными заголовками,
-/// нормализовать и записать в файл. true — файл готов для ядра.
-Future<bool> _fetchAndStoreProviderBody(
-  String key,
-  String url,
-  String path,
-  Map<String, String>? headers, {
-  bool isFallback = false,
-}) async {
-  try {
-    final uaLabel = headers?['User-Agent'] ?? 'по умолчанию';
-    final hwid = headers?['X-Hwid'];
-    await SpoofReport.write(
-      'ПРОВАЙДЕР $key | GET $url | ${isFallback ? 'резерв' : 'основная'} '
-      'попытка | UA: $uaLabel | X-Hwid: ${hwid ?? 'НЕТ'}',
-    );
-    final response = await request
-        .getTextResponseForUrl(url, extraHeaders: headers)
-        .timeout(Duration(seconds: isFallback ? 10 : 15));
-    final status = response.statusCode ?? 0;
-    final body = response.data?.toString() ?? '';
-    if (status < 200 || status >= 300) {
-      commonPrint.log(
-        'SubPreload["$key"]: панель ответила HTTP $status (UA: $uaLabel) — '
-        '${isFallback ? 'предзагрузка не удалась' : 'пробую резервный UA'}',
-      );
-      await SpoofReport.write(
-        '  ОТВЕТ: HTTP $status | '
-        '${response.headers['content-type']?.join(', ') ?? '-'}',
-      );
-      return false;
-    }
-    // Отказ HWID-панели приходит с HTTP 200/404 и заголовками-маркерами
-    // x-hwid-*: без их разбора пользователь видит «тело не распознано»
-    // вместо реальной причины (лимит устройств / HWID не поддерживается).
-    final hwidRefusal = _hwidRefusalReason(response.headers);
-    if (hwidRefusal != null) {
-      commonPrint.log(
-        'SubPreload["$key"]: панель отказала по HWID (UA: $uaLabel) — '
-        '$hwidRefusal. ${isFallback ? 'Предзагрузка не удалась' : 'Пробую резервный UA'}.',
-      );
-      await SpoofReport.write('  ОТВЕТ: HTTP $status | отказ: $hwidRefusal');
-      return false;
-    }
-    final normalized = normalizeSubProviderBody(body);
-    if (normalized == null) {
-      final trimmedBody = body.trim();
-      final preview = trimmedBody.substring(
-        0,
-        trimmedBody.length > 120 ? 120 : trimmedBody.length,
-      );
-      commonPrint.log(
-        'SubPreload["$key"]: тело подписки не распознано '
-        '(HTTP $status, UA: $uaLabel, начало: "$preview") — '
-        '${isFallback ? 'предзагрузка не удалась' : 'пробую резервный UA'}',
-      );
-      await SpoofReport.write(
-        '  ОТВЕТ: HTTP $status | тело НЕ распознано '
-        '(${body.length} байт) | начало: "$preview"',
-      );
-      return false;
-    }
-    final file = File(path);
-    await file.parent.create(recursive: true);
-    await file.writeAsString(normalized.body, flush: true);
-    commonPrint.log(
-      'SubPreload["$key"]: подписка получена (HTTP $status, UA: $uaLabel, '
-      'формат: ${normalized.format}'
-      '${normalized.nodes > 0 ? ', нод: ${normalized.nodes}' : ''}), '
-      'файл провайдера записан — ядро загрузит подписку локально',
-    );
-    await SpoofReport.write(
-      '  ОТВЕТ: HTTP $status | ОК: формат ${normalized.format}, '
-      'нод: ${normalized.nodes}, байт: ${normalized.body.length} — '
-      'файл провайдера записан',
-    );
-    return true;
-  } catch (e) {
-    commonPrint.log(
-      'SubPreload["$key"]: запрос не удался (UA: '
-      '${headers?['User-Agent'] ?? 'по умолчанию'}: $e) — '
-      '${isFallback ? 'скачает ядро' : 'пробую резервный UA'}',
-    );
-    await SpoofReport.write('  ОШИБКА запроса: $e');
-    return false;
-  }
-}
