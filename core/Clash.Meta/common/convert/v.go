@@ -44,16 +44,10 @@ func handleVShareLink(names map[string]int, url *url.URL, scheme string, proxy m
 		proxy["servername"] = sni
 	}
 	if realityPublicKey := query.Get("pbk"); realityPublicKey != "" {
-		realityOpts := map[string]any{
+		proxy["reality-opts"] = map[string]any{
 			"public-key": realityPublicKey,
 			"short-id":   query.Get("sid"),
 		}
-		if value := query.Get("support-x25519mlkem768"); value != "" {
-			if enabled, err := strconv.ParseBool(value); err == nil {
-				realityOpts["support-x25519mlkem768"] = enabled
-			}
-		}
-		proxy["reality-opts"] = realityOpts
 	}
 
 	switch query.Get("packetEncoding") {
@@ -194,10 +188,6 @@ func parseXHTTPExtra(extra map[string]any, opts map[string]any) {
 			reuse["h-keep-alive-period"] = int(v)
 		}
 		return reuse
-	}
-
-	if headers, ok := extra["headers"].(map[string]any); ok && len(headers) > 0 {
-		opts["headers"] = headers
 	}
 
 	if v, ok := extra["noGRPCHeader"].(bool); ok && v {
