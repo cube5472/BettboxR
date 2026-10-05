@@ -15,22 +15,35 @@ class AppPath {
 
   AppPath._internal() {
     appDirPath = join(dirname(Platform.resolvedExecutable));
-    getApplicationSupportDirectory().then((value) {
-      if (system.isWindows && AppIdentity.isDev) {
-        dataDir.complete(
-          Directory(join(value.parent.path, AppIdentity.dataDirName)),
-        );
-      } else {
-        dataDir.complete(value);
+    final portableDir = Directory(join(appDirPath, 'portable'));
+    if (system.isWindows && portableDir.existsSync()) {
+      dataDir.complete(portableDir);
+      final portableTempDir = Directory(join(portableDir.path, 'temp'));
+      if (!portableTempDir.existsSync()) {
+        portableTempDir.createSync(recursive: true);
       }
-    });
-    getTemporaryDirectory().then((value) {
-      tempDir.complete(value);
-    });
+      tempDir.complete(portableTempDir);
+    } else {
+      getApplicationSupportDirectory().then((value) {
+        if (system.isWindows && AppIdentity.isDev) {
+          dataDir.complete(
+            Directory(join(value.parent.path, AppIdentity.dataDirName)),
+          );
+        } else {
+          dataDir.complete(value);
+        }
+      });
+      getTemporaryDirectory().then((value) {
+        tempDir.complete(value);
+      });
+    }
     getDownloadsDirectory().then((value) {
       downloadDir.complete(value);
     });
   }
+
+  bool get isPortable =>
+      system.isWindows && Directory(join(appDirPath, 'portable')).existsSync();
 
   factory AppPath() {
     _instance ??= AppPath._internal();
@@ -47,6 +60,19 @@ class AppPath {
   }
 
   String get corePath {
+    final devWorkspacePath = _devWorkspacePath;
+    if (devWorkspacePath != null) {
+      final corePath = join(
+        devWorkspacePath,
+        'libclash',
+        'windows',
+        '${AppIdentity.coreExecutableName}$executableExtension',
+      );
+      if (File(corePath).existsSync()) {
+        return corePath;
+      }
+    }
+
     return join(
       executableDirPath,
       '${AppIdentity.coreExecutableName}$executableExtension',
@@ -117,6 +143,16 @@ class AppPath {
   Future<String> get sharedPreferencesPath async {
     final directory = await dataDir.future;
     return join(directory.path, 'shared_preferences.json');
+  }
+
+  Future<String> get appConfigPath async {
+    final directory = await dataDir.future;
+    return join(directory.path, 'config.json');
+  }
+
+  Future<String> get ipCacheFilePath async {
+    final tempDirectory = await tempPath;
+    return join(tempDirectory, 'ip_cache.json');
   }
 
   Future<String> get helperAuthKeyPath async {

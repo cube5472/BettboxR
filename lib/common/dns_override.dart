@@ -255,6 +255,64 @@ const List<String> kRfReachableDoTDns = [
 ];
 const List<String> kRfReachablePlainDns = ['77.88.8.8', '77.88.8.1'];
 
+/// Скрипт (например, «Bag-rules-paranoid») взял DNS ядра под полный контроль.
+/// Признак — nameserver с адаптером группы ('#PROXY' и т.п.) либо Quad9:
+/// скрипт выставляет согласованную схему «единственный резолвер через туннель
+/// + РФ-доступный bootstrap», и сторонние добавки (в том числе Яндекс из
+/// ensureRfReachableDns) ломают карантин — утечка видна на dnsleaktest.
+/// Фрагмент после '#' ядро парсит так (core/Clash.Meta/config/config.go):
+/// части без '=' — имя адаптера ('PROXY', 'DIRECT'), части с '=' — параметры
+/// ('skip-cert-verify=true'). Поэтому '#skip-cert-verify=true' адаптером
+/// НЕ считается, а '#PROXY&skip-cert-verify=true' — считается.
+bool hasScriptDnsLock(Map<String, dynamic>? dns) {
+  if (dns == null) return false;
+  final nameserver = dns['nameserver'];
+  if (nameserver is! List) return false;
+  for (final item in nameserver) {
+    final s = item.toString().toLowerCase();
+    final hash = s.indexOf('#');
+    final head = hash == -1 ? s : s.substring(0, hash);
+    if (head.contains('quad9')) return true;
+    if (hash == -1) continue;
+    for (final part in s.substring(hash + 1).split('&')) {
+      if (part.contains('=')) continue;
+      final name = part.trim();
+      if (name.isNotEmpty && name != 'direct') return true;
+    }
+  }
+  return false;
+}
+
+/// Сохраняет скриптовый DNS (глубокая копия) ДО ветки overrideDns, чтобы
+/// восстановить его ПОСЛЕ app-оверрайда и ensureRfReachableDns: скрипт
+/// применяется к сырому конфигу профиля и его DNS-решение должно доживать
+/// до запуска ядра в любом режиме приложения.
+Map<String, dynamic>? captureScriptDnsLock(Map<String, dynamic> rawConfig) {
+  final dns = rawConfig['dns'];
+  if (dns is! Map || !hasScriptDnsLock(dns.cast<String, dynamic>())) {
+    return null;
+  }
+  return _deepCopyMap(dns.cast<String, dynamic>());
+}
+
+Map<String, dynamic> _deepCopyMap(Map<String, dynamic> map) {
+  final out = <String, dynamic>{};
+  map.forEach((key, value) {
+    out[key] = _deepCopyValue(value);
+  });
+  return out;
+}
+
+dynamic _deepCopyValue(dynamic value) {
+  if (value is Map) {
+    return value.map((k, v) => MapEntry(k.toString(), _deepCopyValue(v)));
+  }
+  if (value is List) {
+    return value.map(_deepCopyValue).toList();
+  }
+  return value;
+}
+
 /// Гарантирует наличие РФ-доступных резолверов в [dns] (без дублей).
 /// Списки только ДОПОЛНЯЮТСЯ: пользовательские серверы сохраняются, ядро
 /// опрашивает nameserver параллельно и берёт первый ответивший.
@@ -263,7 +321,11 @@ const List<String> kRfReachablePlainDns = ['77.88.8.8', '77.88.8.1'];
 /// даже когда основной DNS отвечает.
 /// default-nameserver (bootstrap для DoT) дополняется голыми IP —
 /// tls://-строки там запрещены.
+/// Скриптовый DNS-карантин (hasScriptDnsLock) не дополняется — схема
+/// резолверов уже задана скриптом целиком.
 void ensureRfReachableDns(Map<String, dynamic> dns) {
+  if (hasScriptDnsLock(dns)) return;
+
   void ensure(String key, List<String> values) {
     final list =
         ((dns[key] as List?) ?? const []).map((e) => e.toString()).toList();

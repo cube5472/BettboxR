@@ -65,11 +65,17 @@ mixin ClashInterface {
 
   FutureOr<String> getMemory();
 
+  FutureOr<String> getCoreStatus();
+
   FutureOr<void> resetTraffic();
 
   FutureOr<void> startLog();
 
   FutureOr<void> stopLog();
+
+  FutureOr<String> getLogs();
+
+  FutureOr<bool> clearLogs();
 
   Future<bool> crash();
 
@@ -80,6 +86,14 @@ mixin ClashInterface {
   FutureOr<bool> closeConnections();
 
   FutureOr<bool> resetConnections();
+
+  FutureOr<void> startTrackRequests();
+
+  FutureOr<void> stopTrackRequests();
+
+  FutureOr<String> getRequests();
+
+  FutureOr<bool> clearRequests();
 
   Future<bool> setState(CoreState state);
 
@@ -127,7 +141,7 @@ abstract class ClashHandlerInterface with ClashInterface {
     }
   }
 
-  void sendMessage(String message);
+  FutureOr<void> sendMessage(String message);
 
   FutureOr<void> reStart();
 
@@ -151,11 +165,16 @@ abstract class ClashHandlerInterface with ClashInterface {
       } else if (T == bool) {
         mDefaultValue = false;
       } else if (T == Map) {
-        mDefaultValue = {};
+        mDefaultValue = <String, dynamic>{};
       }
     }
 
-    sendMessage(json.encode(Action(id: id, method: method, data: data)));
+    try {
+      await sendMessage(json.encode(Action(id: id, method: method, data: data)));
+    } catch (e) {
+      callbackCompleterMap.remove(id);
+      rethrow;
+    }
 
     return (callbackCompleterMap[id] as Completer<T>).safeFuture(
       timeout: timeout,
@@ -168,6 +187,13 @@ abstract class ClashHandlerInterface with ClashInterface {
             return mDefaultValue;
           },
       functionName: id,
+    );
+  }
+
+  void _invokeAndForget(ActionMethod method, {dynamic data}) {
+    invoke(method: method, data: data).then<void>(
+      (_) {},
+      onError: (Object e) => commonPrint.log('${method.name} ignored: $e'),
     );
   }
 
@@ -251,7 +277,7 @@ abstract class ClashHandlerInterface with ClashInterface {
       method: ActionMethod.getConfig,
       data: json.encode(params),
       timeout: const Duration(seconds: 60),
-      defaultValue: Result.success({}),
+      defaultValue: Result.success(<String, dynamic>{}),
     );
     return res;
   }
@@ -262,7 +288,8 @@ abstract class ClashHandlerInterface with ClashInterface {
     return await invoke<String>(
       method: ActionMethod.setupConfig,
       data: data,
-      timeout: const Duration(seconds: 60),
+      timeout: const Duration(seconds: 15),
+      onTimeout: () => throw TimeoutException('setupConfig timeout'),
     );
   }
 
@@ -369,17 +396,47 @@ abstract class ClashHandlerInterface with ClashInterface {
 
   @override
   resetTraffic() {
-    invoke(method: ActionMethod.resetTraffic);
+    _invokeAndForget(ActionMethod.resetTraffic);
   }
 
   @override
   startLog() {
-    invoke(method: ActionMethod.startLog);
+    _invokeAndForget(ActionMethod.startLog);
   }
 
   @override
   stopLog() {
-    invoke<bool>(method: ActionMethod.stopLog);
+    _invokeAndForget(ActionMethod.stopLog);
+  }
+
+  @override
+  FutureOr<String> getLogs() {
+    return invoke<String>(method: ActionMethod.getLogs);
+  }
+
+  @override
+  FutureOr<bool> clearLogs() {
+    return invoke<bool>(method: ActionMethod.clearLogs);
+  }
+
+  @override
+  startTrackRequests() {
+    _invokeAndForget(ActionMethod.startTrackRequests);
+  }
+
+  @override
+  stopTrackRequests() {
+    _invokeAndForget(ActionMethod.stopTrackRequests);
+  }
+
+  @override
+  FutureOr<String> getRequests() {
+    return invoke<String>(method: ActionMethod.getRequests);
+  }
+
+  @override
+  FutureOr<bool> clearRequests() {
+    return invoke<bool>(method: ActionMethod.clearRequests);
   }
 
   @override
@@ -417,6 +474,11 @@ abstract class ClashHandlerInterface with ClashInterface {
   @override
   FutureOr<String> getMemory() {
     return invoke<String>(method: ActionMethod.getMemory);
+  }
+
+  @override
+  FutureOr<String> getCoreStatus() {
+    return invoke<String>(method: ActionMethod.getCoreStatus);
   }
 
   @override

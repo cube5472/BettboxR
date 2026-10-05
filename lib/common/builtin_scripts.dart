@@ -3,24 +3,59 @@
 //  - Bag-rules-paranoid: DNS-карантин (источник — download/Bag-rules-paranoid.yaml)
 //  - РФ-БС: схема белых списков (правила + 50 провайдеров + DNS-фолбэки,
 //    источник — scripts/rf_bs_script.js, генерируется из BettboxR-1609-fixed-v2.yaml)
-// При изменении скрипта обновить соответствующую константу.
-// Raw-строки (r'''): JS не обрабатывается Dart-экранированием.
+// При изменении скрипта обновить соответствующую константу И поднять
+// kBuiltinScriptVersion — иначе у пользователей не обновятся ранее засеянные
+// копии. Raw-строки (r'''): JS не обрабатывается Dart-экранированием.
+
+// Версия встроенных скриптов. Сид с маркером более старой версии либо с
+// содержимым, совпадающим с исторической версией (см. ниже), обновляется
+// при старте приложения; правленные вручную копии (иной md5) не трогаются.
+const int kBuiltinScriptVersion = 2;
+
+// md5 содержимого исторических версий скриптов (до введения маркера версии) —
+// позволяет отличить старый автосид от ручной правки пользователя.
+// Новые строки добавлять при выпуске версии, менявшей скрипты.
+const Set<String> kBuiltinScriptLegacyHashes = {
+  // s-ru
+  '773022e0087b34da99682e9a0cb6483c', // @4afbc9dd (AI-группа, без маркера)
+  '1c91d06d9f4f955e04edd6e3dae81614', // @c2211f7a
+  '728c999d90b8a86181513ed7f1f72a35', // @9fcf445a
+  'a6d836deba930fd93bb59a21b2fcc49b', // @1f82b8ce
+  'd9924f1a1269d5c8611cbb91a3cc11a6', // @b3a6dc2c
+  '1f0dbae28908541769cad896bc1058a4', // @820765fa
+  // Bag-rules-paranoid
+  '229419eaac6d189af4245943a8ab7e4e', // @4afbc9dd
+  '85a494e1a8b26b896687d3ba5b617860', // @9fcf445a
+  '613ace402dcc73b111a3da6454893d7c', // @b3a6dc2c
+  '5384b7118c2a9de979f6c4aafa900b56', // @2dde7668
+  // РФ-БС
+  '414f856b7c07665b293fe594ae3d5be5', // @4afbc9dd (AI-правила, без маркера)
+  'ae8be8676404e903e9334eda54ddb70f', // @c2211f7a
+  '90e7caae7f9b36823c84ec55f78cdec1', // @9fcf445a
+  '7917fe01ba6de7258b77b4fd26d0c7ea', // @1f82b8ce
+};
 
 const String kBuiltinSRuScriptLabel = 's-ru';
 
 const String builtinSRuScript = r'''// Compatible_With_Bettbox
+// bettboxr-builtin v2
 //
 // BettboxR — скрипт «s-ru»: правила маршрутизации + фильтр RU-нод в одном.
 //
 // Зачем нужен:
 //  1) «Правила маршрутизации (s-ru)» — подставляет полный набор правил:
-//     реклама и шпионские домены в блок, RU-сервисы напрямую, Discord /
-//     YouTube / игры / AI и заблокированное — через VPN. Правила ставятся
-//     только если в профиле есть все нужные rule-providers и группы,
-//     иначе профиль остаётся на своих правилах (конфиг не ломается).
-//  2) «Убирать RU-ноды из авто-групп» — выкидывает RU-ноды из url-test /
-//     fallback / load-balance, чтобы автовыбор не гонял трафик через РФ.
-//     В обычных (select) группах RU-ноды остаются — можно выбрать вручную.
+//     реклама, шпионаж и списки oisd в блок, RU-сервисы напрямую, Discord /
+//     YouTube / игры / AI и заблокированное — через VPN. Правила ставятся,
+//     если в профиле есть все нужные ГРУППЫ. Отсутствующие rule-providers
+//     не роняют схему: критичные списки (приватные диапазоны, RU-направляющие)
+//     заменяются встроенными правилами, остальные RULE-SET аккуратно
+//     пропускаются (причины — в журнале: строки «[script] s-ru: …»).
+//  2) «Убирать RU-ноды из групп» — выкидывает RU-ноды из ВСЕХ групп
+//     (включая select): из явных списков proxies — напрямую, из групп на
+//     провайдерах/include-all — через exclude-filter (ядро применяет его
+//     к любому типу групп). Раньше (до v3) фильтровались только
+//     url-test / fallback / load-balance — в схеме генератора (все группы
+//     select + include-all) RU-ноды оставались в списке и в ручном выборе.
 //
 // Чекбоксы: Профили → Скрипты → «⋮» на карточке скрипта → «Настройка».
 // Сам скрипт включается тумблером на его карточке (и действует на профили,
@@ -29,25 +64,59 @@ const String builtinSRuScript = r'''// Compatible_With_Bettbox
 // ---- Чекбоксы (настройка скрипта в приложении) ----
 var ruleOptionsEnable = {
   "Правила маршрутизации (s-ru)": true,
-  "Убирать RU-ноды из авто-групп": true
+  "Убирать RU-ноды из групп": true
 };
 
 // ---- Фильтр RU-нод ----
-// Маска RU-нод (можно дополнить: /🇷🇺|Russia|\bRU\b/i)
-var RU_MASK = /🇷🇺|Russia/i;
+// Маска RU-нод: ловит «🇷🇺», «RU-1», «РФ», «Россия», «Российск…», «Russian».
+// \b работает только с ASCII-границами — этого достаточно: слово RU
+// окружено дефисом/пробелом/началом строки.
+var RU_MASK = /🇷🇺|Russia|Russian|\bRU\b|РФ|Россия|Российск/i;
 
-// Типы групп, из которых убираем RU-ноды
-var AUTO_TYPES = ["url-test", "fallback", "load-balance"];
+// Маска для exclude-filter групп (Go/RE2 — тот же набор ключей)
+var RU_EXCLUDE = "🇷🇺|Russia|Russian|\\bRU\\b|РФ|Россия|Российск";
+
+// ---- Встроенные замены для профилей без полного набора провайдеров ----
+// private-ips нет в списке провайдеров -> приватные диапазоны напрямую:
+var S_RU_PRIVATE_IP_RULES = [
+  "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve",
+  "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve",
+  "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve",
+  "IP-CIDR,127.0.0.0/8,DIRECT,no-resolve",
+  "IP-CIDR,169.254.0.0/16,DIRECT,no-resolve",
+  "IP-CIDR,224.0.0.0/4,DIRECT,no-resolve",
+  "IP-CIDR,255.255.255.255/32,DIRECT,no-resolve",
+  "IP-CIDR6,fc00::/7,DIRECT,no-resolve",
+  "IP-CIDR6,::1/128,DIRECT,no-resolve"
+];
+// private-domains нет -> локальные имена напрямую:
+var S_RU_PRIVATE_DOMAIN_RULES = [
+  "DOMAIN-SUFFIX,local,DIRECT",
+  "DOMAIN,localhost,DIRECT"
+];
+// Списки «RU-сервисы напрямую» нет -> один GEOIP-фолбэк (база geoip
+// встроена в клиент) на месте первого из пропавших:
+var S_RU_DIRECT_SETS = ["category-ru", "ru-apps"];
+var S_RU_DIRECT_FALLBACK_RULE = "GEOIP,RU,DIRECT";
 
 // ---- Набор правил s-ru ----
+// Telegram-исключение (RULE-SET,telegram-ips → PROXY,no-resolve) стоит
+// ВЫШЕ IPv6-киллсвитча и QUIC-блока: звонки Telegram — UDP/443 на адреса
+// Telegram DC, без этого они режутся QUIC-блоком раньше телеграм-правила.
+// no-resolve: для доменных соединений правило пропускается без резолва
+// (резолв всё равно случится позже на direct-ips), звонки же идут
+// напрямую на IP — они матчатся всегда. Провайдера нет в профиле —
+// правило мягко пропустится (см. _applyRules).
 var S_RU_RULES = [
   'DOMAIN,api.ipify.org,🛡️ VPN',
   'RULE-SET,private-ips,DIRECT,no-resolve',
+  'RULE-SET,telegram-ips,PROXY,no-resolve',
   'IP-CIDR,::/0,REJECT-DROP,no-resolve',
   'AND,((NETWORK,UDP),(DST-PORT,443)),REJECT-DROP',
   'RULE-SET,private-domains,DIRECT',
   'RULE-SET,category-ads,REJECT-DROP',
   'RULE-SET,win-spy,REJECT-DROP',
+  'RULE-SET,oisd_big,REJECT-DROP',
   'RULE-SET,torrent-domains,DIRECT',
   'RULE-SET,google-play,PROXY',
   'RULE-SET,twitch-ads,PROXY',
@@ -60,6 +129,12 @@ var S_RU_RULES = [
   'RULE-SET,escapefromtarkov,🎮 Игры',
   'RULE-SET,steam,🎮 Игры',
   'RULE-SET,faceit,🎮 Игры',
+  'RULE-SET,ai,PROXY',
+  'RULE-SET,google-deepmind,PROXY',
+  'DOMAIN-SUFFIX,copilot.microsoft.com,PROXY',
+  'DOMAIN-SUFFIX,perplexity.ai,PROXY',
+  'DOMAIN-SUFFIX,x.ai,PROXY',
+  'DOMAIN-SUFFIX,grok.com,PROXY',
   'RULE-SET,twitch,DIRECT',
   'RULE-SET,microsoft,DIRECT',
   'RULE-SET,apple,DIRECT',
@@ -72,14 +147,11 @@ var S_RU_RULES = [
   'RULE-SET,games,🎮 Игры',
   'RULE-SET,ru-apps,DIRECT',
   'RULE-SET,direct-ips,DIRECT',
-  'RULE-SET,telegram-ips,PROXY',
   'RULE-SET,telegram-domains,PROXY',
   'RULE-SET,discord_domains,PROXY',
   'RULE-SET,discord_voiceips,PROXY',
   'RULE-SET,discord_vc,PROXY',
   'PROCESS-NAME,Discord.exe,PROXY',
-  'RULE-SET,ai,PROXY',
-  'RULE-SET,google-deepmind,PROXY',
   'DOMAIN-SUFFIX,twitter.com,PROXY',
   'DOMAIN-SUFFIX,x.com,PROXY',
   'DOMAIN-SUFFIX,instagram.com,PROXY',
@@ -94,7 +166,6 @@ var S_RU_RULES = [
   'IP-CIDR,54.0.0.0/8,PROXY',
   'IP-CIDR,23.235.32.0/20,PROXY',
   'IP-CIDR,43.249.72.0/22,PROXY',
-  'RULE-SET,oisd_big,PROXY',
   'RULE-SET,refilter_domains,PROXY',
   'RULE-SET,ru-inline-banned,PROXY',
   'RULE-SET,inline-blocked-ips,PROXY',
@@ -147,25 +218,89 @@ function _usedRuleSets(rules) {
   return used;
 }
 
-// Ставит правила только при полном наборе провайдеров и групп — иначе профиль
-// остаётся на своих правилах, а не падает при старте ядра.
+// AI-правила: цель подменяется на группу «🤖 AI», если она есть в профиле
+// (конфиг генератора с AI-группой); в старых профилях без группы остаётся
+// PROXY — конфиг не ломается.
+var S_RU_AI_RULES = {
+  "RULE-SET,ai,PROXY": true,
+  "RULE-SET,google-deepmind,PROXY": true,
+  "DOMAIN-SUFFIX,copilot.microsoft.com,PROXY": true,
+  "DOMAIN-SUFFIX,perplexity.ai,PROXY": true,
+  "DOMAIN-SUFFIX,x.ai,PROXY": true,
+  "DOMAIN-SUFFIX,grok.com,PROXY": true
+};
+
+function _withAiTargets(rules, aiTarget) {
+  var out = [];
+  for (var i = 0; i < rules.length; i++) {
+    var rule = String(rules[i]);
+    if (aiTarget !== "PROXY" && S_RU_AI_RULES[rule]) {
+      rule = rule.slice(0, -"PROXY".length) + aiTarget;
+    }
+    out.push(rule);
+  }
+  return out;
+}
+
+// Ставит правила, если в профиле есть все нужные ГРУППЫ. Отсутствующие
+// rule-providers обрабатываются мягко: критичные категории заменяются
+// встроенными правилами, остальные RULE-SET пропускаются — схема работает
+// на любом профиле (дефолт генератора несёт только RoscomVPN: 26 из 41
+// списка, прежде из-за этого правила s-ru не применялись вовсе).
 function _applyRules(config) {
   var providers = _providerNames(config);
   var used = _usedRuleSets(S_RU_RULES);
+  var missing = [];
   for (var name in used) {
-    if (!providers[name]) {
-      console.warn("s-ru: в профиле нет rule-provider '" + name + "', правила не применены");
-      return false;
-    }
+    if (!providers[name]) missing.push(name);
   }
   var names = _groupNames(config);
+  var aiTarget = names["🤖 AI"] ? "🤖 AI" : "PROXY";
+  var srcRules = _withAiTargets(S_RU_RULES, aiTarget);
   for (var i = 0; i < S_RU_REQUIRED_GROUPS.length; i++) {
     if (!names[S_RU_REQUIRED_GROUPS[i]]) {
       console.warn("s-ru: в профиле нет группы '" + S_RU_REQUIRED_GROUPS[i] + "', правила не применены");
       return false;
     }
   }
-  config.rules = S_RU_RULES.slice();
+  if (missing.length === 0) {
+    config.rules = srcRules;
+    return true;
+  }
+
+  var rules = [];
+  var dropped = [];
+  var geoipUsed = false;
+  for (var j = 0; j < srcRules.length; j++) {
+    var rule = srcRules[j];
+    var parts = String(rule).split(",");
+    if (parts[0] === "RULE-SET" && missing.indexOf(parts[1]) !== -1) {
+      if (parts[1] === "private-ips") {
+        for (var p = 0; p < S_RU_PRIVATE_IP_RULES.length; p++) {
+          rules.push(S_RU_PRIVATE_IP_RULES[p]);
+        }
+      } else if (parts[1] === "private-domains") {
+        for (var q = 0; q < S_RU_PRIVATE_DOMAIN_RULES.length; q++) {
+          rules.push(S_RU_PRIVATE_DOMAIN_RULES[q]);
+        }
+      } else if (S_RU_DIRECT_SETS.indexOf(parts[1]) !== -1) {
+        if (!geoipUsed) {
+          rules.push(S_RU_DIRECT_FALLBACK_RULE);
+          geoipUsed = true;
+        }
+        // последующие пропавшие RU-списки уже покрыты фолбэком
+      } else {
+        dropped.push(parts[1]);
+      }
+      continue;
+    }
+    rules.push(rule);
+  }
+  config.rules = rules;
+  console.warn("s-ru: нет списков (" + missing.join(", ") + ") — применено частично");
+  if (dropped.length > 0) {
+    console.warn("s-ru: RULE-SET без провайдеров пропущены: " + dropped.join(", "));
+  }
   return true;
 }
 
@@ -175,25 +310,30 @@ function _filterRuNodes(config) {
 
   for (var i = 0; i < groups.length; i++) {
     var group = groups[i];
-    if (!group || AUTO_TYPES.indexOf(group.type) === -1) continue;
+    if (!group) continue;
 
-    // 1) обычный список прокси внутри группы
+    // 1) явный список прокси — ЛЮБОЙ тип группы (select тоже): RU-ноды
+    // выкидываются, но группе не даём опустеть (пустая ломает конфиг)
     if (Array.isArray(group.proxies)) {
       var filtered = group.proxies.filter(function (name) {
         return !RU_MASK.test(String(name));
       });
-      // не даём группе опустеть — пустая группа ломает конфиг
       if (filtered.length > 0) {
         group.proxies = filtered;
       }
     }
 
-    // 2) группы на провайдерах / include-all — фильтруем через exclude-filter
+    // 2) группы на провайдерах / include-all — фильтруем через exclude-filter.
+    // Ядро применяет exclude-filter к ЛЮБОМУ типу групп (не только к
+    // url-test/fallback/load-balance), поэтому select-группы генератора
+    // (🛡️ VPN, 📺 Youtube, 🎮 Игры, 💬 Discord.exe, 🤖 AI) тоже очищаются
     var usesProviders =
-      group["include-all"] === true || (Array.isArray(group.use) && group.use.length > 0);
+      group["include-all"] === true ||
+      group["include-all-providers"] === true ||
+      (Array.isArray(group.use) && group.use.length > 0);
     if (usesProviders) {
       var old = typeof group["exclude-filter"] === "string" ? group["exclude-filter"] : "";
-      var add = "🇷🇺|Russia";
+      var add = RU_EXCLUDE;
       if (old.indexOf(add) === -1) {
         group["exclude-filter"] = old ? old + "|" + add : add;
       }
@@ -209,7 +349,7 @@ function main(config) {
   if (opts["Правила маршрутизации (s-ru)"] !== false) {
     _applyRules(config);
   }
-  if (opts["Убирать RU-ноды из авто-групп"] !== false) {
+  if (opts["Убирать RU-ноды из групп"] !== false) {
     _filterRuNodes(config);
   }
   return config;
@@ -219,6 +359,7 @@ function main(config) {
 const String kBuiltinBagRulesParanoidLabel = 'Bag-rules-paranoid';
 
 const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
+// bettboxr-builtin v2
 //
 // BettboxR — скрипт «Bag-rules-paranoid»: DNS-карантин (fail-closed).
 //
@@ -232,9 +373,24 @@ const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
 //     Проверка внешнего IP (api.ipify.org) принудительно через туннель.
 //     Правила ставятся В НАЧАЛО списка правил профиля — собственные
 //     правила маршрутизации профиля продолжают работать как раньше.
-//  2) «Блокировать QUIC (UDP 443)» — запрещает HTTP/3: весь HTTPS идёт
+//  2) «DNS ядра → Quad9 (через VPN)» — заменяет сам список nameserver
+//     ЯДРА на Quad9 с адаптером «#PROXY» (резолв идёт через туннель).
+//     Это ключевой пункт для dnsleaktest: собственный DNS ядра НЕ проходит
+//     через правила (пункт 1 его не достаёт), а утечки на тесте показывают
+//     именно nameserver ядра. Bootstrap (default-nameserver) и
+//     proxy-server-nameserver (резолв доменов самих нод — работает до
+//     подъёма туннеля) — только РФ-доступный Яндекс, никаких Google/
+//     AdGuard/Cloudflare. Прочие настройки dns профиля (enhanced-mode,
+//     fake-ip и т.д.) сохраняются. При включённом «Переопределении DNS»
+//     в настройках приложения приоритет у скрипта: его DNS восстанавливается
+//     после app-оверрайда.
+//  3) «Блокировать QUIC (UDP 443)» — запрещает HTTP/3: весь HTTPS идёт
 //     по TCP и одинаково проходит через туннель и правила. Бонус: на
 //     UDP/443 сидят WARP/MASQUE-туннели — они тоже закрываются.
+//     Исключение: UDP/443 на адреса Telegram (rule-provider telegram-ips)
+//     идёт через PROXY — звонки Telegram не режутся. Исключение ставится
+//     только если в профиле ЕСТЬ провайдер telegram-ips (иначе RULE-SET
+//     уронил бы конфиг); если провайдера нет — QUIC блокируется целиком.
 //
 // Защита: правила применяются только если в профиле есть группа PROXY и
 // список правил — иначе конфиг не трогается. Повторное применение
@@ -246,6 +402,7 @@ const String builtinBagRulesParanoidScript = r'''// Compatible_With_Bettbox
 // ---- Чекбоксы (настройка скрипта в приложении) ----
 var ruleOptionsEnable = {
   "DNS-карантин (Quad9 через VPN)": true,
+  "DNS ядра → Quad9 (через VPN)": true,
   "Блокировать QUIC (UDP 443)": true
 };
 
@@ -283,7 +440,7 @@ var BLOCK_PLAIN_DNS = [
   "AND,((NETWORK,tcp),(DST-PORT,53)),REJECT"
 ];
 
-// ---- Полный запрет DoT/DoQ (порт 853), кроме Quad9 выше ----
+// ---- Полный запрет DoT/DoQ (порт 853) в правилах — Quad9 разрешён выше ----
 var BLOCK_DOT = "DST-PORT,853,REJECT";
 
 // ---- DoH публичных сервисов (порт 443 — ловим по доменам) ----
@@ -352,8 +509,61 @@ var BLOCK_RESOLVER_IPS = [
 // ---- QUIC / HTTP3 (UDP 443) ----
 var BLOCK_QUIC = "AND,((NETWORK,udp),(DST-PORT,443)),REJECT";
 
-// Собирает набор правил карантинa. quicBlock — включать ли запрет QUIC.
-function _bagRuleList(quicBlock) {
+// ---- Telegram-исключение над QUIC-блоком ----
+// Звонки Telegram — UDP/443 на адреса Telegram DC: без исключения
+// BLOCK_QUIC режет их раньше правил маршрутизации профиля. Ставится
+// только при наличии в профиле rule-provider telegram-ips.
+var TG_EXEMPT_RULE = "RULE-SET,telegram-ips,PROXY,no-resolve";
+
+function _hasRuleProvider(config, name) {
+  var providers = config["rule-providers"];
+  return !!(
+    providers &&
+    typeof providers === "object" &&
+    !Array.isArray(providers) &&
+    providers[name]
+  );
+}
+
+// ---- DNS ядра: единственный резолвер — Quad9 через туннель ----
+// Адаптер «#PROXY» отправляет сами DNS-запросы через группу PROXY:
+// ядро резолвит через Quad9, а трафик до Quad9 идёт через VPN-ноду.
+var QUAD9_NAMESERVERS = [
+  "tls://9.9.9.9#PROXY",
+  "tls://149.112.112.9#PROXY",
+  "https://dns.quad9.net/dns-query#PROXY"
+];
+
+// Bootstrap (имя dns.quad9.net нужно разрешить ДО туннеля) и
+// proxy-server-nameserver (домены самих прокси-нод резолвятся до подъёма
+// туннеля) — только РФ-доступные резолверы, иначе карантин роняет
+// подключение. В default-nameserver допустимы только голые IP.
+var RF_BOOTSTRAP_DNS = ["77.88.8.8", "77.88.8.1"];
+var RF_DIRECT_DOT_DNS = ["tls://77.88.8.8", "tls://77.88.8.1"];
+
+// Заменяет резолверы ЯДРА (merge в dns профиля: enhanced-mode, fake-ip и
+// прочие настройки сохраняются). Требует группу PROXY — адаптер «#PROXY»
+// ссылается на неё, без группы ядро не поднимет конфиг.
+function _applyDns(config) {
+  if (!_hasGroup(config, "PROXY")) {
+    console.warn("Bag-rules-paranoid: в профиле нет группы 'PROXY', DNS ядра не заменены");
+    return false;
+  }
+  var dns = config.dns;
+  if (!dns || typeof dns !== "object" || Array.isArray(dns)) {
+    dns = {};
+  }
+  dns.enable = true;
+  dns.nameserver = QUAD9_NAMESERVERS.slice();
+  dns["default-nameserver"] = RF_BOOTSTRAP_DNS.slice();
+  dns["proxy-server-nameserver"] = RF_DIRECT_DOT_DNS.slice();
+  config.dns = dns;
+  return true;
+}
+
+// Собирает набор правил карантинa. quicBlock — включать ли запрет QUIC;
+// tgExempt — ставить ли Telegram-исключение перед QUIC-правилом.
+function _bagRuleList(quicBlock, tgExempt) {
   var rules = [];
   // Проверка внешнего IP — всегда через туннель. Ставим самым первым:
   // правило срабатывает раньше любых блокировок (в т.ч. раньше запрета QUIC).
@@ -379,13 +589,17 @@ function _bagRuleList(quicBlock) {
     rules.push("IP-CIDR," + BLOCK_RESOLVER_IPS[i] + ",REJECT,no-resolve");
   }
   if (quicBlock) {
+    if (tgExempt) {
+      rules.push(TG_EXEMPT_RULE);
+    }
     rules.push(BLOCK_QUIC);
   }
   return rules;
 }
 
-// Полный набор (с QUIC-правилом) — по нему находим/удаляем свои правила.
-var BAG_ALL_RULES = _bagRuleList(true);
+// Полный набор (с QUIC-правилом и Telegram-исключением) — по нему
+// находим/удаляем свои правила.
+var BAG_ALL_RULES = _bagRuleList(true, true);
 
 function _isOurs(rule) {
   return BAG_ALL_RULES.indexOf(String(rule)) !== -1;
@@ -411,7 +625,8 @@ function _apply(config, quicBlock) {
     console.warn("Bag-rules-paranoid: в профиле нет списка правил, правила не применены");
     return false;
   }
-  config.rules = _bagRuleList(quicBlock).concat(
+  var tgExempt = _hasRuleProvider(config, "telegram-ips");
+  config.rules = _bagRuleList(quicBlock, tgExempt).concat(
     config.rules.filter(function (rule) {
       return !_isOurs(rule);
     })
@@ -436,6 +651,9 @@ function main(config) {
   } else {
     _remove(config);
   }
+  if (opts["DNS ядра → Quad9 (через VPN)"] !== false) {
+    _applyDns(config);
+  }
   return config;
 }
 ''';
@@ -443,6 +661,7 @@ function main(config) {
 const String kBuiltinRFBSScriptLabel = 'РФ-БС';
 
 const String builtinRFBSScript = r'''// Compatible_With_Bettbox
+// bettboxr-builtin v2
 //
 // BettboxR — скрипт «РФ-БС» (РФ — Белые Списки): готовая схема маршрутизации
 // для режима белых списков, накладывается на любой профиль. Прокси скрипт не
@@ -453,11 +672,14 @@ const String builtinRFBSScript = r'''// Compatible_With_Bettbox
 //     правил схемы ПЕРЕД правилами профиля: приватные адреса, весь IPv6 и
 //     (по чекбоксу) QUIC в блок; RU-сервисы и белый список РКН — напрямую;
 //     заблокированное (Telegram/YouTube/Discord/AI/Cloudflare/соцсети и пр.)
-//     — через PROXY. 50 нужных rule-providers скрипт добавляет в профиль
+//     — через PROXY; пуши Apple/FCM (DST-PORT 5223, push.apple.com, FCM) —
+//     тоже PROXY и обязательно ДО apple DIRECT (иначе мёртвые).
+//     50 нужных rule-providers скрипт добавляет в профиль
 //     сам (roscomvpn-geosite и др.); провайдер профиля с тем же именем
 //     заменяется — схема самодостаточна. На первый старт ядра нужна
 //     доступность источников списков (cdn.jsdelivr.net/github), дальше они
-//     лежат в кэше. Цели-группы схемы (📺 Youtube, 🎮 Игры, 💬 Discord.exe)
+//     лежат в кэше. Цели-группы схемы (📺 Youtube, 🎮 Игры, 💬 Discord.exe,
+//     🤖 AI)
 //     работают, только если такие группы есть в профиле, иначе трафик уходит
 //     в PROXY. При выключении чекбокса правила схемы удаляются (провайдеры
 //     остаются — их нельзя отличить от профильных).
@@ -490,13 +712,20 @@ var ruleOptionsEnable = {
 };
 
 // ---- Правила схемы (без финала MATCH; цели-группы резолвятся по профилю) ----
+// Telegram-исключение (RULE-SET,telegram-ips → PROXY,no-resolve) стоит
+// ВЫШЕ IPv6-киллсвитча и QUIC-блока: звонки Telegram — UDP/443 на адреса
+// Telegram DC, без этого они режутся QUIC-блоком раньше телеграм-правила.
+// no-resolve: для доменных соединений правило пропускается без резолва.
+// Провайдер telegram-ips скрипт добавляет сам (см. RF_BS_PROVIDERS).
 var RF_BS_RULES = [
   "RULE-SET,private-ips,DIRECT,no-resolve",
+  "RULE-SET,telegram-ips,PROXY,no-resolve",
   "IP-CIDR,::/0,REJECT-DROP,no-resolve",
   "AND,((NETWORK,UDP),(DST-PORT,443)),REJECT-DROP",
   "RULE-SET,private-domains,DIRECT",
   "RULE-SET,category-ads,REJECT-DROP",
   "RULE-SET,win-spy,REJECT-DROP",
+  "RULE-SET,oisd_big,REJECT-DROP",
   "RULE-SET,torrent-domains,DIRECT",
   "RULE-SET,google-play,PROXY",
   "RULE-SET,twitch-ads,PROXY",
@@ -509,6 +738,17 @@ var RF_BS_RULES = [
   "RULE-SET,escapefromtarkov,🎮 Игры",
   "RULE-SET,steam,🎮 Игры",
   "RULE-SET,faceit,🎮 Игры",
+  "DST-PORT,5223,PROXY",
+  "DOMAIN-SUFFIX,push.apple.com,PROXY",
+  "DOMAIN-SUFFIX,mtalk.google.com,PROXY",
+  "DOMAIN-SUFFIX,identity.apple.com,PROXY",
+  "DOMAIN-SUFFIX,deviceenrollment.apple.com,PROXY",
+  "RULE-SET,ai,🤖 AI",
+  "RULE-SET,google-deepmind,🤖 AI",
+  "DOMAIN-SUFFIX,copilot.microsoft.com,🤖 AI",
+  "DOMAIN-SUFFIX,perplexity.ai,🤖 AI",
+  "DOMAIN-SUFFIX,x.ai,🤖 AI",
+  "DOMAIN-SUFFIX,grok.com,🤖 AI",
   "RULE-SET,twitch,DIRECT",
   "RULE-SET,microsoft,DIRECT",
   "RULE-SET,apple,DIRECT",
@@ -530,14 +770,11 @@ var RF_BS_RULES = [
   "RULE-SET,games,🎮 Игры",
   "RULE-SET,ru-apps,DIRECT",
   "RULE-SET,direct-ips,DIRECT",
-  "RULE-SET,telegram-ips,PROXY",
   "RULE-SET,telegram-domains,PROXY",
   "RULE-SET,discord_domains,PROXY",
   "RULE-SET,discord_voiceips,PROXY",
   "RULE-SET,discord_vc,PROXY",
   "PROCESS-NAME,Discord.exe,PROXY",
-  "RULE-SET,ai,PROXY",
-  "RULE-SET,google-deepmind,PROXY",
   "DOMAIN-SUFFIX,twitter.com,PROXY",
   "DOMAIN-SUFFIX,x.com,PROXY",
   "DOMAIN-SUFFIX,instagram.com,PROXY",
@@ -545,11 +782,6 @@ var RF_BS_RULES = [
   "DOMAIN-SUFFIX,facebook.com,PROXY",
   "RULE-SET,whatsapp-domains,PROXY",
   "DOMAIN-KEYWORD,bittorrent,DIRECT",
-  "DST-PORT,5223,PROXY",
-  "DOMAIN-SUFFIX,push.apple.com,PROXY",
-  "DOMAIN-SUFFIX,mtalk.google.com,PROXY",
-  "DOMAIN-SUFFIX,identity.apple.com,PROXY",
-  "DOMAIN-SUFFIX,deviceenrollment.apple.com,PROXY",
   "RULE-SET,cloudflare-ips,PROXY",
   "RULE-SET,cloudflare-domains,PROXY",
   "IP-CIDR,23.0.0.0/12,PROXY",
@@ -558,7 +790,6 @@ var RF_BS_RULES = [
   "IP-CIDR,54.0.0.0/8,PROXY",
   "IP-CIDR,23.235.32.0/20,PROXY",
   "IP-CIDR,43.249.72.0/22,PROXY",
-  "RULE-SET,oisd_big,PROXY",
   "RULE-SET,refilter_domains,PROXY",
   "RULE-SET,ru-inline-banned,PROXY",
   "RULE-SET,inline-blocked-ips,PROXY",
@@ -686,6 +917,14 @@ var RF_BS_OUR_STRINGS = (function () {
   for (var i = 0; i < RF_BS_RULES.length; i++) {
     map[RF_BS_RULES[i]] = true;
     map[_resolveRule(RF_BS_RULES[i], {})] = true;
+  }
+  // Строки прежних версий схемы — чтобы повторное применение снимало и их
+  // (oisd_big был PROXY в хвосте до переноса в блок рекламы; telegram-ips
+  // был без no-resolve в хвосте до переноса над QUIC-блоком).
+  var legacy = ["RULE-SET,oisd_big,PROXY", "RULE-SET,telegram-ips,PROXY"];
+  for (var j = 0; j < legacy.length; j++) {
+    map[legacy[j]] = true;
+    map[_resolveRule(legacy[j], {})] = true;
   }
   return map;
 })();
