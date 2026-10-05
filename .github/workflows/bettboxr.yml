@@ -1,14 +1,26 @@
 name: build-bettboxr
 
-# Сборка BettboxR (форк Bettbox с встроенным генератором) — только Android.
-# Подпись: с секретами KEYSTORE/KEY_ALIAS/STORE_PASSWORD/KEY_PASSWORD — release,
+# Сборка BettboxR (форк Bettbox с встроенным генератором): Android и/или Windows.
+# Запуск: вкладка Actions → build-bettboxr → Run workflow → выбрать платформу.
+# Android-подпись: с секретами KEYSTORE/KEY_ALIAS/STORE_PASSWORD/KEY_PASSWORD — release,
 # без них или с битым KEYSTORE — debug (APK всё равно соберётся и установится).
+# Windows: инсталлятор dist/Bettbox-*-windows-amd64-setup.exe, без подписи (SmartScreen
+# предупредит — это норма), секреты не нужны.
 
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Платформа сборки'
+        required: true
+        default: 'android'
+        type: choice
+        options:
+          - android
+          - windows
+          - all
       arch:
-        description: 'Архитектура сборки'
+        description: 'Архитектура (для Android)'
         required: true
         default: 'arm64'
         type: choice
@@ -22,6 +34,7 @@ env:
 
 jobs:
   build:
+    if: github.event.inputs.target != 'windows'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -128,4 +141,90 @@ jobs:
         with:
           name: BettboxR-apk-${{ github.event.inputs.arch || 'arm64' }}-${{ env.BETTBOXR_SIGNING }}
           path: out/*.apk
+          if-no-files-found: error
+
+  build-windows:
+    if: github.event.inputs.target == 'windows' || github.event.inputs.target == 'all'
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Enable Git long paths
+        run: git config --global core.longpaths true
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Setup Golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.x'
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.9'
+          cache: true
+          cache-key: flutter-bettboxr-windows-${{ hashFiles('**/pubspec.lock') }}
+
+      # Как в апстриме: снять read-only с tun_windows.go в кэше модулей
+      - name: Patch sing-tun (windows)
+        shell: bash
+        run: |
+          cd core
+          SING_TUN_VERSION=$(grep -E 'github\.com/metacubex/sing-tun\s+v[^[:space:]]+' go.mod | awk '{print $2}')
+          echo "sing-tun ${SING_TUN_VERSION}"
+          go mod download github.com/metacubex/sing-tun@${SING_TUN_VERSION}
+          MOD_CACHE=$(go env GOMODCACHE | tr '\\' '/')
+          FILE="${MOD_CACHE}/github.com/metacubex/sing-tun@${SING_TUN_VERSION}/tun_windows.go"
+          chmod +w "${FILE}"
+
+      - name: Build Core (windows amd64)
+        shell: bash
+        run: |
+          flutter pub get
+          dart run build_runner build -d
+          dart setup.dart windows --arch amd64 --out core-only
+
+      - name: Build HelperService
+        shell: pwsh
+        run: |
+          $coreHash = (Get-FileHash libclash/windows/BettboxCore.exe -Algorithm SHA256).Hash.ToLower()
+          Write-Host "Core SHA256: $coreHash"
+          dart setup.dart windows --arch amd64 --out helper --core-hash $coreHash
+          "CORE_HASH=$coreHash" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build Bettbox (windows)
+        shell: pwsh
+        run: |
+          flutter build windows --release --dart-define=CORE_SHA256=$env:CORE_HASH --dart-define=APP_ENV=stable --dart-define=APP_ASSET_SUFFIX=windows-amd64-setup.exe
+
+      - name: Package installer (Inno Setup)
+        shell: bash
+        run: |
+          dart windows/packaging/exe/package_windows.dart --arch amd64 --env stable
+
+      - name: Collect installer
+        shell: bash
+        run: |
+          mkdir -p out
+          find dist -name '*.exe' | while read -r f; do cp "$f" out/; done
+          ls -la out/
+          if ! ls out/*.exe >/dev/null 2>&1; then
+            echo "Инсталлятор не найден" && exit 1
+          fi
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: BettboxR-windows-amd64-setup
+          path: out/*.exe
           if-no-files-found: error

@@ -161,10 +161,6 @@ jobs:
           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
           flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.9' }}
 
-      - name: Clear Pub Cache Credentials
-        shell: bash
-        run: rm -f ~/.pub-cache/credentials.json 2>/dev/null || true
-
 
       - name: Clean Gradle (Android)
         if: matrix.platform == 'android'
@@ -429,30 +425,12 @@ jobs:
             fi
           fi
 
-      - name: Upload Artifacts (macOS & Android)
-        if: matrix.platform != 'linux' && matrix.platform != 'windows'
+      - name: Upload Artifacts (Non-Linux)
+        if: matrix.platform != 'linux'
         uses: actions/upload-artifact@v7
         with:
           name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}
           path: ./dist/*
-          archive: false
-          overwrite: true
-
-      - name: Upload Windows Installer Artifact
-        if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v7
-        with:
-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-installer
-          path: ./dist/*.exe
-          archive: false
-          overwrite: true
-
-      - name: Upload Windows Portable Artifact
-        if: matrix.platform == 'windows' && matrix.compatible == true && matrix.arch == 'amd64'
-        uses: actions/upload-artifact@v7
-        with:
-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-portable
-          path: ./dist/*.zip
           archive: false
           overwrite: true
 
@@ -499,7 +477,6 @@ jobs:
           path: ./dist/
           pattern: Bettbox-*
           merge-multiple: true
-          skip-decompress: true
 
       - name: Generate release.md
         run: |
