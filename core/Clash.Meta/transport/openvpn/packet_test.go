@@ -59,11 +59,11 @@ func TestControlPacketEncodeDecodeWithTLSCrypt(t *testing.T) {
 }
 
 func TestControlPacketEncodeDecodeWithTLSAuth(t *testing.T) {
-	cryptClient, err := NewTLSAuth(testStaticKey(), "1", AuthSHA1)
+	cryptClient, err := NewTLSAuth(testStaticKey(), "1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	cryptServer, err := NewTLSAuth(testStaticKey(), "0", AuthSHA1)
+	cryptServer, err := NewTLSAuth(testStaticKey(), "0")
 	if err != nil {
 		t.Fatal(err)
 	}
