@@ -106,12 +106,17 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   List<double> _headerOffsets = [];
 
   List<Proxy> _getGroupSortedProxies(Group group) {
+    // groupName ОБЯЗАТЕЛЕН: без него _sortOfCustom пропускает ручной
+    // порядок (proxyOrders) — карточки в режиме списка после перетаскивания
+    // откатывались назад. Регрессия синка 6792277e: раньше groupName был
+    // на обоих местах вызова, в новом хелпере его потеряли.
     return _cachedSortedProxiesMap.putIfAbsent(
       group.name,
       () => globalState.appController.getSortProxies(
         proxies: group.all,
         sortType: widget.sortType,
         testUrl: group.testUrl,
+        groupName: group.name,
       ),
     );
   }
