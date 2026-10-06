@@ -254,18 +254,39 @@ Map<String, dynamic> parseVless(String url) {
     }
   }
   // XHTTP / splithttp: ядро знает только network 'xhttp' и ждёт опции в
-  // xhttp-opts (path/host/mode). Без них path теряется, ядро стучится
-  // на '/' и сервер отбивает запросы (transport/xhttp/config.go).
+  // xhttp-opts. Без них path теряется, ядро стучится на '/' и сервер
+  // отбивает запросы (transport/xhttp/config.go). Расширенные параметры
+  // панели (v2rayN/xray) несут в параметре extra= — URL-закодированный
+  // JSON (xmux/padding/session/uplink). Без них серверы с нестандартным
+  // размещением session/uplink (cookie вместо path/body) молча не
+  // работают: клиент кладёт данные не туда, сервер их не находит.
+  // Значения extra перекрывают параметры URL — так же, как в v2ray-JSON.
   final linkType = params.get('type');
   if (linkType == 'xhttp' || linkType == 'splithttp') {
     proxy['network'] = 'xhttp';
-    final xhttpOpts = <String, dynamic>{};
+    final eff = <dynamic, dynamic>{};
     final xPath = params.get('path');
     final xHost = params.get('host');
     final xMode = params.get('mode');
-    if (xPath != null && xPath.isNotEmpty) xhttpOpts['path'] = xPath;
-    if (xHost != null && xHost.isNotEmpty) xhttpOpts['host'] = xHost;
-    if (xMode != null && xMode.isNotEmpty) xhttpOpts['mode'] = xMode;
+    if (xPath != null && xPath.isNotEmpty) eff['path'] = xPath;
+    if (xHost != null && xHost.isNotEmpty) eff['host'] = xHost;
+    if (xMode != null && xMode.isNotEmpty) eff['mode'] = xMode;
+    final extraRaw = params.get('extra');
+    if (extraRaw != null && extraRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(extraRaw);
+        if (decoded is Map) {
+          decoded.forEach((k, v) {
+            if (v == null || v == '') return;
+            eff[k] = v;
+          });
+        }
+      } on Object {
+        // Битый extra не валим весь парсинг — разбираем по параметрам URL.
+      }
+    }
+    final xhttpOpts = <String, dynamic>{};
+    applyXhttpEffMapToOpts(eff, xhttpOpts);
     if (xhttpOpts.isNotEmpty) proxy['xhttp-opts'] = xhttpOpts;
   }
   final alpn = params.get('alpn');
@@ -1158,6 +1179,16 @@ Map<String, dynamic> parseVmess(String url) {
       grpcOpts['grpc-service-name'] = serviceName;
     }
     if (grpcOpts.isNotEmpty) proxy['grpc-opts'] = grpcOpts;
+  } else if (net == 'xhttp' || net == 'splithttp') {
+    // xhttp у vmess-ссылок (net: "xhttp"): path/host лежат в JSON,
+    // mode — если панель его заполнила.
+    proxy['network'] = 'xhttp';
+    final xhttpOpts = <String, dynamic>{};
+    if (path.isNotEmpty) xhttpOpts['path'] = path;
+    if (host.isNotEmpty) xhttpOpts['host'] = host;
+    final vmMode = '${json['mode'] ?? ''}';
+    if (vmMode.isNotEmpty) xhttpOpts['mode'] = vmMode;
+    if (xhttpOpts.isNotEmpty) proxy['xhttp-opts'] = xhttpOpts;
   } else if (net == 'tcp' && '${json['type'] ?? ''}' == 'http') {
     proxy['network'] = 'http';
     final httpOpts = <String, dynamic>{};

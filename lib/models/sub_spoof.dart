@@ -1001,7 +1001,9 @@ Map<String, dynamic>? _convertXrayOutbound(Map<String, dynamic> ob) {
     transport: _spoofNodeMap(stream['wsSettings']) ??
         _spoofNodeMap(stream['grpcSettings']) ??
         _spoofNodeMap(stream['httpSettings']) ??
-        _spoofNodeMap(stream['httpupgradeSettings']),
+        _spoofNodeMap(stream['httpupgradeSettings']) ??
+        _spoofNodeMap(stream['xhttpSettings']) ??
+        _spoofNodeMap(stream['splithttpSettings']),
   );
   clash['name'] =
       _spoofNodeString(ob, _spoofNodeNameKeys) ?? '$server:$port';
@@ -1137,7 +1139,11 @@ void _applyClashTransport(
   String? network,
   Map<String, dynamic>? transport,
 }) {
-  final net = (network ?? '').trim().toLowerCase();
+  var net = (network ?? '').trim().toLowerCase();
+  // sing-box не несёт network — тип транспорта лежит в transport.type.
+  if (net.isEmpty && transport != null) {
+    net = '${transport['type'] ?? ''}'.trim().toLowerCase();
+  }
   if (net.isEmpty && transport == null) {
     return;
   }
@@ -1203,6 +1209,27 @@ void _applyClashTransport(
         if (path != null && '$path'.trim().isNotEmpty) {
           clash['httpupgrade-opts'] = {'path': '$path'};
         }
+      }
+    case 'xhttp':
+    case 'splithttp':
+      clash['network'] = 'xhttp';
+      final xhttpOpts = <String, dynamic>{};
+      if (transport != null) {
+        final path = transport['path'];
+        if (path != null && '$path'.trim().isNotEmpty) {
+          xhttpOpts['path'] = '$path';
+        }
+        final host = transport['host'];
+        if (host != null && '$host'.trim().isNotEmpty) {
+          xhttpOpts['host'] = '$host';
+        }
+        final mode = transport['mode'];
+        if (mode != null && '$mode'.trim().isNotEmpty) {
+          xhttpOpts['mode'] = '$mode';
+        }
+      }
+      if (xhttpOpts.isNotEmpty) {
+        clash['xhttp-opts'] = xhttpOpts;
       }
     default:
       break;

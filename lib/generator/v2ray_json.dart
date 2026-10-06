@@ -455,87 +455,7 @@ bool _applyStream(Map<String, dynamic> proxy, Map<dynamic, dynamic> stream) {
             eff[k] = v;
           });
         }
-
-        void putStr(String from, String to) {
-          final v = eff[from];
-          if (v is String && v.isNotEmpty) xhttpOpts[to] = v;
-        }
-
-        putStr('path', 'path');
-        putStr('host', 'host');
-        putStr('mode', 'mode');
-        putStr('xPaddingBytes', 'x-padding-bytes');
-        if (eff['xPaddingObfsMode'] == true) {
-          xhttpOpts['x-padding-obfs-mode'] = true;
-        }
-        putStr('xPaddingKey', 'x-padding-key');
-        putStr('xPaddingHeader', 'x-padding-header');
-        putStr('xPaddingPlacement', 'x-padding-placement');
-        putStr('xPaddingMethod', 'x-padding-method');
-        putStr('uplinkHTTPMethod', 'uplink-http-method');
-        putStr('uplinkDataKey', 'uplink-data-key');
-        putStr('uplinkDataPlacement', 'uplink-data-placement');
-        putStr('uplinkChunkSize', 'uplink-chunk-size');
-        putStr('seqKey', 'seq-key');
-        putStr('seqPlacement', 'seq-placement');
-        putStr('sessionIDKey', 'session-key');
-        putStr('sessionIDPlacement', 'session-placement');
-        putStr('sessionIDLength', 'session-length');
-        putStr('scMaxEachPostBytes', 'sc-max-each-post-bytes');
-        putStr('scMinPostsIntervalMs', 'sc-min-posts-interval-ms');
-        if (eff['noGRPCHeader'] == true) xhttpOpts['no-grpc-header'] = true;
-        final xmux = eff['xmux'];
-        if (xmux is Map && xmux.isNotEmpty) {
-          final reuse = <String, dynamic>{};
-          // В ядре эти поля — строки (диапазоны «16-32»), число приводим к
-          // строке; нули пропускаем (в Xray это «без лимита»).
-          void putReuse(String from, String to) {
-            final v = xmux[from];
-            if (v is String && v.isNotEmpty) {
-              reuse[to] = v;
-            } else if (v is int && v != 0) {
-              reuse[to] = '$v';
-            }
-          }
-
-          putReuse('maxConcurrency', 'max-concurrency');
-          putReuse('maxConnections', 'max-connections');
-          putReuse('cMaxReuseTimes', 'c-max-reuse-times');
-          putReuse('hMaxRequestTimes', 'h-max-request-times');
-          putReuse('hMaxReusableSecs', 'h-max-reusable-secs');
-          final keepAlive = xmux['hKeepAlivePeriod'];
-          if (keepAlive is int) reuse['h-keep-alive-period'] = keepAlive;
-          if (reuse.isNotEmpty) xhttpOpts['reuse-settings'] = reuse;
-        }
-
-        // Дефолты, которые Xray проставляет в infra/conf
-        // (transport_method.go Build), а ядро mihomo — НЕТ. Критичен
-        // первый: при uplinkDataPlacement=header без ключа ядро кладёт
-        // данные в заголовки «-0», «-1» — сервер их не находит и молча
-        // держит соединение до таймаута (узлы «От глушилок» FishVPN).
-        final uplPlacement = xhttpOpts['uplink-data-placement'];
-        final uplStr = uplPlacement is String && uplPlacement.isNotEmpty
-            ? uplPlacement
-            : 'body';
-        if (uplStr != 'body' && !xhttpOpts.containsKey('uplink-data-key')) {
-          xhttpOpts['uplink-data-key'] =
-              uplStr == 'cookie' ? 'x_data' : 'X-Data';
-        }
-        final seqPlacement = xhttpOpts['seq-placement'];
-        if (seqPlacement is String &&
-            seqPlacement.isNotEmpty &&
-            seqPlacement != 'path' &&
-            !xhttpOpts.containsKey('seq-key')) {
-          xhttpOpts['seq-key'] = seqPlacement == 'header' ? 'X-Seq' : 'x_seq';
-        }
-        final sessPlacement = xhttpOpts['session-placement'];
-        if (sessPlacement is String &&
-            sessPlacement.isNotEmpty &&
-            sessPlacement != 'path' &&
-            !xhttpOpts.containsKey('session-key')) {
-          xhttpOpts['session-key'] =
-              sessPlacement == 'header' ? 'X-Session' : 'x_session';
-        }
+        applyXhttpEffMapToOpts(eff, xhttpOpts);
       }
       if (xhttpOpts.isNotEmpty) proxy['xhttp-opts'] = xhttpOpts;
       break;
@@ -559,4 +479,106 @@ bool _applyStream(Map<String, dynamic> proxy, Map<dynamic, dynamic> stream) {
       return false;
   }
   return true;
+}
+
+/// Маппинг «эффективного» набора параметров XHTTP (Xray-camelCase:
+/// верхний уровень xhttpSettings или параметры URL ссылки) со слитым
+/// extra в ключи xhttp-opts ядра mihomo (kebab-case). Общий для
+/// v2ray-JSON подписок и share-ссылок `vless://…&extra=<json>` —
+/// поведение одинаково на обоих путях импорта. Пустые/null значения не переносятся;
+/// значения extra перекрывают верхний уровень (слитие делает вызывающий).
+void applyXhttpEffMapToOpts(
+  Map<dynamic, dynamic> eff,
+  Map<String, dynamic> xhttpOpts,
+) {
+  String numToStr(num v) {
+    if (v is int) return '$v';
+    return v == v.truncateToDouble() ? '${v.truncate()}' : '$v';
+  }
+
+  void putStr(String from, String to) {
+    final v = eff[from];
+    if (v is String && v.isNotEmpty) {
+      xhttpOpts[to] = v;
+    } else if (v is num) {
+      // Числовые лимиты панели отдают и строкой, и числом; поле ядра —
+      // строка, WeaklyTypedInput у декодера приведёт тип и так.
+      xhttpOpts[to] = numToStr(v);
+    }
+  }
+
+  putStr('path', 'path');
+  putStr('host', 'host');
+  putStr('mode', 'mode');
+  putStr('xPaddingBytes', 'x-padding-bytes');
+  if (eff['xPaddingObfsMode'] == true) {
+    xhttpOpts['x-padding-obfs-mode'] = true;
+  }
+  putStr('xPaddingKey', 'x-padding-key');
+  putStr('xPaddingHeader', 'x-padding-header');
+  putStr('xPaddingPlacement', 'x-padding-placement');
+  putStr('xPaddingMethod', 'x-padding-method');
+  putStr('uplinkHTTPMethod', 'uplink-http-method');
+  putStr('uplinkDataKey', 'uplink-data-key');
+  putStr('uplinkDataPlacement', 'uplink-data-placement');
+  putStr('uplinkChunkSize', 'uplink-chunk-size');
+  putStr('seqKey', 'seq-key');
+  putStr('seqPlacement', 'seq-placement');
+  putStr('sessionIDKey', 'session-key');
+  putStr('sessionIDPlacement', 'session-placement');
+  putStr('sessionIDLength', 'session-length');
+  putStr('scMaxEachPostBytes', 'sc-max-each-post-bytes');
+  putStr('scMinPostsIntervalMs', 'sc-min-posts-interval-ms');
+  if (eff['noGRPCHeader'] == true) xhttpOpts['no-grpc-header'] = true;
+  final xmux = eff['xmux'];
+  if (xmux is Map && xmux.isNotEmpty) {
+    final reuse = <String, dynamic>{};
+    // В ядре эти поля — строки (диапазоны «16-32»), число приводим к
+    // строке; нули пропускаем (в Xray это «без лимита»).
+    void putReuse(String from, String to) {
+      final v = xmux[from];
+      if (v is String && v.isNotEmpty) {
+        reuse[to] = v;
+      } else if (v is num && v != 0) {
+        reuse[to] = numToStr(v);
+      }
+    }
+
+    putReuse('maxConcurrency', 'max-concurrency');
+    putReuse('maxConnections', 'max-connections');
+    putReuse('cMaxReuseTimes', 'c-max-reuse-times');
+    putReuse('hMaxRequestTimes', 'h-max-request-times');
+    putReuse('hMaxReusableSecs', 'h-max-reusable-secs');
+    final keepAlive = xmux['hKeepAlivePeriod'];
+    if (keepAlive is num) reuse['h-keep-alive-period'] = keepAlive.toInt();
+    if (reuse.isNotEmpty) xhttpOpts['reuse-settings'] = reuse;
+  }
+
+  // Дефолты, которые Xray проставляет в infra/conf
+  // (transport_method.go Build), а ядро mihomo — НЕТ. Критичен
+  // первый: при uplinkDataPlacement=header без ключа ядро кладёт
+  // данные в заголовки «-0», «-1» — сервер их не находит и молча
+  // держит соединение до таймаута (узлы «От глушилок» FishVPN).
+  final uplPlacement = xhttpOpts['uplink-data-placement'];
+  final uplStr = uplPlacement is String && uplPlacement.isNotEmpty
+      ? uplPlacement
+      : 'body';
+  if (uplStr != 'body' && !xhttpOpts.containsKey('uplink-data-key')) {
+    xhttpOpts['uplink-data-key'] = uplStr == 'cookie' ? 'x_data' : 'X-Data';
+  }
+  final seqPlacement = xhttpOpts['seq-placement'];
+  if (seqPlacement is String &&
+      seqPlacement.isNotEmpty &&
+      seqPlacement != 'path' &&
+      !xhttpOpts.containsKey('seq-key')) {
+    xhttpOpts['seq-key'] = seqPlacement == 'header' ? 'X-Seq' : 'x_seq';
+  }
+  final sessPlacement = xhttpOpts['session-placement'];
+  if (sessPlacement is String &&
+      sessPlacement.isNotEmpty &&
+      sessPlacement != 'path' &&
+      !xhttpOpts.containsKey('session-key')) {
+    xhttpOpts['session-key'] =
+        sessPlacement == 'header' ? 'X-Session' : 'x_session';
+  }
 }
