@@ -286,6 +286,11 @@ extension ProfileExtension on Profile {
     }
     content = await _convertSubBodyIfNeeded(this, content);
     content = utils.patchYamlConfig(content);
+    // stack: mips ядро в основном TUN не принимает — роняет и валидацию
+    // (validateConfig → config.Parse), и разбор файла при активации
+    // (getConfig → UnmarshalRawConfig). Нормализуем ДО записи: в файле
+    // профиля будет gvisor, поведение то же (см. normalizeMipsStackConfig).
+    content = utils.normalizeMipsStackConfig(content);
     if (validate) {
       final message =
           await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
@@ -322,6 +327,9 @@ extension ProfileExtension on Profile {
     }
     content = await _convertSubBodyIfNeeded(this, content);
     content = utils.patchYamlConfig(content);
+    // Аналогично saveFile: mips → gvisor до валидации и записи файла,
+    // иначе ядро отвечает «invalid tun stack» прямо в генераторе.
+    content = utils.normalizeMipsStackConfig(content);
     final message =
         await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
     if (message.isNotEmpty) {

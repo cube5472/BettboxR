@@ -237,7 +237,12 @@ abstract class ClashHandlerInterface with ClashInterface {
   @override
   FutureOr<String> validateConfig(String data, {String? ageSecretKey}) {
     final params = {
-      'data': data,
+      // Страховка на уровне слоя ядра: литеральный «stack: mips»
+      // config.Parse отбивает «invalid tun stack» (см.
+      // utils.normalizeMipsStackConfig). Пишущие профиль пути
+      // нормализуют контент сами (profile.dart), здесь покрываем
+      // чистые проверки: редактор профиля, проверка скриптов и т.п.
+      'data': utils.normalizeMipsStackConfig(data),
       'age-secret-key': ageSecretKey ?? '',
     };
     return invoke<String>(

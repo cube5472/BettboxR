@@ -1281,6 +1281,31 @@ class Utils {
     });
   }
 
+  /// Стек «mips» в основном TUN текущее ядро не принимает
+  /// (constant/tun.go → StackTypeMapping: только gvisor/system/mixed):
+  /// config.Parse (validateConfig) и config.UnmarshalRawConfig
+  /// (getConfig при активации профиля) возвращают «invalid tun stack».
+  /// Нормализуем mips → gvisor прямо в тексте конфига ДО валидации и
+  /// записи файла: поведение то же (при применении профиля стек всё
+  /// равно выгружается в ядро через getRealTun/patchRawConfig, где mips
+  /// глобальных настроек заменяется на gvisor), а файл остаётся
+  /// корректным для парсера ядра. Касается только ключа stack с ровно
+  /// значением mips (в любом регистре, в кавычках или без, с
+  /// хвостовым комментарием).
+  String normalizeMipsStackConfig(String content) {
+    if (!content.contains('stack')) return content;
+    return content.replaceAllMapped(
+      RegExp(
+        r'^(\s*stack\s*:\s*)(["\x27]?)(mips)(\2)(\s*(?:#.*)?)$',
+        multiLine: true,
+        caseSensitive: false,
+      ),
+      (match) =>
+          '${match.group(1)}${match.group(2)}gvisor${match.group(4)}'
+          '${match.group(5)}',
+    );
+  }
+
   String encryptSecret(String raw) {
     if (raw.isEmpty) return raw;
     const salt = 'Bettbox';

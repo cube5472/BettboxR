@@ -1796,9 +1796,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
           ),
           const SizedBox(height: 8),
           // Выбор TUN-стека: попадает в tun.stack собранного конфига.
-          // mips (mihomo IP stack) в текущем ядре работает через
-          // авто-замену на gvisor при применении (getRealTun) — на будущих
-          // ядрах с mipstack в TUN заработает нативно.
+          // mips (mihomo IP stack) в текущем ядре работает как gvisor:
+          // при сохранении профиля normalizeMipsStackConfig (utils.dart)
+          // пишет в файл gvisor, на выгрузке в ядро страхует getRealTun.
           InputDecorator(
             decoration: const InputDecoration(
               labelText: 'Стек TUN',

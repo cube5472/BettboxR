@@ -2012,11 +2012,12 @@ class GeneratorParams {
   final String? mtu;
   /// TUN-стек в собранном конфиге: mips / gvisor / system / mixed.
   /// mips — стек mihomo IP stack (mipstack): в текущем ядре он заведён
-  /// только внутри WireGuard/OpenVPN/Masque/ZeroTier-нод, поэтому при
-  /// применении конфига приложение отдаёт ядру gvisor (см. getRealTun
-  /// в clash_config.dart и state.dart), а в YAML значение сохраняется
-  /// как mips — на будущих ядрах с mipstack в основном TUN стек
-  /// заработает нативно, без пересборки конфига.
+  /// только внутри WireGuard/OpenVPN/Masque/ZeroTier-нод, поэтому на
+  /// выгрузке в ядро его заменяет gvisor (getRealTun в clash_config.dart
+  /// и state.dart), а при сохранении профиля mips → gvisor делает
+  /// normalizeMipsStackConfig (utils.dart): парсер ядра (config.Parse /
+  /// UnmarshalRawConfig) отбивает литеральный mips как
+  /// «invalid tun stack».
   final String? tunStack;
   final bool providerMode;
   final String providerUrl;

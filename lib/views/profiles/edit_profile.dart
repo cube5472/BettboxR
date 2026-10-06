@@ -269,7 +269,11 @@ class EditProfileViewState extends State<EditProfileView> {
       return;
     }
     if (context.mounted) {
-      Navigator.of(context).pop(utils.patchValidateConfig(data));
+      Navigator.of(context).pop(
+        // mips → gvisor: сохранённый файл должен разбираться ядром
+        // (getConfig → UnmarshalRawConfig при активации профиля).
+        utils.patchValidateConfig(utils.normalizeMipsStackConfig(data)),
+      );
     }
   }
 
