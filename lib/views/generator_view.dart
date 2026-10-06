@@ -119,6 +119,9 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
     text: 'https://www.gstatic.com/generate_204',
   );
   final _mtuController = TextEditingController();
+  /// Выбор TUN-стека в генераторе (mips/gvisor/system/mixed; mips при
+  /// применении конфига отдаётся ядру как gvisor — см. getRealTun).
+  String _tunStack = 'gvisor';
   // DNS (раздел «7. DNS»): пустое поле = дефолт веб-генератора
   // (kDefaultDnsValues в buildConfig).
   final _defaultNsController = TextEditingController();
@@ -846,6 +849,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       nameserver: _nameserverController.text,
       proxyServerNameserver: _proxyNsController.text,
       mtu: _mtuController.text.trim(),
+      tunStack: _tunStack,
       providerMode: _providerMode,
       providerExclude: _providerExclude,
       providerUrl: _providerUrlController.text,
@@ -933,6 +937,7 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       'nameserver': _nameserverController.text,
       'proxyServerNameserver': _proxyNsController.text,
       'mtu': _mtuController.text,
+      'tunStack': _tunStack,
       'providerMode': _providerMode,
       'providerUrl': _providerUrlController.text,
       'providerInterval': _providerIntervalController.text,
@@ -963,6 +968,10 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
       _proxyNsController.text =
           data['proxyServerNameserver']?.toString() ?? '';
       _mtuController.text = data['mtu']?.toString() ?? '';
+      _tunStack = const ['mips', 'gvisor', 'system', 'mixed']
+              .contains(data['tunStack'])
+          ? data['tunStack'] as String
+          : 'gvisor';
       _providerMode = data['providerMode'] == true;
       _providerUrlController.text = data['providerUrl']?.toString() ?? '';
       _providerIntervalController.text =
@@ -1783,6 +1792,47 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
               labelText: 'MTU для TUN',
               border: OutlineInputBorder(),
               helperText: 'Пусто — по умолчанию ядра',
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Выбор TUN-стека: попадает в tun.stack собранного конфига.
+          // mips (mihomo IP stack) в текущем ядре работает через
+          // авто-замену на gvisor при применении (getRealTun) — на будущих
+          // ядрах с mipstack в TUN заработает нативно.
+          InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Стек TUN',
+              border: OutlineInputBorder(),
+              helperText:
+                  'Как ядро обрабатывает трафик внутри TUN-интерфейса',
+            ),
+            child: DropdownButton<String>(
+              value: _tunStack,
+              isExpanded: true,
+              isDense: true,
+              underline: const SizedBox.shrink(),
+              items: const [
+                DropdownMenuItem(
+                  value: 'mips',
+                  child: Text('MIPS — mihomo IP stack (работает как gVisor)'),
+                ),
+                DropdownMenuItem(
+                  value: 'gvisor',
+                  child: Text('gVisor — программный стек (надёжный)'),
+                ),
+                DropdownMenuItem(
+                  value: 'system',
+                  child: Text('System — системный стек (быстрее)'),
+                ),
+                DropdownMenuItem(
+                  value: 'mixed',
+                  child: Text('Mixed — гибридный (системный TCP + gVisor UDP)'),
+                ),
+              ],
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _tunStack = v);
+              },
             ),
           ),
         ]),

@@ -327,9 +327,22 @@ extension TunExt on Tun {
     String? fakeIpRangeV6,
     List<String>? bypassPrivateRouteAddress,
   }) {
+    // Выгрузка стека в ядро: через getRealTun проходят ОБЕ линии —
+    // YAML-setup (patchRawConfig в state.dart) и JSON-updateConfig
+    // (updateParamsProvider в providers/state.dart). Стек mips (mihomo
+    // IP stack) в текущем ядре заведён только внутри WireGuard/OpenVPN/
+    // Masque/ZeroTier-нод; в валидации основного TUN (constant/tun.go →
+    // StackTypeMapping) его нет — литеральный «stack: mips» даёт
+    // «invalid tun stack» и «Setup config failed». Поэтому на выгрузке
+    // mips заменяем на gvisor — ближайший программный стек. В настройках
+    // и в YAML профиля значение mips сохраняется и заработает нативно,
+    // когда mipstack появится в основном TUN.
+    final realTun = copyWith(
+      stack: stack == TunStack.mips ? TunStack.gvisor : stack,
+    );
     if (system.isDesktop) {
       if (bypassPrivateRoute) {
-        return copyWith(
+        return realTun.copyWith(
           autoRoute: true,
           autoRedirect: system.isLinux,
           routeAddress: [],
@@ -338,7 +351,7 @@ extension TunExt on Tun {
               defaultDesktopBypassPrivateRouteAddress,
         );
       }
-      return copyWith(
+      return realTun.copyWith(
         autoRoute: true,
         autoRedirect: system.isLinux,
         routeAddress: [],
@@ -347,7 +360,7 @@ extension TunExt on Tun {
     }
 
     if (bypassPrivateRoute) {
-      return copyWith(
+      return realTun.copyWith(
         autoRoute: true,
         routeAddress: List<String>.from(
           bypassPrivateRouteAddress ?? defaultBypassPrivateRouteAddress,
@@ -355,7 +368,7 @@ extension TunExt on Tun {
       );
     }
 
-    return copyWith(autoRoute: true, routeAddress: []);
+    return realTun.copyWith(autoRoute: true, routeAddress: []);
   }
 }
 

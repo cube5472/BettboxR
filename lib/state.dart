@@ -786,7 +786,30 @@ class GlobalState {
     rawConfig['tun']['dns-hijack'] = dnsHijack.isEmpty
         ? const ['any:53']
         : dnsHijack;
-    rawConfig['tun']['stack'] = realPatchConfig.tun.stack.name;
+    // Стек TUN: профиль может нести собственный стек — генератор пишет
+    // выбор из «Стек TUN» прямо в tun.stack (в т.ч. mips). Если он есть,
+    // используем его, иначе глобальную настройку. Значения из настроек уже
+    // нормализованы getRealTun (mips → gvisor: стек mips в текущем ядре
+    // заведён только внутри WireGuard/OpenVPN/Masque/ZeroTier-нод, а в
+    // валидации основного TUN — constant/tun.go → StackTypeMapping — его
+    // нет, раньше литеральный mips давал «invalid tun stack» и
+    // «Setup config failed»). Подстраховка ниже — на случай чужого YAML
+    // со стеком mips, другим регистром или мусором.
+    final profileTunStack = rawConfig['tun']['stack'] is String
+        ? (rawConfig['tun']['stack'] as String).trim().toLowerCase()
+        : '';
+    final globalTunStack = realPatchConfig.tun.stack == TunStack.mips
+        ? TunStack.gvisor.name
+        : realPatchConfig.tun.stack.name;
+    if (profileTunStack == 'gvisor' ||
+        profileTunStack == 'system' ||
+        profileTunStack == 'mixed') {
+      rawConfig['tun']['stack'] = profileTunStack;
+    } else if (profileTunStack == 'mips') {
+      rawConfig['tun']['stack'] = TunStack.gvisor.name;
+    } else {
+      rawConfig['tun']['stack'] = globalTunStack;
+    }
     rawConfig['tun']['congestion-controller'] =
         realPatchConfig.tun.congestionController.name;
     rawConfig['tun']['route-address'] = realPatchConfig.tun.routeAddress;

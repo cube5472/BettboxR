@@ -1979,6 +1979,14 @@ class GeneratorParams {
   final String nameserver;
   final String proxyServerNameserver;
   final String? mtu;
+  /// TUN-стек в собранном конфиге: mips / gvisor / system / mixed.
+  /// mips — стек mihomo IP stack (mipstack): в текущем ядре он заведён
+  /// только внутри WireGuard/OpenVPN/Masque/ZeroTier-нод, поэтому при
+  /// применении конфига приложение отдаёт ядру gvisor (см. getRealTun
+  /// в clash_config.dart и state.dart), а в YAML значение сохраняется
+  /// как mips — на будущих ядрах с mipstack в основном TUN стек
+  /// заработает нативно, без пересборки конфига.
+  final String? tunStack;
   final bool providerMode;
   final String providerUrl;
   /// Режим provider: exclude-filter основного провайдера 'subscription'.
@@ -2018,6 +2026,7 @@ class GeneratorParams {
     required this.nameserver,
     required this.proxyServerNameserver,
     this.mtu,
+    this.tunStack,
     this.providerMode = false,
     this.providerUrl = '',
     this.providerExclude = '',
@@ -2067,6 +2076,7 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
   'nameserver': p.nameserver,
   'proxyServerNameserver': p.proxyServerNameserver,
   'mtu': p.mtu,
+  'tunStack': p.tunStack,
   'providerMode': p.providerMode,
   'providerExclude': p.providerExclude,
   'providerUrl': p.providerUrl,
@@ -2117,6 +2127,7 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
     nameserver: json['nameserver'] as String? ?? '',
     proxyServerNameserver: json['proxyServerNameserver'] as String? ?? '',
     mtu: json['mtu'] as String?,
+    tunStack: json['tunStack'] as String?,
     providerMode: json['providerMode'] as bool? ?? false,
     providerExclude: json['providerExclude'] as String? ?? '',
     providerUrl: json['providerUrl'] as String? ?? '',
@@ -2620,9 +2631,20 @@ String buildConfig(GeneratorParams p) {
     'ff00::/8',
   ];
 
+  // Выбор стека TUN: mips/gvisor/system/mixed — совпадает с дропдауном
+  // генератора. mips пишется в YAML как есть; при применении профиля
+  // getRealTun (clash_config.dart) отдаст ядру gvisor — в текущем ядре
+  // mipstack в основном TUN не заведён, литеральный mips был бы отклонён
+  // («invalid tun stack»). Всё прочее — fallback на gvisor.
+  const validStacks = {'mips', 'gvisor', 'system', 'mixed'};
+  final tunStack = (p.tunStack != null &&
+          validStacks.contains(p.tunStack!.toLowerCase()))
+      ? p.tunStack!.toLowerCase()
+      : 'gvisor';
+
   final tun = <String, dynamic>{
     'enable': true,
-    'stack': 'gvisor',
+    'stack': tunStack,
     'auto-route': true,
     'auto-detect-interface': true,
     'strict-route': true,
