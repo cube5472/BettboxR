@@ -1925,57 +1925,37 @@ List<Map<String, dynamic>> parseSubscriptionBody(String body) {
 
 // ---------------- Дедупликация ----------------
 
-String _proxyKey(Map<String, dynamic> p) {
-  final type = p['type'] as String? ?? 'unknown';
-  var id = '';
-  switch (type) {
-    case 'vless':
-      id = p['uuid'] as String? ?? '';
-      break;
-    case 'trojan':
-    case 'anytls':
-      id = p['password'] as String? ?? '';
-      break;
-    case 'ss':
-      id = '${p['cipher']}:${p['password']}';
-      break;
-    case 'hysteria2':
-      id = p['password'] as String? ?? '';
-      break;
-    case 'tuic':
-      id = '${p['uuid']}:${p['password']}';
-      break;
-    case 'wireguard':
-      id = '${p['private-key'] ?? ''}${p['public-key'] ?? ''}';
-      break;
-    case 'masque':
-      final sni = p['sni'] ?? '';
-      final network = p['network'] ?? 'masque';
-      final pk = p['private-key'] ?? '';
-      final pub = p['public-key'] ?? '';
-      id = '${p['server']}:${p['port']}:$sni:$network:$pk:$pub';
-      break;
-    case 'ssr':
-      id = '${p['cipher']}:${p['password']}:${p['protocol']}';
-      break;
-    case 'socks5':
-    case 'http':
-      id = '${p['username'] ?? ''}:${p['password'] ?? ''}';
-      break;
-  }
-  return '$type|${p['server']}|${p['port']}|$id';
-}
-
+/// Дедупликация распознанных прокси + уникализация имён.
+///
+/// Дубликат — полностью идентичная нода (все поля, включая имя):
+/// подписки часто отдают одну и ту же ссылку много раз подряд.
+/// Ноды же с одним сервером и учёткой, но РАЗНЫМИ ярлыками — разные:
+/// панель за одним адресом прячет разные выходы/маршруты, а ядро в
+/// provider-режиме показывает их все. Прежний ключ (тип|сервер|порт|
+/// учётка) схлопывал такие ноды: 505 ссылок подписки превращались в
+/// 44 — «парс на ноды» показывал в разы меньше, чем «провайдером».
+/// Теперь ключ — полная сериализация ноды.
+///
+/// Имена в итоговом списке обязаны быть уникальными (mihomo
+/// идентифицирует прокси по имени, дубликат имени ломает конфиг) —
+/// коллизии разрешает ensureUniqueNames («имя-1», «имя-2»…), та же
+/// конвенция, что у сборщика конфига и «мёртвых нод».
 List<Map<String, dynamic>> uniqueProxies(List<Map<String, dynamic>> proxies) {
   final seen = <String>{};
   final unique = <Map<String, dynamic>>[];
   for (final p in proxies) {
-    final key = _proxyKey(p);
-    if (!seen.contains(key)) {
-      seen.add(key);
-      unique.add(p);
+    String key;
+    try {
+      key = jsonEncode(p);
+    } on Object {
+      // Нестандартное значение в полях — дедуп для этой ноды пропускаем.
+      key = 'raw-${unique.length}';
     }
+    if (seen.contains(key)) continue;
+    seen.add(key);
+    unique.add(p);
   }
+  ensureUniqueNames(unique);
   return unique;
 }
 
