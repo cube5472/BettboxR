@@ -12,10 +12,21 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 /// Число нод в конфиге профиля: статические proxies из файла профиля
-/// плюс proxies из кэш-файлов proxy-провайдеров (относительный путь
-/// «./provider/…» резолвится от home-каталога ядра — там ядро хранит
-/// скачанные провайдеры). null — файла ещё нет (профиль ни разу не
-/// применялся) или YAML не разобрался: на карточке ничего не рисуем.
+/// плюс proxies из кэша proxy-провайдеров.
+///
+/// ВАЖНО: путь кэша http-провайдера нельзя брать из файла профиля —
+/// при каждом применении конфига приложение переписывает поле `path`
+/// каждого http-провайдера на свой приватный файл
+/// (state.dart, patchRawConfig → getProvidersFilePath:
+/// `profiles/providers/<id>/proxies/<md5(url)>`), именно туда ядро
+/// скачивает подписку. Поэтому счётчик вызывает тот же
+/// [appPath.getProvidersFilePath] — один источник правды с ядром.
+/// Для file-провайдеров и ручных путей резолвим как ядро
+/// (C.Path.Resolve): относительный путь — от home-каталога.
+///
+/// null — файла профиля ещё нет, YAML не разобрался или провайдерные
+/// кэши ещё не скачаны (профиль ни разу не применялся): на карточке
+/// ничего не рисуем.
 ///
 /// Пересчитывается при любом изменении списка профилей (обновление
 /// подписки, пересборка, правка файла) и при возврате на вкладку
@@ -32,31 +43,57 @@ final profileNodeCountProvider = FutureProvider.autoDispose
         final content = await file.readAsString();
         final doc = loadYaml(content);
         var count = 0;
+        // Правда ли, что какой-то провайдер ещё не скачан/не читается:
+        // тогда при нулевом итоге честного числа у нас нет.
+        var hasUnloadedProvider = false;
         final proxies = doc is Map ? doc['proxies'] : null;
         if (proxies is List) count += proxies.length;
         final providers = doc is Map ? doc['proxy-providers'] : null;
         if (providers is Map) {
           final homeDir = await appPath.homeDirPath;
-          for (final entry in providers.values) {
-            if (entry is! Map) continue;
-            final providerPath = entry['path'];
-            if (providerPath is! String || providerPath.isEmpty) continue;
-            final abs = providerPath.startsWith('./')
-                ? p.join(homeDir, providerPath.substring(2))
-                : providerPath;
+          Future<void> countCacheFile(String abs) async {
             try {
               final providerFile = File(abs);
-              if (!await providerFile.exists()) continue;
+              if (!await providerFile.exists()) {
+                hasUnloadedProvider = true;
+                return;
+              }
               final providerDoc = loadYaml(await providerFile.readAsString());
               final providerProxies = providerDoc is Map
                   ? providerDoc['proxies']
                   : null;
               if (providerProxies is List) count += providerProxies.length;
             } on Object {
-              // Битый или недокачанный кэш провайдера — просто не считаем.
+              // Битый или недокачанный кэш провайдера.
+              hasUnloadedProvider = true;
+            }
+          }
+
+          for (final entry in providers.values) {
+            if (entry is! Map) continue;
+            final url = entry['url'];
+            if (entry['type'] == 'http' && url is String && url.isNotEmpty) {
+              // Тот же путь, что назначает приложение при применении
+              // конфига (patchRawConfig) — там ядро держит кэш.
+              await countCacheFile(
+                await appPath.getProvidersFilePath(
+                  profile.id,
+                  'proxies',
+                  url,
+                ),
+              );
+            } else {
+              // file-провайдер или провайдер с ручным путём.
+              final providerPath = entry['path'];
+              if (providerPath is! String || providerPath.isEmpty) continue;
+              final abs = p.isAbsolute(providerPath)
+                  ? providerPath
+                  : p.join(homeDir, providerPath);
+              await countCacheFile(abs);
             }
           }
         }
+        if (count == 0 && hasUnloadedProvider) return null;
         return count;
       } on Object {
         return null;
