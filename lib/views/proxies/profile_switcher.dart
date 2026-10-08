@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bett_box/common/common.dart';
@@ -24,8 +25,17 @@ import 'package:yaml/yaml.dart';
 /// Для file-провайдеров и ручных путей резолвим как ядро
 /// (C.Path.Resolve): относительный путь — от home-каталога.
 ///
-/// null — файла профиля ещё нет, YAML не разобрался или провайдерные
-/// кэши ещё не скачаны (профиль ни разу не применялся): на карточке
+/// Разбор кэша зеркалит парсер провайдеров ядра (adapter/provider):
+/// 1) YAML с полем `proxies:` — считаем поимённо, дубликаты имён
+///    выкидываются (proxiesSet), учитывается exclude-filter;
+/// 2) иначе список share-ссылок (ConvertsV2Ray, в т.ч. base64-блоб):
+///    считаются строки с известной схемой, имя берётся из фрагмента
+///    (у ядра имена размножаются uniqueName — дедупа нет),
+///    vmess-base64-JSON требует поле `ps`, для vless/trojan/tuic
+///    обязаны быть host и порт. exclude-filter применяется к имени.
+///
+/// null — файла профиля ещё нет, провайдерные кэши ещё не скачаны
+/// (профиль ни разу не применялся) или файл не читается: на карточке
 /// ничего не рисуем.
 ///
 /// Пересчитывается при любом изменении списка профилей (обновление
@@ -51,18 +61,17 @@ final profileNodeCountProvider = FutureProvider.autoDispose
         final providers = doc is Map ? doc['proxy-providers'] : null;
         if (providers is Map) {
           final homeDir = await appPath.homeDirPath;
-          Future<void> countCacheFile(String abs) async {
+          Future<void> countCacheFile(String abs, Object? excludeFilter) async {
             try {
               final providerFile = File(abs);
               if (!await providerFile.exists()) {
                 hasUnloadedProvider = true;
                 return;
               }
-              final providerDoc = loadYaml(await providerFile.readAsString());
-              final providerProxies = providerDoc is Map
-                  ? providerDoc['proxies']
-                  : null;
-              if (providerProxies is List) count += providerProxies.length;
+              count += _countProviderContent(
+                await providerFile.readAsString(),
+                excludeFilter,
+              );
             } on Object {
               // Битый или недокачанный кэш провайдера.
               hasUnloadedProvider = true;
@@ -81,6 +90,7 @@ final profileNodeCountProvider = FutureProvider.autoDispose
                   'proxies',
                   url,
                 ),
+                entry['exclude-filter'],
               );
             } else {
               // file-провайдер или провайдер с ручным путём.
@@ -89,7 +99,7 @@ final profileNodeCountProvider = FutureProvider.autoDispose
               final abs = p.isAbsolute(providerPath)
                   ? providerPath
                   : p.join(homeDir, providerPath);
-              await countCacheFile(abs);
+              await countCacheFile(abs, entry['exclude-filter']);
             }
           }
         }
@@ -99,6 +109,164 @@ final profileNodeCountProvider = FutureProvider.autoDispose
         return null;
       }
     });
+
+/// Схемы share-ссылок, которые понимает парсер провайдеров ядра
+/// (core/Clash.Meta, common/convert/converter.go → ConvertsV2Ray).
+const Set<String> _kShareLinkSchemes = {
+  'hysteria',
+  'hysteria2',
+  'hy2',
+  'hysteria2+realm',
+  'hy2+realm',
+  'tuic',
+  'trojan',
+  'vless',
+  'vmess',
+  'ss',
+  'ssr',
+  'socks',
+  'socks5',
+  'socks5h',
+  'http',
+  'https',
+  'anytls',
+  'mierus',
+};
+
+/// Считает ноды в содержимом кэша провайдера тем же способом, что и
+/// ядро: сначала YAML с `proxies:`, при неудаче — список share-ссылок
+/// (ConvertsV2Ray, включая base64-блоб целиком).
+int _countProviderContent(String content, Object? excludeFilter) {
+  RegExp? exclude;
+  if (excludeFilter is String && excludeFilter.trim().isNotEmpty) {
+    try {
+      exclude = RegExp(excludeFilter.trim());
+    } on Object {
+      // Битый regex в конфиге — ядро упало бы на нём, нам просто
+      // считаем без фильтра.
+    }
+  }
+  Object? doc;
+  try {
+    doc = loadYaml(content);
+  } on Object {
+    doc = null;
+  }
+  if (doc is Map && doc['proxies'] is List) {
+    return _countYamlProxies(doc['proxies'] as List, exclude);
+  }
+  return _countShareLinkLines(content, exclude);
+}
+
+/// YAML-ветка ядра: имя обязательно, дедуп по имени (proxiesSet),
+/// exclude-filter по имени.
+int _countYamlProxies(List proxies, RegExp? exclude) {
+  final seen = <String>{};
+  var count = 0;
+  for (final item in proxies) {
+    if (item is! Map) continue;
+    final name = item['name'];
+    if (name is! String || name.isEmpty) continue;
+    if (exclude != null && exclude.hasMatch(name)) continue;
+    if (!seen.add(name)) continue;
+    count++;
+  }
+  return count;
+}
+
+/// Ветка share-ссылок (ConvertsV2Ray): base64-блоб разворачивается,
+/// дальше построчно. Дедупа нет — ядро размножает имена через
+/// uniqueName, поэтому считаем каждую валидную строку.
+int _countShareLinkLines(String content, RegExp? exclude) {
+  final text = _tryBase64Body(content) ?? content;
+  var count = 0;
+  for (final raw in text.split('\n')) {
+    final line = raw.trimRight();
+    if (line.isEmpty) continue;
+    final sep = line.indexOf('://');
+    if (sep <= 0) continue;
+    final scheme = line.substring(0, sep).toLowerCase();
+    if (!_kShareLinkSchemes.contains(scheme)) continue;
+    final uri = Uri.tryParse(line);
+    if (uri == null) continue;
+    final name = _decodedFragment(uri);
+    if (name == null) continue; // битые %-последовательности — ядро выкидывает строку
+    if (scheme == 'vmess') {
+      // V2RayN-стиль: vmess://base64(JSON с обязательным полем ps);
+      // иначе — Xray VMessAEAD-ссылка, требующая host и порт.
+      final ps = _vmessJsonName(line.substring(sep + 3));
+      if (ps != null) {
+        if (exclude == null || !exclude.hasMatch(ps)) count++;
+      } else if (uri.host.isNotEmpty && uri.port != 0) {
+        if (exclude == null || !exclude.hasMatch(name)) count++;
+      }
+      continue;
+    }
+    if (uri.host.isEmpty) continue;
+    // vless/trojan/tuic: ядро требует непустые host и port
+    // (handleVShareLink и аналоги); hysteria/hysteria2/ss — порт может
+    // отсутствовать, ядро подставляет дефолт или берёт из тела.
+    final portRequired =
+        scheme == 'vless' || scheme == 'trojan' || scheme == 'tuic';
+    if (portRequired && uri.port == 0) continue;
+    if (exclude != null && exclude.hasMatch(name)) continue;
+    count++;
+  }
+  return count;
+}
+
+/// Имя ноды из фрагмента ссылки. Ядро берёт url.Fragment — он уже
+/// процитирован/декодирован; Dart Uri.fragment возвращает сырое
+/// значение — декодируем вручную. null — битые %-последовательности
+/// (ядро в таком случае выкидывает всю строку на url.Parse).
+String? _decodedFragment(Uri uri) {
+  try {
+    return Uri.decodeComponent(uri.fragment);
+  } on Object {
+    return null;
+  }
+}
+
+/// Зеркало DecodeBase64 ядра: весь файл как один base64-блоб
+/// (RawStdEncoding, затем StdEncoding, стандартный алфавит). При
+/// неудаче — null (используем текст как есть).
+String? _tryBase64Body(String s) {
+  final trimmed = s.trim();
+  if (trimmed.isEmpty || trimmed.contains('\n') || trimmed.contains('\r')) {
+    return null;
+  }
+  if (!RegExp(r'^[A-Za-z0-9+/]+={0,2}$').hasMatch(trimmed)) return null;
+  if (trimmed.length % 4 == 1) return null;
+  final padded = trimmed.padRight(
+    (trimmed.length + 3) ~/ 4 * 4,
+    '=',
+  );
+  try {
+    final decoded = utf8.decode(base64.decode(padded));
+    return decoded.contains('://') ? decoded : null;
+  } on Object {
+    return null;
+  }
+}
+
+/// Имя vmess-ссылки V2RayN-стиля: base64(JSON), поле `ps` обязательно
+/// (ядро: values["ps"].(string), иначе строка пропускается). Алфавит —
+/// стандартный, как tryDecodeBase64 ядра.
+String? _vmessJsonName(String body) {
+  final b64 = body.trim();
+  if (b64.isEmpty || b64.length % 4 == 1) return null;
+  if (!RegExp(r'^[A-Za-z0-9+/]+={0,2}$').hasMatch(b64)) return null;
+  final padded = b64.padRight((b64.length + 3) ~/ 4 * 4, '=');
+  try {
+    final decoded = jsonDecode(utf8.decode(base64.decode(padded)));
+    if (decoded is Map && decoded['ps'] is String) {
+      return decoded['ps'] as String;
+    }
+  } on Object {
+    // Не vmess-JSON — возможно, AEAD-ссылка или мусор.
+  }
+  return null;
+}
 
 /// Панель быстрого переключения конфигов (профилей) во вкладке «Прокси».
 ///
