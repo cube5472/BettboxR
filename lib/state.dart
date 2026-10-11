@@ -837,8 +837,31 @@ class GlobalState {
     if (rawConfig['profile'] == null) {
       rawConfig['profile'] = <String, dynamic>{};
     }
+    // Подмена клиента подписок для ЯДРА. Провайдеры качает не
+    // приложение, а ядро: оно представляется global-ua, и панель
+    // отдаёт Bettbox-UA урезанный список нод (mifa.world/rondo:
+    // 149 вместо 272), а HWID-панели отказывают провайдеру целиком.
+    // Приоритет тот же, что при скачивании профиля (profile.update):
+    // индивидуальная подмена профиля → глобальная (Настройки → Общие →
+    // «Подмена клиента подписок») → кастомный UA настроек (Настройки →
+    // Общие → «UA») → пакетный UA ядра.
+    final providerSpoof = await resolveEffectiveSubSpoof(profileId);
+    final providerSpoofHeaders = await providerSpoof.resolveHeaders();
+    final providerSpoofUa =
+        providerSpoofHeaders?['User-Agent']?.trim() ?? '';
+    final customGlobalUa = realPatchConfig.globalUa?.trim() ?? '';
+    final effectiveProviderUa = providerSpoofUa.isNotEmpty
+        ? providerSpoofUa
+        : customGlobalUa.isNotEmpty
+            ? customGlobalUa
+            : packageInfo.ua;
     if (rawConfig['proxy-providers'] != null) {
       final proxyProviders = rawConfig['proxy-providers'] as Map;
+      await SpoofReport.write(
+        'ЯДРО-ПРОВАЙДЕРЫ $profileId | подмена: '
+        '${providerSpoof.isEnabled ? providerSpoof.client : 'выкл'} | '
+        'global-ua: $effectiveProviderUa',
+      );
       for (final key in proxyProviders.keys) {
         final proxyProvider = proxyProviders[key];
         if (proxyProvider['type'] != 'http') {
@@ -850,6 +873,25 @@ class GlobalState {
             'proxies',
             proxyProvider['url'],
           );
+        }
+        // Провайдеру без собственного User-Agent вписываем заголовки
+        // подмены целиком (UA + device + X-Hwid): header провайдера
+        // ядро отправляет как есть, и он сильнее global-ua. Свой
+        // header YAML уважаем — не трогаем.
+        if (providerSpoofHeaders != null && proxyProvider['url'] != null) {
+          final existingHeader = proxyProvider['header'];
+          final headerMap = existingHeader is Map
+              ? Map<String, dynamic>.from(existingHeader)
+              : <String, dynamic>{};
+          final hasOwnUa = headerMap.keys.any(
+            (k) => k.toString().toLowerCase() == 'user-agent',
+          );
+          if (!hasOwnUa) {
+            for (final entry in providerSpoofHeaders.entries) {
+              headerMap[entry.key] = [entry.value];
+            }
+            proxyProvider['header'] = headerMap;
+          }
         }
       }
     }
@@ -878,7 +920,10 @@ class GlobalState {
       rawConfig['profile']['store-fake-ip'] = true;
     }
     rawConfig['geox-url'] = realPatchConfig.geoXUrl.toJson();
-    rawConfig['global-ua'] = realPatchConfig.globalUa;
+    // global-ua ядра: подмена клиента (если включена) → кастомный UA
+    // настроек → пакетный UA. null сюда попадать не должен: тогда ядро
+    // молча берёт захардкоженный Bettbox-UA и панели режут подписку.
+    rawConfig['global-ua'] = effectiveProviderUa;
     if (rawConfig['hosts'] == null) {
       rawConfig['hosts'] = <String, dynamic>{};
     }
