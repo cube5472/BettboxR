@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:yaml/yaml.dart';
 
 import 'generator_data.dart';
+import 'v2ray_json.dart';
 
 // ---------------- JSON-данные ----------------
 
@@ -18,21 +19,39 @@ List<dynamic> _l(String key) =>
 
 final Map<String, dynamic> kDefaultDnsValues = _m('defaultDnsValues');
 final Map<String, dynamic> kStaticObj = _m('staticObj');
-final Map<String, dynamic> kRuleProvidersDavoyan = _m('ruleProvidersDavoyan');
-final Map<String, dynamic> kRuleProvidersLegiz = _m('ruleProvidersLegiz');
-final Map<String, dynamic> kRuleProvidersRoscomvpn = _m(
-  'ruleProvidersRoscomvpn',
-);
+// Универсальный дедуплицированный набор провайдеров и категории правил.
+final Map<String, dynamic> kRuleProviders = _m('ruleProviders');
+final Map<String, dynamic> kRuleCategories = _m('ruleCategories');
+// Жёсткий порядок применения категорий: «base» всегда включена.
+const List<String> kCategoryOrder = [
+  'base',
+  'ads',
+  'torrents',
+  'services',
+  'games',
+  'ru',
+];
+// Категории, управляемые чекбоксами (всё, кроме фиксированной базы).
+const List<String> kSelectableCategories = [
+  'ads',
+  'torrents',
+  'services',
+  'games',
+  'ru',
+];
 final List<dynamic> kProxyGroups = _l('proxyGroups');
-final List<dynamic> kRulesBase = _l('rulesBase');
-final List<dynamic> kUnblockRules = _l('unblockRules');
+// Пресеты сервисов/CDN и обход блокировок RU: {providers, rules}.
 final Map<String, dynamic> kServiceRules = _m('serviceRules');
 final Map<String, dynamic> kCdnRules = _m('cdnRules');
+final Map<String, dynamic> kRuUnblock = _m('ruUnblock');
 
-final Map<String, Map<String, dynamic>> kProviderSets = {
-  'roscomvpn': kRuleProvidersRoscomvpn,
-  'davoyan': kRuleProvidersDavoyan,
-  'legiz': kRuleProvidersLegiz,
+// Лейблы категорий правил для UI генератора (ключи kSelectableCategories).
+final Map<String, String> kCategoryLabels = {
+  'ads': 'Реклама и шпионаж → блок',
+  'torrents': 'Торренты → DIRECT',
+  'services': 'Сервисы: YouTube, Telegram, GitHub, Google Play',
+  'games': 'Игры и лаунчеры → группа «Игры»',
+  'ru': 'Россия и Microsoft/Apple → DIRECT',
 };
 
 final Map<String, String> kPresetLabels = {
@@ -226,22 +245,48 @@ Map<String, dynamic> parseVless(String url) {
     if (wsOpts.isNotEmpty) proxy['ws-opts'] = wsOpts;
     if (!params.has('alpn')) proxy['alpn'] = ['h2', 'http/1.1'];
   }
-  if (params.get('type') == 'grpc' && params.has('path')) {
-    proxy['grpc-opts'] = {'grpc-service-name': params.get('path')};
+  if (params.get('type') == 'grpc') {
+    // v2rayN кладет serviceName в path=; некоторые панели — в serviceName=.
+    // Без него сервер отвечает обрывом (EOF) — узлы FishVPN grpc+reality.
+    final serviceName = params.get('serviceName') ?? params.get('path');
+    if (serviceName != null && serviceName.isNotEmpty) {
+      proxy['grpc-opts'] = {'grpc-service-name': serviceName};
+    }
   }
   // XHTTP / splithttp: ядро знает только network 'xhttp' и ждёт опции в
-  // xhttp-opts (path/host/mode). Без них path теряется, ядро стучится
-  // на '/' и сервер отбивает запросы (transport/xhttp/config.go).
+  // xhttp-opts. Без них path теряется, ядро стучится на '/' и сервер
+  // отбивает запросы (transport/xhttp/config.go). Расширенные параметры
+  // панели (v2rayN/xray) несут в параметре extra= — URL-закодированный
+  // JSON (xmux/padding/session/uplink). Без них серверы с нестандартным
+  // размещением session/uplink (cookie вместо path/body) молча не
+  // работают: клиент кладёт данные не туда, сервер их не находит.
+  // Значения extra перекрывают параметры URL — так же, как в v2ray-JSON.
   final linkType = params.get('type');
   if (linkType == 'xhttp' || linkType == 'splithttp') {
     proxy['network'] = 'xhttp';
-    final xhttpOpts = <String, dynamic>{};
+    final eff = <dynamic, dynamic>{};
     final xPath = params.get('path');
     final xHost = params.get('host');
     final xMode = params.get('mode');
-    if (xPath != null && xPath.isNotEmpty) xhttpOpts['path'] = xPath;
-    if (xHost != null && xHost.isNotEmpty) xhttpOpts['host'] = xHost;
-    if (xMode != null && xMode.isNotEmpty) xhttpOpts['mode'] = xMode;
+    if (xPath != null && xPath.isNotEmpty) eff['path'] = xPath;
+    if (xHost != null && xHost.isNotEmpty) eff['host'] = xHost;
+    if (xMode != null && xMode.isNotEmpty) eff['mode'] = xMode;
+    final extraRaw = params.get('extra');
+    if (extraRaw != null && extraRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(extraRaw);
+        if (decoded is Map) {
+          decoded.forEach((k, v) {
+            if (v == null || v == '') return;
+            eff[k] = v;
+          });
+        }
+      } on Object {
+        // Битый extra не валим весь парсинг — разбираем по параметрам URL.
+      }
+    }
+    final xhttpOpts = <String, dynamic>{};
+    applyXhttpEffMapToOpts(eff, xhttpOpts);
     if (xhttpOpts.isNotEmpty) proxy['xhttp-opts'] = xhttpOpts;
   }
   final alpn = params.get('alpn');
@@ -304,8 +349,12 @@ Map<String, dynamic> parseTrojan(String url) {
     if (wsOpts.isNotEmpty) proxy['ws-opts'] = wsOpts;
     if (!params.has('alpn')) proxy['alpn'] = ['h2', 'http/1.1'];
   }
-  if (params.get('type') == 'grpc' && params.has('path')) {
-    proxy['grpc-opts'] = {'grpc-service-name': params.get('path')};
+  if (params.get('type') == 'grpc') {
+    // v2rayN кладет serviceName в path=; некоторые панели — в serviceName=.
+    final serviceName = params.get('serviceName') ?? params.get('path');
+    if (serviceName != null && serviceName.isNotEmpty) {
+      proxy['grpc-opts'] = {'grpc-service-name': serviceName};
+    }
   }
   final alpn = params.get('alpn');
   if (alpn != null) {
@@ -386,7 +435,9 @@ Map<String, dynamic> parseHysteria2(String url) {
           }
         }
       }
-    } on Object {}
+    } on Object {
+      // fm — необязательное поле: некорректный JSON просто игнорируем.
+    }
   }
   return proxy;
 }
@@ -1121,8 +1172,23 @@ Map<String, dynamic> parseVmess(String url) {
     if (h2Opts.isNotEmpty) proxy['h2-opts'] = h2Opts;
   } else if (net == 'grpc') {
     final grpcOpts = <String, dynamic>{};
-    if (path.isNotEmpty) grpcOpts['grpc-service-name'] = path;
+    final serviceName = '${json['serviceName'] ?? ''}';
+    if (path.isNotEmpty) {
+      grpcOpts['grpc-service-name'] = path;
+    } else if (serviceName.isNotEmpty) {
+      grpcOpts['grpc-service-name'] = serviceName;
+    }
     if (grpcOpts.isNotEmpty) proxy['grpc-opts'] = grpcOpts;
+  } else if (net == 'xhttp' || net == 'splithttp') {
+    // xhttp у vmess-ссылок (net: "xhttp"): path/host лежат в JSON,
+    // mode — если панель его заполнила.
+    proxy['network'] = 'xhttp';
+    final xhttpOpts = <String, dynamic>{};
+    if (path.isNotEmpty) xhttpOpts['path'] = path;
+    if (host.isNotEmpty) xhttpOpts['host'] = host;
+    final vmMode = '${json['mode'] ?? ''}';
+    if (vmMode.isNotEmpty) xhttpOpts['mode'] = vmMode;
+    if (xhttpOpts.isNotEmpty) proxy['xhttp-opts'] = xhttpOpts;
   } else if (net == 'tcp' && '${json['type'] ?? ''}' == 'http') {
     proxy['network'] = 'http';
     final httpOpts = <String, dynamic>{};
@@ -1430,7 +1496,9 @@ List<Map<String, dynamic>> parseManualInput(String? text) {
     try {
       final proxy = parseProxyLink(line);
       if (proxy['name'] != null) proxies.add(proxy);
-    } on Object {}
+    } on Object {
+      // Строка не является ссылкой на прокси — пропускаем её.
+    }
   }
   return proxies;
 }
@@ -1831,6 +1899,11 @@ List<Map<String, dynamic>> parseSubscriptionBody(String body) {
       'сервер вернул HTML-страницу вместо подписки — проверьте срок действия ссылки',
     );
   }
+  // v2ray-JSON (массив Xray-конфигов — формат панелей для happ/v2raytun/INCY)
+  final v2rayJson = tryParseV2rayJsonSubscription(trimmed);
+  if (v2rayJson != null) {
+    return v2rayJson;
+  }
   // Clash YAML (в т.ч. с мусором до/после — parseYamlSubscription сам справится)
   if (RegExp(r'^\s*proxies\s*:', multiLine: true).hasMatch(trimmed)) {
     return parseYamlSubscription(trimmed);
@@ -1852,57 +1925,37 @@ List<Map<String, dynamic>> parseSubscriptionBody(String body) {
 
 // ---------------- Дедупликация ----------------
 
-String _proxyKey(Map<String, dynamic> p) {
-  final type = p['type'] as String? ?? 'unknown';
-  var id = '';
-  switch (type) {
-    case 'vless':
-      id = p['uuid'] as String? ?? '';
-      break;
-    case 'trojan':
-    case 'anytls':
-      id = p['password'] as String? ?? '';
-      break;
-    case 'ss':
-      id = '${p['cipher']}:${p['password']}';
-      break;
-    case 'hysteria2':
-      id = p['password'] as String? ?? '';
-      break;
-    case 'tuic':
-      id = '${p['uuid']}:${p['password']}';
-      break;
-    case 'wireguard':
-      id = '${p['private-key'] ?? ''}${p['public-key'] ?? ''}';
-      break;
-    case 'masque':
-      final sni = p['sni'] ?? '';
-      final network = p['network'] ?? 'masque';
-      final pk = p['private-key'] ?? '';
-      final pub = p['public-key'] ?? '';
-      id = '${p['server']}:${p['port']}:$sni:$network:$pk:$pub';
-      break;
-    case 'ssr':
-      id = '${p['cipher']}:${p['password']}:${p['protocol']}';
-      break;
-    case 'socks5':
-    case 'http':
-      id = '${p['username'] ?? ''}:${p['password'] ?? ''}';
-      break;
-  }
-  return '$type|${p['server']}|${p['port']}|$id';
-}
-
+/// Дедупликация распознанных прокси + уникализация имён.
+///
+/// Дубликат — полностью идентичная нода (все поля, включая имя):
+/// подписки часто отдают одну и ту же ссылку много раз подряд.
+/// Ноды же с одним сервером и учёткой, но РАЗНЫМИ ярлыками — разные:
+/// панель за одним адресом прячет разные выходы/маршруты, а ядро в
+/// provider-режиме показывает их все. Прежний ключ (тип|сервер|порт|
+/// учётка) схлопывал такие ноды: 505 ссылок подписки превращались в
+/// 44 — «парс на ноды» показывал в разы меньше, чем «провайдером».
+/// Теперь ключ — полная сериализация ноды.
+///
+/// Имена в итоговом списке обязаны быть уникальными (mihomo
+/// идентифицирует прокси по имени, дубликат имени ломает конфиг) —
+/// коллизии разрешает ensureUniqueNames («имя-1», «имя-2»…), та же
+/// конвенция, что у сборщика конфига и «мёртвых нод».
 List<Map<String, dynamic>> uniqueProxies(List<Map<String, dynamic>> proxies) {
   final seen = <String>{};
   final unique = <Map<String, dynamic>>[];
   for (final p in proxies) {
-    final key = _proxyKey(p);
-    if (!seen.contains(key)) {
-      seen.add(key);
-      unique.add(p);
+    String key;
+    try {
+      key = jsonEncode(p);
+    } on Object {
+      // Нестандартное значение в полях — дедуп для этой ноды пропускаем.
+      key = 'raw-${unique.length}';
     }
+    if (seen.contains(key)) continue;
+    seen.add(key);
+    unique.add(p);
   }
+  ensureUniqueNames(unique);
   return unique;
 }
 
@@ -1937,17 +1990,47 @@ class GeneratorParams {
   final String nameserver;
   final String proxyServerNameserver;
   final String? mtu;
+  /// TUN-стек в собранном конфиге: mips / gvisor / system / mixed.
+  /// mips — стек mihomo IP stack (mipstack): в текущем ядре он заведён
+  /// только внутри WireGuard/OpenVPN/Masque/ZeroTier-нод, поэтому на
+  /// выгрузке в ядро его заменяет gvisor (getRealTun в clash_config.dart
+  /// и state.dart), а при сохранении профиля mips → gvisor делает
+  /// normalizeMipsStackConfig (utils.dart): парсер ядра (config.Parse /
+  /// UnmarshalRawConfig) отбивает литеральный mips как
+  /// «invalid tun stack».
+  final String? tunStack;
   final bool providerMode;
   final String providerUrl;
+  /// Режим provider: exclude-filter основного провайдера 'subscription'.
+  /// В форме не отображается; заполняется синхронизацией при удалении
+  /// мёртвых нод (dead_nodes), чтобы «Пересобрать» не вернул вырезанные
+  /// ноды. Пусто — фильтра нет.
+  final String providerExclude;
   final int providerInterval;
-  final String providerUa;
+  // Заголовки подмены клиента (UA / X-Hwid / device) в параметры
+  // генератора НЕ входят: подмена — настройка приложения
+  // (Настройки → Общие → «Подмена клиента подписок»), применяется
+  // ко всем http-провайдерам при применении профиля (state.dart) и к
+  // клиентским скачиваниям подписок (request.dart / profile.dart).
   final List<Map<String, dynamic>> proxies;
   final List<List<String>> chains;
-  final List<String> providerSets;
+  /// Включённые категории правил (см. kSelectableCategories); «base»
+  /// всегда добавляется независимо от этого списка.
+  final List<String> ruleCategories;
   final List<String> servicePresets;
   final List<String> cdnPresets;
   final bool ruUnblock;
   final List<Map<String, String>> customRules;
+  /// --- Резерв (fallback) ---
+  /// Включить блок резерва: группа «🆘 Резерв» + proxy-providers.
+  final bool reserveEnabled;
+  /// Подписки резерва: {url, interval}; порядок списка = приоритет.
+  final List<Map<String, String>> reserveSubscriptions;
+  /// Основная нода (приоритет 1); имя должно совпадать с одной из
+  /// proxies, иначе молча пропускается. '' — не использовать.
+  final String reservePrimaryNode;
+  /// Интервал активных health-check подписок, сек.
+  final int reserveHealthInterval;
 
   const GeneratorParams({
     required this.urlTest,
@@ -1955,18 +2038,194 @@ class GeneratorParams {
     required this.nameserver,
     required this.proxyServerNameserver,
     this.mtu,
+    this.tunStack,
     this.providerMode = false,
     this.providerUrl = '',
+    this.providerExclude = '',
     this.providerInterval = 86400,
-    this.providerUa = '',
     required this.proxies,
     this.chains = const [],
-    this.providerSets = const ['roscomvpn'],
+    this.ruleCategories = kSelectableCategories,
     this.servicePresets = const [],
     this.cdnPresets = const [],
     this.ruUnblock = true,
     this.customRules = const [],
+    this.reserveEnabled = false,
+    this.reserveSubscriptions = const [],
+    this.reservePrimaryNode = '',
+    this.reserveHealthInterval = 300,
   });
+}
+
+// ---------------- Маркер генераторного конфига ----------------
+//
+// Каждый конфиг, собранный генератором, получает в шапку YAML две
+// строки-комментария: признак «собран генератором» и полный JSON
+// параметров сборки. Ядро mihomo игнорирует YAML-комментарии, а
+// utils.patchYamlConfig (прогоняется при каждом сохранении профиля)
+// их не меняет — значит маркер переживает валидацию и бэкапы.
+// Наличие маркера = профиль можно «Пересобрать» одним тапом: параметры
+// достаются из шапки, прогоняются через актуальный buildConfig и
+// результат заменяет содержимое того же профиля (ID не меняется —
+// выбранная нода, кэш выбора и настройки профиля сохраняются).
+// Удаление мёртвых нод (dead_nodes.dart) синхронизирует params с
+// внесённым удалением (proxies/exclude подписок/providerExclude) и
+// перезаписывает шапку — иначе «Пересобрать» вернул бы мёртвые ноды.
+
+const String kGeneratorMarkerLine = '# bettboxr-generator v1';
+
+/// Имя группы резерва (fallback), генерируемой при включённом разделе
+/// «Резерв». Вставляется первой в список «🛡️ VPN», чтобы стать
+/// выбором по умолчанию.
+const String kReserveGroupName = '🆘 Резерв';
+
+const String kGeneratorParamsPrefix = '# bettboxr-params: ';
+
+/// Обратимая сериализация параметров генератора в JSON.
+Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
+  'urlTest': p.urlTest,
+  'defaultNameserver': p.defaultNameserver,
+  'nameserver': p.nameserver,
+  'proxyServerNameserver': p.proxyServerNameserver,
+  'mtu': p.mtu,
+  'tunStack': p.tunStack,
+  'providerMode': p.providerMode,
+  'providerExclude': p.providerExclude,
+  'providerUrl': p.providerUrl,
+  'providerInterval': p.providerInterval,
+  'proxies': p.proxies,
+  'chains': p.chains,
+  'ruleCategories': p.ruleCategories,
+  'servicePresets': p.servicePresets,
+  'cdnPresets': p.cdnPresets,
+  'ruUnblock': p.ruUnblock,
+  'customRules': p.customRules,
+  'reserveEnabled': p.reserveEnabled,
+  'reserveSubscriptions': p.reserveSubscriptions,
+  'reservePrimaryNode': p.reservePrimaryNode,
+  'reserveHealthInterval': p.reserveHealthInterval,
+};
+
+List<Map<String, dynamic>> _jsonMapList(dynamic v) => v is List
+    ? v.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+    : const <Map<String, dynamic>>[];
+
+List<List<String>> _jsonStrListList(dynamic v) => v is List
+    ? v
+          .map(
+            (e) => e is List ? e.map((x) => '$x').toList() : <String>[],
+          )
+          .toList()
+    : const <List<String>>[];
+
+List<String> _jsonStrList(dynamic v) =>
+    v is List ? v.map((e) => '$e').toList() : const <String>[];
+
+List<Map<String, String>> _jsonStrMapList(dynamic v) => v is List
+    ? v
+          .whereType<Map>()
+          .map((e) => e.map((k, val) => MapEntry('$k', '$val')))
+          .toList()
+    : const <Map<String, String>>[];
+
+/// Восстановление параметров из JSON, записанного
+/// [generatorParamsToJson]. Недостающие поля заменяются дефолтами
+/// конструктора, так что старые маркеры остаются совместимыми с новыми
+/// версиями генератора.
+GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
+  return GeneratorParams(
+    urlTest: json['urlTest'] as String? ?? '',
+    defaultNameserver: json['defaultNameserver'] as String? ?? '',
+    nameserver: json['nameserver'] as String? ?? '',
+    proxyServerNameserver: json['proxyServerNameserver'] as String? ?? '',
+    mtu: json['mtu'] as String?,
+    tunStack: json['tunStack'] as String?,
+    providerMode: json['providerMode'] as bool? ?? false,
+    providerExclude: json['providerExclude'] as String? ?? '',
+    providerUrl: json['providerUrl'] as String? ?? '',
+    providerInterval: json['providerInterval'] as int? ?? 86400,
+    proxies: _jsonMapList(json['proxies']),
+    chains: _jsonStrListList(json['chains']),
+    ruleCategories: _jsonStrList(json['ruleCategories']),
+    servicePresets: _jsonStrList(json['servicePresets']),
+    cdnPresets: _jsonStrList(json['cdnPresets']),
+    ruUnblock: json['ruUnblock'] as bool? ?? true,
+    customRules: _jsonStrMapList(json['customRules']),
+    reserveEnabled: json['reserveEnabled'] as bool? ?? false,
+    reserveSubscriptions: _jsonStrMapList(json['reserveSubscriptions']),
+    reservePrimaryNode: json['reservePrimaryNode'] as String? ?? '',
+    reserveHealthInterval: json['reserveHealthInterval'] as int? ?? 300,
+  );
+}
+
+/// Дописывает в шапку собранного YAML маркер с параметрами сборки.
+/// JSON кодируется одной строкой (jsonEncode не выпускает переводов
+/// строки), поэтому маркер всегда занимает ровно одну строку.
+String embedGeneratorMarker(String yaml, GeneratorParams p) {
+  final json = jsonEncode(generatorParamsToJson(p));
+  return '$kGeneratorMarkerLine\n$kGeneratorParamsPrefix$json\n$yaml';
+}
+
+/// Достаёт параметры сборки из шапки конфига. Возвращает null, если
+/// маркера нет (конфиг создан не генератором или шапка повреждена).
+/// Сканируются только строки до первого содержимого: маркер обязан
+/// находиться в начале файла, иначе конфиг считаем не-генераторным.
+GeneratorParams? extractGeneratorParams(String content) {
+  try {
+    for (final rawLine in content.split('\n')) {
+      final line = rawLine.trimLeft();
+      if (line.isEmpty) continue;
+      if (!line.startsWith('#')) return null;
+      if (line.startsWith(kGeneratorParamsPrefix)) {
+        final decoded = jsonDecode(
+          line.substring(kGeneratorParamsPrefix.length).trim(),
+        );
+        if (decoded is Map<String, dynamic>) {
+          return generatorParamsFromJson(decoded);
+        }
+        return null;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
+/// Извлекает текстовый блок `proxies:` из YAML конфига. Используется при
+/// открытии готового профиля в генераторе: блок подставляется в поле
+/// «Источники прокси» как локальный текст, поэтому ноды отображаются,
+/// переживают правку текста и повторное нажатие «Разобрать» (те же
+/// правила захвата блока, что в _salvageProxyItems: элементы могут
+/// стоять на любом отступе, верхнеуровневый ключ завершает блок).
+/// Возвращает '' если блока нет или он не содержит элементов.
+String extractProxiesYamlBlock(String yaml) {
+  final lines = yaml.split('\n');
+  final keyProxies = RegExp(r'^proxies\s*:\s*(#.*)?$');
+  final itemStartRe = RegExp(r'^(\s*)- ');
+  var start = -1;
+  for (var i = 0; i < lines.length; i++) {
+    if (keyProxies.hasMatch(lines[i])) {
+      start = i;
+      break;
+    }
+  }
+  if (start < 0) return '';
+  final block = <String>['proxies:'];
+  for (var i = start + 1; i < lines.length; i++) {
+    final t = lines[i];
+    if (t.trim().isEmpty ||
+        t.startsWith(' ') ||
+        t.startsWith('\t') ||
+        itemStartRe.hasMatch(t)) {
+      block.add(t);
+    } else {
+      break;
+    }
+  }
+  while (block.isNotEmpty && block.last.trim().isEmpty) {
+    block.removeLast();
+  }
+  if (block.length <= 1) return '';
+  return block.join('\n');
 }
 
 const Map<String, List<String>> _kRequiredFields = {
@@ -2027,31 +2286,34 @@ String buildConfig(GeneratorParams p) {
   final dnsObj = <String, dynamic>{
     'enable': true,
     'ipv6': false,
+    // DNS-запросы тоже проходят через правила: без respect-rules ядро
+    // диалит все DNS напрямую с устройства, и nameserver-policy для
+    // заблокированных резолверов не работает как задумано.
+    'respect-rules': true,
     'default-nameserver': defaultNS
         .split(',')
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList(),
-    'direct-nameserver': [
-      '77.88.8.8#DIRECT',
-      '77.88.8.1#DIRECT',
-      '8.8.8.8#DIRECT',
-    ],
+    // Прямые DNS только РФ-доступные: Google (8.8.8.8) на прямом канале
+    // в РФ нестабилен и тянет за собой таймауты при старте.
+    'direct-nameserver': ['77.88.8.8#DIRECT', '77.88.8.1#DIRECT'],
     'nameserver': nameserver
         .split(',')
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList(),
     'nameserver-policy': {
+      // Домены обновлений списков — через РФ-доступный DoT, иначе первый
+      // старт без VPN не сможет скачать rule-providers.
       'raw.githubusercontent.com,cdn.jsdelivr.net,github.com': [
-        'tls://77.88.8.8#skip-cert-verify=true',
-        'tls://77.88.8.1#skip-cert-verify=true',
-        'tls://8.8.8.8#skip-cert-verify=true',
+        'tls://77.88.8.8#DIRECT',
+        'tls://77.88.8.1#DIRECT',
       ],
-      'rule-set:ru-inline,ru-outside,yandex,mailru,drweb,geosite-ru': [
-        'tls://77.88.8.8#skip-cert-verify=true',
-        'tls://77.88.8.1#skip-cert-verify=true',
-        'tls://8.8.8.8#skip-cert-verify=true',
+      // RU-домены — через Яндекс-DoT напрямую: быстрый и доступный.
+      'rule-set:category-ru,whitelist,ru-apps': [
+        'tls://77.88.8.8#DIRECT',
+        'tls://77.88.8.1#DIRECT',
       ],
     },
     'prefer-h3': false,
@@ -2127,65 +2389,196 @@ String buildConfig(GeneratorParams p) {
     }
   }
 
-  // --- rule-providers ---
-  final selectedProviders = <String>[];
-  for (final key in ['roscomvpn', 'davoyan', 'legiz']) {
-    if (p.providerSets.contains(key)) selectedProviders.add(key);
-  }
-  var ruleProviders = <String, dynamic>{};
-  for (final key in ['roscomvpn', 'davoyan', 'legiz']) {
-    if (selectedProviders.contains(key)) {
-      ruleProviders.addAll(kProviderSets[key]!);
+  // --- резерв (fallback): «🆘 Резерв» + proxy-providers подписок ---
+  // Статические ноды всегда идут в цепочке первыми (в порядке списка),
+  // затем ноды подписок по порядку; выбранная «основная нода» становится
+  // приоритетом 1. Fallback берёт первую живую. Цепочки (dialer-proxy)
+  // в резерв не попадают — они для ручного выбора в «🛡️ VPN». В режиме
+  // provider статических нод нет — приоритет начинается с первой
+  // подписки. Правила не трогаются: группа доступна через выбор
+  // в «🛡️ VPN».
+  final reserveProviders = <String, dynamic>{};
+  if (p.reserveEnabled) {
+    final healthInterval = p.reserveHealthInterval > 0
+        ? p.reserveHealthInterval
+        : 300;
+    final reserveProxies = <String>[];
+    final chainNames = chainProxyNames.toSet();
+    final staticNames = proxyList
+        .map((proxy) => '${proxy['name']}')
+        .where((name) => !chainNames.contains(name))
+        .toList();
+    final primary = p.reservePrimaryNode.trim();
+    if (primary.isNotEmpty && staticNames.contains(primary)) {
+      reserveProxies.add(primary);
     }
-  }
-  final providerNames = ruleProviders.keys.toSet();
-
-  final filteredPolicy = <String, dynamic>{};
-  (dnsObj['nameserver-policy'] as Map<String, dynamic>).forEach((key, value) {
-    if (key.startsWith('rule-set:')) {
-      final sets = key.split(':')[1].split(',').map((s) => s.trim()).toList();
-      final allExist = sets.every(providerNames.contains);
-      if (allExist) filteredPolicy[key] = value;
-    } else {
-      filteredPolicy[key] = value;
+    for (final name in staticNames) {
+      if (!reserveProxies.contains(name)) reserveProxies.add(name);
     }
-  });
-  dnsObj['nameserver-policy'] = filteredPolicy;
-
-  // --- правила ---
-  var allRules = <String>[];
-  for (final rule in kRulesBase.cast<String>()) {
-    if (rule.startsWith('RULE-SET,')) {
-      final parts = rule.split(',');
-      if (parts.length >= 2 && providerNames.contains(parts[1].trim())) {
-        allRules.add(rule);
+    var subIndex = 0;
+    for (final sub in p.reserveSubscriptions) {
+      final url = (sub['url'] ?? '').trim();
+      if (url.isEmpty) continue;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        throw Exception(
+          'Резерв: URL подписки должен начинаться '
+          'с http:// или https://',
+        );
       }
-    } else {
-      allRules.add(rule);
+      subIndex++;
+      final name = 'sub$subIndex';
+      final parsed = int.tryParse((sub['interval'] ?? '').trim());
+      // exclude-filter: regex по имени ноды; совпавшие выкидываются
+      // ещё на разборе подписки (мусор, инфо-ноды, «剩余/expire» и т.п.).
+      final exclude = (sub['exclude'] ?? '').trim();
+      reserveProviders[name] = <String, dynamic>{
+        'type': 'http',
+        'url': url,
+        'interval': parsed != null && parsed > 0 ? parsed : 86400,
+        'path': './provider/reserve_$name.yaml',
+        if (exclude.isNotEmpty) 'exclude-filter': exclude,
+        // Аналогично основному провайдеру: выравнивает поведение
+        // панелей с self-signed сертификатами между режимами.
+        'override': {'skip-cert-verify': true},
+        'health-check': {
+          'enable': true,
+          'url': urlTest,
+          'interval': healthInterval,
+        },
+      };
+      // ВАЖНО: ключ провайдера (sub1..subN) попадает только в 'use'.
+      // В 'proxies' группы могут быть только имена реально существующих
+      // нод/групп: ссылка на неизвестное имя валит запуск ядра.
+    }
+    if (reserveProviders.isEmpty) {
+      throw Exception(
+        'Резерв: добавьте хотя бы одну подписку с непустым URL',
+      );
+    }
+    final reserveGroup = <String, dynamic>{
+      'name': kReserveGroupName,
+      'type': 'fallback',
+      if (reserveProxies.isNotEmpty) 'proxies': reserveProxies,
+      'use': reserveProviders.keys.toList(),
+      'url': urlTest,
+      'interval': healthInterval,
+    };
+    final vpnIndex = groups.indexWhere(
+      (g) => g is Map<String, dynamic> && g['name'] == '🛡️ VPN',
+    );
+    if (vpnIndex != -1) {
+      final vpn = groups[vpnIndex] as Map<String, dynamic>;
+      final vpnProxies = (vpn['proxies'] as List).cast<String>().toList();
+      // Дефолтный выбор группы «🛡️ VPN» — первая нода в списке.
+      vpnProxies.insert(0, kReserveGroupName);
+      vpn['proxies'] = vpnProxies;
+    }
+    final autoIndex = groups.indexWhere(
+      (g) => g is Map<String, dynamic> && g['name'] == '⚡️ Авто',
+    );
+    groups.insert(
+      autoIndex != -1 ? autoIndex + 1 : groups.length,
+      reserveGroup,
+    );
+    // Подписочные ноды не заливаются во все списки: в «⚡️ Авто» и
+    // сервисных группах остаются только статические ноды; провайдерные
+    // доступны в «🛡️ VPN» и «🆘 Резерв». Без статических нод (режим
+    // provider) include-all остаётся — иначе группы опустеют.
+    if (proxyList.isNotEmpty) {
+      for (final g in groups) {
+        if (g is! Map<String, dynamic>) continue;
+        if (g['name'] == '🛡️ VPN') continue;
+        if (g['include-all'] == true) {
+          g.remove('include-all');
+          g['include-all-proxies'] = true;
+        }
+      }
     }
   }
 
-  final presetRules = <String>[];
+  // --- rule-providers и правила (категорный универсальный набор) ---
+  // Провайдеры набираются из включённых категорий/пресетов; правила
+  // добавляются в жёстком порядке (категории по kCategoryOrder, пресеты
+  // сервисов — между «играми» и «ru», см. ниже) и ссылаться могут
+  // только на уже добавленных провайдеров.
+  final ruleProviders = <String, dynamic>{};
+  void addProviders(Iterable<dynamic> names) {
+    for (final name in names) {
+      final key = '$name';
+      final def = kRuleProviders[key];
+      if (def == null) continue;
+      ruleProviders[key] = jsonDecode(jsonEncode(def)) as Map<String, dynamic>;
+    }
+  }
+
+  void addRules(List<dynamic> rules, List<String> target) {
+    for (final rule in rules.cast<String>()) {
+      if (rule.startsWith('RULE-SET,')) {
+        final parts = rule.split(',');
+        if (parts.length >= 2 &&
+            !ruleProviders.containsKey(parts[1].trim())) {
+          continue;
+        }
+      }
+      target.add(rule);
+    }
+  }
+
+  final activeRules = <String>[];
+  // 1) База (киллсвитч, приватные сети) — всегда.
+  final baseCategory = kRuleCategories['base'];
+  if (baseCategory != null) {
+    addProviders((baseCategory['providers'] as List<dynamic>?) ?? const []);
+    addRules(
+      (baseCategory['rules'] as List<dynamic>?) ?? const [],
+      activeRules,
+    );
+  }
+  // 2) Включённые категории — в жёстком порядке, кроме «ru».
+  for (final key in kCategoryOrder) {
+    if (key == 'base' || key == 'ru') continue;
+    if (!p.ruleCategories.contains(key)) continue;
+    final category = kRuleCategories[key];
+    if (category == null) continue;
+    addProviders((category['providers'] as List<dynamic>?) ?? const []);
+    addRules(
+      (category['rules'] as List<dynamic>?) ?? const [],
+      activeRules,
+    );
+  }
+  // 3) Пресеты сервисов — ОБЯЗАТЕЛЬНО до категории «ru»: их правила
+  //    (пуши Apple/FCM из пресета «Ghostline») иначе перехватываются
+  //    RULE-SET,apple,DIRECT и становятся мёртвыми.
   for (final name in p.servicePresets) {
-    final rules = kServiceRules[name];
-    if (rules != null) presetRules.addAll(rules.cast<String>());
+    final preset = kServiceRules[name];
+    if (preset == null) continue;
+    addProviders((preset['providers'] as List<dynamic>?) ?? const []);
+    addRules((preset['rules'] as List<dynamic>?) ?? const [], activeRules);
   }
-  for (final name in p.cdnPresets) {
-    final rules = kCdnRules[name];
-    if (rules != null) presetRules.addAll(rules.cast<String>());
-  }
-  if (p.ruUnblock) presetRules.addAll(kUnblockRules.cast<String>());
-
-  for (final rule in presetRules) {
-    if (rule.startsWith('RULE-SET,')) {
-      final parts = rule.split(',');
-      if (parts.length >= 2 && providerNames.contains(parts[1].trim())) {
-        allRules.add(rule);
-      }
-    } else {
-      allRules.add(rule);
+  // 4) Категория «ru» — RU-сервисы и RU-домены напрямую.
+  if (p.ruleCategories.contains('ru')) {
+    final ruCategory = kRuleCategories['ru'];
+    if (ruCategory != null) {
+      addProviders((ruCategory['providers'] as List<dynamic>?) ?? const []);
+      addRules(
+        (ruCategory['rules'] as List<dynamic>?) ?? const [],
+        activeRules,
+      );
     }
   }
+  // 5) Обход блокировок RU.
+  if (p.ruUnblock) {
+    addProviders((kRuUnblock['providers'] as List<dynamic>?) ?? const []);
+    addRules((kRuUnblock['rules'] as List<dynamic>?) ?? const [], activeRules);
+  }
+  // 6) CDN-пресеты: несут своих провайдеров и правила.
+  for (final name in p.cdnPresets) {
+    final preset = kCdnRules[name];
+    if (preset == null) continue;
+    addProviders((preset['providers'] as List<dynamic>?) ?? const []);
+    addRules((preset['rules'] as List<dynamic>?) ?? const [], activeRules);
+  }
+  var allRules = activeRules;
 
   for (final rule in p.customRules) {
     final type = rule['type'] ?? '';
@@ -2193,7 +2586,7 @@ String buildConfig(GeneratorParams p) {
     final action = rule['action'] ?? '';
     if (value.isEmpty || action.isEmpty) continue;
     if (type == 'RULE-SET') {
-      if (!providerNames.contains(value)) continue;
+      if (!ruleProviders.containsKey(value)) continue;
       allRules.add('RULE-SET,$value,$action');
       continue;
     }
@@ -2212,21 +2605,9 @@ String buildConfig(GeneratorParams p) {
     }
   }
 
-  final finalRules = <String>[];
-  for (final rule in allRules) {
-    if (rule.startsWith('RULE-SET,')) {
-      final parts = rule.split(',');
-      if (parts.length >= 2 && providerNames.contains(parts[1].trim())) {
-        finalRules.add(rule);
-      }
-    } else {
-      finalRules.add(rule);
-    }
-  }
-
   final seen = <String>{};
   final uniqueRules = <String>[];
-  for (final rule in finalRules) {
+  for (final rule in allRules) {
     if (!seen.contains(rule)) {
       seen.add(rule);
       uniqueRules.add(rule);
@@ -2262,9 +2643,20 @@ String buildConfig(GeneratorParams p) {
     'ff00::/8',
   ];
 
+  // Выбор стека TUN: mips/gvisor/system/mixed — совпадает с дропдауном
+  // генератора. mips пишется в YAML как есть; при применении профиля
+  // getRealTun (clash_config.dart) отдаст ядру gvisor — в текущем ядре
+  // mipstack в основном TUN не заведён, литеральный mips был бы отклонён
+  // («invalid tun stack»). Всё прочее — fallback на gvisor.
+  const validStacks = {'mips', 'gvisor', 'system', 'mixed'};
+  final tunStack = (p.tunStack != null &&
+          validStacks.contains(p.tunStack!.toLowerCase()))
+      ? p.tunStack!.toLowerCase()
+      : 'gvisor';
+
   final tun = <String, dynamic>{
     'enable': true,
-    'stack': 'gvisor',
+    'stack': tunStack,
     'auto-route': true,
     'auto-detect-interface': true,
     'strict-route': true,
@@ -2293,6 +2685,10 @@ String buildConfig(GeneratorParams p) {
           'ports': [80, '8080-8880'],
         },
         'TLS': {
+          // Подмена назначения для TLS нужна, чтобы rule-сопоставление
+          // работало по реальному SNI даже на голых IP (критично для
+          // respect-rules в DNS и для списков-доменов).
+          'override-destination': true,
           'ports': [443, 8443],
         },
       },
@@ -2309,20 +2705,19 @@ String buildConfig(GeneratorParams p) {
         'url': p.providerUrl.trim(),
         'interval': p.providerInterval,
         'path': './provider/proxies.yaml',
-        // Панели подписок часто отдают разный список нод в зависимости от
-        // User-Agent: clash-клиентам (и BettboxR) — урезанный YAML, а
-        // v2ray-клиентам — полную base64-подписку. Явный header позволяет
-        // получать полный список (например: v2rayNG/1.8.23).
-        if (p.providerUa.trim().isNotEmpty)
-          'header': {
-            'User-Agent': [p.providerUa.trim()],
-          },
+        // Синхронизация удаления мёртвых нод (dead_nodes): выжившие
+        // исключения основного провайдера переживают пересборку.
+        if (p.providerExclude.trim().isNotEmpty)
+          'exclude-filter': p.providerExclude.trim(),
         // Панели часто отдают share-ссылки с self-signed сертификатами,
         // а конвертер ядра мапит insecure → skip-cert-verify не для всех
         // протоколов (например, для tuic не мапит вовсе). Явный override
         // выравнивает поведение с статическим режимом.
         'override': {'skip-cert-verify': true},
         'health-check': {'enable': true, 'url': urlTest, 'interval': 600},
+        // Заголовки подмены клиента (UA/X-Hwid/device) сюда не пишутся:
+        // они применяются на уровне приложения ко всем http-провайдерам
+        // при каждом применении профиля (state.dart, patchRawConfig).
       },
     };
   } else {
@@ -2330,6 +2725,17 @@ String buildConfig(GeneratorParams p) {
       throw Exception('Нет прокси: вставьте ссылки или импортируйте конфиг.');
     }
     config['proxies'] = proxyList;
+  }
+
+  // Подписки резерва сосуществуют с основным провайдером режима
+  // provider: ключи разные ('subscription' vs sub1..subN).
+  if (reserveProviders.isNotEmpty) {
+    final existing = config['proxy-providers'];
+    if (existing is Map<String, dynamic>) {
+      existing.addAll(reserveProviders);
+    } else {
+      config['proxy-providers'] = reserveProviders;
+    }
   }
 
   return yamlDump(config);
