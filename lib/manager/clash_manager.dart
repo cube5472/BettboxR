@@ -9,7 +9,7 @@ import 'package:bett_box/providers/config.dart';
 import 'package:bett_box/providers/state.dart';
 import 'package:bett_box/services/dns_stats.dart';
 import 'package:bett_box/state.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ClashManager extends ConsumerStatefulWidget {
@@ -23,6 +23,9 @@ class ClashManager extends ConsumerStatefulWidget {
 
 class _ClashContainerState extends ConsumerState<ClashManager>
     with AppMessageListener {
+  final List<TrackerInfo> _pendingRequests = [];
+  static const _flushDuration = Duration(milliseconds: 300);
+
   @override
   Widget build(BuildContext context) {
     return widget.child;
@@ -41,7 +44,7 @@ class _ClashContainerState extends ConsumerState<ClashManager>
                 hardRestart: system.isDesktop && profileChanged,
               )
               .catchError((Object error, StackTrace stackTrace) {
-                commonPrint.log('Profile change failed: $error');
+                commonPrint.error('Profile change failed: $error');
               }),
         );
       }
@@ -85,9 +88,17 @@ class _ClashContainerState extends ConsumerState<ClashManager>
     }
   }
 
+  void _flushRequests() {
+    if (!mounted || _pendingRequests.isEmpty) return;
+    final requests = List.of(_pendingRequests);
+    _pendingRequests.clear();
+    ref.read(requestsProvider.notifier).addRequests(requests);
+  }
+
   @override
   Future<void> dispose() async {
     dnsStats.removeListener(_handleDnsStatsChanged);
+    throttler.cancel(FunctionTag.requests);
     clashMessage.removeListener(this);
     super.dispose();
   }
@@ -104,8 +115,17 @@ class _ClashContainerState extends ConsumerState<ClashManager>
 
   @override
   void onLog(Log log) {
-    ref.read(logsProvider.notifier).addLog(log);
-    dnsStats.handleLog(log.payload);
+    globalState.appController.addLog(log);
+    // 1.19.5: Log.core срезает префикс модуля из payload — «[DNS] resolve …»
+    // превращается в payload «resolve …» с module: 'DNS'. Парсер
+    // DnsStatsService разбирает строки, начинающиеся с «[DNS», и молча
+    // терял все события. Восстанавливаем префикс: ядро пишет «[DNS] …»
+    // и «[DNS Server] …» — регулярка модуля режет их именно так.
+    dnsStats.handleLog(
+      log.module == null || log.module!.isEmpty
+          ? log.payload
+          : '[${log.module}] ${log.payload}',
+    );
     if (log.logLevel == LogLevel.error) {
       globalState.showNotifier(log.payload);
     }
@@ -114,15 +134,20 @@ class _ClashContainerState extends ConsumerState<ClashManager>
 
   @override
   void onRequest(TrackerInfo trackerInfo) async {
-    ref.read(requestsProvider.notifier).addRequest(trackerInfo);
+    _pendingRequests.add(trackerInfo);
+    throttler.call(
+      FunctionTag.requests,
+      _flushRequests,
+      duration: _flushDuration,
+    );
     super.onRequest(trackerInfo);
   }
 
   @override
   Future<void> onLoaded(String providerName) async {
-    ref
-        .read(providersProvider.notifier)
-        .setProvider(await clashCore.getExternalProvider(providerName));
+    final provider = await clashCore.getExternalProvider(providerName);
+    if (!mounted) return;
+    ref.read(providersProvider.notifier).setProvider(provider);
     globalState.appController.updateGroupsDebounce();
     super.onLoaded(providerName);
   }

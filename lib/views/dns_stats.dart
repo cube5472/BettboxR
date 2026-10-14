@@ -3,7 +3,7 @@ import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/services/dns_stats.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Экран пассивной DNS-статистики (уровень 1): кто реально отвечает на
 /// запросы ядра, сколько кэш-попаданий, ошибок и задержек. Данные копятся
@@ -228,127 +228,127 @@ class _DnsStatsViewState extends State<DnsStatsView> {
     final domains = _sortedDomains(day);
     final events = dnsStats.events.reversed.toList();
 
-    return CommonScaffold(
-      title: 'DNS-статистика',
-      actions: [
-        IconButton(
-          tooltip: 'Сбросить',
-          onPressed: _handleReset,
-          icon: const Icon(Icons.delete_sweep_outlined),
-        ),
-      ],
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 20, top: 8),
-        children: [
-          _section('Сбор данных', [
-            ListItem.switchItem(
-              title: const Text('Собирать DNS-статистику'),
-              subtitle: const Text(
-                'Пока включено, ядро временно работает с уровнем логов debug. Данные хранятся только на устройстве.',
-              ),
-              delegate: SwitchDelegate<bool>(
-                value: dnsStats.enabled,
-                onChanged: _handleToggle,
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 20, top: 8),
+      children: [
+        _section('Сбор данных', [
+          ListItem.switchItem(
+            title: const Text('Собирать DNS-статистику'),
+            subtitle: const Text(
+              'Пока включено, ядро временно работает с уровнем логов debug. Данные хранятся только на устройстве.',
+            ),
+            delegate: SwitchDelegate<bool>(
+              value: dnsStats.enabled,
+              onChanged: _handleToggle,
+            ),
+          ),
+          // 1.19.5 оборачивает страницу в общий AdaptiveSheetScaffold,
+          // поэтому у экрана больше нет собственного AppBar с кнопкой
+          // сброса — сброс переехал сюда, в тело.
+          ListItem(
+            leading: const Icon(Icons.delete_sweep_outlined),
+            title: const Text('Сбросить статистику'),
+            subtitle: const Text('Удалить все собранные данные за 7 дней'),
+            onTap: _handleReset,
+          ),
+        ]),
+        if (!dnsStats.enabled)
+          _hint(
+            'Сбор выключен. Включите тумблер, откройте несколько сайтов и вернитесь на этот экран.',
+          )
+        else if (day.handled == 0 && day.errors == 0 && day.timeouts == 0)
+          _hint(
+            'Данных пока нет. Счётчики заполняются в фоне, пока VPN работает и приложение открыто.',
+          )
+        else ...[
+          _section('За сегодня', [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  _statCell(
+                    '${day.handled}',
+                    'запросов',
+                    colorScheme.onSurface,
+                  ),
+                  _statCell(
+                    '${day.cacheHits}',
+                    'из кэша',
+                    colorScheme.onSurfaceVariant,
+                  ),
+                  _statCell(
+                    '$errorsTotal',
+                    'ошибок',
+                    errorsTotal > 0
+                        ? colorScheme.error
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                  _statCell(avgLatency, 'ср. задержка', colorScheme.primary),
+                ],
               ),
             ),
           ]),
-          if (!dnsStats.enabled)
-            _hint(
-              'Сбор выключен. Включите тумблер, откройте несколько сайтов и вернитесь на этот экран.',
-            )
-          else if (day.handled == 0 && day.errors == 0 && day.timeouts == 0)
-            _hint(
-              'Данных пока нет. Счётчики заполняются в фоне, пока VPN работает и приложение открыто.',
-            )
-          else ...[
-            _section('За сегодня', [
+          if (day.qtypes.isNotEmpty)
+            _section('Типы записей', [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    _statCell(
-                      '${day.handled}',
-                      'запросов',
-                      colorScheme.onSurface,
-                    ),
-                    _statCell(
-                      '${day.cacheHits}',
-                      'из кэша',
-                      colorScheme.onSurfaceVariant,
-                    ),
-                    _statCell(
-                      '$errorsTotal',
-                      'ошибок',
-                      errorsTotal > 0
-                          ? colorScheme.error
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                    _statCell(avgLatency, 'ср. задержка', colorScheme.primary),
-                  ],
+                child: Text(
+                  _qtypesLine(day),
+                  style: context.textTheme.bodyMedium,
                 ),
               ),
             ]),
-            if (day.qtypes.isNotEmpty)
-              _section('Типы записей', [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    _qtypesLine(day),
-                    style: context.textTheme.bodyMedium,
+          if (servers.isNotEmpty)
+            _section('Серверы', [
+              for (final entry in servers)
+                ListItem(
+                  title: Text(
+                    entry.key,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      _serverLine(entry.value),
+                      style: context.textTheme.bodySmall,
+                    ),
                   ),
                 ),
-              ]),
-            if (servers.isNotEmpty)
-              _section('Серверы', [
-                for (final entry in servers)
-                  ListItem(
-                    title: Text(
-                      entry.key,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        _serverLine(entry.value),
-                        style: context.textTheme.bodySmall,
-                      ),
+            ]),
+          if (domains.isNotEmpty)
+            _section('Топ-домены', [
+              for (final entry in domains)
+                ListItem(
+                  title: Text(
+                    entry.key,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Text('${entry.value}'),
+                ),
+            ]),
+          if (events.isNotEmpty)
+            _section('Последние события', [
+              for (final event in events.take(20))
+                ListItem(
+                  title: Text(
+                    '${_kindLabel(event.kind)} — ${event.domain}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _kindColor(event.kind, colorScheme),
                     ),
                   ),
-              ]),
-            if (domains.isNotEmpty)
-              _section('Топ-домены', [
-                for (final entry in domains)
-                  ListItem(
-                    title: Text(
-                      entry.key,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Text('${entry.value}'),
-                  ),
-              ]),
-            if (events.isNotEmpty)
-              _section('Последние события', [
-                for (final event in events.take(20))
-                  ListItem(
-                    title: Text(
-                      '${_kindLabel(event.kind)} — ${event.domain}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: _kindColor(event.kind, colorScheme),
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        _eventLine(event),
-                        style: context.textTheme.bodySmall,
-                      ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      _eventLine(event),
+                      style: context.textTheme.bodySmall,
                     ),
                   ),
-              ]),
+                ),
+            ]),
           ],
           _section('О статистике', [
             const ListItem(
@@ -357,8 +357,7 @@ class _DnsStatsViewState extends State<DnsStatsView> {
               ),
             ),
           ]),
-        ],
-      ),
+      ],
     );
   }
 }
