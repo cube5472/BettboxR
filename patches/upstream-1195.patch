@@ -20914,12 +20914,14 @@ index fea1a4b..40a7389 100644
  
  class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
 diff --git a/lib/main.dart b/lib/main.dart
-index ccc1bb1..3a3d8a7 100644
+index ccc1bb1..eccc069 100644
 --- a/lib/main.dart
 +++ b/lib/main.dart
-@@ -9,9 +9,8 @@ import 'package:bett_box/plugins/clipboard_ext.dart';
+@@ -8,10 +8,10 @@ import 'package:bett_box/plugins/app.dart';
+ import 'package:bett_box/plugins/clipboard_ext.dart';
  import 'package:bett_box/plugins/tile.dart';
  import 'package:bett_box/plugins/vpn.dart';
++import 'package:bett_box/services/dns_stats.dart';
  import 'package:bett_box/state.dart';
 -import 'package:code_forge/code_forge.dart';
 -import 'package:flutter/material.dart';
@@ -20929,7 +20931,7 @@ index ccc1bb1..3a3d8a7 100644
  import 'package:flutter_riverpod/flutter_riverpod.dart';
  import 'package:synchronized/synchronized.dart';
  
-@@ -37,14 +36,16 @@ Future<void> main(List<String> args) async {
+@@ -37,14 +37,16 @@ Future<void> main(List<String> args) async {
      exit(0);
    }
  
@@ -20950,7 +20952,7 @@ index ccc1bb1..3a3d8a7 100644
        exit(0);
      }
    }
-@@ -57,7 +58,7 @@ Future<void> main(List<String> args) async {
+@@ -57,7 +59,7 @@ Future<void> main(List<String> args) async {
    try {
      await uiManager.initializeUI();
    } catch (e) {
@@ -20959,7 +20961,7 @@ index ccc1bb1..3a3d8a7 100644
    }
  
    await _runApp();
-@@ -71,7 +72,7 @@ Future<void> _sendControlCommand(String command) async {
+@@ -71,7 +73,7 @@ Future<void> _sendControlCommand(String command) async {
        return;
      } catch (e) {
        if (i == 4) {
@@ -20968,7 +20970,7 @@ index ccc1bb1..3a3d8a7 100644
          return;
        }
        await Future.delayed(const Duration(milliseconds: 200));
-@@ -80,18 +81,10 @@ Future<void> _sendControlCommand(String command) async {
+@@ -80,18 +82,10 @@ Future<void> _sendControlCommand(String command) async {
  }
  
  Future<void> _runApp() async {
@@ -20989,7 +20991,7 @@ index ccc1bb1..3a3d8a7 100644
    }
    await android?.init();
  
-@@ -100,7 +93,7 @@ Future<void> _runApp() async {
+@@ -100,7 +94,7 @@ Future<void> _runApp() async {
      clipboardExt.init();
    }
    HttpOverrides.global = BettboxHttpOverrides();
@@ -20998,7 +21000,7 @@ index ccc1bb1..3a3d8a7 100644
  }
  
  @pragma('vm:entry-point')
-@@ -131,9 +124,7 @@ Future<void> _service(List<String> flags) async {
+@@ -131,9 +125,7 @@ Future<void> _service(List<String> flags) async {
            if (candidateIps.isEmpty && candidateGateways.isEmpty) return;
  
            final shouldStop =
@@ -21009,7 +21011,7 @@ index ccc1bb1..3a3d8a7 100644
                candidateGateways.any(
                  (gw) => NetworkMatcher.matchAnyGateway(gw, networks),
                );
-@@ -150,7 +141,7 @@ Future<void> _service(List<String> flags) async {
+@@ -150,7 +142,7 @@ Future<void> _service(List<String> flags) async {
            }
          });
        } catch (e) {
@@ -21018,7 +21020,20 @@ index ccc1bb1..3a3d8a7 100644
        }
      }
  
-@@ -219,9 +210,10 @@ Future<void> _service(List<String> flags) async {
+@@ -197,6 +189,12 @@ Future<void> _service(List<String> flags) async {
+     }
+ 
+     commonPrint.log('Executing ${bootStart ? "boot" : "quick"} start sequence');
++    // DNS-статистика: флаг сбора читаем из prefs ДО сборки параметров ядра —
++    // от него зависит log-level в setup-патче (debug при включённом сборе)
++    // и решение о старте потока логов ядра.
++    await dnsStats.load();
++    final dnsStatsLogEnabled =
++        globalState.config.appSetting.openLogs || dnsStats.enabled;
+     await ClashCore.initGeo();
+     app.tip(appLocalizations.startVpn);
+     final homeDirPath = await appPath.homeDirPath;
+@@ -219,13 +217,22 @@ Future<void> _service(List<String> flags) async {
            params,
            globalState.getCoreState(),
          );
@@ -21032,7 +21047,19 @@ index ccc1bb1..3a3d8a7 100644
            await vpn?.stop();
            return;
          }
-@@ -236,19 +228,9 @@ Future<void> _service(List<String> flags) async {
+         await vpn?.start(clashLibHandler.getAndroidVpnOptions());
++        // DNS-статистика: при фоновом (quick) старте VPN держим поток логов
++        // ядра включённым, если включён сбор статистики или «Вести логи».
++        // Без этого после перезапуска ядра счётчики стоят, пока пользователь
++        // не откроет приложение и экран статистики.
++        await clashLibHandler.invokeAction(
++          '{"id": "quickDnsStatsLog", "method": '
++          '"${dnsStatsLogEnabled ? "startLog" : "stopLog"}"}',
++        );
+         Future.delayed(const Duration(seconds: 2), checkSmartAutoStop);
+ 
+         if (globalState.config.vpnProps.networkSpeedNotification) {
+@@ -236,19 +243,9 @@ Future<void> _service(List<String> flags) async {
            await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
          }
  
@@ -21053,7 +21080,7 @@ index ccc1bb1..3a3d8a7 100644
          await vpn?.stop();
        }
      });
-@@ -258,7 +240,9 @@ Future<void> _service(List<String> flags) async {
+@@ -258,7 +255,9 @@ Future<void> _service(List<String> flags) async {
  void _handleMainIpc(ClashLibHandler clashLibHandler) {
    final sendPort = IsolateNameServer.lookupPortByName(mainIsolate);
    if (sendPort == null) {
@@ -21064,7 +21091,7 @@ index ccc1bb1..3a3d8a7 100644
      return;
    }
  
-@@ -285,7 +269,7 @@ void _safeSend(SendPort sendPort, dynamic message) {
+@@ -285,7 +284,7 @@ void _safeSend(SendPort sendPort, dynamic message) {
    try {
      sendPort.send(message);
    } catch (e) {
@@ -21073,7 +21100,7 @@ index ccc1bb1..3a3d8a7 100644
      final retryPort = IsolateNameServer.lookupPortByName(mainIsolate);
      if (retryPort != null) {
        try {
-@@ -327,8 +311,8 @@ class _VpnListenerWithService with VpnListener {
+@@ -327,8 +326,8 @@ class _VpnListenerWithService with VpnListener {
    const _VpnListenerWithService({
      required Function(String dns) onDnsChanged,
      required Function() onNetworkChanged,
@@ -22429,7 +22456,7 @@ index b91bc82..6c95c21 100644
    }
  }
 diff --git a/lib/manager/clash_manager.dart b/lib/manager/clash_manager.dart
-index f5fb859..fbcfaad 100644
+index f5fb859..1312fe9 100644
 --- a/lib/manager/clash_manager.dart
 +++ b/lib/manager/clash_manager.dart
 @@ -9,7 +9,7 @@ import 'package:bett_box/providers/config.dart';
@@ -22460,7 +22487,35 @@ index f5fb859..fbcfaad 100644
                }),
          );
        }
-@@ -85,9 +88,17 @@ class _ClashContainerState extends ConsumerState<ClashManager>
+@@ -66,11 +69,23 @@ class _ClashContainerState extends ConsumerState<ClashManager>
+       }
+     });
+ 
+-    // DNS-статистика: синхронизация флага в провайдер (тянет за собой
+-    // updateParamsProvider → на лету патчит log-level ядра) и включение/
+-    // выключение потока логов независимо от настройки «Вести логи».
+-    ref.read(dnsStatsEnabledProvider.notifier).state = dnsStats.enabled;
++    // DNS-статистика: при холодном старте синглтон ещё не загружен из prefs
++    // (enabled=false), поэтому раньше флаг синхронизировался только при
++    // открытии экрана статистики: ядро стартовало без потока логов, а
++    // провайдер оставался false — счётчики не заполнялись. Теперь грузим
++    // prefs сразу, затем синхронизируем провайдер (тянет за собой
++    // updateParamsProvider → на лету патчит log-level ядра) и включаем
++    // поток логов независимо от настройки «Вести логи».
+     dnsStats.addListener(_handleDnsStatsChanged);
++    unawaited(_initDnsStats());
++  }
++
++  Future<void> _initDnsStats() async {
++    await dnsStats.load();
++    if (!mounted) return;
++    // Страховка: если load() уже был завершён до подписки листенера,
++    // notifyListeners не придёт — синхронизируем вручную.
++    _handleDnsStatsChanged();
+   }
+ 
+   void _handleDnsStatsChanged() {
+@@ -85,9 +100,17 @@ class _ClashContainerState extends ConsumerState<ClashManager>
      }
    }
  
@@ -22478,7 +22533,7 @@ index f5fb859..fbcfaad 100644
      clashMessage.removeListener(this);
      super.dispose();
    }
-@@ -104,7 +115,7 @@ class _ClashContainerState extends ConsumerState<ClashManager>
+@@ -104,7 +127,7 @@ class _ClashContainerState extends ConsumerState<ClashManager>
  
    @override
    void onLog(Log log) {
@@ -22487,7 +22542,7 @@ index f5fb859..fbcfaad 100644
      dnsStats.handleLog(log.payload);
      if (log.logLevel == LogLevel.error) {
        globalState.showNotifier(log.payload);
-@@ -114,15 +125,20 @@ class _ClashContainerState extends ConsumerState<ClashManager>
+@@ -114,15 +137,20 @@ class _ClashContainerState extends ConsumerState<ClashManager>
  
    @override
    void onRequest(TrackerInfo trackerInfo) async {
@@ -42545,7 +42600,7 @@ index 3234458..8b9ec45 100644
  /// Пассивная DNS-статистика BettboxR (уровень 1 — без правок ядра).
  ///
 diff --git a/lib/state.dart b/lib/state.dart
-index 622f6e9..8054083 100644
+index 622f6e9..5695f7e 100644
 --- a/lib/state.dart
 +++ b/lib/state.dart
 @@ -1,4 +1,5 @@
@@ -42554,8 +42609,11 @@ index 622f6e9..8054083 100644
  import 'dart:io';
  import 'dart:isolate';
  
-@@ -15,7 +16,8 @@ import 'package:bett_box/providers/providers.dart';
+@@ -13,9 +14,11 @@ import 'package:bett_box/plugins/app.dart';
+ import 'package:bett_box/plugins/service.dart';
+ import 'package:bett_box/providers/providers.dart';
  import 'package:bett_box/providers/state.dart' as providers_state;
++import 'package:bett_box/services/dns_stats.dart';
  
  import 'package:bett_box/widgets/dialog.dart';
 -import 'package:flutter/material.dart';
@@ -42564,7 +42622,7 @@ index 622f6e9..8054083 100644
  import 'package:flutter/services.dart';
  import 'package:flutter_riverpod/flutter_riverpod.dart' as flutter_riverpod;
  import 'package:material_color_utilities/palettes/core_palette.dart';
-@@ -53,9 +55,7 @@ class GlobalState {
+@@ -53,9 +56,7 @@ class GlobalState {
              ? const ClashConfig(findProcessMode: FindProcessMode.always)
              : defaultClashConfig,
          networkProps: defaultNetworkProps,
@@ -42575,7 +42633,7 @@ index 622f6e9..8054083 100644
        );
  
    set config(Config value) => _config = value;
-@@ -100,27 +100,28 @@ class GlobalState {
+@@ -100,27 +101,28 @@ class GlobalState {
      return widgets.contains(DashboardWidget.networkDetection);
    }
  
@@ -42624,7 +42682,7 @@ index 622f6e9..8054083 100644
    }
  
    bool get isStart => startTime != null && startTime!.isBeforeNow;
-@@ -141,8 +142,13 @@ class GlobalState {
+@@ -141,8 +143,13 @@ class GlobalState {
  
    Future<void> initApp(int version) async {
      isExiting = false;
@@ -42639,7 +42697,7 @@ index 622f6e9..8054083 100644
        coreSHA256 = await _calcCoreSHA256();
      }
      isPre = const String.fromEnvironment('APP_ENV') != 'stable';
-@@ -166,17 +172,46 @@ class GlobalState {
+@@ -166,17 +173,46 @@ class GlobalState {
      return coreSHA256;
    }
  
@@ -42687,7 +42745,7 @@ index 622f6e9..8054083 100644
        return null;
      }
    }
-@@ -203,10 +238,13 @@ class GlobalState {
+@@ -203,10 +239,13 @@ class GlobalState {
                ? const ClashConfig(findProcessMode: FindProcessMode.always)
                : defaultClashConfig,
            networkProps: defaultNetworkProps,
@@ -42704,7 +42762,7 @@ index 622f6e9..8054083 100644
      await globalState.migrateOldData(config);
      _seedBuiltinScript();
      final locale =
-@@ -257,7 +295,7 @@ class GlobalState {
+@@ -257,7 +296,7 @@ class GlobalState {
        try {
          await task();
        } catch (e) {
@@ -42713,7 +42771,7 @@ index 622f6e9..8054083 100644
        }
      }
      timer = null;
-@@ -326,7 +364,7 @@ class GlobalState {
+@@ -326,7 +365,7 @@ class GlobalState {
          startTime = null;
        }
      } catch (e) {
@@ -42722,7 +42780,7 @@ index 622f6e9..8054083 100644
      }
    }
  
-@@ -612,6 +650,21 @@ class GlobalState {
+@@ -612,6 +651,21 @@ class GlobalState {
        preferences.saveConfig(config);
        this.config = config;
      }
@@ -42744,7 +42802,7 @@ index 622f6e9..8054083 100644
    }
  
    /// Встраивает предустановленные скрипты: «s-ru» (правила маршрутизации +
-@@ -632,7 +685,11 @@ class GlobalState {
+@@ -632,7 +686,11 @@ class GlobalState {
      for (final (label, content) in builtins) {
        final exists = next.any((script) => script.label == label);
        if (exists) continue;
@@ -42757,7 +42815,7 @@ index 622f6e9..8054083 100644
        changed = true;
      }
      if (!changed) return;
-@@ -652,596 +709,348 @@ class GlobalState {
+@@ -652,596 +710,355 @@ class GlobalState {
      );
    }
  
@@ -43441,6 +43499,13 @@ index 622f6e9..8054083 100644
 +    final externalController = patchConfig.externalController;
 +    final secret = patchConfig.secret;
 +    final hasAuthentication = patchConfig.authentication.isNotEmpty;
++    // DNS-статистика: пока включён сбор, ядро должно стартовать сразу с
++    // log-level debug — иначе [DNS]-строки фильтруются ядром, и счётчики
++    // не заполняются до первого updateClashConfig из UI.
++    final effectiveLogLevel =
++        dnsStats.enabled && patchConfig.logLevel != LogLevel.debug
++        ? LogLevel.debug
++        : patchConfig.logLevel;
 +    final general = <String, dynamic>{
 +      'external-controller': patchConfig.allowLan
 +          ? externalController.value.replaceAll('127.0.0.1', '0.0.0.0')
@@ -43456,7 +43521,7 @@ index 622f6e9..8054083 100644
 +      'tcp-concurrent': patchConfig.tcpConcurrent,
 +      'unified-delay': patchConfig.unifiedDelay,
 +      'ipv6': patchConfig.ipv6,
-+      'log-level': patchConfig.logLevel.name,
++      'log-level': effectiveLogLevel.name,
 +      'keep-alive-interval': patchConfig.keepAliveInterval,
 +      'mixed-port': patchConfig.mixedPort,
 +      'port': patchConfig.port,
@@ -43664,7 +43729,7 @@ index 622f6e9..8054083 100644
    }
  
    Future<Map<String, dynamic>> getProfileConfig(String profileId) async {
-@@ -1253,35 +1062,26 @@ class GlobalState {
+@@ -1253,35 +1070,26 @@ class GlobalState {
      };
      configMap['rules'] = configMap['rule'];
      configMap.remove('rule');
@@ -43716,7 +43781,7 @@ index 622f6e9..8054083 100644
    }
  }
  
-@@ -1297,6 +1097,8 @@ class DashboardRefreshManager {
+@@ -1297,6 +1105,8 @@ class DashboardRefreshManager {
  
    bool get isRunning => _isRunning;
  
@@ -43725,7 +43790,7 @@ index 622f6e9..8054083 100644
    Future<bool> _isActive() async {
      if (system.isDesktop) {
        final isPinned = globalState.config.windowProps.isPinned;
-@@ -1316,9 +1118,18 @@ class DashboardRefreshManager {
+@@ -1316,9 +1126,18 @@ class DashboardRefreshManager {
      if (lifecycleState != null && lifecycleState != AppLifecycleState.resumed) {
        return false;
      }
@@ -43744,7 +43809,7 @@ index 622f6e9..8054083 100644
    Future<void> _tryTick(int token) async {
      if (!await _isActive()) {
        return;
-@@ -1363,7 +1174,10 @@ class DetectionState {
+@@ -1363,7 +1182,10 @@ class DetectionState {
    bool _isIpMasked = false;
    IpInfo? _rawIpInfo;
    bool _isFirstLaunch = true;
@@ -43756,7 +43821,7 @@ index 622f6e9..8054083 100644
  
    final state = ValueNotifier<NetworkDetectionState>(
      const NetworkDetectionState(
-@@ -1403,13 +1217,13 @@ class DetectionState {
+@@ -1403,13 +1225,13 @@ class DetectionState {
        ipInfo: null,
        errorMessage: null,
      );
@@ -43772,7 +43837,7 @@ index 622f6e9..8054083 100644
      state.value = state.value.copyWith(
        isLoading: false,
        ipInfo: _maskIpInfo(_rawIpInfo),
-@@ -1441,14 +1255,18 @@ class DetectionState {
+@@ -1441,14 +1263,18 @@ class DetectionState {
      _handleResponse(res);
    }
  
@@ -43797,7 +43862,7 @@ index 622f6e9..8054083 100644
  
      final delay = immediate
          ? Duration.zero
-@@ -1456,11 +1274,21 @@ class DetectionState {
+@@ -1456,11 +1282,21 @@ class DetectionState {
  
      debouncer.call(
        FunctionTag.checkIp,
@@ -43820,7 +43885,7 @@ index 622f6e9..8054083 100644
    void tryStartCheck() {
      if (!globalState.hasNetworkDetectionWidget) return;
      if (!state.value.isLoading &&
-@@ -1472,19 +1300,20 @@ class DetectionState {
+@@ -1472,19 +1308,20 @@ class DetectionState {
  
    void checkOnForegroundResume() {
      if (!globalState.hasNetworkDetectionWidget) return;
@@ -43844,7 +43909,7 @@ index 622f6e9..8054083 100644
    }
  
    void _handleResponse(Result<IpInfo?> res) {
-@@ -1511,7 +1340,7 @@ class DetectionState {
+@@ -1511,7 +1348,7 @@ class DetectionState {
  
      if (res.data != null) {
        _rawIpInfo = res.data;
@@ -43853,7 +43918,7 @@ index 622f6e9..8054083 100644
      }
      state.value = state.value.copyWith(
        isLoading: false,
-@@ -1519,17 +1348,22 @@ class DetectionState {
+@@ -1519,17 +1356,22 @@ class DetectionState {
        errorMessage: _rawIpInfo != null
            ? null
            : (state.value.ipInfo == null
@@ -43879,7 +43944,7 @@ index 622f6e9..8054083 100644
  
      final isStateChanged = _preIsStart != isStart;
      _preIsStart = isStart;
-@@ -1543,6 +1377,8 @@ class DetectionState {
+@@ -1543,6 +1385,8 @@ class DetectionState {
  
      _cancelPreviousRequest();
      _cancelToken = CancelToken();
@@ -43888,7 +43953,7 @@ index 622f6e9..8054083 100644
      final requestId = ++_requestId;
  
      final shouldShowLoading =
-@@ -1571,19 +1407,24 @@ class DetectionState {
+@@ -1571,19 +1415,24 @@ class DetectionState {
            );
  
      if (requestId != _requestId) return;
@@ -43919,7 +43984,7 @@ index 622f6e9..8054083 100644
      }
    }
  }
-@@ -1596,16 +1437,10 @@ class MediaUnlockStateNotifier {
+@@ -1596,16 +1445,10 @@ class MediaUnlockStateNotifier {
    int _requestId = 0;
    Timer? _nodeChangeTimer;
    static const _nodeChangeDelay = Duration(milliseconds: 800);
@@ -43938,7 +44003,7 @@ index 622f6e9..8054083 100644
    final Set<MediaPlatform> _batchTestingPlatforms = {};
  
    bool isBatchChecking([Iterable<MediaPlatform>? platforms]) {
-@@ -1630,35 +1465,39 @@ class MediaUnlockStateNotifier {
+@@ -1630,35 +1473,39 @@ class MediaUnlockStateNotifier {
    List<MediaPlatform> get pinnedPlatforms {
      final pinned = globalState.config.appSetting.pinnedMediaPlatforms;
      return (pinned.isNotEmpty ? pinned : defaultPinnedMediaPlatforms)
@@ -43991,7 +44056,7 @@ index 622f6e9..8054083 100644
        finalMap.putIfAbsent(
          platform,
          () => MediaUnlockResult(
-@@ -1671,9 +1510,8 @@ class MediaUnlockStateNotifier {
+@@ -1671,9 +1518,8 @@ class MediaUnlockStateNotifier {
          lastChecked: DateTime.now(),
        );
      } finally {
@@ -44003,7 +44068,7 @@ index 622f6e9..8054083 100644
        state.value = state.value.copyWith(testingPlatforms: nextTesting);
      }
    }
-@@ -1694,17 +1532,16 @@ class MediaUnlockStateNotifier {
+@@ -1694,17 +1540,16 @@ class MediaUnlockStateNotifier {
      final targetPlatforms = force
          ? platforms.toList()
          : platforms
@@ -44025,7 +44090,7 @@ index 622f6e9..8054083 100644
  
      state.value = state.value.copyWith(
        isLoading: isFullCheck ? true : state.value.isLoading,
-@@ -1720,12 +1557,11 @@ class MediaUnlockStateNotifier {
+@@ -1720,12 +1565,11 @@ class MediaUnlockStateNotifier {
        if (bufferResults.isEmpty) return;
        final updates = Map<MediaPlatform, MediaUnlockResult>.from(bufferResults);
        bufferResults.clear();
@@ -44043,7 +44108,7 @@ index 622f6e9..8054083 100644
        state.value = state.value.copyWith(
          results: nextResults,
          testingPlatforms: nextTesting,
-@@ -1733,46 +1569,48 @@ class MediaUnlockStateNotifier {
+@@ -1733,46 +1577,48 @@ class MediaUnlockStateNotifier {
      }
  
      try {
@@ -44125,7 +44190,7 @@ index 622f6e9..8054083 100644
        state.value = state.value.copyWith(
          isLoading: isFullCheck ? false : state.value.isLoading,
          results: nextResults,
-@@ -1782,18 +1620,17 @@ class MediaUnlockStateNotifier {
+@@ -1782,18 +1628,17 @@ class MediaUnlockStateNotifier {
        throttleTimer?.cancel();
        if (requestId != _requestId) return;
        flushUpdates();
@@ -44150,7 +44215,7 @@ index 622f6e9..8054083 100644
        state.value = state.value.copyWith(
          isLoading: isFullCheck ? false : state.value.isLoading,
          results: fallbackResults,
-@@ -1802,9 +1639,8 @@ class MediaUnlockStateNotifier {
+@@ -1802,9 +1647,8 @@ class MediaUnlockStateNotifier {
      } finally {
        throttleTimer?.cancel();
        _batchTestingPlatforms.removeAll(targetPlatforms);
@@ -44162,7 +44227,7 @@ index 622f6e9..8054083 100644
        state.value = state.value.copyWith(
          isLoading: (requestId == _requestId && isFullCheck)
              ? false
-@@ -1818,10 +1654,7 @@ class MediaUnlockStateNotifier {
+@@ -1818,10 +1662,7 @@ class MediaUnlockStateNotifier {
      checkPlatforms(platforms ?? pinnedPlatforms, force: force);
    }
  
@@ -44174,7 +44239,7 @@ index 622f6e9..8054083 100644
      final showMoreStreaming =
          globalState.config.appSetting.mediaUnlockMoreStreamingPlatforms;
      final allAvailable = MediaPlatform.values
-@@ -1867,9 +1700,12 @@ class MediaUnlockStateNotifier {
+@@ -1867,9 +1708,12 @@ class MediaUnlockStateNotifier {
        } else {
          await Future.delayed(const Duration(seconds: 2));
        }
@@ -44190,7 +44255,7 @@ index 622f6e9..8054083 100644
        for (final p in pinnedPlatforms) {
          nextResults.remove(p);
        }
-@@ -1878,7 +1714,7 @@ class MediaUnlockStateNotifier {
+@@ -1878,7 +1722,7 @@ class MediaUnlockStateNotifier {
          testingPlatforms: {},
          isLoading: false,
        );
@@ -44199,7 +44264,7 @@ index 622f6e9..8054083 100644
        checkPinned(force: true);
        return;
      }
-@@ -1888,14 +1724,15 @@ class MediaUnlockStateNotifier {
+@@ -1888,14 +1732,15 @@ class MediaUnlockStateNotifier {
        if (globalState.appState.runTime == null) return;
        if (globalState.backgroundMode.value) return;
  
@@ -44220,7 +44285,7 @@ index 622f6e9..8054083 100644
        for (final p in pinnedPlatforms) {
          nextResults.remove(p);
        }
-@@ -1913,14 +1750,18 @@ class MediaUnlockStateNotifier {
+@@ -1913,14 +1758,18 @@ class MediaUnlockStateNotifier {
      if (!isRunning) return;
      if (!globalState.hasMediaUnlockWidget) return;
      if (!globalState.config.appSetting.mediaUnlockRefreshOnNodeChange) return;
@@ -44244,7 +44309,7 @@ index 622f6e9..8054083 100644
      for (final p in pinnedPlatforms) {
        nextResults.remove(p);
      }
-@@ -1936,14 +1777,16 @@ class MediaUnlockStateNotifier {
+@@ -1936,14 +1785,16 @@ class MediaUnlockStateNotifier {
      final isRunning = globalState.appState.runTime != null;
      if (!isRunning) return;
      if (!globalState.hasMediaUnlockWidget) return;
