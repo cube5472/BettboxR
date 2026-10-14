@@ -65,6 +65,19 @@ jobs:
           done < patches/upstream-1195.binlist
           echo "Upstream sync v1.19.5 применён"
 
+      # Фиксы BettboxR поверх базы 1.19.5 (2026-10-14):
+      # 1) DNS-статистика снова собирает данные — Log.core в 1.19.5 срезает
+      #    «[DNS]»-префикс из payload, парсер статистики его ждёт;
+      # 2) убран двойной AppBar на странице DNS-статистики;
+      # 3) генератор: поля снова с видимым бордером, убран растянутый серый
+      #    блок в «1. Источники прокси» (многострочная подсказка + filled-тема).
+      - name: Apply BettboxR UI fixes
+        shell: bash
+        run: |
+          set -e
+          git apply --whitespace=nowarn patches/bettboxr-1195-ui-fixes.patch
+          echo "BettboxR UI fixes применены"
+
       - name: Setup Rust (Android)
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -197,6 +210,14 @@ jobs:
             esac
           done < patches/upstream-1195.binlist
           echo "Upstream sync v1.19.5 применён"
+
+      # Фиксы BettboxR поверх базы 1.19.5 (см. комментарий в android-джобе)
+      - name: Apply BettboxR UI fixes
+        shell: bash
+        run: |
+          set -e
+          git apply --whitespace=nowarn patches/bettboxr-1195-ui-fixes.patch
+          echo "BettboxR UI fixes применены"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
