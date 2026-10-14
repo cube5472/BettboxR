@@ -19,6 +19,14 @@
 //  - для нод подписок имена дописываются в exclude подписки;
 //  - для основного провайдера (режим provider) — в providerExclude.
 // У не-генераторных конфигов комментарии шапки сохраняются как были.
+//
+// Защита релеев цепочек: вырезание ноды, на которую ссылается
+// `dialer-proxy` выжившей ноды, делает конфиг невалидным (ядро:
+// «proxy not found»), валидация в saveFileWithString падает и всё
+// массовое удаление отменяется целиком — ни одна нода не удаляется.
+// Поэтому такие ноды пропускаются: они уйдут позже, вместе с
+// последней зависимой цепочкой (после её удаления ссылок не
+// останется и релей станет обычным кандидатом).
 import 'dart:convert';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/generator/generator_core.dart';
@@ -371,9 +379,31 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
       }
     }
   }
-  final staticDead = deadNames.where(staticNames.contains).toList();
+  final staticDeadAll = deadNames.where(staticNames.contains).toList();
   final providerDead = deadNames
       .where((name) => !staticNames.contains(name))
+      .toList();
+
+  // Защита релеев цепочек (см. шапку файла): удаляемой не становится
+  // статическая нода, на которую через dialer-proxy ссылается хотя бы
+  // одна выживающая статическая нода. Без этого массовое удаление
+  // падало целиком на валидации ядра («proxy not found»), если в
+  // мёртвые попадал релей живых/непротестированных цепочек.
+  final survivors = staticNames.difference(staticDeadAll.toSet());
+  final dialerRefs = <String>{};
+  if (proxiesRaw is List) {
+    for (final entry in proxiesRaw) {
+      if (entry is! Map) continue;
+      final name = entry['name'];
+      if (name is! String || !survivors.contains(name)) continue;
+      final dialerRef = entry['dialer-proxy'];
+      if (dialerRef is String && dialerRef.isNotEmpty) {
+        dialerRefs.add(dialerRef);
+      }
+    }
+  }
+  final staticDead = staticDeadAll
+      .where((name) => !dialerRefs.contains(name))
       .toList();
 
   // Параметры из маркера генератора (см. шапку файла): синхронизируются
@@ -386,7 +416,8 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
   var removed = 0;
   final misses = <String>[];
 
-  // 1. Статические ноды: proxies + все списки групп.
+  // 1. Статические ноды: proxies + все списки групп (релеи цепочек
+  // уже вычтены из staticDead защитой выше).
   if (staticDead.isNotEmpty) {
     final keepStatic = staticNames.difference(staticDead.toSet());
     if (keepStatic.isEmpty) {
@@ -430,8 +461,21 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
       }
     }
     final providersConfig = config['proxy-providers'];
+    // Страховка: если ядро ещё не отдало список внешних провайдеров
+    // (owners пуст — например, удаление сразу после старта приложения),
+    // а proxy-provider в конфиге ровно один — ноды относятся к нему.
+    // Без этого всё удаление вырождалось в «Удалено 0» и выглядело
+    // как «кнопка не работает».
+    String? fallbackOwner;
+    if (owners.isEmpty && providersConfig is Map && providersConfig.length == 1) {
+      final onlyKey = providersConfig.keys.first;
+      if (onlyKey is String) {
+        fallbackOwner = onlyKey;
+      }
+    }
     for (final name in providerDead) {
-      final providerNames = owners[name];
+      final providerNames = owners[name] ??
+          (fallbackOwner == null ? null : <String>{fallbackOwner});
       if (providerNames == null || providerNames.isEmpty) {
         misses.add(name);
         continue;
