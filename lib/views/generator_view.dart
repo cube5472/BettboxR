@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bett_box/common/common.dart';
+import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/generator/generator_core.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/providers.dart';
