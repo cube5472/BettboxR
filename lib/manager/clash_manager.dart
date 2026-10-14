@@ -69,11 +69,23 @@ class _ClashContainerState extends ConsumerState<ClashManager>
       }
     });
 
-    // DNS-статистика: синхронизация флага в провайдер (тянет за собой
-    // updateParamsProvider → на лету патчит log-level ядра) и включение/
-    // выключение потока логов независимо от настройки «Вести логи».
-    ref.read(dnsStatsEnabledProvider.notifier).state = dnsStats.enabled;
+    // DNS-статистика: при холодном старте синглтон ещё не загружен из prefs
+    // (enabled=false), поэтому раньше флаг синхронизировался только при
+    // открытии экрана статистики: ядро стартовало без потока логов, а
+    // провайдер оставался false — счётчики не заполнялись. Теперь грузим
+    // prefs сразу, затем синхронизируем провайдер (тянет за собой
+    // updateParamsProvider → на лету патчит log-level ядра) и включаем
+    // поток логов независимо от настройки «Вести логи».
     dnsStats.addListener(_handleDnsStatsChanged);
+    unawaited(_initDnsStats());
+  }
+
+  Future<void> _initDnsStats() async {
+    await dnsStats.load();
+    if (!mounted) return;
+    // Страховка: если load() уже был завершён до подписки листенера,
+    // notifyListeners не придёт — синхронизируем вручную.
+    _handleDnsStatsChanged();
   }
 
   void _handleDnsStatsChanged() {
