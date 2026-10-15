@@ -63,6 +63,72 @@ jobs:
                 ;;
             esac
           done < patches/upstream-1195.binlist
+          cat > patches/bettboxr-ui-fixes.patch <<'BETTBOXR_UI_FIXES'
+          diff --git a/lib/views/proxies/list.dart b/lib/views/proxies/list.dart
+          --- a/lib/views/proxies/list.dart
+          +++ b/lib/views/proxies/list.dart
+          @@ -359,12 +359,14 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+               bool autoStickyHeader,
+             ) {
+               final isExpand = widget.currentUnfoldSet.contains(group.name);
+          +    final hideDead = _hideDeadGroups.contains(group.name);
+               final cacheKey = (
+                 isExpand,
+                 group.name == _expandingGroup,
+                 headerHeight,
+                 itemHeight,
+                 autoStickyHeader,
+          +      hideDead,
+               );
+               final cached = _sliverCache[group.name];
+               if (cached != null &&
+          @@ -372,8 +374,13 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+                   cached.$2 == cacheKey) {
+                 return cached.$3;
+               }
+          -    final sortedProxies = isExpand ? group.all : const <Proxy>[];
+          -    final rowCount = (sortedProxies.length / widget.columns).ceil();
+          +    // Фильтр скрытых (мёртвых) нод: в архитектуре v1.19.5 строки строятся
+          +    // напрямую из group.all, проводка мод-фичи скрытия была потеряна —
+          +    // восстанавливаем пропуск через _getVisibleProxies.
+          +    final visibleProxies = isExpand
+          +        ? _getVisibleProxies(group, group.all)
+          +        : const <Proxy>[];
+          +    final rowCount = (visibleProxies.length / widget.columns).ceil();
+           
+               final sliver = SliverPadding(
+                 padding: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
+          @@ -402,13 +409,16 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+                       cardType: widget.cardType,
+                       columns: widget.columns,
+                       onScrollToSelected: () => _scrollToSelected(group.name),
+          +            isHideDead: hideDead,
+          +            onToggleHideDead: () => _handleToggleHideDead(group),
+          +            onDeleteDead: () => _handleDeleteDead(group),
+                     ),
+                   ),
+                   sliver: SliverFixedExtentList(
+                     itemExtent: itemHeight + 8,
+                     delegate: SliverChildBuilderDelegate(
+                       (context, rowIndex) =>
+          -                _buildRow(group, sortedProxies, rowIndex, itemHeight),
+          +                _buildRow(group, visibleProxies, rowIndex, itemHeight),
+                       childCount: rowCount,
+                     ),
+                   ),
+          @@ -428,6 +438,10 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+           
+             @override
+             Widget build(BuildContext context) {
+          +    // sortNum растёт в конце каждого теста задержек (addSortNum) — watch
+          +    // гарантирует перестройку списка и переприменение фильтра скрытия
+          +    // к свежим задержкам (в т.ч. когда тест шёл параллельно с включением).
+          +    ref.watch(sortNumProvider);
+               final isMobileView = ref.watch(isMobileViewProvider);
+               final autoStickyHeader = ref.watch(
+                 proxiesStyleSettingProvider.select((s) => s.autoStickyHeader),
+          BETTBOXR_UI_FIXES
+          git apply --whitespace=nowarn patches/bettboxr-ui-fixes.patch
           echo "Upstream sync v1.19.5 применён"
 
       - name: Setup Rust (Android)
@@ -196,6 +262,72 @@ jobs:
                 ;;
             esac
           done < patches/upstream-1195.binlist
+          cat > patches/bettboxr-ui-fixes.patch <<'BETTBOXR_UI_FIXES'
+          diff --git a/lib/views/proxies/list.dart b/lib/views/proxies/list.dart
+          --- a/lib/views/proxies/list.dart
+          +++ b/lib/views/proxies/list.dart
+          @@ -359,12 +359,14 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+               bool autoStickyHeader,
+             ) {
+               final isExpand = widget.currentUnfoldSet.contains(group.name);
+          +    final hideDead = _hideDeadGroups.contains(group.name);
+               final cacheKey = (
+                 isExpand,
+                 group.name == _expandingGroup,
+                 headerHeight,
+                 itemHeight,
+                 autoStickyHeader,
+          +      hideDead,
+               );
+               final cached = _sliverCache[group.name];
+               if (cached != null &&
+          @@ -372,8 +374,13 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+                   cached.$2 == cacheKey) {
+                 return cached.$3;
+               }
+          -    final sortedProxies = isExpand ? group.all : const <Proxy>[];
+          -    final rowCount = (sortedProxies.length / widget.columns).ceil();
+          +    // Фильтр скрытых (мёртвых) нод: в архитектуре v1.19.5 строки строятся
+          +    // напрямую из group.all, проводка мод-фичи скрытия была потеряна —
+          +    // восстанавливаем пропуск через _getVisibleProxies.
+          +    final visibleProxies = isExpand
+          +        ? _getVisibleProxies(group, group.all)
+          +        : const <Proxy>[];
+          +    final rowCount = (visibleProxies.length / widget.columns).ceil();
+           
+               final sliver = SliverPadding(
+                 padding: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
+          @@ -402,13 +409,16 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+                       cardType: widget.cardType,
+                       columns: widget.columns,
+                       onScrollToSelected: () => _scrollToSelected(group.name),
+          +            isHideDead: hideDead,
+          +            onToggleHideDead: () => _handleToggleHideDead(group),
+          +            onDeleteDead: () => _handleDeleteDead(group),
+                     ),
+                   ),
+                   sliver: SliverFixedExtentList(
+                     itemExtent: itemHeight + 8,
+                     delegate: SliverChildBuilderDelegate(
+                       (context, rowIndex) =>
+          -                _buildRow(group, sortedProxies, rowIndex, itemHeight),
+          +                _buildRow(group, visibleProxies, rowIndex, itemHeight),
+                       childCount: rowCount,
+                     ),
+                   ),
+          @@ -428,6 +438,10 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+           
+             @override
+             Widget build(BuildContext context) {
+          +    // sortNum растёт в конце каждого теста задержек (addSortNum) — watch
+          +    // гарантирует перестройку списка и переприменение фильтра скрытия
+          +    // к свежим задержкам (в т.ч. когда тест шёл параллельно с включением).
+          +    ref.watch(sortNumProvider);
+               final isMobileView = ref.watch(isMobileViewProvider);
+               final autoStickyHeader = ref.watch(
+                 proxiesStyleSettingProvider.select((s) => s.autoStickyHeader),
+          BETTBOXR_UI_FIXES
+          git apply --whitespace=nowarn patches/bettboxr-ui-fixes.patch
           echo "Upstream sync v1.19.5 применён"
 
       - name: Setup Rust
