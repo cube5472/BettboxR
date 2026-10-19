@@ -9521,7 +9521,7 @@ index 0000000..10cb6be
 +	// без добавки «VPN подключён, но ничего не работает». mihomo
 +	// опрашивает nameserver параллельно и берёт первый ответивший,
 +	// так что добавка безвредна и вне РФ. Дубликаты отсекаются.
-+	ensureRfReachableDns(raw.DNS)
++	ensureRfReachableDns(&raw.DNS)
 +
 +	if !patchForAndroid {
 +		return nil
@@ -24501,24 +24501,6 @@ index b91bc82..de3f256 100644
      );
    }
  }
-diff --git a/lib/manager/clash_manager.dart b/lib/manager/clash_manager.dart
-index 542e0d1..72b01a0 100644
---- a/lib/manager/clash_manager.dart
-+++ b/lib/manager/clash_manager.dart
-@@ -107,6 +107,13 @@ class _ClashContainerState extends ConsumerState<ClashManager>
-     ref.read(requestsProvider.notifier).addRequests(requests);
-   }
- 
-+  void _flushRequests() {
-+    if (!mounted || _pendingRequests.isEmpty) return;
-+    final requests = List.of(_pendingRequests);
-+    _pendingRequests.clear();
-+    ref.read(requestsProvider.notifier).addRequests(requests);
-+  }
-+
-   @override
-   Future<void> dispose() async {
-     dnsStats.removeListener(_handleDnsStatsChanged);
 diff --git a/lib/manager/connectivity_manager.dart b/lib/manager/connectivity_manager.dart
 index b98dd1c..f187729 100644
 --- a/lib/manager/connectivity_manager.dart
@@ -55052,7 +55034,7 @@ index efc2135..38ad7b8 100644
                labelText: appLocalizations.agePublicKeyLabel,
                helperText: _helperText,
 diff --git a/lib/views/profiles/override_profile.dart b/lib/views/profiles/override_profile.dart
-index 79c830c..1d28152 100644
+index 79c830c..6a2a946 100644
 --- a/lib/views/profiles/override_profile.dart
 +++ b/lib/views/profiles/override_profile.dart
 @@ -1,10 +1,13 @@
@@ -55689,6 +55671,7 @@ index 79c830c..1d28152 100644
 +                                ),
 +                              ),
 +                            ),
++                          ],
 +                        ],
                        ),
 -                      onPressed: onCopy,
@@ -55714,7 +55697,6 @@ index 79c830c..1d28152 100644
 +                        ),
 +                      ),
 +                  ],
-+                ],
                  ),
 -              ],
 +              ),
@@ -60714,7 +60696,7 @@ index 3f6995c..0962573 100644
  class ScrollOverBuilder extends StatefulWidget {
    final Widget Function(bool isOver) builder;
 diff --git a/lib/widgets/card.dart b/lib/widgets/card.dart
-index 5d5a2fc..f944109 100644
+index 5d5a2fc..d46f4ff 100644
 --- a/lib/widgets/card.dart
 +++ b/lib/widgets/card.dart
 @@ -2,7 +2,7 @@ import 'package:bett_box/common/common.dart';
@@ -60726,52 +60708,7 @@ index 5d5a2fc..f944109 100644
  
  import 'text.dart';
  
-@@ -78,44 +78,6 @@ class InfoHeader extends StatelessWidget {
-   }
- }
- 
--class SmoothRoundedRectangleBorder extends RoundedRectangleBorder {
--  const SmoothRoundedRectangleBorder({
--    super.side,
--    super.borderRadius = BorderRadius.zero,
--  });
--
--  @override
--  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
--    switch (side.style) {
--      case BorderStyle.none:
--        break;
--      case BorderStyle.solid:
--        final borderRect = borderRadius.resolve(textDirection).toRRect(rect);
--        if (side.width <= 0.0) {
--          canvas.drawRRect(borderRect, side.toPaint());
--        } else {
--          final strokeRect = borderRect.deflate(side.width / 2.0);
--          final paint = side.toPaint()
--            ..style = PaintingStyle.stroke
--            ..strokeWidth = side.width
--            ..isAntiAlias = true;
--          canvas.drawRRect(strokeRect, paint);
--        }
--    }
--  }
--
--  @override
--  SmoothRoundedRectangleBorder copyWith({
--    BorderSide? side,
--    BorderRadiusGeometry? borderRadius,
--  }) {
--    return SmoothRoundedRectangleBorder(
--      side: side ?? this.side,
--      borderRadius: borderRadius ?? this.borderRadius,
--    );
--  }
--}
--
- class CommonCard extends StatelessWidget {
-   const CommonCard({
-     super.key,
-@@ -130,6 +92,7 @@ class CommonCard extends StatelessWidget {
+@@ -130,6 +130,7 @@ class CommonCard extends StatelessWidget {
      this.enterAnimated = false,
      this.info,
      this.clipBehavior = Clip.antiAlias,
@@ -60779,7 +60716,7 @@ index 5d5a2fc..f944109 100644
    }) : isSelected = isSelected ?? false;
  
    final bool enterAnimated;
-@@ -143,6 +106,7 @@ class CommonCard extends StatelessWidget {
+@@ -143,6 +144,7 @@ class CommonCard extends StatelessWidget {
    final CommonCardType type;
    final double? radius;
    final Clip clipBehavior;
@@ -60787,7 +60724,7 @@ index 5d5a2fc..f944109 100644
  
    // final WidgetStateProperty<Color?>? backgroundColor;
    // final WidgetStateProperty<BorderSide?>? borderSide;
-@@ -167,6 +131,7 @@ class CommonCard extends StatelessWidget {
+@@ -167,6 +169,7 @@ class CommonCard extends StatelessWidget {
        }
        return BorderSide(
          color: isSelected ? edge : edge.withValues(alpha: 0.55),
@@ -60795,7 +60732,7 @@ index 5d5a2fc..f944109 100644
        );
      }
      final hoverColor = isSelected
-@@ -175,28 +140,37 @@ class CommonCard extends StatelessWidget {
+@@ -175,28 +178,37 @@ class CommonCard extends StatelessWidget {
      if (states.contains(WidgetState.hovered) ||
          states.contains(WidgetState.focused) ||
          states.contains(WidgetState.pressed)) {
@@ -60843,7 +60780,7 @@ index 5d5a2fc..f944109 100644
    }
  
    @override
-@@ -225,16 +199,16 @@ class CommonCard extends StatelessWidget {
+@@ -225,16 +237,16 @@ class CommonCard extends StatelessWidget {
      }
  
      final isInteractive = onPressed != null || onLongPress != null;
@@ -60866,7 +60803,7 @@ index 5d5a2fc..f944109 100644
          iconColor: WidgetStatePropertyAll(context.colorScheme.primary),
          iconSize: WidgetStateProperty.all(20),
          backgroundColor: WidgetStateProperty.resolveWith(
-@@ -250,6 +224,22 @@ class CommonCard extends StatelessWidget {
+@@ -250,6 +262,22 @@ class CommonCard extends StatelessWidget {
        child: childWidget,
      );
  
