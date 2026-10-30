@@ -1,9 +1,10 @@
-GET d092a155 assets/data/BundleMRS.7z
-GET d092a155 assets/fonts/Twemoji.Mozilla.ttf
-GET d092a155 core/testdata/BundleMRS.7z
 DEL - assets/data/ASN.mmdb
+GET 5df714e0 assets/data/BundleMRS.7z
+DEL - assets/data/GeoSite.dat
 DEL - assets/data/geoip.metadb
 DEL - assets/data/zash.zip
+GET 5df714e0 assets/fonts/Twemoji.Mozilla.ttf
+GET 5df714e0 core/testdata/BundleMRS.7z
 DEL - plugins/code_forge/assets/icons/class.ttf
 DEL - plugins/code_forge/assets/icons/event.ttf
 DEL - plugins/code_forge/assets/icons/field.ttf
@@ -82,4 +83,3 @@ DEL - plugins/flutter_qjs/example/windows/runner/resources/app_icon.ico
 DEL - snapshots/android-mem.jpg
 DEL - snapshots/readme.jpg
 DEL - snapshots/windows-mem.png
-DEL - assets/data/GeoSite.dat
