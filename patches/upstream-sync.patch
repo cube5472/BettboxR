@@ -58119,7 +58119,8 @@ index 3248545..dd23021 100644
 +  'volatile': instance.volatile,
  };
 diff --git a/lib/models/generated/config.freezed.dart b/lib/models/generated/config.freezed.dart
-index bf29f01..daf1343 100644
+index bf29f01..32c8250 100644
+index bf29f01..32c8250 100644
 --- a/lib/models/generated/config.freezed.dart
 +++ b/lib/models/generated/config.freezed.dart
 @@ -1,6 +1,6 @@
@@ -58946,7 +58947,7 @@ index bf29f01..daf1343 100644
  
  class _ProxiesStyle implements ProxiesStyle {
 -  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.shrink, this.delayAnimation = DelayAnimationType.none, final  Map<String, String> iconMap = const {}, final  Map<String, List<String>> proxyOrders = const {}, this.concurrencyLimit = 250, this.autoStickyHeader = true, this.showHiddenItems = false, this.hasCustomizedStyle = false}): _iconMap = iconMap,_proxyOrders = proxyOrders;
-+  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.expand, this.delayAnimation = DelayAnimationType.pulse, this.syncDelayAnimation = true,  Map<String, String> iconMap = const {}, this.concurrencyLimit = 250, this.autoStickyHeader = false, this.showHiddenItems = false, this.hasCustomizedStyle = false}): _iconMap = iconMap;
++  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.expand, this.delayAnimation = DelayAnimationType.pulse, this.syncDelayAnimation = true,  Map<String, String> iconMap = const {}, final  Map<String, List<String>> proxyOrders = const {}, this.concurrencyLimit = 250, this.autoStickyHeader = false, this.showHiddenItems = false, this.hasCustomizedStyle = false}): _iconMap = iconMap,_proxyOrders = proxyOrders;
    factory _ProxiesStyle.fromJson(Map<String, dynamic> json) => _$ProxiesStyleFromJson(json);
  
  @override@JsonKey() final  ProxiesType type;
@@ -114861,14 +114862,13 @@ diff --git a/lib/views/tools.dart b/lib/views/tools.dart
 index 09d49bd..b37d1a1 100644
 --- a/lib/views/tools.dart
 +++ b/lib/views/tools.dart
-@@ -19,13 +19,21 @@ import 'package:bett_box/views/config/ntp.dart';
+@@ -19,13 +19,20 @@ import 'package:bett_box/views/config/ntp.dart';
  import 'package:bett_box/views/config/sniffer.dart';
  import 'package:bett_box/views/config/tunnel.dart';
  import 'package:bett_box/views/connection/connections.dart';
 +
  import 'package:bett_box/views/dns_stats.dart';
  import 'package:bett_box/views/generator_view.dart';
-+import 'package:bett_box/views/connection/requests.dart';
  import 'package:bett_box/views/hotkey.dart';
  import 'package:bett_box/views/other_setting.dart';
  import 'package:bett_box/views/stealth_check.dart';
