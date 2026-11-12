@@ -93847,7 +93847,7 @@ index 567f047..d6c619e 100644
  as Dns,ntp: null == ntp ? _self.ntp : ntp // ignore: cast_nullable_to_non_nullable
  as Ntp,sniffer: null == sniffer ? _self.sniffer : sniffer // ignore: cast_nullable_to_non_nullable
 diff --git a/lib/models/generated/clash_config.g.dart b/lib/models/generated/clash_config.g.dart
-index 3943b22..58746c7 100644
+index 3943b22..1fd10a7 100644
 --- a/lib/models/generated/clash_config.g.dart
 +++ b/lib/models/generated/clash_config.g.dart
 @@ -170,12 +170,7 @@ _Tun _$TunFromJson(Map<String, dynamic> json) => _Tun(
@@ -93976,14 +93976,12 @@ index 3943b22..58746c7 100644
    port: (json['port'] as num?)?.toInt() ?? 123,
    interval: (json['interval'] as num?)?.toInt() ?? 60,
  );
-@@ -475,20 +465,21 @@ _ClashConfig _$ClashConfigFromJson(Map<String, dynamic> json) => _ClashConfig(
-       defaultSkipAuthPrefixes,
+@@ -476,19 +466,20 @@ _ClashConfig _$ClashConfigFromJson(Map<String, dynamic> json) => _ClashConfig(
    logLevel:
        $enumDecodeNullable(_$LogLevelEnumMap, json['log-level']) ??
--      LogLevel.silent,
+       LogLevel.silent,
 -  ipv6: json['ipv6'] as bool? ?? false,
-+        LogLevel.silent,
-+    ipv6: json['ipv6'] as bool? ?? true,
++  ipv6: json['ipv6'] as bool? ?? true,
    findProcessMode:
        $enumDecodeNullable(
          _$FindProcessModeEnumMap,
@@ -101453,7 +101451,7 @@ index 3248545..d070df3 100644
 +  'lastUpdateTime': instance.lastUpdateTime?.toIso8601String(),
  };
 diff --git a/lib/models/generated/config.freezed.dart b/lib/models/generated/config.freezed.dart
-index bf29f01..15a613d 100644
+index bf29f01..6dc358c 100644
 --- a/lib/models/generated/config.freezed.dart
 +++ b/lib/models/generated/config.freezed.dart
 @@ -1,6 +1,6 @@
@@ -101641,7 +101639,7 @@ index bf29f01..15a613d 100644
  
  class _AppSettingProps implements AppSettingProps {
 -  const _AppSettingProps({this.locale, @JsonKey(fromJson: dashboardWidgetsSafeFromJson) final  List<DashboardWidget> dashboardWidgets = defaultDashboardWidgets, @JsonKey(fromJson: mobileDashboardWidgetsSafeFromJson) final  List<DashboardWidget> mobileDashboardWidgets = defaultAndroidDashboardWidgets, @JsonKey(fromJson: desktopDashboardWidgetsSafeFromJson) final  List<DashboardWidget> desktopDashboardWidgets = defaultDashboardWidgets, @JsonKey(fromJson: pinnedMediaPlatformsSafeFromJson) final  List<MediaPlatform> pinnedMediaPlatforms = defaultPinnedMediaPlatforms, this.mediaUnlockMoreStreamingPlatforms = false, this.mediaUnlockExtraDetails = false, this.mediaUnlockRefreshOnNodeChange = true, this.mediaUnlockColorfulIcons = true, this.mediaUnlockRefreshByCategory = true, this.onlyStatisticsProxy = true, this.autoLaunch = false, this.silentLaunch = false, this.smartDelayLaunch = false, this.autoRun = false, this.openLogs = true, this.closeConnections = true, this.testUrl = defaultTestUrl, this.showStartSwitch = false, this.enableNavBarHapticFeedback = true, this.autoCheckUpdate = true, this.showLabel = false, this.disclaimerAccepted = false, this.minimizeOnExit = true, this.hidden = false, this.keepDockIcon = true, this.developerMode = false, this.enableHighRefreshRate = false, this.recoveryStrategy = RecoveryStrategy.compatible, this.enableHighPriority = false}): _dashboardWidgets = dashboardWidgets,_mobileDashboardWidgets = mobileDashboardWidgets,_desktopDashboardWidgets = desktopDashboardWidgets,_pinnedMediaPlatforms = pinnedMediaPlatforms;
-+  const _AppSettingProps({this.locale, @JsonKey(fromJson: dashboardWidgetsSafeFromJson)  List<DashboardWidget> dashboardWidgets = defaultDashboardWidgets, @JsonKey(fromJson: mobileDashboardWidgetsSafeFromJson)  List<DashboardWidget> mobileDashboardWidgets = defaultAndroidDashboardWidgets, @JsonKey(fromJson: desktopDashboardWidgetsSafeFromJson)  List<DashboardWidget> desktopDashboardWidgets = defaultDashboardWidgets, @JsonKey(fromJson: pinnedMediaPlatformsSafeFromJson)  List<MediaPlatform> pinnedMediaPlatforms = defaultPinnedMediaPlatforms, this.mediaUnlockMoreStreamingPlatforms = false, this.mediaUnlockExtraDetails = false, this.mediaUnlockRefreshOnNodeChange = true, this.mediaUnlockColorfulIcons = true, this.mediaUnlockRefreshByCategory = true, this.onlyStatisticsProxy = true, this.autoLaunch = false, this.silentLaunch = false, this.smartDelayLaunch = false, this.autoRun = false, this.openLogs = true, this.closeConnections = true, this.logAiSearch = true, this.testUrl = defaultTestUrl, this.showStartSwitch = true, this.startSwitchStyle = StartSwitchStyle.outlined, this.startSwitchOnLabel, this.startSwitchOffLabel, this.enableNavBarHapticFeedback = true, this.autoCheckUpdate = true, this.showLabel = false, this.disclaimerAccepted = false, this.minimizeOnExit = true, this.hidden = false, this.keepDockIcon = true, this.developerMode = false, this.recoveryStrategy = RecoveryStrategy.compatible, this.backupPassword = '', this.enableHighPriority = false, this.sidebarCollapsed = true, this.sidebarFlyout = false, this.sidebarFlyoutOutsideTools = false, this.sidebarFlyoutDelay = SidebarFlyoutDelay.standard, @JsonKey(fromJson: sidebarFlyoutEntriesSafeFromJson)  List<SidebarFlyoutEntry> sidebarFlyoutEntries = defaultSidebarFlyoutEntries, this.dashboardTitle, this.dashboardWatermark = false,  List<String> toolboxTiles = const <String>[], @JsonKey(unknownEnumValue: MrsTapAction.viewRules) this.mrsTapAction = MrsTapAction.viewRules, this.mrsResolveDns = true, this.ipRiskDetail = false, this.ipRiskAlert = true, this.iperfOptions = const IperfOptions(), this.localPingOptions = const LocalPingOptions(),  Map<String, String> mobileDashboardSizes = const <String, String>{},  Map<String, String> desktopDashboardSizes = const <String, String>{}}): _dashboardWidgets = dashboardWidgets,_mobileDashboardWidgets = mobileDashboardWidgets,_desktopDashboardWidgets = desktopDashboardWidgets,_pinnedMediaPlatforms = pinnedMediaPlatforms,_sidebarFlyoutEntries = sidebarFlyoutEntries,_toolboxTiles = toolboxTiles,_mobileDashboardSizes = mobileDashboardSizes,_desktopDashboardSizes = desktopDashboardSizes;
++  const _AppSettingProps({this.locale, @JsonKey(fromJson: dashboardWidgetsSafeFromJson)  List<DashboardWidget> dashboardWidgets = defaultDashboardWidgets, @JsonKey(fromJson: mobileDashboardWidgetsSafeFromJson)  List<DashboardWidget> mobileDashboardWidgets = defaultAndroidDashboardWidgets, @JsonKey(fromJson: desktopDashboardWidgetsSafeFromJson)  List<DashboardWidget> desktopDashboardWidgets = defaultDashboardWidgets, @JsonKey(fromJson: pinnedMediaPlatformsSafeFromJson)  List<MediaPlatform> pinnedMediaPlatforms = defaultPinnedMediaPlatforms, this.mediaUnlockMoreStreamingPlatforms = false, this.mediaUnlockExtraDetails = false, this.mediaUnlockRefreshOnNodeChange = true, this.mediaUnlockColorfulIcons = true, this.mediaUnlockRefreshByCategory = true, this.onlyStatisticsProxy = true, this.autoLaunch = false, this.silentLaunch = false, this.smartDelayLaunch = false, this.autoRun = false, this.openLogs = true, this.closeConnections = true, this.logAiSearch = true, this.testUrl = defaultTestUrl, this.showStartSwitch = true, this.startSwitchStyle = StartSwitchStyle.outlined, this.startSwitchOnLabel, this.startSwitchOffLabel, this.enableNavBarHapticFeedback = true, this.autoCheckUpdate = false, this.showLabel = false, this.disclaimerAccepted = false, this.minimizeOnExit = true, this.hidden = false, this.keepDockIcon = true, this.developerMode = false, this.recoveryStrategy = RecoveryStrategy.compatible, this.backupPassword = '', this.enableHighPriority = false, this.sidebarCollapsed = true, this.sidebarFlyout = false, this.sidebarFlyoutOutsideTools = false, this.sidebarFlyoutDelay = SidebarFlyoutDelay.standard, @JsonKey(fromJson: sidebarFlyoutEntriesSafeFromJson)  List<SidebarFlyoutEntry> sidebarFlyoutEntries = defaultSidebarFlyoutEntries, this.dashboardTitle, this.dashboardWatermark = false,  List<String> toolboxTiles = const <String>[], @JsonKey(unknownEnumValue: MrsTapAction.viewRules) this.mrsTapAction = MrsTapAction.viewRules, this.mrsResolveDns = true, this.ipRiskDetail = false, this.ipRiskAlert = true, this.iperfOptions = const IperfOptions(), this.localPingOptions = const LocalPingOptions(),  Map<String, String> mobileDashboardSizes = const <String, String>{},  Map<String, String> desktopDashboardSizes = const <String, String>{}}): _dashboardWidgets = dashboardWidgets,_mobileDashboardWidgets = mobileDashboardWidgets,_desktopDashboardWidgets = desktopDashboardWidgets,_pinnedMediaPlatforms = pinnedMediaPlatforms,_sidebarFlyoutEntries = sidebarFlyoutEntries,_toolboxTiles = toolboxTiles,_mobileDashboardSizes = mobileDashboardSizes,_desktopDashboardSizes = desktopDashboardSizes;
    factory _AppSettingProps.fromJson(Map<String, dynamic> json) => _$AppSettingPropsFromJson(json);
  
  @override final  String? locale;
@@ -102296,7 +102294,7 @@ index bf29f01..15a613d 100644
 - ProxiesType get type; ProxiesSortType get sortType; ProxiesLayout get layout; ProxiesIconStyle get iconStyle; ProxyCardType get cardType; DelayAnimationType get delayAnimation; Map<String, String> get iconMap;// Ручной порядок нод внутри групп: ключ — имя группы,
 -// значение — упорядоченный список имён нод.
 - Map<String, List<String>> get proxyOrders; int get concurrencyLimit; bool get autoStickyHeader; bool get showHiddenItems; bool get hasCustomizedStyle;
-+ ProxiesType get type; ProxiesSortType get sortType; ProxiesLayout get layout; ProxiesIconStyle get iconStyle; ProxyCardType get cardType; DelayAnimationType get delayAnimation; bool get syncDelayAnimation; Map<String, String> get iconMap; Map<String, List<String>> get proxyOrders; int get concurrencyLimit; bool get autoStickyHeader; bool get showHiddenItems; bool get hasCustomizedStyle;
++ ProxiesType get type; ProxiesSortType get sortType; ProxiesLayout get layout; ProxiesIconStyle get iconStyle; ProxyCardType get cardType; DelayAnimationType get delayAnimation; bool get syncDelayAnimation; Map<String, String> get iconMap; Map<String, List<String>> get proxyOrders;@JsonKey(fromJson: concurrencyLimitFromJson) int get concurrencyLimit; bool get autoStickyHeader; bool get showHiddenItems; bool get hideTimeoutProxies; bool get hasCustomizedStyle;
  /// Create a copy of ProxiesStyle
  /// with the given fields replaced by the non-null parameter values.
  @JsonKey(includeFromJson: false, includeToJson: false)
@@ -102306,7 +102304,7 @@ index bf29f01..15a613d 100644
  bool operator ==(Object other) {
 -  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, iconMap)&&const DeepCollectionEquality().equals(other.proxyOrders, proxyOrders)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.autoStickyHeader, autoStickyHeader) || other.autoStickyHeader == autoStickyHeader)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems)&&(identical(other.hasCustomizedStyle, hasCustomizedStyle) || other.hasCustomizedStyle == hasCustomizedStyle));
 +  final _this = this as ProxiesStyle;
-+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxiesStyle&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.sortType, _this.sortType) || other.sortType == _this.sortType)&&(identical(other.layout, _this.layout) || other.layout == _this.layout)&&(identical(other.iconStyle, _this.iconStyle) || other.iconStyle == _this.iconStyle)&&(identical(other.cardType, _this.cardType) || other.cardType == _this.cardType)&&(identical(other.delayAnimation, _this.delayAnimation) || other.delayAnimation == _this.delayAnimation)&&(identical(other.syncDelayAnimation, _this.syncDelayAnimation) || other.syncDelayAnimation == _this.syncDelayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _this.iconMap)&&const DeepCollectionEquality().equals(other.proxyOrders, _this.proxyOrders)&&(identical(other.concurrencyLimit, _this.concurrencyLimit) || other.concurrencyLimit == _this.concurrencyLimit)&&(identical(other.autoStickyHeader, _this.autoStickyHeader) || other.autoStickyHeader == _this.autoStickyHeader)&&(identical(other.showHiddenItems, _this.showHiddenItems) || other.showHiddenItems == _this.showHiddenItems)&&(identical(other.hasCustomizedStyle, _this.hasCustomizedStyle) || other.hasCustomizedStyle == _this.hasCustomizedStyle));
++  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxiesStyle&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.sortType, _this.sortType) || other.sortType == _this.sortType)&&(identical(other.layout, _this.layout) || other.layout == _this.layout)&&(identical(other.iconStyle, _this.iconStyle) || other.iconStyle == _this.iconStyle)&&(identical(other.cardType, _this.cardType) || other.cardType == _this.cardType)&&(identical(other.delayAnimation, _this.delayAnimation) || other.delayAnimation == _this.delayAnimation)&&(identical(other.syncDelayAnimation, _this.syncDelayAnimation) || other.syncDelayAnimation == _this.syncDelayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _this.iconMap)&&const DeepCollectionEquality().equals(other.proxyOrders, _this.proxyOrders)&&(identical(other.concurrencyLimit, _this.concurrencyLimit) || other.concurrencyLimit == _this.concurrencyLimit)&&(identical(other.autoStickyHeader, _this.autoStickyHeader) || other.autoStickyHeader == _this.autoStickyHeader)&&(identical(other.showHiddenItems, _this.showHiddenItems) || other.showHiddenItems == _this.showHiddenItems)&&(identical(other.hideTimeoutProxies, _this.hideTimeoutProxies) || other.hideTimeoutProxies == _this.hideTimeoutProxies)&&(identical(other.hasCustomizedStyle, _this.hasCustomizedStyle) || other.hasCustomizedStyle == _this.hasCustomizedStyle));
  }
  
  @JsonKey(includeFromJson: false, includeToJson: false)
@@ -102314,14 +102312,14 @@ index bf29f01..15a613d 100644
 -int get hashCode => Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,const DeepCollectionEquality().hash(iconMap),const DeepCollectionEquality().hash(proxyOrders),concurrencyLimit,autoStickyHeader,showHiddenItems,hasCustomizedStyle);
 +int get hashCode {
 +  final _this = this as ProxiesStyle;
-+  return Object.hash(runtimeType,_this.type,_this.sortType,_this.layout,_this.iconStyle,_this.cardType,_this.delayAnimation,_this.syncDelayAnimation,const DeepCollectionEquality().hash(_this.iconMap),const DeepCollectionEquality().hash(_this.proxyOrders),_this.concurrencyLimit,_this.autoStickyHeader,_this.showHiddenItems,_this.hasCustomizedStyle);
++  return Object.hash(runtimeType,_this.type,_this.sortType,_this.layout,_this.iconStyle,_this.cardType,_this.delayAnimation,_this.syncDelayAnimation,const DeepCollectionEquality().hash(_this.iconMap),const DeepCollectionEquality().hash(_this.proxyOrders),_this.concurrencyLimit,_this.autoStickyHeader,_this.showHiddenItems,_this.hideTimeoutProxies,_this.hasCustomizedStyle);
 +}
  
  @override
  String toString() {
 -  return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, iconMap: $iconMap, proxyOrders: $proxyOrders, concurrencyLimit: $concurrencyLimit, autoStickyHeader: $autoStickyHeader, showHiddenItems: $showHiddenItems, hasCustomizedStyle: $hasCustomizedStyle)';
 +  final _this = this as ProxiesStyle;
-+  return 'ProxiesStyle(type: ${_this.type}, sortType: ${_this.sortType}, layout: ${_this.layout}, iconStyle: ${_this.iconStyle}, cardType: ${_this.cardType}, delayAnimation: ${_this.delayAnimation}, syncDelayAnimation: ${_this.syncDelayAnimation}, iconMap: ${_this.iconMap}, proxyOrders: ${_this.proxyOrders}, concurrencyLimit: ${_this.concurrencyLimit}, autoStickyHeader: ${_this.autoStickyHeader}, showHiddenItems: ${_this.showHiddenItems}, hasCustomizedStyle: ${_this.hasCustomizedStyle})';
++  return 'ProxiesStyle(type: ${_this.type}, sortType: ${_this.sortType}, layout: ${_this.layout}, iconStyle: ${_this.iconStyle}, cardType: ${_this.cardType}, delayAnimation: ${_this.delayAnimation}, syncDelayAnimation: ${_this.syncDelayAnimation}, iconMap: ${_this.iconMap}, proxyOrders: ${_this.proxyOrders}, concurrencyLimit: ${_this.concurrencyLimit}, autoStickyHeader: ${_this.autoStickyHeader}, showHiddenItems: ${_this.showHiddenItems}, hideTimeoutProxies: ${_this.hideTimeoutProxies}, hasCustomizedStyle: ${_this.hasCustomizedStyle})';
  }
  
  
@@ -102330,7 +102328,7 @@ index bf29f01..15a613d 100644
  @useResult
  $Res call({
 - ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, Map<String, List<String>> proxyOrders, int concurrencyLimit, bool autoStickyHeader, bool showHiddenItems, bool hasCustomizedStyle
-+ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, bool syncDelayAnimation, Map<String, String> iconMap, Map<String, List<String>> proxyOrders, int concurrencyLimit, bool autoStickyHeader, bool showHiddenItems, bool hasCustomizedStyle
++ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, bool syncDelayAnimation, Map<String, String> iconMap, Map<String, List<String>> proxyOrders,@JsonKey(fromJson: concurrencyLimitFromJson) int concurrencyLimit, bool autoStickyHeader, bool showHiddenItems, bool hideTimeoutProxies, bool hasCustomizedStyle
  });
  
  
@@ -102340,7 +102338,7 @@ index bf29f01..15a613d 100644
  /// with the given fields replaced by the non-null parameter values.
 -@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? proxyOrders = null,Object? concurrencyLimit = null,Object? autoStickyHeader = null,Object? showHiddenItems = null,Object? hasCustomizedStyle = null,}) {
 -  return _then(_self.copyWith(
-+@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? syncDelayAnimation = null,Object? iconMap = null,Object? proxyOrders = null,Object? concurrencyLimit = null,Object? autoStickyHeader = null,Object? showHiddenItems = null,Object? hasCustomizedStyle = null,}) {
++@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? syncDelayAnimation = null,Object? iconMap = null,Object? proxyOrders = null,Object? concurrencyLimit = null,Object? autoStickyHeader = null,Object? showHiddenItems = null,Object? hideTimeoutProxies = null,Object? hasCustomizedStyle = null,}) {
 +  return _then(ProxiesStyle(
  type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
  as ProxiesType,sortType: null == sortType ? _self.sortType : sortType // ignore: cast_nullable_to_non_nullable
@@ -102364,11 +102362,11 @@ index bf29f01..15a613d 100644
  /// ```
  
 -@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders,  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hasCustomizedStyle)?  $default,{required TResult orElse(),}) {final _that = this;
-+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders,  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hasCustomizedStyle)?  $default,{required TResult orElse(),}) {final _that = this;
++@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders, @JsonKey(fromJson: concurrencyLimitFromJson)  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)?  $default,{required TResult orElse(),}) {final _that = this;
  switch (_that) {
  case _ProxiesStyle() when $default != null:
 -return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hasCustomizedStyle);case _:
-+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hasCustomizedStyle);case _:
++return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
    return orElse();
  
  }
@@ -102377,11 +102375,11 @@ index bf29f01..15a613d 100644
  /// ```
  
 -@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders,  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hasCustomizedStyle)  $default,) {final _that = this;
-+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders,  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hasCustomizedStyle)  $default,) {final _that = this;
++@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders, @JsonKey(fromJson: concurrencyLimitFromJson)  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)  $default,) {final _that = this;
  switch (_that) {
  case _ProxiesStyle():
 -return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hasCustomizedStyle);case _:
-+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hasCustomizedStyle);case _:
++return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
    throw StateError('Unexpected subclass');
  
  }
@@ -102390,11 +102388,11 @@ index bf29f01..15a613d 100644
  /// ```
  
 -@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders,  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hasCustomizedStyle)?  $default,) {final _that = this;
-+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders,  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hasCustomizedStyle)?  $default,) {final _that = this;
++@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  bool syncDelayAnimation,  Map<String, String> iconMap,  Map<String, List<String>> proxyOrders, @JsonKey(fromJson: concurrencyLimitFromJson)  int concurrencyLimit,  bool autoStickyHeader,  bool showHiddenItems,  bool hideTimeoutProxies,  bool hasCustomizedStyle)?  $default,) {final _that = this;
  switch (_that) {
  case _ProxiesStyle() when $default != null:
 -return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hasCustomizedStyle);case _:
-+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hasCustomizedStyle);case _:
++return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.syncDelayAnimation,_that.iconMap,_that.proxyOrders,_that.concurrencyLimit,_that.autoStickyHeader,_that.showHiddenItems,_that.hideTimeoutProxies,_that.hasCustomizedStyle);case _:
    return null;
  
  }
@@ -102403,7 +102401,7 @@ index bf29f01..15a613d 100644
  
  class _ProxiesStyle implements ProxiesStyle {
 -  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.shrink, this.delayAnimation = DelayAnimationType.none, final  Map<String, String> iconMap = const {}, final  Map<String, List<String>> proxyOrders = const {}, this.concurrencyLimit = 250, this.autoStickyHeader = true, this.showHiddenItems = false, this.hasCustomizedStyle = false}): _iconMap = iconMap,_proxyOrders = proxyOrders;
-+  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.expand, this.delayAnimation = DelayAnimationType.pulse, this.syncDelayAnimation = true,  Map<String, String> iconMap = const {}, final  Map<String, List<String>> proxyOrders = const {}, this.concurrencyLimit = 250, this.autoStickyHeader = false, this.showHiddenItems = false, this.hasCustomizedStyle = false}): _iconMap = iconMap,_proxyOrders = proxyOrders;
++  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.expand, this.delayAnimation = DelayAnimationType.pulse, this.syncDelayAnimation = true,  Map<String, String> iconMap = const {},  Map<String, List<String>> proxyOrders = const {}, @JsonKey(fromJson: concurrencyLimitFromJson) this.concurrencyLimit = maxDelayTestConcurrency, this.autoStickyHeader = false, this.showHiddenItems = false, this.hideTimeoutProxies = false, this.hasCustomizedStyle = false}): _iconMap = iconMap,_proxyOrders = proxyOrders;
    factory _ProxiesStyle.fromJson(Map<String, dynamic> json) => _$ProxiesStyleFromJson(json);
  
  @override@JsonKey() final  ProxiesType type;
@@ -102415,7 +102413,7 @@ index bf29f01..15a613d 100644
   final  Map<String, String> _iconMap;
  @override@JsonKey() Map<String, String> get iconMap {
    if (_iconMap is EqualUnmodifiableMapView) return _iconMap;
-@@ -1817,11 +1979,7 @@ class _ProxiesStyle implements ProxiesStyle {
+@@ -1817,20 +1979,17 @@ class _ProxiesStyle implements ProxiesStyle {
    return EqualUnmodifiableMapView(_iconMap);
  }
  
@@ -102427,8 +102425,11 @@ index bf29f01..15a613d 100644
  @override@JsonKey() Map<String, List<String>> get proxyOrders {
    if (_proxyOrders is EqualUnmodifiableMapView) return _proxyOrders;
    // ignore: implicit_dynamic_type
-@@ -1831,6 +1989,7 @@ class _ProxiesStyle implements ProxiesStyle {
- @override@JsonKey() final  int concurrencyLimit;
+   return EqualUnmodifiableMapView(_proxyOrders);
+ }
+ 
+-@override@JsonKey() final  int concurrencyLimit;
++@override@JsonKey(fromJson: concurrencyLimitFromJson) final  int concurrencyLimit;
  @override@JsonKey() final  bool autoStickyHeader;
  @override@JsonKey() final  bool showHiddenItems;
 +@override@JsonKey() final  bool hideTimeoutProxies;
@@ -102440,20 +102441,20 @@ index bf29f01..15a613d 100644
  @override
  bool operator ==(Object other) {
 -  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&const DeepCollectionEquality().equals(other._iconMap, _iconMap)&&const DeepCollectionEquality().equals(other._proxyOrders, _proxyOrders)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.autoStickyHeader, autoStickyHeader) || other.autoStickyHeader == autoStickyHeader)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems)&&(identical(other.hasCustomizedStyle, hasCustomizedStyle) || other.hasCustomizedStyle == hasCustomizedStyle));
-+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&(identical(other.syncDelayAnimation, syncDelayAnimation) || other.syncDelayAnimation == syncDelayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _iconMap)&&const DeepCollectionEquality().equals(other.proxyOrders, _proxyOrders)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.autoStickyHeader, autoStickyHeader) || other.autoStickyHeader == autoStickyHeader)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems)&&(identical(other.hasCustomizedStyle, hasCustomizedStyle) || other.hasCustomizedStyle == hasCustomizedStyle));
++    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&(identical(other.syncDelayAnimation, syncDelayAnimation) || other.syncDelayAnimation == syncDelayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, _iconMap)&&const DeepCollectionEquality().equals(other.proxyOrders, _proxyOrders)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.autoStickyHeader, autoStickyHeader) || other.autoStickyHeader == autoStickyHeader)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems)&&(identical(other.hideTimeoutProxies, hideTimeoutProxies) || other.hideTimeoutProxies == hideTimeoutProxies)&&(identical(other.hasCustomizedStyle, hasCustomizedStyle) || other.hasCustomizedStyle == hasCustomizedStyle));
  }
  
  @JsonKey(includeFromJson: false, includeToJson: false)
  @override
 -int get hashCode => Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,const DeepCollectionEquality().hash(_iconMap),const DeepCollectionEquality().hash(_proxyOrders),concurrencyLimit,autoStickyHeader,showHiddenItems,hasCustomizedStyle);
 +int get hashCode {
-+    return Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,syncDelayAnimation,const DeepCollectionEquality().hash(_iconMap),const DeepCollectionEquality().hash(_proxyOrders),concurrencyLimit,autoStickyHeader,showHiddenItems,hasCustomizedStyle);
++    return Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,syncDelayAnimation,const DeepCollectionEquality().hash(_iconMap),const DeepCollectionEquality().hash(_proxyOrders),concurrencyLimit,autoStickyHeader,showHiddenItems,hideTimeoutProxies,hasCustomizedStyle);
 +}
  
  @override
  String toString() {
 -  return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, iconMap: $iconMap, proxyOrders: $proxyOrders, concurrencyLimit: $concurrencyLimit, autoStickyHeader: $autoStickyHeader, showHiddenItems: $showHiddenItems, hasCustomizedStyle: $hasCustomizedStyle)';
-+    return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, syncDelayAnimation: $syncDelayAnimation, iconMap: $iconMap, proxyOrders: $proxyOrders, concurrencyLimit: $concurrencyLimit, autoStickyHeader: $autoStickyHeader, showHiddenItems: $showHiddenItems, hasCustomizedStyle: $hasCustomizedStyle)';
++    return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, syncDelayAnimation: $syncDelayAnimation, iconMap: $iconMap, proxyOrders: $proxyOrders, concurrencyLimit: $concurrencyLimit, autoStickyHeader: $autoStickyHeader, showHiddenItems: $showHiddenItems, hideTimeoutProxies: $hideTimeoutProxies, hasCustomizedStyle: $hasCustomizedStyle)';
  }
  
  
@@ -102462,7 +102463,7 @@ index bf29f01..15a613d 100644
  @override @useResult
  $Res call({
 - ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, Map<String, List<String>> proxyOrders, int concurrencyLimit, bool autoStickyHeader, bool showHiddenItems, bool hasCustomizedStyle
-+ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, bool syncDelayAnimation, Map<String, String> iconMap, Map<String, List<String>> proxyOrders, int concurrencyLimit, bool autoStickyHeader, bool showHiddenItems, bool hasCustomizedStyle
++ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, bool syncDelayAnimation, Map<String, String> iconMap, Map<String, List<String>> proxyOrders,@JsonKey(fromJson: concurrencyLimitFromJson) int concurrencyLimit, bool autoStickyHeader, bool showHiddenItems, bool hideTimeoutProxies, bool hasCustomizedStyle
  });
  
  
@@ -102471,7 +102472,7 @@ index bf29f01..15a613d 100644
  /// Create a copy of ProxiesStyle
  /// with the given fields replaced by the non-null parameter values.
 -@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? proxyOrders = null,Object? concurrencyLimit = null,Object? autoStickyHeader = null,Object? showHiddenItems = null,Object? hasCustomizedStyle = null,}) {
-+@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? syncDelayAnimation = null,Object? iconMap = null,Object? proxyOrders = null,Object? concurrencyLimit = null,Object? autoStickyHeader = null,Object? showHiddenItems = null,Object? hasCustomizedStyle = null,}) {
++@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? syncDelayAnimation = null,Object? iconMap = null,Object? proxyOrders = null,Object? concurrencyLimit = null,Object? autoStickyHeader = null,Object? showHiddenItems = null,Object? hideTimeoutProxies = null,Object? hasCustomizedStyle = null,}) {
    return _then(_ProxiesStyle(
  type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
  as ProxiesType,sortType: null == sortType ? _self.sortType : sortType // ignore: cast_nullable_to_non_nullable
@@ -104289,10 +104290,10 @@ index bf29f01..15a613d 100644
  }
  
 diff --git a/lib/models/generated/config.g.dart b/lib/models/generated/config.g.dart
-index ecd4bc3..bb401fc 100644
+index ecd4bc3..dc670bf 100644
 --- a/lib/models/generated/config.g.dart
 +++ b/lib/models/generated/config.g.dart
-@@ -41,8 +41,17 @@ _AppSettingProps _$AppSettingPropsFromJson(
+@@ -41,25 +41,82 @@ _AppSettingProps _$AppSettingPropsFromJson(
    autoRun: json['autoRun'] as bool? ?? false,
    openLogs: json['openLogs'] as bool? ?? true,
    closeConnections: json['closeConnections'] as bool? ?? true,
@@ -104310,8 +104311,11 @@ index ecd4bc3..bb401fc 100644
 +  startSwitchOffLabel: json['startSwitchOffLabel'] as String?,
    enableNavBarHapticFeedback:
        json['enableNavBarHapticFeedback'] as bool? ?? true,
-   autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
-@@ -52,14 +61,62 @@ _AppSettingProps _$AppSettingPropsFromJson(
+-  autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
++  autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? false,
+   showLabel: json['showLabel'] as bool? ?? false,
+   disclaimerAccepted: json['disclaimerAccepted'] as bool? ?? false,
+   minimizeOnExit: json['minimizeOnExit'] as bool? ?? true,
    hidden: json['hidden'] as bool? ?? false,
    keepDockIcon: json['keepDockIcon'] as bool? ?? true,
    developerMode: json['developerMode'] as bool? ?? false,
@@ -104563,7 +104567,7 @@ index ecd4bc3..bb401fc 100644
  
  _ProxiesStyle _$ProxiesStyleFromJson(Map<String, dynamic> json) =>
      _ProxiesStyle(
-@@ -374,29 +495,33 @@ _ProxiesStyle _$ProxiesStyleFromJson(Map<String, dynamic> json) =>
+@@ -374,13 +495,14 @@ _ProxiesStyle _$ProxiesStyleFromJson(Map<String, dynamic> json) =>
            ProxiesIconStyle.none,
        cardType:
            $enumDecodeNullable(_$ProxyCardTypeEnumMap, json['cardType']) ??
@@ -104580,29 +104584,15 @@ index ecd4bc3..bb401fc 100644
        iconMap:
            (json['iconMap'] as Map<String, dynamic>?)?.map(
              (k, e) => MapEntry(k, e as String),
+@@ -394,9 +516,12 @@ _ProxiesStyle _$ProxiesStyleFromJson(Map<String, dynamic> json) =>
+             ),
            ) ??
            const {},
--      proxyOrders:
--          (json['proxyOrders'] as Map<String, dynamic>?)?.map(
--            (k, e) => MapEntry(
--              k,
--              (e as List<dynamic>).map((e) => e as String).toList(),
--            ),
--          ) ??
--          const {},
 -      concurrencyLimit: (json['concurrencyLimit'] as num?)?.toInt() ?? 250,
 -      autoStickyHeader: json['autoStickyHeader'] as bool? ?? true,
-+        proxyOrders:
-+            (json['proxyOrders'] as Map<String, dynamic>?)?.map(
-+              (k, e) => MapEntry(
-+                k,
-+                (e as List<dynamic>).map((e) => e as String).toList(),
-+              ),
-+            ) ??
-+            const {},
-+        concurrencyLimit: json['concurrencyLimit'] == null
-+            ? maxDelayTestConcurrency
-+            : concurrencyLimitFromJson(json['concurrencyLimit']),
++      concurrencyLimit: json['concurrencyLimit'] == null
++          ? maxDelayTestConcurrency
++          : concurrencyLimitFromJson(json['concurrencyLimit']),
 +      autoStickyHeader: json['autoStickyHeader'] as bool? ?? false,
        showHiddenItems: json['showHiddenItems'] as bool? ?? false,
 +      hideTimeoutProxies: json['hideTimeoutProxies'] as bool? ?? false,
@@ -104649,7 +104639,9 @@ index ecd4bc3..bb401fc 100644
 +);
 +
 +Map<String, dynamic> _$CustomRouteToJson(_CustomRoute instance) =>
-+    <String, dynamic>{
+     <String, dynamic>{
+-      'currentId': instance.currentId,
+-      'scripts': instance.scripts,
 +      'id': instance.id,
 +      'name': instance.name,
 +      'icon': instance.icon,
@@ -104696,9 +104688,7 @@ index ecd4bc3..bb401fc 100644
 +    );
 +
 +Map<String, dynamic> _$ManagedPropsToJson(_ManagedProps instance) =>
-     <String, dynamic>{
--      'currentId': instance.currentId,
--      'scripts': instance.scripts,
++    <String, dynamic>{
 +      'options': instance.options,
 +      'syncedVersion': instance.syncedVersion,
 +      'routes': instance.routes,
@@ -122211,7 +122201,7 @@ index d48f6b3..dcb1a95 100644
 +export 'traffic_stats.dart';
 +export 'home_widget.dart';
 diff --git a/lib/models/profile.dart b/lib/models/profile.dart
-index 8310ce1..acd2b51 100644
+index 8310ce1..d8f73a2 100644
 --- a/lib/models/profile.dart
 +++ b/lib/models/profile.dart
 @@ -1,5 +1,4 @@
@@ -122434,7 +122424,7 @@ index 8310ce1..acd2b51 100644
    Future<void> checkAndUpdate() async {
      final isExists = await check();
      if (!isExists) {
-@@ -189,10 +287,82 @@ extension ProfileExtension on Profile {
+@@ -189,9 +287,78 @@ extension ProfileExtension on Profile {
  
    Future<int> get profileLastModified async {
      final file = await getFile();
@@ -122512,13 +122502,9 @@ index 8310ce1..acd2b51 100644
 +    return content;
 +  }
    Future<Profile> update({bool validate = true}) async {
-+    final downloadPath = _stagingPath(
-+      await appPath.getProfilePath(id),
-+      'download',
      // Подмена клиента подписки (User-Agent/X-Hwid + device-заголовки) —
      // индивидуальная настройка профиля, иначе глобальная клиентская
-     // (Настройки → Общие → «Подмена клиента подписок»).
-@@ -229,11 +399,7 @@ extension ProfileExtension on Profile {
+@@ -229,11 +396,7 @@ extension ProfileExtension on Profile {
        await SpoofReport.write('  ОШИБКА запроса: $e');
        rethrow;
      }
@@ -122531,7 +122517,7 @@ index 8310ce1..acd2b51 100644
      // HWID-панели (3x-ui и форки) отвечают отказом HTTP 404 с маркерами
      // X-Hwid-Not-Supported / X-Hwid-Max-Devices-Reached; без проверки
      // пользователь увидит криптическую ошибку валидатора вместо причины.
-@@ -267,88 +433,49 @@ extension ProfileExtension on Profile {
+@@ -267,88 +430,49 @@ extension ProfileExtension on Profile {
      }
      final disposition = response.headers['content-disposition']?.firstOrNull;
      final userinfo = response.headers['subscription-userinfo']?.firstOrNull;
@@ -142637,7 +142623,7 @@ index aaa1aac..54c5a92 100644
 +  }
 +}
 diff --git a/lib/providers/generated/state.g.dart b/lib/providers/generated/state.g.dart
-index 0ee61fd..2231b8e 100644
+index 0ee61fd..579f97d 100644
 --- a/lib/providers/generated/state.g.dart
 +++ b/lib/providers/generated/state.g.dart
 @@ -6,2119 +6,2811 @@ part of '../state.dart';
@@ -143766,7 +143752,7 @@ index 0ee61fd..2231b8e 100644
 -  String get query;
 -}
 +String _$sortedGroupProxiesHash() =>
-+    r'5e631c8fd12ed454c3b1430d50aa3a706600845a';
++    r'd06c3951ea62db3671f12dbc592fe46aac7062c5';
 +
 +final class SortedGroupProxiesFamily extends $Family
 +    with
