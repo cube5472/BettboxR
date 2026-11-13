@@ -157834,6 +157834,90 @@ index 670b4757..ed3b52a0 100644
          delegate: NextDelegate(
            title: appLocalizations.experimental,
            actions: [
+diff --git a/lib/views/config/dns.dart b/lib/views/config/dns.dart
+index 30f287a4..627fa67c 100644
+--- a/lib/views/config/dns.dart
++++ b/lib/views/config/dns.dart
+@@ -6,24 +6,6 @@ import 'package:bett_box/widgets/widgets.dart';
+ import 'package:flutter/material.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ 
+-class OverrideItem extends ConsumerWidget {
+-  const OverrideItem({super.key});
+-
+-  @override
+-  Widget build(BuildContext context, ref) {
+-    final override = ref.watch(overrideDnsProvider);
+-    return ListItem.switchItem(
+-      title: Text(appLocalizations.overrideDns),
+-      subtitle: Text(appLocalizations.overrideDnsDesc),
+-      delegate: SwitchDelegate(
+-        value: override,
+-        onChanged: (bool value) async {
+-          ref.read(overrideDnsProvider.notifier).value = value;
+-        },
+-      ),
+-    );
+-  }
+-}
+ 
+ class StatusItem extends ConsumerWidget {
+   const StatusItem({super.key});
+@@ -838,46 +820,8 @@ class IpcidrItem extends StatelessWidget {
+   }
+ }
+ 
+-class DomainItem extends StatelessWidget {
+-  const DomainItem({super.key});
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return ListItem.next(
+-      title: Text(appLocalizations.domain),
+-      delegate: NextDelegate(
+-        blur: false,
+-        title: appLocalizations.domain,
+-        widget: Consumer(
+-          builder: (_, ref, _) {
+-            final domain = ref.watch(
+-              patchClashConfigProvider.select(
+-                (state) => state.dns.fallbackFilter.domain,
+-              ),
+-            );
+-            return ListInputPage(
+-              title: appLocalizations.domain,
+-              items: domain,
+-              titleBuilder: (item) => Text(item),
+-              onChange: (items) {
+-                ref
+-                    .read(patchClashConfigProvider.notifier)
+-                    .updateState(
+-                      (state) => state.copyWith.dns.fallbackFilter(
+-                        domain: List.from(items),
+-                      ),
+-                    );
+-              },
+-            );
+-          },
+-        ),
+-      ),
+-    );
+-  }
+-}
+ 
+ final dnsItems = <Widget>[
+-  ...generateSection(items: const [OverrideItem()]),
+   ...generateSection(
+     title: appLocalizations.options,
+     items: const [
+@@ -911,7 +855,6 @@ final dnsItems = <Widget>[
+       GeoipCodeItem(),
+       FallbackConcurrentItem(),
+       IpcidrItem(),
+-      DomainItem(),
+     ],
+   ),
+ ];
 diff --git a/lib/views/config/experimental.dart b/lib/views/config/experimental.dart
 index 44e2d48a..d6e6d728 100644
 --- a/lib/views/config/experimental.dart
@@ -182629,10 +182713,10 @@ index 89950707..0ff256aa 100644
      if (widget.defaultValue == null) {
        return;
 diff --git a/lib/views/theme.dart b/lib/views/theme.dart
-index a8ebf857..5c5152a5 100644
+index a8ebf857..31f27531 100644
 --- a/lib/views/theme.dart
 +++ b/lib/views/theme.dart
-@@ -1,19 +1,15 @@
+@@ -1,19 +1,16 @@
 -// ignore_for_file: deprecated_member_use
 -
  import 'dart:math';
@@ -182643,7 +182727,7 @@ index a8ebf857..5c5152a5 100644
 -import 'package:bett_box/models/selector.dart';
  import 'package:bett_box/plugins/app.dart';
  import 'package:bett_box/providers/config.dart';
--import 'package:bett_box/providers/state.dart';
+ import 'package:bett_box/providers/state.dart';
  import 'package:bett_box/state.dart';
  import 'package:bett_box/widgets/widgets.dart';
 -import 'package:flutter/material.dart';
@@ -182653,7 +182737,7 @@ index a8ebf857..5c5152a5 100644
  
  class ThemeModeItem {
    final ThemeMode themeMode;
-@@ -39,26 +35,30 @@ class ThemeView extends ConsumerWidget {
+@@ -39,26 +36,30 @@ class ThemeView extends ConsumerWidget {
  
    @override
    Widget build(BuildContext context, WidgetRef ref) {
@@ -182697,7 +182781,7 @@ index a8ebf857..5c5152a5 100644
        if (toggleItems.isNotEmpty) ...generateSection(items: toggleItems),
      ];
      return generateListView(items);
-@@ -102,7 +102,7 @@ class _ThemeModeItem extends ConsumerWidget {
+@@ -102,7 +103,7 @@ class _ThemeModeItem extends ConsumerWidget {
      final themeMode = ref.watch(
        themeSettingProvider.select((state) => state.themeMode),
      );
@@ -182706,7 +182790,7 @@ index a8ebf857..5c5152a5 100644
        ThemeModeItem(
          iconData: Icons.auto_mode,
          label: appLocalizations.auto,
-@@ -124,40 +124,23 @@ class _ThemeModeItem extends ConsumerWidget {
+@@ -124,40 +125,23 @@ class _ThemeModeItem extends ConsumerWidget {
          label: appLocalizations.themeMode,
          iconData: Icons.brightness_high,
        ),
@@ -182763,7 +182847,7 @@ index a8ebf857..5c5152a5 100644
            },
          ),
        ),
-@@ -187,7 +170,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -187,7 +171,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
      ref.read(themeSettingProvider.notifier).updateState((state) {
        return state.copyWith(
          primaryColors: defaultPrimaryColors,
@@ -182772,7 +182856,7 @@ index a8ebf857..5c5152a5 100644
          schemeVariant: DynamicSchemeVariant.content,
        );
      });
-@@ -205,14 +188,12 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -205,14 +189,12 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
      ref.read(themeSettingProvider.notifier).updateState((state) {
        final newPrimaryColors = List<int>.from(state.primaryColors)
          ..remove(color);
@@ -182793,7 +182877,7 @@ index a8ebf857..5c5152a5 100644
        return state.copyWith(
          primaryColors: newPrimaryColors,
          primaryColor: newPrimaryColor,
-@@ -222,7 +203,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -222,7 +204,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
  
    Future<void> _handleAdd() async {
      final res = await globalState.showCommonDialog<int>(
@@ -182802,7 +182886,7 @@ index a8ebf857..5c5152a5 100644
      );
      if (res == null) {
        return;
-@@ -238,7 +219,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -238,7 +220,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
      }
      ref.read(themeSettingProvider.notifier).updateState((state) {
        return state.copyWith(
@@ -182811,7 +182895,7 @@ index a8ebf857..5c5152a5 100644
        );
      });
    }
-@@ -247,7 +228,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -247,7 +229,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
      final schemeVariant = ref.read(
        themeSettingProvider.select((state) => state.schemeVariant),
      );
@@ -182820,7 +182904,7 @@ index a8ebf857..5c5152a5 100644
        child: OptionsDialog<DynamicSchemeVariant>(
          title: appLocalizations.colorSchemes,
          options: DynamicSchemeVariant.values,
-@@ -265,30 +246,31 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -265,30 +247,31 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
  
    @override
    Widget build(BuildContext context) {
@@ -182865,7 +182949,7 @@ index a8ebf857..5c5152a5 100644
          ),
          if (!isEquals)
            IconButton.filledTonal(
-@@ -327,8 +309,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -327,8 +310,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
                            ref
                                .read(themeSettingProvider.notifier)
                                .updateState(
@@ -182875,7 +182959,7 @@ index a8ebf857..5c5152a5 100644
                                );
                          },
                        ),
-@@ -341,10 +322,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
+@@ -341,10 +323,7 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
                    child: IconButton.filledTonal(
                      onPressed: _handleAdd,
                      iconSize: 32,
@@ -182887,7 +182971,7 @@ index a8ebf857..5c5152a5 100644
                    ),
                  ),
                ],
-@@ -365,7 +343,7 @@ class _PrueBlackItem extends ConsumerWidget {
+@@ -365,7 +344,7 @@ class _PrueBlackItem extends ConsumerWidget {
        themeSettingProvider.select((state) => state.pureBlack),
      );
      return ListItem.switchItem(
@@ -182896,7 +182980,7 @@ index a8ebf857..5c5152a5 100644
        horizontalTitleGap: 12,
        title: Text(
          appLocalizations.pureBlackMode,
-@@ -477,19 +455,19 @@ class _HarmonyFontItem extends ConsumerWidget {
+@@ -477,19 +456,19 @@ class _HarmonyFontItem extends ConsumerWidget {
      final useHarmonyFont = ref.watch(
        themeSettingProvider.select((state) => state.useHarmonyFont),
      );
@@ -182922,7 +183006,7 @@ index a8ebf857..5c5152a5 100644
          ),
        ),
        delegate: SwitchDelegate(
-@@ -512,19 +490,19 @@ class _DarkIconItem extends ConsumerWidget {
+@@ -512,19 +491,19 @@ class _DarkIconItem extends ConsumerWidget {
      final useDarkIcon = ref.watch(
        themeSettingProvider.select((state) => state.useDarkIcon),
      );
@@ -182947,7 +183031,7 @@ index a8ebf857..5c5152a5 100644
          ),
        ),
        delegate: SwitchDelegate(
-@@ -548,19 +526,19 @@ class _TrayIconInvertItem extends ConsumerWidget {
+@@ -548,19 +527,19 @@ class _TrayIconInvertItem extends ConsumerWidget {
      final invertTrayIcon = ref.watch(
        themeSettingProvider.select((state) => state.invertTrayIcon),
      );
@@ -182973,7 +183057,7 @@ index a8ebf857..5c5152a5 100644
          ),
        ),
        delegate: SwitchDelegate(
-@@ -581,17 +559,19 @@ class _TextScaleFactorItem extends ConsumerWidget {
+@@ -581,17 +560,19 @@ class _TextScaleFactorItem extends ConsumerWidget {
  
    @override
    Widget build(BuildContext context, WidgetRef ref) {
@@ -182998,7 +183082,7 @@ index a8ebf857..5c5152a5 100644
              horizontalTitleGap: 12,
              title: Text(
                appLocalizations.textScale,
-@@ -600,7 +580,7 @@ class _TextScaleFactorItem extends ConsumerWidget {
+@@ -600,7 +581,7 @@ class _TextScaleFactorItem extends ConsumerWidget {
                ),
              ),
              delegate: SwitchDelegate(
@@ -183007,7 +183091,7 @@ index a8ebf857..5c5152a5 100644
                onChanged: (value) {
                  ref
                      .read(themeSettingProvider.notifier)
-@@ -612,7 +592,7 @@ class _TextScaleFactorItem extends ConsumerWidget {
+@@ -612,7 +593,7 @@ class _TextScaleFactorItem extends ConsumerWidget {
            ),
          ),
          Padding(
@@ -183016,7 +183100,7 @@ index a8ebf857..5c5152a5 100644
            child: Row(
              mainAxisAlignment: MainAxisAlignment.spaceBetween,
              mainAxisSize: MainAxisSize.max,
-@@ -620,16 +600,16 @@ class _TextScaleFactorItem extends ConsumerWidget {
+@@ -620,16 +601,16 @@ class _TextScaleFactorItem extends ConsumerWidget {
              children: [
                Expanded(
                  child: DisabledMask(
@@ -183036,7 +183120,7 @@ index a8ebf857..5c5152a5 100644
                          onChanged: (value) {
                            ref
                                .read(themeSettingProvider.notifier)
-@@ -644,7 +624,7 @@ class _TextScaleFactorItem extends ConsumerWidget {
+@@ -644,7 +625,7 @@ class _TextScaleFactorItem extends ConsumerWidget {
                  ),
                ),
                Padding(
@@ -183045,7 +183129,7 @@ index a8ebf857..5c5152a5 100644
                  child: Text(process, style: context.textTheme.titleMedium),
                ),
              ],
-@@ -663,43 +643,61 @@ class _PaletteDialog extends StatefulWidget {
+@@ -663,43 +644,61 @@ class _PaletteDialog extends StatefulWidget {
  }
  
  class _PaletteDialogState extends State<_PaletteDialog> {
@@ -183129,7 +183213,7 @@ index a8ebf857..5c5152a5 100644
      }
  
      return null;
-@@ -725,14 +723,16 @@ class _PaletteDialogState extends State<_PaletteDialog> {
+@@ -725,14 +724,16 @@ class _PaletteDialogState extends State<_PaletteDialog> {
        ],
        child: Column(
          children: [
@@ -183153,7 +183237,7 @@ index a8ebf857..5c5152a5 100644
              valueListenable: _controller,
              builder: (_, color, _) {
                return FilledButton(
-@@ -785,6 +785,38 @@ class _SliderDefaultsM3 extends SliderThemeData {
+@@ -785,6 +786,38 @@ class _SliderDefaultsM3 extends SliderThemeData {
    final BuildContext context;
    late final ColorScheme _colors = Theme.of(context).colorScheme;
  
@@ -183192,7 +183276,7 @@ index a8ebf857..5c5152a5 100644
    @override
    Color? get activeTrackColor => _colors.primary;
  
-@@ -792,24 +824,27 @@ class _SliderDefaultsM3 extends SliderThemeData {
+@@ -792,24 +825,27 @@ class _SliderDefaultsM3 extends SliderThemeData {
    Color? get inactiveTrackColor => _colors.secondaryContainer;
  
    @override
@@ -183226,7 +183310,7 @@ index a8ebf857..5c5152a5 100644
  
    @override
    Color? get disabledActiveTickMarkColor => _colors.onInverseSurface;
-@@ -821,28 +856,15 @@ class _SliderDefaultsM3 extends SliderThemeData {
+@@ -821,28 +857,15 @@ class _SliderDefaultsM3 extends SliderThemeData {
    Color? get thumbColor => _colors.primary;
  
    @override
@@ -183258,7 +183342,7 @@ index a8ebf857..5c5152a5 100644
  
    @override
    Color? get valueIndicatorColor => _colors.inverseSurface;
-@@ -865,23 +887,7 @@ class _SliderDefaultsM3 extends SliderThemeData {
+@@ -865,23 +888,7 @@ class _SliderDefaultsM3 extends SliderThemeData {
        const RoundSliderTickMarkShape(tickMarkRadius: 4.0 / 2);
  
    @override
