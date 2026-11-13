@@ -183934,18 +183934,10 @@ index 00000000..db8863ac
 +  }
 +}
 diff --git a/lib/views/tools.dart b/lib/views/tools.dart
-index 09d49bdd..5c2e05cd 100644
+index 09d49bdd..6221e6c2 100644
 --- a/lib/views/tools.dart
 +++ b/lib/views/tools.dart
-@@ -11,7 +11,6 @@ import 'package:bett_box/views/about.dart';
- import 'package:bett_box/views/access.dart';
- import 'package:bett_box/views/application_setting.dart';
- import 'package:bett_box/views/config/config.dart';
--import 'package:bett_box/views/config/dns.dart';
- import 'package:bett_box/views/config/experimental.dart';
- import 'package:bett_box/views/config/general.dart';
- import 'package:bett_box/views/config/network.dart';
-@@ -19,13 +18,20 @@ import 'package:bett_box/views/config/ntp.dart';
+@@ -19,13 +19,20 @@ import 'package:bett_box/views/config/ntp.dart';
  import 'package:bett_box/views/config/sniffer.dart';
  import 'package:bett_box/views/config/tunnel.dart';
  import 'package:bett_box/views/connection/connections.dart';
@@ -183967,7 +183959,7 @@ index 09d49bdd..5c2e05cd 100644
  import 'package:flutter_riverpod/flutter_riverpod.dart';
  import 'package:intl/intl.dart';
  import 'package:path/path.dart' show dirname, join;
-@@ -50,6 +56,141 @@ class _SearchItem {
+@@ -50,6 +57,141 @@ class _SearchItem {
    });
  }
  
@@ -184109,7 +184101,7 @@ index 09d49bdd..5c2e05cd 100644
  class _GeneralListView extends StatelessWidget {
    const _GeneralListView();
  
-@@ -93,42 +234,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -93,42 +235,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
      BuildContext context, {
      required String title,
      required List<Widget> items,
@@ -184154,7 +184146,7 @@ index 09d49bdd..5c2e05cd 100644
    }
  
    String _query = '';
-@@ -232,7 +340,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -232,7 +341,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
          title: appLocalizations.theme,
          subtitle: appLocalizations.themeDesc,
          category: settingsCategory,
@@ -184163,7 +184155,7 @@ index 09d49bdd..5c2e05cd 100644
          onTap: (context, _) =>
              _pushPage(context, appLocalizations.theme, const ThemeView()),
        ),
-@@ -240,7 +348,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -240,7 +349,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
          title: appLocalizations.backupAndRecovery,
          subtitle: appLocalizations.backupAndRecoveryDesc,
          category: settingsCategory,
@@ -184172,7 +184164,7 @@ index 09d49bdd..5c2e05cd 100644
          onTap: (context, _) => _pushPage(
            context,
            appLocalizations.backupAndRecovery,
-@@ -252,7 +360,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -252,7 +361,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
            title: appLocalizations.hotkeyManagement,
            subtitle: appLocalizations.hotkeyManagementDesc,
            category: settingsCategory,
@@ -184181,7 +184173,7 @@ index 09d49bdd..5c2e05cd 100644
            onTap: (context, _) => _pushPage(
              context,
              appLocalizations.hotkeyManagement,
-@@ -264,7 +372,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -264,7 +373,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
            title: appLocalizations.loopback,
            subtitle: appLocalizations.loopbackDesc,
            category: settingsCategory,
@@ -184190,7 +184182,7 @@ index 09d49bdd..5c2e05cd 100644
            onTap: (context, _) {
              windows?.runas(
                '"${join(dirname(Platform.resolvedExecutable), "WindowsLoopbackManager.exe")}"',
-@@ -278,7 +386,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -278,7 +387,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
            title: appLocalizations.accessControl,
            subtitle: appLocalizations.accessControlDesc,
            category: settingsCategory,
@@ -184199,7 +184191,7 @@ index 09d49bdd..5c2e05cd 100644
            onTap: (context, _) => _pushPage(
              context,
              appLocalizations.appAccessControl,
-@@ -301,7 +409,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -301,7 +410,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
          title: appLocalizations.basicConfig,
          subtitle: appLocalizations.basicConfigDesc,
          category: settingsCategory,
@@ -184208,7 +184200,7 @@ index 09d49bdd..5c2e05cd 100644
          onTap: (context, _) => _pushPage(
            context,
            appLocalizations.basicConfig,
-@@ -323,7 +431,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -323,7 +432,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
          title: appLocalizations.application,
          subtitle: appLocalizations.applicationDesc,
          category: settingsCategory,
@@ -184217,7 +184209,7 @@ index 09d49bdd..5c2e05cd 100644
          onTap: (context, _) => _pushPage(
            context,
            appLocalizations.application,
-@@ -333,7 +441,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -333,7 +442,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
        _SearchItem(
          title: appLocalizations.disclaimer,
          category: otherCategory,
@@ -184226,7 +184218,7 @@ index 09d49bdd..5c2e05cd 100644
          onTap: (context, _) async {
            final accepted = await globalState.appController.showDisclaimer();
            if (!accepted) {
-@@ -344,14 +452,14 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -344,14 +453,14 @@ class _ToolViewState extends ConsumerState<ToolsView> {
        _SearchItem(
          title: appLocalizations.about,
          category: otherCategory,
@@ -184243,7 +184235,7 @@ index 09d49bdd..5c2e05cd 100644
          onTap: (context, _) => _pushPage(
            context,
            appLocalizations.developerMode,
-@@ -373,12 +481,6 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -373,12 +482,6 @@ class _ToolViewState extends ConsumerState<ToolsView> {
          onTap: (context, _) =>
              _pushPage(context, appLocalizations.theme, const ThemeView()),
        ),
@@ -184256,7 +184248,7 @@ index 09d49bdd..5c2e05cd 100644
        _SearchItem(
          title: appLocalizations.harmonyFont,
          subtitle: appLocalizations.harmonyFontDesc,
-@@ -515,6 +617,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -515,6 +618,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
            const ApplicationSettingView(),
          ),
        ),
@@ -184274,7 +184266,7 @@ index 09d49bdd..5c2e05cd 100644
        if (system.isAndroid)
          _SearchItem(
            title: appLocalizations.navBarHapticFeedback,
-@@ -526,16 +639,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -526,16 +640,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
              const ApplicationSettingView(),
            ),
          ),
@@ -184301,7 +184293,7 @@ index 09d49bdd..5c2e05cd 100644
        _SearchItem(
          title: appLocalizations.onlyStatisticsProxy,
          subtitle: appLocalizations.onlyStatisticsProxyDesc,
-@@ -613,8 +727,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -613,8 +728,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
            ),
          ),
        _SearchItem(
@@ -184312,7 +184304,7 @@ index 09d49bdd..5c2e05cd 100644
          category: otherSettingsCategory,
          onTap: (context, _) => _pushPage(
            context,
-@@ -623,8 +737,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -623,8 +738,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
          ),
        ),
        _SearchItem(
@@ -184323,7 +184315,7 @@ index 09d49bdd..5c2e05cd 100644
          category: otherSettingsCategory,
          onTap: (context, _) => _pushPage(
            context,
-@@ -886,16 +1000,6 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -886,16 +1001,6 @@ class _ToolViewState extends ConsumerState<ToolsView> {
              const NetworkListView(),
            ),
          ),
@@ -184340,7 +184332,7 @@ index 09d49bdd..5c2e05cd 100644
        if (!system.isAndroid)
          _SearchItem(
            title: appLocalizations.strictRoute,
-@@ -917,16 +1021,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -917,16 +1022,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
            const NetworkListView(),
          ),
        ),
@@ -184367,7 +184359,7 @@ index 09d49bdd..5c2e05cd 100644
        _SearchItem(
          title: appLocalizations.endpointIndependentNat,
          subtitle: appLocalizations.endpointIndependentNatDesc,
-@@ -937,15 +1042,26 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -937,15 +1043,26 @@ class _ToolViewState extends ConsumerState<ToolsView> {
            const NetworkListView(),
          ),
        ),
@@ -184402,7 +184394,7 @@ index 09d49bdd..5c2e05cd 100644
        _SearchItem(
          title: 'MTU',
          category: networkCategory,
-@@ -1393,6 +1509,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -1393,6 +1510,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
      final moreItems = ref.watch(
        moreToolsSelectorStateProvider.select((state) => state.navigationItems),
      );
@@ -184412,7 +184404,7 @@ index 09d49bdd..5c2e05cd 100644
      final searchItems = _getSearchItems(moreItems);
      final searchResults = _query.isEmpty
          ? const <Widget>[]
-@@ -1418,13 +1537,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -1418,13 +1538,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
        Consumer(
          builder: (_, ref, _) {
            final state = ref.watch(moreToolsSelectorStateProvider);
@@ -184432,7 +184424,7 @@ index 09d49bdd..5c2e05cd 100644
                  .map((item) => _buildNavigationMenuItem(item))
                  .toList(),
            );
-@@ -1453,19 +1576,33 @@ class _ToolViewState extends ConsumerState<ToolsView> {
+@@ -1453,19 +1577,33 @@ class _ToolViewState extends ConsumerState<ToolsView> {
      ];
  
      return CommonScaffold(
@@ -184478,7 +184470,7 @@ index 09d49bdd..5c2e05cd 100644
          ),
        ),
      );
-@@ -1527,9 +1664,12 @@ class _StealthCheckItem extends StatelessWidget {
+@@ -1527,9 +1665,12 @@ class _StealthCheckItem extends StatelessWidget {
    }
  }
  
@@ -184492,7 +184484,7 @@ index 09d49bdd..5c2e05cd 100644
    static final List<Locale> _localeOptions = _getOrderedLocales();
    static const Map<String, String> _nativeLocaleNames = {
      'zh_CN': '简体中文',
-@@ -1543,7 +1683,9 @@ class _LocaleItem extends ConsumerWidget {
+@@ -1543,7 +1684,9 @@ class _LocaleItem extends ConsumerWidget {
  
    static List<Locale> _getOrderedLocales() {
      final priority = ['zh_CN', 'zh_TC', 'en', 'ru', 'fa', 'ja', 'ko'];
@@ -184503,7 +184495,7 @@ index 09d49bdd..5c2e05cd 100644
      locales.sort((a, b) {
        final aKey = a.toString();
        final bKey = b.toString();
-@@ -1590,13 +1732,20 @@ class _LocaleItem extends ConsumerWidget {
+@@ -1590,13 +1733,20 @@ class _LocaleItem extends ConsumerWidget {
    }
  }
  
@@ -184526,7 +184518,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.theme),
        subtitle: Text(appLocalizations.themeDesc),
        delegate: NextDelegate(
-@@ -1607,13 +1756,13 @@ class _ThemeItem extends StatelessWidget {
+@@ -1607,13 +1757,13 @@ class _ThemeItem extends StatelessWidget {
    }
  }
  
@@ -184542,7 +184534,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.backupAndRecovery),
        subtitle: Text(appLocalizations.backupAndRecoveryDesc),
        delegate: NextDelegate(
-@@ -1624,13 +1773,13 @@ class _BackupItem extends StatelessWidget {
+@@ -1624,13 +1774,13 @@ class _BackupItem extends StatelessWidget {
    }
  }
  
@@ -184558,7 +184550,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.hotkeyManagement),
        subtitle: Text(appLocalizations.hotkeyManagementDesc),
        delegate: NextDelegate(
-@@ -1641,13 +1790,13 @@ class _HotkeyItem extends StatelessWidget {
+@@ -1641,13 +1791,13 @@ class _HotkeyItem extends StatelessWidget {
    }
  }
  
@@ -184574,7 +184566,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.loopback),
        subtitle: Text(appLocalizations.loopbackDesc),
        onTap: () {
-@@ -1661,13 +1810,13 @@ class _LoopbackItem extends StatelessWidget {
+@@ -1661,13 +1811,13 @@ class _LoopbackItem extends StatelessWidget {
    }
  }
  
@@ -184590,7 +184582,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.accessControl),
        subtitle: Text(appLocalizations.accessControlDesc),
        delegate: NextDelegate(
-@@ -1678,13 +1827,13 @@ class _AccessItem extends StatelessWidget {
+@@ -1678,13 +1828,13 @@ class _AccessItem extends StatelessWidget {
    }
  }
  
@@ -184606,7 +184598,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.basicConfig),
        subtitle: Text(appLocalizations.basicConfigDesc),
        delegate: NextDelegate(
-@@ -1695,7 +1844,7 @@ class _ConfigItem extends StatelessWidget {
+@@ -1695,7 +1845,7 @@ class _ConfigItem extends StatelessWidget {
    }
  }
  
@@ -184615,7 +184607,7 @@ index 09d49bdd..5c2e05cd 100644
    const _OtherSettingItem();
  
    @override
-@@ -1712,13 +1861,13 @@ class _OtherSettingItem extends StatelessWidget {
+@@ -1712,13 +1862,13 @@ class _OtherSettingItem extends StatelessWidget {
    }
  }
  
@@ -184631,7 +184623,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.application),
        subtitle: Text(appLocalizations.applicationDesc),
        delegate: NextDelegate(
-@@ -1729,13 +1878,13 @@ class _SettingItem extends StatelessWidget {
+@@ -1729,13 +1879,13 @@ class _SettingItem extends StatelessWidget {
    }
  }
  
@@ -184647,7 +184639,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.disclaimer),
        onTap: () async {
          final isDisclaimerAccepted = await globalState.appController
-@@ -1748,13 +1897,13 @@ class _DisclaimerItem extends StatelessWidget {
+@@ -1748,13 +1898,13 @@ class _DisclaimerItem extends StatelessWidget {
    }
  }
  
@@ -184663,7 +184655,7 @@ index 09d49bdd..5c2e05cd 100644
        title: Text(appLocalizations.about),
        delegate: NextDelegate(
          title: appLocalizations.about,
-@@ -1764,13 +1913,13 @@ class _InfoItem extends StatelessWidget {
+@@ -1764,13 +1914,13 @@ class _InfoItem extends StatelessWidget {
    }
  }
  
