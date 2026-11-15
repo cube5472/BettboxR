@@ -1,37 +1,53 @@
+import 'dart:math' as math;
+
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'card.dart';
 import 'common.dart';
 import 'dead_nodes.dart';
 import 'reorder.dart';
 
-class ProxiesListView extends ConsumerWidget {
+class ProxiesListView extends StatefulWidget {
   const ProxiesListView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(proxiesListStateProvider);
+  State<ProxiesListView> createState() => ProxiesListViewState();
+}
 
-    if (state.groups.isEmpty) {
-      return NullStatus(
-        label: appLocalizations.nullTip(appLocalizations.proxies),
-      );
-    }
+class ProxiesListViewState extends State<ProxiesListView> {
+  final _groupsListKey = GlobalKey<_ProxyGroupsListState>();
 
-    return _ProxyGroupsList(
-      groups: state.groups,
-      columns: state.columns,
-      cardType: state.proxyCardType,
-      sortType: state.proxiesSortType,
-      sortNum: state.sortNum,
-      currentUnfoldSet: state.currentUnfoldSet,
+  void collapseAll() => _groupsListKey.currentState?.collapseAll();
+
+  @override
+  Widget build(BuildContext context) {
+    return ActiveConsumer(
+      builder: (_, ref) {
+        final state = ref.watch(proxiesListStateProvider);
+
+        if (state.groups.isEmpty) {
+          return NullStatus(
+            label: appLocalizations.nullTip(appLocalizations.proxies),
+            icon: Icons.cloud_off_outlined,
+          );
+        }
+
+        return _ProxyGroupsList(
+          key: _groupsListKey,
+          groups: state.groups,
+          columns: state.columns,
+          cardType: state.proxyCardType,
+          currentUnfoldSet: state.currentUnfoldSet,
+        );
+      },
     );
   }
 }
@@ -40,16 +56,13 @@ class _ProxyGroupsList extends ConsumerStatefulWidget {
   final List<Group> groups;
   final int columns;
   final ProxyCardType cardType;
-  final ProxiesSortType sortType;
-  final num sortNum;
   final Set<String> currentUnfoldSet;
 
   const _ProxyGroupsList({
+    super.key,
     required this.groups,
     required this.columns,
     required this.cardType,
-    required this.sortType,
-    required this.sortNum,
     required this.currentUnfoldSet,
   });
 
@@ -57,110 +70,73 @@ class _ProxyGroupsList extends ConsumerStatefulWidget {
   ConsumerState<_ProxyGroupsList> createState() => _ProxyGroupsListState();
 }
 
-abstract class _FlatItem {
-  double getHeight(double headerHeight, double itemHeight);
-}
+class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList>
+    with SingleTickerProviderStateMixin {
+  static final _expandSlide = Tween<Offset>(
+    begin: const Offset(0, -0.16),
+    end: Offset.zero,
+  );
+  static final List<CurveTween> _rowFadeTweens = List<CurveTween>.generate(7, (
+    index,
+  ) {
+    final begin = index * 0.07;
+    return CurveTween(
+      curve: Interval(begin, begin + 0.58, curve: Curves.easeOutCubic),
+    );
+  }, growable: false);
 
-class _HeaderItem extends _FlatItem {
-  final Group group;
-  _HeaderItem(this.group);
-
-  @override
-  double getHeight(double headerHeight, double itemHeight) => headerHeight;
-}
-
-class _SpacingItem extends _FlatItem {
-  final double height;
-  _SpacingItem(this.height);
-
-  @override
-  double getHeight(double headerHeight, double itemHeight) => height;
-}
-
-class _RowItem extends _FlatItem {
-  final Group group;
-  final List<Proxy> proxies;
-  _RowItem(this.group, this.proxies);
-
-  @override
-  double getHeight(double headerHeight, double itemHeight) => itemHeight + 8.0;
-}
-
-class _HiddenInfoItem extends _FlatItem {
-  final String groupName;
-  final int count;
-  _HiddenInfoItem(this.groupName, this.count);
-
-  @override
-  double getHeight(double headerHeight, double itemHeight) => 44.0;
-}
-
-class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _viewportKey = GlobalKey();
   late final DragAutoScroller _autoScroller;
   final Set<String> _hideDeadGroups = {};
-  final ValueNotifier<ProxiesListHeaderSelectorState?> _headerStateNotifier =
-      ValueNotifier<ProxiesListHeaderSelectorState?>(null);
-  final Map<String, List<Proxy>> _cachedSortedProxiesMap = {};
-  List<double> _headerOffsets = [];
-
-  List<Proxy> _getGroupSortedProxies(Group group) {
-    // groupName ОБЯЗАТЕЛЕН: без него _sortOfCustom пропускает ручной
-    // порядок (proxyOrders) — карточки в режиме списка после перетаскивания
-    // откатывались назад. Регрессия синка 6792277e: раньше groupName был
-    // на обоих местах вызова, в новом хелпере его потеряли.
-    return _cachedSortedProxiesMap.putIfAbsent(
-      group.name,
-      () => globalState.appController.getSortProxies(
-        proxies: group.all,
-        sortType: widget.sortType,
-        testUrl: group.testUrl,
-        groupName: group.name,
-      ),
-    );
-  }
+  final _sliverCache = <String, (Group, Object, Widget)>{};
+  late final AnimationController _expandController;
+  String? _expandingGroup;
+  bool _pendingScrollToTop = false;
 
   @override
   void initState() {
     super.initState();
+    _expandController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+      value: 1,
+    );
     _autoScroller = DragAutoScroller(
       scrollController: _scrollController,
       viewportKey: _viewportKey,
     );
-    _scrollController.addListener(_adjustHeader);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _adjustHeader();
-    });
+  }
+
+  Set<String> _groupsWithRows(_ProxyGroupsList target) {
+    return {
+      for (final group in target.groups)
+        if (target.currentUnfoldSet.contains(group.name) &&
+            group.all.isNotEmpty)
+          group.name,
+    };
   }
 
   @override
-  void didUpdateWidget(covariant _ProxyGroupsList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!identical(widget.groups, oldWidget.groups) ||
-        widget.sortType != oldWidget.sortType ||
-        widget.sortNum != oldWidget.sortNum) {
-      _cachedSortedProxiesMap.clear();
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _adjustHeader();
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sliverCache.clear();
   }
 
   bool _isDeadDelay(int? delay) => delay != null && delay < 0;
 
-  bool get _dragEnabled => widget.sortType == ProxiesSortType.custom;
+  bool get _dragEnabled =>
+      ref.watch(
+        proxiesStyleSettingProvider.select((state) => state.sortType),
+      ) ==
+      ProxiesSortType.custom;
 
   /// Переносит ноду [fromName] на позицию ноды [toName] в группе [group]
   /// и сохраняет ручной порядок (по текущему видимому списку).
+  /// В новой архитектуре sorting (sortedGroupsState) уже применён к group.all,
+  /// поэтому индексы считаем по видимым нодам поверх него.
   void _handleReorder(Group group, String fromName, String toName) {
-    final sortedProxies = globalState.appController.getSortProxies(
-      proxies: group.all,
-      sortType: widget.sortType,
-      testUrl: group.testUrl,
-      groupName: group.name,
-    );
-    final visibleProxies = _getVisibleProxies(group, sortedProxies);
+    final visibleProxies = _getVisibleProxies(group, group.all);
     final names = visibleProxies.map((proxy) => proxy.name).toList();
     final from = names.indexOf(fromName);
     final to = names.indexOf(toName);
@@ -220,54 +196,34 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     }
   }
 
-  void _adjustHeader() {
-    final autoStickyHeader = ref.read(
-      proxiesStyleSettingProvider.select((s) => s.autoStickyHeader),
-    );
-    if (!autoStickyHeader ||
-        !_scrollController.hasClients ||
-        _headerOffsets.isEmpty) {
-      if (_headerStateNotifier.value != null) {
-        _headerStateNotifier.value = null;
-      }
-      return;
+  @override
+  void didUpdateWidget(_ProxyGroupsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.columns != widget.columns ||
+        oldWidget.cardType != widget.cardType) {
+      _sliverCache.clear();
+    } else if (!identical(oldWidget.groups, widget.groups)) {
+      final names = {for (final group in widget.groups) group.name};
+      _sliverCache.removeWhere((name, _) => !names.contains(name));
     }
-
-    final pixels = _scrollController.offset;
-    final index = _headerOffsets.findInterval(pixels);
-    if (index < 0 || index >= widget.groups.length) {
-      if (_headerStateNotifier.value != null) {
-        _headerStateNotifier.value = null;
-      }
-      return;
+    if (_pendingScrollToTop && widget.currentUnfoldSet.isEmpty) {
+      _pendingScrollToTop = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTop());
     }
-
-    final headerHeight = _getHeaderHeight();
-    double offset = 0.0;
-    if (index + 1 <= _headerOffsets.length - 1) {
-      final endOffset = _headerOffsets[index + 1];
-      final startOffset = endOffset - headerHeight - 8.0;
-      if (pixels > startOffset && pixels < endOffset) {
-        offset = pixels - startOffset;
-      }
-    }
-
-    final nextState = ProxiesListHeaderSelectorState(
-      offset: offset > 0 ? offset : 0.0,
-      currentIndex: index,
-    );
-    if (_headerStateNotifier.value != nextState) {
-      _headerStateNotifier.value = nextState;
-    }
+    final added = _groupsWithRows(
+      widget,
+    ).difference(_groupsWithRows(oldWidget));
+    if (added.length != 1 || !TickerMode.valuesOf(context).enabled) return;
+    _expandingGroup = added.first;
+    _expandController.forward(from: 0);
   }
 
   Future<void> _handleDeleteDead(Group group) {
     return deleteDeadNodesFlow(context, ref, group);
   }
 
-  /// Удаление одной ноды по удержанию карточки (см. deleteSingleNodeFlow).
-  /// В режиме ручной сортировки удержание занято drag'ом — коллбэк
-  /// не передаётся в карточку (см. сборку _RowItem).
+  /// Удаление одной ноды — пункт «Удалить ноду» в меню долгого нажатия
+  /// (см. deleteSingleNodeFlow); меню открывается в любом режиме сортировки.
   Future<void> _handleDeleteNode(Group group, Proxy proxy) {
     return deleteSingleNodeFlow(context, ref, group, proxy);
   }
@@ -280,19 +236,79 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
       tempUnfoldSet.add(groupName);
     }
     globalState.appController.updateCurrentUnfoldSet(tempUnfoldSet);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _adjustHeader();
-    });
+  }
+
+  void collapseAll() {
+    if (widget.currentUnfoldSet.isEmpty) return;
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(
+        _collapsedAnchorOffset(_scrollController.position),
+      );
+    }
+    _pendingScrollToTop = true;
+    globalState.appController.updateCurrentUnfoldSet({});
+  }
+
+  double _collapsedAnchorOffset(ScrollPosition position) {
+    final offset = position.pixels;
+    final top = 16.0 + _rise;
+    final headerExtent = _getHeaderHeight() + 8.0;
+    final rowExtent = getItemHeight(widget.cardType) + 8.0;
+    final groups = widget.groups;
+    var anchor = offset;
+    var start = top;
+    for (var i = 0; i < groups.length; i++) {
+      final group = groups[i];
+      final rowCount = widget.currentUnfoldSet.contains(group.name)
+          ? (group.all.length / widget.columns).ceil()
+          : 0;
+      final extent = headerExtent + rowCount * rowExtent;
+      if (offset < start + extent) {
+        final delta = offset - start;
+        final collapsedStart = top + i * headerExtent;
+        anchor = delta < headerExtent ? collapsedStart + delta : collapsedStart;
+        break;
+      }
+      start += extent;
+    }
+    final collapsedMax =
+        top +
+        groups.length * headerExtent +
+        _bottomPadding(ref.read(isMobileViewProvider)) -
+        position.viewportDimension;
+    return anchor.clamp(0.0, math.max(0.0, collapsedMax));
+  }
+
+  void _scrollToTop() {
+    if (!mounted || !_scrollController.hasClients) return;
+    final distance = _scrollController.offset;
+    if (distance <= 0) return;
+    _scrollController.animateTo(
+      0,
+      duration: Duration(
+        milliseconds: (240 + distance * 0.12).clamp(240, 560).round(),
+      ),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  double _bottomPadding(bool isMobileView) {
+    return 16.0 +
+        (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0);
   }
 
   double _getHeaderHeight() {
     final measure = globalState.measure;
-    final contentRowHeight = [
+    final contentRowHeight = math.max(
       40.0,
       measure.titleMediumHeight + 4 + measure.labelMediumHeight,
-    ].reduce((a, b) => a > b ? a : b);
+    );
     return 28.0 + contentRowHeight;
   }
+
+  static const _pinnedInset = 8.0;
+  static const _edgeFadeInset = 16.0;
+  double _rise = 0;
 
   void _scrollToSelected(String groupName) {
     if (!_scrollController.hasClients) return;
@@ -303,36 +319,34 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
 
     final headerHeight = _getHeaderHeight();
     final itemHeight = getItemHeight(widget.cardType);
+    final autoStickyHeader = ref.read(
+      proxiesStyleSettingProvider.select((s) => s.autoStickyHeader),
+    );
 
-    final tempFlatItems = _buildFlatItems();
-    var targetIndex = -1;
-    for (var i = 0; i < tempFlatItems.length; i++) {
-      final item = tempFlatItems[i];
-      if (item is _HeaderItem && item.group.name == groupName) {
-        targetIndex = i;
+    var targetOffset = 16.0;
+    Group? targetGroup;
+    for (final group in widget.groups) {
+      if (group.name == groupName) {
+        targetGroup = group;
         break;
       }
+      final isExpand = widget.currentUnfoldSet.contains(group.name);
+      final rowCount = isExpand
+          ? (group.all.length / widget.columns).ceil()
+          : 0;
+      targetOffset += headerHeight + 8.0 + rowCount * (itemHeight + 8.0);
     }
-    if (targetIndex < 0) return;
+    final group = targetGroup;
+    if (group == null) return;
 
-    var targetOffset = 0.0;
-    for (var i = 0; i < targetIndex; i++) {
-      targetOffset += tempFlatItems[i].getHeight(headerHeight, itemHeight);
-    }
-
-    final group = widget.groups.firstWhere((g) => g.name == groupName);
-    final sortedProxies = _getGroupSortedProxies(group);
-    final visibleProxies = _getVisibleProxies(group, sortedProxies);
-    final proxyIndex = visibleProxies.indexWhere((p) => p.name == selectedName);
+    final proxyIndex = group.all.indexWhere((p) => p.name == selectedName);
     if (proxyIndex >= 0) {
       final rowIndex = proxyIndex ~/ widget.columns;
-      final autoStickyHeader = ref.read(
-        proxiesStyleSettingProvider.select((s) => s.autoStickyHeader),
-      );
       if (autoStickyHeader) {
-        targetOffset += rowIndex * (itemHeight + 8.0);
+        targetOffset += rowIndex * (itemHeight + 8.0) - _pinnedInset;
       } else {
         targetOffset += headerHeight + 8.0 + rowIndex * (itemHeight + 8.0);
+        if (_rise > 0) targetOffset -= _edgeFadeInset;
       }
     }
 
@@ -343,283 +357,203 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     );
   }
 
-  List<_FlatItem> _buildFlatItems() {
-    final flatItems = <_FlatItem>[];
-    final headerOffsets = <double>[];
-    var currentOffset = 0.0;
-    final headerHeight = _getHeaderHeight();
-    final itemHeight = getItemHeight(widget.cardType);
+  Widget _buildRow(
+    Group group,
+    List<Proxy> sortedProxies,
+    int rowIndex,
+    double itemHeight,
+  ) {
+    final columns = widget.columns;
+    final start = rowIndex * columns;
+    final totalLength = sortedProxies.length;
 
-    for (final group in widget.groups) {
-      headerOffsets.add(currentOffset);
-      flatItems.add(_HeaderItem(group));
-      currentOffset += headerHeight;
-
-      flatItems.add(_SpacingItem(8.0));
-      currentOffset += 8.0;
-
-      final isExpand = widget.currentUnfoldSet.contains(group.name);
-      if (isExpand) {
-        final sortedProxies = _getGroupSortedProxies(group);
-        final visibleProxies = _getVisibleProxies(group, sortedProxies);
-        final hiddenCount = sortedProxies.length - visibleProxies.length;
-        if (hiddenCount > 0) {
-          flatItems.add(_HiddenInfoItem(group.name, hiddenCount));
-          currentOffset += 44.0;
-        }
-
-        for (var i = 0; i < visibleProxies.length; i += widget.columns) {
-          final end = (i + widget.columns < visibleProxies.length)
-              ? i + widget.columns
-              : visibleProxies.length;
-          final chunk = visibleProxies.sublist(i, end);
-          flatItems.add(_RowItem(group, chunk));
-          currentOffset += (itemHeight + 8.0);
-        }
+    final rowChildren = <Widget>[];
+    for (var i = 0; i < columns; i++) {
+      if (i > 0) {
+        rowChildren.add(const SizedBox(width: 8));
+      }
+      final proxyIndex = start + i;
+      if (proxyIndex < totalLength) {
+        final proxy = sortedProxies[proxyIndex];
+        rowChildren.add(
+          Expanded(
+            child: ProxyDragTile(
+              key: ValueKey('drag_${group.name}.${proxy.name}'),
+              proxyName: proxy.name,
+              enabled: _dragEnabled,
+              onReorder: (fromName, toName) =>
+                  _handleReorder(group, fromName, toName),
+              onDragStart: () => _autoScroller.start(),
+              onDragUpdate: _autoScroller.update,
+              onDragEnd: () => _autoScroller.stop(),
+              child: ProxyCard(
+                key: ValueKey('${group.name}.${proxy.name}'),
+                proxy: proxy,
+                groupName: group.name,
+                type: widget.cardType,
+                groupType: group.type,
+                testUrl: group.testUrl,
+                // onLongPress не передаётся: карточный фолбэк открывает
+                // меню действий апстрима, удаление идёт пунктом onDeleteNode.
+                onDeleteNode: () => _handleDeleteNode(group, proxy),
+              ),
+            ),
+          ),
+        );
+      } else {
+        rowChildren.add(const Expanded(child: SizedBox()));
       }
     }
-    _headerOffsets = headerOffsets;
-    return flatItems;
+
+    final rowWidget = Row(children: rowChildren);
+    final Widget content = switch (group.name == _expandingGroup) {
+      true => () {
+        final animation = _expandController.drive(
+          _rowFadeTweens[math.min(rowIndex, 6)],
+        );
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: animation.drive(_expandSlide),
+            child: rowWidget,
+          ),
+        );
+      }(),
+      false => rowWidget,
+    };
+
+    return Padding(
+      key: ValueKey('row_${group.name}_$rowIndex'),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(height: itemHeight, child: content),
+    );
+  }
+
+  Widget _buildGroupSliver(
+    Group group,
+    double headerHeight,
+    double itemHeight,
+    bool autoStickyHeader,
+  ) {
+    final isExpand = widget.currentUnfoldSet.contains(group.name);
+    final hideDead = _hideDeadGroups.contains(group.name);
+    final cacheKey = (
+      isExpand,
+      group.name == _expandingGroup,
+      headerHeight,
+      itemHeight,
+      autoStickyHeader,
+      hideDead,
+    );
+    final cached = _sliverCache[group.name];
+    if (cached != null &&
+        identical(cached.$1, group) &&
+        cached.$2 == cacheKey) {
+      return cached.$3;
+    }
+    // Фильтр скрытых (мёртвых) нод: в архитектуре v1.19.5 строки строятся
+    // напрямую из group.all, проводка мод-фичи скрытия была потеряна —
+    // восстанавливаем пропуск через _getVisibleProxies.
+    final visibleProxies = isExpand
+        ? _getVisibleProxies(group, group.all)
+        : const <Proxy>[];
+    final rowCount = (visibleProxies.length / widget.columns).ceil();
+
+    final sliver = SliverPadding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 0),
+      sliver: SliverStickyHeader(
+        key: ValueKey('group_${group.name}'),
+        pinned: autoStickyHeader,
+        spacing: 8,
+        pinnedInset: _pinnedInset,
+        headerRadius: 16,
+        pinnedShadow: BoxShadow(
+          color: Colors.black.withValues(
+            alpha: context.colorScheme.brightness == Brightness.light
+                ? 0.10
+                : 0.32,
+          ),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
+        ),
+        header: SizedBox(
+          height: headerHeight,
+          child: _GroupHeader(
+            key: ValueKey('header_${group.name}'),
+            group: group,
+            isExpand: isExpand,
+            onToggle: () => _handleToggle(group.name),
+            cardType: widget.cardType,
+            columns: widget.columns,
+            onScrollToSelected: () => _scrollToSelected(group.name),
+            isHideDead: hideDead,
+            onToggleHideDead: () => _handleToggleHideDead(group),
+            onDeleteDead: () => _handleDeleteDead(group),
+          ),
+        ),
+        sliver: SliverFixedExtentList(
+          itemExtent: itemHeight + 8,
+          delegate: SliverChildBuilderDelegate(
+            (context, rowIndex) =>
+                _buildRow(group, visibleProxies, rowIndex, itemHeight),
+            childCount: rowCount,
+          ),
+        ),
+      ),
+    );
+    _sliverCache[group.name] = (group, cacheKey, sliver);
+    return sliver;
   }
 
   @override
   void dispose() {
     _autoScroller.dispose();
-    _headerStateNotifier.dispose();
-    _scrollController.removeListener(_adjustHeader);
+    _expandController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // sortNum растёт в конце каждого теста задержек (addSortNum) — watch
+    // гарантирует перестройку списка и переприменение фильтра скрытия
+    // к свежим задержкам (в т.ч. когда тест шёл параллельно с включением).
+    ref.watch(sortNumProvider);
     final isMobileView = ref.watch(isMobileViewProvider);
     final autoStickyHeader = ref.watch(
       proxiesStyleSettingProvider.select((s) => s.autoStickyHeader),
     );
-
-    ref.listen(
-      proxiesStyleSettingProvider.select((s) => s.autoStickyHeader),
-      (_, next) {
-        if (!next) {
-          _headerStateNotifier.value = null;
-        } else {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _adjustHeader();
-          });
-        }
-      },
-    );
-
-    final flatItems = _buildFlatItems();
-    final headerHeight = _getHeaderHeight();
     final itemHeight = getItemHeight(widget.cardType);
+    final headerHeight = _getHeaderHeight();
 
-    return CommonScrollBar(
-      controller: _scrollController,
-      child: KeyedSubtree(
-        key: _viewportKey,
-        child: Stack(
-          clipBehavior: Clip.hardEdge,
-          children: [
-            Positioned.fill(
-              child: ListView.builder(
-                key: const PageStorageKey<String>('proxies_list'),
-                controller: _scrollController,
-                padding: EdgeInsets.all(16).copyWith(
-                  bottom:
-                      (globalState.isAndroidTV ? 48.0 : 16.0) +
-                      (isMobileView
-                          ? getFloatingBottomBarReserveHeight(context)
-                          : 0),
+    return ScrollEdgeRise(
+      builder: (context, rise) {
+        _rise = rise;
+        return CommonScrollBar(
+          controller: _scrollController,
+          child: KeyedSubtree(
+            key: _viewportKey,
+            child: CustomScrollView(
+            key: const PageStorageKey<String>('proxies_list'),
+            controller: _scrollController,
+            clipBehavior: Clip.hardEdge,
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: 16 + rise)),
+              for (final group in widget.groups)
+                _buildGroupSliver(
+                  group,
+                  headerHeight,
+                  itemHeight,
+                  autoStickyHeader,
                 ),
-                itemCount: flatItems.length,
-                itemExtentBuilder: (index, _) {
-                  return flatItems[index].getHeight(headerHeight, itemHeight);
-                },
-                itemBuilder: (context, index) {
-                  final item = flatItems[index];
-                  if (item is _HeaderItem) {
-                    final isExpand = widget.currentUnfoldSet.contains(
-                      item.group.name,
-                    );
-                    return _GroupHeader(
-                      key: ValueKey('header_${item.group.name}'),
-                      group: item.group,
-                      isExpand: isExpand,
-                      onToggle: () => _handleToggle(item.group.name),
-                      cardType: widget.cardType,
-                      columns: widget.columns,
-                      onScrollToSelected: () =>
-                          _scrollToSelected(item.group.name),
-                      isHideDead: _hideDeadGroups.contains(item.group.name),
-                      onToggleHideDead: () => _handleToggleHideDead(item.group),
-                      onDeleteDead: () => _handleDeleteDead(item.group),
-                    );
-                  } else if (item is _SpacingItem) {
-                    return SizedBox(height: item.height);
-                  } else if (item is _HiddenInfoItem) {
-                    return _HiddenInfoRow(
-                      count: item.count,
-                      onShow: () {
-                        _hideDeadGroups.remove(item.groupName);
-                        if (mounted) {
-                          setState(() {});
-                        }
-                      },
-                    );
-                  } else if (item is _RowItem) {
-                    final cardWidgets = <Widget>[];
-                    for (var i = 0; i < widget.columns; i++) {
-                      if (i < item.proxies.length) {
-                        final proxy = item.proxies[i];
-                        cardWidgets.add(
-                          Expanded(
-                            child: ProxyDragTile(
-                              proxyName: proxy.name,
-                              enabled: _dragEnabled,
-                              onReorder: (fromName, toName) =>
-                                  _handleReorder(item.group, fromName, toName),
-                              onDragStart: () => _autoScroller.start(),
-                              onDragUpdate: _autoScroller.update,
-                              onDragEnd: () => _autoScroller.stop(),
-                              onHoldNoMove: () =>
-                                  _handleDeleteNode(item.group, proxy),
-                              child: ProxyCard(
-                                key: ValueKey(
-                                  '${item.group.name}.${proxy.name}',
-                                ),
-                                proxy: proxy,
-                                groupName: item.group.name,
-                                type: widget.cardType,
-                                groupType: item.group.type,
-                                testUrl: item.group.testUrl,
-                                onLongPress: _dragEnabled
-                                    ? null
-                                    : () => _handleDeleteNode(
-                                          item.group,
-                                          proxy,
-                                        ),
-                              ),
-                            ),
-                          ),
-                        );
-                      } else {
-                        cardWidgets.add(const Expanded(child: SizedBox()));
-                      }
-                    }
-
-                    final rowChildren = <Widget>[];
-                    for (var i = 0; i < cardWidgets.length; i++) {
-                      rowChildren.add(cardWidgets[i]);
-                      if (i < cardWidgets.length - 1) {
-                        rowChildren.add(const SizedBox(width: 8));
-                      }
-                    }
-
-                    return Padding(
-                      key: ValueKey('row_${item.group.name}_$index'),
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: SizedBox(
-                        height: itemHeight,
-                        child: Row(children: rowChildren),
-                      ),
-                    );
-                  }
-                  return const SizedBox();
-                },
+              SliverPadding(
+                padding: EdgeInsets.only(bottom: _bottomPadding(isMobileView)),
               ),
-            ),
-            if (autoStickyHeader)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: ValueListenableBuilder<ProxiesListHeaderSelectorState?>(
-                  valueListenable: _headerStateNotifier,
-                  builder: (context, headerState, _) {
-                    if (headerState == null) return const SizedBox.shrink();
-                    final index = headerState.currentIndex;
-                    if (index < 0 || index >= widget.groups.length) {
-                      return const SizedBox.shrink();
-                    }
-                    final group = widget.groups[index];
-                    final isExpand = widget.currentUnfoldSet.contains(
-                      group.name,
-                    );
-
-                    return Transform.translate(
-                      offset: Offset(0, -headerState.offset),
-                      child: Container(
-                        color: context.colorScheme.surface,
-                        padding: const EdgeInsets.only(
-                          top: 16,
-                          left: 16,
-                          right: 16,
-                          bottom: 8,
-                        ),
-                        child: SizedBox(
-                          height: headerHeight,
-                          child: _GroupHeader(
-                            key: ValueKey('sticky_header_${group.name}'),
-                            group: group,
-                            isExpand: isExpand,
-                            onToggle: () => _handleToggle(group.name),
-                            cardType: widget.cardType,
-                            columns: widget.columns,
-                            onScrollToSelected: () =>
-                                _scrollToSelected(group.name),
-                            isHideDead: _hideDeadGroups.contains(group.name),
-                            onToggleHideDead: () =>
-                                _handleToggleHideDead(group),
-                            onDeleteDead: () => _handleDeleteDead(group),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HiddenInfoRow extends StatelessWidget {
-  final int count;
-  final VoidCallback onShow;
-
-  const _HiddenInfoRow({required this.count, required this.onShow});
-
-  @override
-  Widget build(BuildContext context) {
-    return CommonCard(
-      radius: 16,
-      type: CommonCardType.filled,
-      onPressed: onShow,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Icon(
-              Icons.visibility,
-              size: 18,
-              color: context.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                appLocalizations.hiddenUnavailableCount(count),
-                style: context.textTheme.labelMedium?.toLight,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+          ),
+        );
+      },
     );
   }
 }
@@ -660,8 +594,37 @@ class _GroupHeader extends ConsumerWidget {
 
     final selectedProxyIcon = ref.watch(proxyIconProvider(selectedProxyName));
 
+    final showFilled = iconStyle == ProxiesIconStyle.none;
+    final expandIcon = CommonExpandIcon(
+      expand: isExpand,
+      duration: const Duration(milliseconds: 320),
+    );
+    final primaryColor = context.colorScheme.primary;
+    final expandButtonStyle = ButtonStyle(
+      backgroundColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.focused)) {
+          return primaryColor.withValues(alpha: 0.2);
+        }
+        return null;
+      }),
+    );
+    void handleToggle() {
+      if (system.isAndroid &&
+          ref.read(
+            appSettingProvider.select((s) => s.enableNavBarHapticFeedback),
+          )) {
+        HapticFeedback.selectionClick();
+      }
+      onToggle();
+    }
+
+    final textTheme = context.textTheme;
+    final labelLightStyle = textTheme.labelMedium?.toLight;
+
     return CommonCard(
-      radius: 16,
+      radius: 20.0,
+      subtle: true,
+      elevated: false,
       type: CommonCardType.filled,
       onPressed: onToggle,
       child: Padding(
@@ -676,7 +639,7 @@ class _GroupHeader extends ConsumerWidget {
                 children: [
                   EmojiText(
                     group.name,
-                    style: context.textTheme.titleMedium,
+                    style: textTheme.titleMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -686,16 +649,14 @@ class _GroupHeader extends ConsumerWidget {
                       Flexible(
                         child: Text(
                           group.type.name,
-                          style: context.textTheme.labelMedium?.toLight,
+                          style: labelLightStyle,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
                       ),
+
                       if (selectedProxyName.isNotEmpty) ...[
-                        Text(
-                          '  •  ',
-                          style: context.textTheme.labelMedium?.toLight,
-                        ),
+                        Text('  •  ', style: labelLightStyle),
                         if (selectedProxyIcon.isNotEmpty) ...[
                           CommonTargetIcon(
                             src: selectedProxyIcon,
@@ -706,7 +667,7 @@ class _GroupHeader extends ConsumerWidget {
                         Flexible(
                           child: EmojiText(
                             selectedProxyName,
-                            style: context.textTheme.labelMedium?.toLight,
+                            style: labelLightStyle,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -716,91 +677,105 @@ class _GroupHeader extends ConsumerWidget {
                 ],
               ),
             ),
-            if (isExpand) ...[
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
-                iconSize: 20,
-                icon: const Icon(Icons.adjust),
-                onPressed: onScrollToSelected,
-                tooltip: appLocalizations.locate,
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
-                iconSize: 20,
-                icon: Icon(
-                  isHideDead ? Icons.visibility : Icons.visibility_off,
-                ),
-                onPressed: onToggleHideDead,
-                tooltip: isHideDead
-                    ? appLocalizations.showUnavailable
-                    : appLocalizations.hideUnavailable,
-              ),
-              if (isHideDead && onDeleteDead != null)
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                  iconSize: 20,
-                  icon: const Icon(Icons.delete_sweep_outlined),
-                  onPressed: onDeleteDead,
-                  tooltip: appLocalizations.deleteUnavailable,
-                ),
-              AnimatedBuilder(
-                animation: delayTestCoordinator,
-                builder: (_, _) {
-                  final isTestingThisGroup = delayTestCoordinator
-                      .isTestingGroup(group.name);
-                  return IconButton(
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+            if (isExpand)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(width: 6),
+                  PressScale(
+                    child: SizedBox.square(
+                      dimension: 36,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.adjust),
+                        onPressed: onScrollToSelected,
+                        tooltip: appLocalizations.locate,
+                      ),
                     ),
-                    iconSize: 20,
-                    icon: isTestingThisGroup
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.network_ping),
-                    onPressed: delayTestCoordinator.isTesting
-                        ? null
-                        : () => _delayTest(context),
-                    tooltip: appLocalizations.startTest,
-                  );
-                },
+                  ),
+                  _PressScaleWrapper(
+                    child: SizedBox.square(
+                      dimension: 36,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          isHideDead ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: onToggleHideDead,
+                        tooltip: isHideDead
+                            ? appLocalizations.showUnavailable
+                            : appLocalizations.hideUnavailable,
+                      ),
+                    ),
+                  ),
+                  if (isHideDead && onDeleteDead != null)
+                    _PressScaleWrapper(
+                      child: SizedBox.square(
+                        dimension: 36,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.delete_sweep_outlined),
+                          onPressed: onDeleteDead,
+                          tooltip: appLocalizations.deleteUnavailable,
+                        ),
+                      ),
+                    ),
+                  AnimatedBuilder(
+                    animation: delayTestCoordinator,
+                    builder: (_, _) {
+                      final isTestingThisGroup = delayTestCoordinator
+                          .isTestingGroup(group.name);
+                      return PressScale(
+                        enabled: !delayTestCoordinator.isTesting,
+                        child: SizedBox(
+                          width: 44,
+                          height: 36,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            icon: isTestingThisGroup
+                                ? const RepaintBoundary(
+                                    child: SizedBox.square(
+                                      dimension: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.network_ping),
+                            onPressed: delayTestCoordinator.isTesting
+                                ? null
+                                : () => _delayTest(context),
+                            tooltip: appLocalizations.startTest,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                ],
               ),
-            ],
-            IconButton.filledTonal(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.all(4),
-              constraints: const BoxConstraints(
-                minWidth: 34,
-                minHeight: 34,
-              ),
-              icon: CommonExpandIcon(expand: isExpand),
-              onPressed: onToggle,
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.focused)) {
-                    return context.colorScheme.primary.withValues(alpha: 0.2);
-                  }
-                  return null;
-                }),
+            PressScale(
+              child: SizedBox.square(
+                dimension: 36,
+                child: showFilled
+                    ? IconButton.filledTonal(
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        icon: expandIcon,
+                        onPressed: handleToggle,
+                        style: expandButtonStyle,
+                      )
+                    : IconButton(
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        icon: expandIcon,
+                        onPressed: handleToggle,
+                        style: expandButtonStyle,
+                      ),
               ),
             ),
           ],
@@ -837,6 +812,53 @@ class _GroupHeader extends ConsumerWidget {
   }
 
   Future<void> _delayTest(BuildContext context) async {
-    await delayTest(group.all, testUrl: group.testUrl, groupName: group.name);
+    final currentGroups = globalState.appController.getCurrentGroups();
+    final targetGroup = currentGroups.getGroup(group.name) ?? group;
+    await delayTest(
+      targetGroup.all,
+      testUrl: targetGroup.testUrl,
+      groupName: targetGroup.name,
+    );
+  }
+}
+
+class _PressScaleWrapper extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+
+  const _PressScaleWrapper({required this.child, this.enabled = true});
+
+  @override
+  State<_PressScaleWrapper> createState() => _PressScaleWrapperState();
+}
+
+class _PressScaleWrapperState extends State<_PressScaleWrapper> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = (widget.enabled && _isPressed) ? 0.92 : 1.0;
+    return Listener(
+      onPointerDown: (_) {
+        if (!widget.enabled) return;
+        setState(() => _isPressed = true);
+      },
+      onPointerUp: (_) {
+        if (_isPressed) {
+          setState(() => _isPressed = false);
+        }
+      },
+      onPointerCancel: (_) {
+        if (_isPressed) {
+          setState(() => _isPressed = false);
+        }
+      },
+      child: AnimatedScale(
+        scale: scale,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
+    );
   }
 }

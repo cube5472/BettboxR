@@ -1,29 +1,23 @@
 import 'dart:async';
 
 import 'package:bett_box/common/common.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-/// Обёртка карточки ноды: включает перетаскивание долгим нажатием.
+/// Обёртка карточки ноды: перетаскивание за пиктограмму отпечатка пальца.
 ///
 /// Порядок применяется в момент drop: при наведении подсвечивается цель,
 /// после отпускания вызывается [ProxyDragTile.onReorder] (откуда, куда) и
 /// список перестраивается. Вне режима ручной сортировки ([enabled] == false)
-/// ведёт себя как обычная карточка.
+/// ведёт себя как обычная карточка — пиктограмма не рисуется.
 ///
-/// [ProxyDragTile.onHoldNoMove]: «удержание без движения» — drag стартует по
-/// долгому нажатию, но если палец отпущен на месте (в пределах дрожания
-/// руки), это трактуется как долгое нажатие на карточку, а не как
-/// перетаскивание. Так в режиме ручной сортировки уживаются drag (удержал
-/// и повёл) и удаление ноды (удержал и отпустил).
+/// Долгое нажатие на саму карточку занято меню действий апстрима (тест
+/// скорости / доступность / чистота IP / удаление ноды), поэтому перенос
+/// запускается ТОЛЬКО удержанием пиктограммы отпечатка в правом верхнем
+/// углу карточки.
 ///
-/// Движение пальца отслеживается ТОЛЬКО по глобальным координатам
-/// (Listener.onPointerDown/Move + DragUpdateDetails.globalPosition).
-/// Полагаться на offsets из onDragEnd/onDraggableCanceled нельзя: это
-/// позиция левого верхнего угла аватара (globalPosition минус якорь
-/// childDragAnchorStrategy), а не точка пальца — сравнение с точкой
-/// нажатия давало дистанцию в десятки пикселей и «удержание на месте»
-/// никогда не распознавалось.
+/// Якорь переноса — центр пиктограммы, пересчитанный в координаты
+/// feedback-карточки (правый верхний угол с отступом), чтобы карточка под
+/// пальцем не «прыгала» в момент старта переноса.
 class ProxyDragTile extends StatefulWidget {
   final String proxyName;
   final Widget child;
@@ -32,7 +26,6 @@ class ProxyDragTile extends StatefulWidget {
   final VoidCallback? onDragStart;
   final VoidCallback? onDragEnd;
   final ValueChanged<Offset>? onDragUpdate;
-  final VoidCallback? onHoldNoMove;
 
   const ProxyDragTile({
     super.key,
@@ -43,7 +36,6 @@ class ProxyDragTile extends StatefulWidget {
     this.onDragStart,
     this.onDragEnd,
     this.onDragUpdate,
-    this.onHoldNoMove,
   });
 
   @override
@@ -51,62 +43,21 @@ class ProxyDragTile extends StatefulWidget {
 }
 
 class _ProxyDragTileState extends State<ProxyDragTile> {
-  /// Порог «палец не двигался»: отпускание ближе этого расстояния от точки
-  /// нажатия считается удержанием на месте (жест удаления), а не переносом.
-  static const double _holdSlop = 12.0;
+  /// Пиктограмма: Positioned(top: 2, right: 6, бокс 28x28), иконка 26
+  /// по центру -> её центр в координатах карточки: (width-20, 16).
+  bool _dragging = false;
 
-  /// Глобальная точка первого касания (Listener.onPointerDown).
-  Offset? _downPosition;
-
-  /// Палец ушёл дальше [_holdSlop] от точки касания — это уже перенос,
-  /// а не «удержание на месте».
-  bool _movedFar = false;
-
-  /// Защита от двойного срабатывания: при отмене drag'а флаттер вызывает
-  /// и onDragEnd, и onDraggableCanceled — обрабатываем только первый из них.
-  bool _holdHandled = true;
-
-  void _handlePointerDown(PointerDownEvent event) {
-    _downPosition = event.position;
-    _movedFar = false;
-    _holdHandled = false;
+  void _dragStarted() {
+    setState(() => _dragging = true);
+    widget.onDragStart?.call();
   }
 
-  void _handlePointerMove(PointerMoveEvent event) {
-    _trackMovement(event.position);
-  }
-
-  void _handlePointerCancel(PointerCancelEvent event) {
-    // Системная отмена (входящий звонок, переключение приложения и т.п.) —
-    // не жест удаления.
-    _holdHandled = true;
-  }
-
-  void _trackMovement(Offset globalPosition) {
-    final down = _downPosition;
-    if (down == null || _movedFar) {
+  void _dragFinished() {
+    if (!_dragging) {
       return;
     }
-    if ((globalPosition - down).distance > _holdSlop) {
-      _movedFar = true;
-    }
-  }
-
-  void _handleDragFinished() {
+    setState(() => _dragging = false);
     widget.onDragEnd?.call();
-    if (_holdHandled) {
-      return;
-    }
-    _holdHandled = true;
-    final onHoldNoMove = widget.onHoldNoMove;
-    if (onHoldNoMove == null) {
-      return;
-    }
-    // Сюда offset'ы из onDragEnd/onDraggableCanceled НЕ передаются — см.
-    // комментарий к классу: это угол аватара, а не точка пальца.
-    if (!_movedFar) {
-      onHoldNoMove();
-    }
   }
 
   @override
@@ -154,34 +105,59 @@ class _ProxyDragTileState extends State<ProxyDragTile> {
               return SizedBox.fromSize(size: tileSize, child: w);
             }
 
-            return LongPressDraggable<String>(
-              data: widget.proxyName,
-              maxSimultaneousDrags: 1,
-              dragAnchorStrategy: childDragAnchorStrategy,
-              onDragStarted: widget.onDragStart,
-              onDragUpdate: (details) {
-                _trackMovement(details.globalPosition);
-                widget.onDragUpdate?.call(details.globalPosition);
-              },
-              onDragEnd: (details) => _handleDragFinished(),
-              onDraggableCanceled: (_, __) => _handleDragFinished(),
-              feedback: wrap(
-                Material(
-                  color: Colors.transparent,
-                  child: _DragFeedbackShadow(
-                    child: Opacity(opacity: 0.95, child: widget.child),
+            Offset handleAnchor(
+              Draggable<Object> draggable,
+              BuildContext context,
+              Offset position,
+            ) {
+              // Центр пиктограммы в координатах feedback-карточки.
+              if (tileSize == null) {
+                return Offset.zero;
+              }
+              return Offset(tileSize.width - 20, 16);
+            }
+
+            return Stack(
+              children: [
+                wrap(_dragging ? Opacity(opacity: 0.45, child: tile) : tile),
+                Positioned(
+                  top: 2,
+                  right: 6,
+                  width: 28,
+                  height: 28,
+                  child: LongPressDraggable<String>(
+                    data: widget.proxyName,
+                    maxSimultaneousDrags: 1,
+                    dragAnchorStrategy: handleAnchor,
+                    onDragStarted: _dragStarted,
+                    onDragUpdate: (details) =>
+                        widget.onDragUpdate?.call(details.globalPosition),
+                    onDragEnd: (_) => _dragFinished(),
+                    onDraggableCanceled: (_, __) => _dragFinished(),
+                    feedback: wrap(
+                      Material(
+                        color: Colors.transparent,
+                        child: _DragFeedbackShadow(
+                          child: Opacity(opacity: 0.95, child: widget.child),
+                        ),
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.fingerprint,
+                        size: 26,
+                        color: _dragging
+                            ? context.colorScheme.primary.withValues(
+                                alpha: 0.15,
+                              )
+                            : context.colorScheme.primary.withValues(
+                                alpha: 0.45,
+                              ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              childWhenDragging: wrap(
-                Opacity(opacity: 0.45, child: widget.child),
-              ),
-              child: Listener(
-                onPointerDown: _handlePointerDown,
-                onPointerMove: _handlePointerMove,
-                onPointerCancel: _handlePointerCancel,
-                child: wrap(tile),
-              ),
+              ],
             );
           },
         );
