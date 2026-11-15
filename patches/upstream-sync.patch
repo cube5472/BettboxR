@@ -178426,10 +178426,10 @@ index 529acf2f..5c430edb 100644
                  const SizedBox(width: 8),
 diff --git a/lib/views/proxies/actions.dart b/lib/views/proxies/actions.dart
 new file mode 100644
-index 00000000..4a659e38
+index 00000000..a1fca15e
 --- /dev/null
 +++ b/lib/views/proxies/actions.dart
-@@ -0,0 +1,224 @@
+@@ -0,0 +1,231 @@
 +import 'package:bett_box/clash/clash.dart';
 +import 'package:bett_box/common/common.dart';
 +import 'package:bett_box/enum/enum.dart';
@@ -178451,6 +178451,7 @@ index 00000000..4a659e38
 +  Group? proxyGroup,
 +  String proxyGroupSelected = '',
 +  Offset? position,
++  VoidCallback? onDeleteNode,
 +}) async {
 +  final items = [
 +    if (proxyGroup != null)
@@ -178487,6 +178488,12 @@ index 00000000..4a659e38
 +      label: appLocalizations.ipRiskCheck,
 +      onPressed: coreRunning ? () => _checkIpRisk(context, proxy.name) : null,
 +    ),
++    if (onDeleteNode != null)
++      PopupMenuItemData(
++        icon: Icons.delete_outline_rounded,
++        label: appLocalizations.deleteNodeTitle,
++        onPressed: onDeleteNode,
++      ),
 +    if (groupType.isComputedSelected)
 +      PopupMenuItemData(
 +        icon: locked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
@@ -179096,7 +179103,7 @@ index 4eab456d..963686b9 100644
 +  }
 +}
 diff --git a/lib/views/proxies/card.dart b/lib/views/proxies/card.dart
-index e54da21e..3e4d1d83 100644
+index e54da21e..be03e194 100644
 --- a/lib/views/proxies/card.dart
 +++ b/lib/views/proxies/card.dart
 @@ -3,78 +3,65 @@ import 'package:bett_box/enum/enum.dart';
@@ -179215,7 +179222,7 @@ index e54da21e..3e4d1d83 100644
    }
  
    void _handleTestCurrentDelay() {
-@@ -82,81 +69,112 @@ class ProxyCard extends StatelessWidget {
+@@ -82,81 +69,114 @@ class ProxyCard extends StatelessWidget {
      proxyDelayTest(proxy, testUrl);
    }
  
@@ -179324,6 +179331,7 @@ index e54da21e..3e4d1d83 100644
 +  final ProxyCardType type;
 +  final String? testUrl;
 +  final VoidCallback? onLongPress;
++  final VoidCallback? onDeleteNode;
 +
 +  const ProxyCard({
 +    super.key,
@@ -179333,6 +179341,7 @@ index e54da21e..3e4d1d83 100644
 +    required this.groupType,
 +    required this.type,
 +    this.onLongPress,
++    this.onDeleteNode,
 +  });
 +
 +  Measure get measure => globalState.measure;
@@ -179370,7 +179379,7 @@ index e54da21e..3e4d1d83 100644
        return wrapPadding(nameWidget);
      }
  
-@@ -179,42 +197,88 @@ class ProxyCard extends StatelessWidget {
+@@ -179,42 +199,88 @@ class ProxyCard extends StatelessWidget {
  
    bool _isSelectedProxy(WidgetRef ref) {
      return ref.watch(
@@ -179482,7 +179491,7 @@ index e54da21e..3e4d1d83 100644
    }
  
    Future<void> _changeProxy(WidgetRef ref) async {
-@@ -234,27 +298,56 @@ class ProxyCard extends StatelessWidget {
+@@ -234,27 +300,57 @@ class ProxyCard extends StatelessWidget {
      globalState.showNotifier(appLocalizations.notSelectedTip);
    }
  
@@ -179507,6 +179516,7 @@ index e54da21e..3e4d1d83 100644
 +      proxyGroup: ref.read(groupsProvider).getGroup(proxy.name),
 +      proxyGroupSelected: ref.read(selectedMapProvider)[proxy.name] ?? '',
 +      position: position,
++      onDeleteNode: onDeleteNode,
 +    );
 +  }
 +
@@ -179549,7 +179559,7 @@ index e54da21e..3e4d1d83 100644
                isSelected: isSelected,
                child: Container(
                  alignment: Alignment.centerLeft,
-@@ -263,68 +356,9 @@ class ProxyCard extends StatelessWidget {
+@@ -263,68 +359,9 @@ class ProxyCard extends StatelessWidget {
                    mainAxisSize: MainAxisSize.min,
                    crossAxisAlignment: CrossAxisAlignment.start,
                    spacing: 8,
@@ -179621,7 +179631,7 @@ index e54da21e..3e4d1d83 100644
                  ),
                ),
              ),
-@@ -341,6 +375,12 @@ class ProxyCard extends StatelessWidget {
+@@ -341,6 +378,12 @@ class ProxyCard extends StatelessWidget {
                ),
            ],
          );
@@ -179634,7 +179644,7 @@ index e54da21e..3e4d1d83 100644
        },
      );
    }
-@@ -353,13 +393,13 @@ class _ProxyDesc extends ConsumerWidget {
+@@ -353,13 +396,13 @@ class _ProxyDesc extends ConsumerWidget {
  
    @override
    Widget build(BuildContext context, WidgetRef ref) {
@@ -179654,7 +179664,7 @@ index e54da21e..3e4d1d83 100644
      if (selectedName.isEmpty) return const SizedBox.shrink();
      return _ProxyMetaTag(selectedName);
    }
-@@ -391,6 +431,7 @@ class _ProxyComputedMarkIcon extends StatelessWidget {
+@@ -391,6 +434,7 @@ class _ProxyComputedMarkIcon extends StatelessWidget {
  
    @override
    Widget build(BuildContext context) {
@@ -179662,7 +179672,7 @@ index e54da21e..3e4d1d83 100644
      return Container(
        alignment: Alignment.topRight,
        margin: const EdgeInsets.all(8),
-@@ -398,12 +439,12 @@ class _ProxyComputedMarkIcon extends StatelessWidget {
+@@ -398,12 +442,12 @@ class _ProxyComputedMarkIcon extends StatelessWidget {
          padding: const EdgeInsets.all(4),
          decoration: BoxDecoration(
            shape: BoxShape.circle,
@@ -179923,7 +179933,7 @@ index d24ef6dc..57e3f63f 100644
    }
  
 diff --git a/lib/views/proxies/list.dart b/lib/views/proxies/list.dart
-index 7beea6c1..378e5730 100644
+index 7beea6c1..6a19fa6d 100644
 --- a/lib/views/proxies/list.dart
 +++ b/lib/views/proxies/list.dart
 @@ -1,37 +1,53 @@
@@ -180168,7 +180178,7 @@ index 7beea6c1..378e5730 100644
      final names = visibleProxies.map((proxy) => proxy.name).toList();
      final from = names.indexOf(fromName);
      final to = names.indexOf(toName);
-@@ -220,45 +196,26 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
+@@ -220,54 +196,34 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
      }
    }
  
@@ -180232,7 +180242,18 @@ index 7beea6c1..378e5730 100644
    }
  
    Future<void> _handleDeleteDead(Group group) {
-@@ -280,20 +237,80 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
+     return deleteDeadNodesFlow(context, ref, group);
+   }
+ 
+-  /// Удаление одной ноды по удержанию карточки (см. deleteSingleNodeFlow).
+-  /// В режиме ручной сортировки удержание занято drag'ом — коллбэк
+-  /// не передаётся в карточку (см. сборку _RowItem).
++  /// Удаление одной ноды — пункт «Удалить ноду» в меню долгого нажатия
++  /// (см. deleteSingleNodeFlow); меню открывается в любом режиме сортировки.
+   Future<void> _handleDeleteNode(Group group, Proxy proxy) {
+     return deleteSingleNodeFlow(context, ref, group, proxy);
+   }
+@@ -280,20 +236,80 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
        tempUnfoldSet.add(groupName);
      }
      globalState.appController.updateCurrentUnfoldSet(tempUnfoldSet);
@@ -180318,7 +180339,7 @@ index 7beea6c1..378e5730 100644
    void _scrollToSelected(String groupName) {
      if (!_scrollController.hasClients) return;
      final selectedName = ref
-@@ -303,36 +320,34 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
+@@ -303,36 +319,34 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
  
      final headerHeight = _getHeaderHeight();
      final itemHeight = getItemHeight(widget.cardType);
@@ -180373,7 +180394,7 @@ index 7beea6c1..378e5730 100644
        }
      }
  
-@@ -343,283 +358,204 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
+@@ -343,283 +357,203 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
      );
    }
  
@@ -180420,7 +180441,6 @@ index 7beea6c1..378e5730 100644
 +              onDragStart: () => _autoScroller.start(),
 +              onDragUpdate: _autoScroller.update,
 +              onDragEnd: () => _autoScroller.stop(),
-+              onHoldNoMove: () => _handleDeleteNode(group, proxy),
 +              child: ProxyCard(
 +                key: ValueKey('${group.name}.${proxy.name}'),
 +                proxy: proxy,
@@ -180428,9 +180448,9 @@ index 7beea6c1..378e5730 100644
 +                type: widget.cardType,
 +                groupType: group.type,
 +                testUrl: group.testUrl,
-+                onLongPress: _dragEnabled
-+                    ? null
-+                    : () => _handleDeleteNode(group, proxy),
++                // onLongPress не передаётся: карточный фолбэк открывает
++                // меню действий апстрима, удаление идёт пунктом onDeleteNode.
++                onDeleteNode: () => _handleDeleteNode(group, proxy),
 +              ),
 +            ),
 +          ),
@@ -180833,7 +180853,7 @@ index 7beea6c1..378e5730 100644
      );
    }
  }
-@@ -660,8 +596,37 @@ class _GroupHeader extends ConsumerWidget {
+@@ -660,8 +594,37 @@ class _GroupHeader extends ConsumerWidget {
  
      final selectedProxyIcon = ref.watch(proxyIconProvider(selectedProxyName));
  
@@ -180872,7 +180892,7 @@ index 7beea6c1..378e5730 100644
        type: CommonCardType.filled,
        onPressed: onToggle,
        child: Padding(
-@@ -676,7 +641,7 @@ class _GroupHeader extends ConsumerWidget {
+@@ -676,7 +639,7 @@ class _GroupHeader extends ConsumerWidget {
                  children: [
                    EmojiText(
                      group.name,
@@ -180881,7 +180901,7 @@ index 7beea6c1..378e5730 100644
                      maxLines: 1,
                      overflow: TextOverflow.ellipsis,
                    ),
-@@ -686,16 +651,14 @@ class _GroupHeader extends ConsumerWidget {
+@@ -686,16 +649,14 @@ class _GroupHeader extends ConsumerWidget {
                        Flexible(
                          child: Text(
                            group.type.name,
@@ -180901,7 +180921,7 @@ index 7beea6c1..378e5730 100644
                          if (selectedProxyIcon.isNotEmpty) ...[
                            CommonTargetIcon(
                              src: selectedProxyIcon,
-@@ -706,7 +669,7 @@ class _GroupHeader extends ConsumerWidget {
+@@ -706,7 +667,7 @@ class _GroupHeader extends ConsumerWidget {
                          Flexible(
                            child: EmojiText(
                              selectedProxyName,
@@ -180910,7 +180930,7 @@ index 7beea6c1..378e5730 100644
                              overflow: TextOverflow.ellipsis,
                            ),
                          ),
-@@ -716,91 +679,105 @@ class _GroupHeader extends ConsumerWidget {
+@@ -716,91 +677,105 @@ class _GroupHeader extends ConsumerWidget {
                  ],
                ),
              ),
@@ -181098,7 +181118,7 @@ index 7beea6c1..378e5730 100644
                ),
              ),
            ],
-@@ -837,6 +814,53 @@ class _GroupHeader extends ConsumerWidget {
+@@ -837,6 +812,53 @@ class _GroupHeader extends ConsumerWidget {
    }
  
    Future<void> _delayTest(BuildContext context) async {
@@ -181757,6 +181777,223 @@ index 6eabac53..e06e5495 100644
    }
  }
 -
+diff --git a/lib/views/proxies/reorder.dart b/lib/views/proxies/reorder.dart
+index 0bfb4b71..6b99fec0 100644
+--- a/lib/views/proxies/reorder.dart
++++ b/lib/views/proxies/reorder.dart
+@@ -1,29 +1,23 @@
+ import 'dart:async';
+ 
+ import 'package:bett_box/common/common.dart';
+-import 'package:flutter/gestures.dart';
+ import 'package:flutter/material.dart';
+ 
+-/// Обёртка карточки ноды: включает перетаскивание долгим нажатием.
++/// Обёртка карточки ноды: перетаскивание за пиктограмму отпечатка пальца.
+ ///
+ /// Порядок применяется в момент drop: при наведении подсвечивается цель,
+ /// после отпускания вызывается [ProxyDragTile.onReorder] (откуда, куда) и
+ /// список перестраивается. Вне режима ручной сортировки ([enabled] == false)
+-/// ведёт себя как обычная карточка.
++/// ведёт себя как обычная карточка — пиктограмма не рисуется.
+ ///
+-/// [ProxyDragTile.onHoldNoMove]: «удержание без движения» — drag стартует по
+-/// долгому нажатию, но если палец отпущен на месте (в пределах дрожания
+-/// руки), это трактуется как долгое нажатие на карточку, а не как
+-/// перетаскивание. Так в режиме ручной сортировки уживаются drag (удержал
+-/// и повёл) и удаление ноды (удержал и отпустил).
++/// Долгое нажатие на саму карточку занято меню действий апстрима (тест
++/// скорости / доступность / чистота IP / удаление ноды), поэтому перенос
++/// запускается ТОЛЬКО удержанием пиктограммы отпечатка в правом верхнем
++/// углу карточки.
+ ///
+-/// Движение пальца отслеживается ТОЛЬКО по глобальным координатам
+-/// (Listener.onPointerDown/Move + DragUpdateDetails.globalPosition).
+-/// Полагаться на offsets из onDragEnd/onDraggableCanceled нельзя: это
+-/// позиция левого верхнего угла аватара (globalPosition минус якорь
+-/// childDragAnchorStrategy), а не точка пальца — сравнение с точкой
+-/// нажатия давало дистанцию в десятки пикселей и «удержание на месте»
+-/// никогда не распознавалось.
++/// Якорь переноса — центр пиктограммы, пересчитанный в координаты
++/// feedback-карточки (правый верхний угол с отступом), чтобы карточка под
++/// пальцем не «прыгала» в момент старта переноса.
+ class ProxyDragTile extends StatefulWidget {
+   final String proxyName;
+   final Widget child;
+@@ -32,7 +26,6 @@ class ProxyDragTile extends StatefulWidget {
+   final VoidCallback? onDragStart;
+   final VoidCallback? onDragEnd;
+   final ValueChanged<Offset>? onDragUpdate;
+-  final VoidCallback? onHoldNoMove;
+ 
+   const ProxyDragTile({
+     super.key,
+@@ -43,7 +36,6 @@ class ProxyDragTile extends StatefulWidget {
+     this.onDragStart,
+     this.onDragEnd,
+     this.onDragUpdate,
+-    this.onHoldNoMove,
+   });
+ 
+   @override
+@@ -51,62 +43,21 @@ class ProxyDragTile extends StatefulWidget {
+ }
+ 
+ class _ProxyDragTileState extends State<ProxyDragTile> {
+-  /// Порог «палец не двигался»: отпускание ближе этого расстояния от точки
+-  /// нажатия считается удержанием на месте (жест удаления), а не переносом.
+-  static const double _holdSlop = 12.0;
++  /// Пиктограмма: Positioned(top: 2, right: 6, бокс 28x28), иконка 26
++  /// по центру -> её центр в координатах карточки: (width-20, 16).
++  bool _dragging = false;
+ 
+-  /// Глобальная точка первого касания (Listener.onPointerDown).
+-  Offset? _downPosition;
+-
+-  /// Палец ушёл дальше [_holdSlop] от точки касания — это уже перенос,
+-  /// а не «удержание на месте».
+-  bool _movedFar = false;
+-
+-  /// Защита от двойного срабатывания: при отмене drag'а флаттер вызывает
+-  /// и onDragEnd, и onDraggableCanceled — обрабатываем только первый из них.
+-  bool _holdHandled = true;
+-
+-  void _handlePointerDown(PointerDownEvent event) {
+-    _downPosition = event.position;
+-    _movedFar = false;
+-    _holdHandled = false;
++  void _dragStarted() {
++    setState(() => _dragging = true);
++    widget.onDragStart?.call();
+   }
+ 
+-  void _handlePointerMove(PointerMoveEvent event) {
+-    _trackMovement(event.position);
+-  }
+-
+-  void _handlePointerCancel(PointerCancelEvent event) {
+-    // Системная отмена (входящий звонок, переключение приложения и т.п.) —
+-    // не жест удаления.
+-    _holdHandled = true;
+-  }
+-
+-  void _trackMovement(Offset globalPosition) {
+-    final down = _downPosition;
+-    if (down == null || _movedFar) {
++  void _dragFinished() {
++    if (!_dragging) {
+       return;
+     }
+-    if ((globalPosition - down).distance > _holdSlop) {
+-      _movedFar = true;
+-    }
+-  }
+-
+-  void _handleDragFinished() {
++    setState(() => _dragging = false);
+     widget.onDragEnd?.call();
+-    if (_holdHandled) {
+-      return;
+-    }
+-    _holdHandled = true;
+-    final onHoldNoMove = widget.onHoldNoMove;
+-    if (onHoldNoMove == null) {
+-      return;
+-    }
+-    // Сюда offset'ы из onDragEnd/onDraggableCanceled НЕ передаются — см.
+-    // комментарий к классу: это угол аватара, а не точка пальца.
+-    if (!_movedFar) {
+-      onHoldNoMove();
+-    }
+   }
+ 
+   @override
+@@ -154,34 +105,59 @@ class _ProxyDragTileState extends State<ProxyDragTile> {
+               return SizedBox.fromSize(size: tileSize, child: w);
+             }
+ 
+-            return LongPressDraggable<String>(
+-              data: widget.proxyName,
+-              maxSimultaneousDrags: 1,
+-              dragAnchorStrategy: childDragAnchorStrategy,
+-              onDragStarted: widget.onDragStart,
+-              onDragUpdate: (details) {
+-                _trackMovement(details.globalPosition);
+-                widget.onDragUpdate?.call(details.globalPosition);
+-              },
+-              onDragEnd: (details) => _handleDragFinished(),
+-              onDraggableCanceled: (_, __) => _handleDragFinished(),
+-              feedback: wrap(
+-                Material(
+-                  color: Colors.transparent,
+-                  child: _DragFeedbackShadow(
+-                    child: Opacity(opacity: 0.95, child: widget.child),
++            Offset handleAnchor(
++              Draggable<Object> draggable,
++              BuildContext context,
++              Offset position,
++            ) {
++              // Центр пиктограммы в координатах feedback-карточки.
++              if (tileSize == null) {
++                return Offset.zero;
++              }
++              return Offset(tileSize.width - 20, 16);
++            }
++
++            return Stack(
++              children: [
++                wrap(_dragging ? Opacity(opacity: 0.45, child: tile) : tile),
++                Positioned(
++                  top: 2,
++                  right: 6,
++                  width: 28,
++                  height: 28,
++                  child: LongPressDraggable<String>(
++                    data: widget.proxyName,
++                    maxSimultaneousDrags: 1,
++                    dragAnchorStrategy: handleAnchor,
++                    onDragStarted: _dragStarted,
++                    onDragUpdate: (details) =>
++                        widget.onDragUpdate?.call(details.globalPosition),
++                    onDragEnd: (_) => _dragFinished(),
++                    onDraggableCanceled: (_, __) => _dragFinished(),
++                    feedback: wrap(
++                      Material(
++                        color: Colors.transparent,
++                        child: _DragFeedbackShadow(
++                          child: Opacity(opacity: 0.95, child: widget.child),
++                        ),
++                      ),
++                    ),
++                    child: Center(
++                      child: Icon(
++                        Icons.fingerprint,
++                        size: 26,
++                        color: _dragging
++                            ? context.colorScheme.primary.withValues(
++                                alpha: 0.15,
++                              )
++                            : context.colorScheme.primary.withValues(
++                                alpha: 0.45,
++                              ),
++                      ),
++                    ),
+                   ),
+                 ),
+-              ),
+-              childWhenDragging: wrap(
+-                Opacity(opacity: 0.45, child: widget.child),
+-              ),
+-              child: Listener(
+-                onPointerDown: _handlePointerDown,
+-                onPointerMove: _handlePointerMove,
+-                onPointerCancel: _handlePointerCancel,
+-                child: wrap(tile),
+-              ),
++              ],
+             );
+           },
+         );
 diff --git a/lib/views/proxies/setting.dart b/lib/views/proxies/setting.dart
 index 5e96d1f3..d9335d6c 100644
 --- a/lib/views/proxies/setting.dart
@@ -181864,7 +182101,7 @@ index 5e96d1f3..d9335d6c 100644
      );
    }
 diff --git a/lib/views/proxies/tab.dart b/lib/views/proxies/tab.dart
-index e818e545..b4eb86fd 100644
+index e818e545..c4a25731 100644
 --- a/lib/views/proxies/tab.dart
 +++ b/lib/views/proxies/tab.dart
 @@ -6,7 +6,7 @@ import 'package:bett_box/models/config.dart';
@@ -182288,6 +182525,39 @@ index e818e545..b4eb86fd 100644
      proxies = sortedProxies;
      testUrl = widget.group.testUrl;
      final baseBottom =
+@@ -522,26 +512,18 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
+                 onDragStart: () => _autoScroller.start(),
+                 onDragUpdate: _autoScroller.update,
+                 onDragEnd: () => _autoScroller.stop(),
+-                onHoldNoMove: () => deleteSingleNodeFlow(
+-                      context,
+-                      ref,
+-                      widget.group,
+-                      proxy,
+-                    ),
+                 child: ProxyCard(
+                   testUrl: widget.group.testUrl,
+                   groupType: widget.group.type,
+                   type: widget.cardType,
+                   proxy: proxy,
+                   groupName: widget.group.name,
+-                  onLongPress: _dragEnabled
+-                      ? null
+-                      : () => deleteSingleNodeFlow(
+-                            context,
+-                            ref,
+-                            widget.group,
+-                            proxy,
+-                          ),
++                  onDeleteNode: () => deleteSingleNodeFlow(
++                        context,
++                        ref,
++                        widget.group,
++                        proxy,
++                      ),
+                 ),
+               );
+             },
 diff --git a/lib/views/resources.dart b/lib/views/resources.dart
 index 89950707..0ff256aa 100644
 --- a/lib/views/resources.dart
@@ -197306,6 +197576,18 @@ index 2ad12e67..ac2d21d7 100644
      override public func order(_ place: NSWindow.OrderingMode, relativeTo otherWin: Int) {
          super.order(place, relativeTo: otherWin)
          hiddenWindowAtLaunch()
+diff --git a/patches/upstream-sync.binlist b/patches/upstream-sync.binlist
+index acb22093..5831876d 100644
+--- a/patches/upstream-sync.binlist
++++ b/patches/upstream-sync.binlist
+@@ -14,7 +14,6 @@ GET 88b9597a assets/images/avatars/aaANDkk.jpg
+ GET 88b9597a assets/images/avatars/argsno.jpg
+ GET 88b9597a assets/images/avatars/fig0ut.jpg
+ GET 88b9597a assets/images/avatars/jasonsamtago.jpg
+-DEL - assets/images/avatars/mod.png
+ GET 88b9597a assets/images/avatars/suplzzz.jpg
+ GET 88b9597a assets/images/avatars/uclort.jpg
+ GET 88b9597a core/testdata/BundleMRS.7z
 diff --git a/plugins/code_forge/.gitignore b/plugins/code_forge/.gitignore
 index 6a214f6e..75a5eec2 100644
 --- a/plugins/code_forge/.gitignore
