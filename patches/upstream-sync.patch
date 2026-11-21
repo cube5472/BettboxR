@@ -167692,10 +167692,10 @@ index 0ee61fd4..f2feef09 100644
 +    r'd88d6f0a3f36366a4c63fd52acdb09331ccf1aa8';
 
 diff --git a/lib/providers/state.dart b/lib/providers/state.dart
-index 65c0edc6..a9ea7a15 100644
+index 65c0edc6..6fa8f657 100644
 --- a/lib/providers/state.dart
 +++ b/lib/providers/state.dart
-@@ -1,8 +1,13 @@
+@@ -1,10 +1,14 @@
 -import 'package:dynamic_color/dynamic_color.dart';
 +import 'dart:convert';
 +
@@ -167708,9 +167708,11 @@ index 65c0edc6..a9ea7a15 100644
 +    show DynamicScheme, Variant;
 +import 'package:material_ui/material_ui.dart';
  import 'package:bett_box/services/dns_stats.dart';
- import 'package:flutter/material.dart';
+-import 'package:flutter/material.dart';
  import 'package:flutter_riverpod/flutter_riverpod.dart';
-@@ -37,33 +42,35 @@ Config configState(Ref ref) {
+ import 'package:riverpod_annotation/riverpod_annotation.dart';
+ 
+@@ -37,33 +41,35 @@ Config configState(Ref ref) {
    final appSetting = ref.watch(appSettingProvider);
    final profiles = ref.watch(profilesProvider);
    final currentProfileId = ref.watch(currentProfileIdProvider);
@@ -167750,7 +167752,7 @@ index 65c0edc6..a9ea7a15 100644
      currentProfileId: currentProfileId,
      profiles: profiles,
      appSetting: appSetting,
-@@ -134,10 +141,7 @@ NavigationItemsState currentNavigationItemsState(Ref ref) {
+@@ -134,10 +140,7 @@ NavigationItemsState currentNavigationItemsState(Ref ref) {
  @riverpod
  CoreState coreState(Ref ref) {
    final vpnProps = ref.watch(vpnSettingProvider);
@@ -167762,7 +167764,7 @@ index 65c0edc6..a9ea7a15 100644
      networkSettingProvider.select(
        (state) => (
          bypassPrivateRoute: state.bypassPrivateRoute,
-@@ -147,20 +151,19 @@ CoreState coreState(Ref ref) {
+@@ -147,20 +150,19 @@ CoreState coreState(Ref ref) {
    );
    final currentProfile = ref.watch(currentProfileProvider);
    final onlyStatisticsProxy = ref.watch(appSettingProvider).onlyStatisticsProxy;
@@ -167786,7 +167788,7 @@ index 65c0edc6..a9ea7a15 100644
      networkSettingProvider.select(
        (state) => (
          bypassPrivateRoute: state.bypassPrivateRoute,
-@@ -174,10 +177,6 @@ UpdateParams updateParams(Ref ref) {
+@@ -174,10 +176,6 @@ UpdateParams updateParams(Ref ref) {
        (state) => UpdateParams(
          tun: state.tun.getRealTun(
            bypassPrivateRoute,
@@ -167797,7 +167799,7 @@ index 65c0edc6..a9ea7a15 100644
            bypassPrivateRouteAddress: realBypassPrivateRouteAddress,
          ),
          allowLan: state.allowLan,
-@@ -189,7 +188,7 @@ UpdateParams updateParams(Ref ref) {
+@@ -189,7 +187,7 @@ UpdateParams updateParams(Ref ref) {
              : state.logLevel,
          ipv6: state.ipv6,
          tcpConcurrent: state.tcpConcurrent,
@@ -167806,7 +167808,7 @@ index 65c0edc6..a9ea7a15 100644
          unifiedDelay: state.unifiedDelay,
          mixedPort: state.mixedPort,
        ),
-@@ -202,7 +201,7 @@ ProxyState proxyState(Ref ref) {
+@@ -202,7 +200,7 @@ ProxyState proxyState(Ref ref) {
    final isStart = ref.watch(runTimeProvider.select((state) => state != null));
    final vm2 = ref.watch(
      networkSettingProvider.select(
@@ -167815,7 +167817,7 @@ index 65c0edc6..a9ea7a15 100644
      ),
    );
    final mixedPort = ref.watch(
-@@ -216,9 +215,17 @@ ProxyState proxyState(Ref ref) {
+@@ -216,9 +214,17 @@ ProxyState proxyState(Ref ref) {
    );
  }
  
@@ -167835,7 +167837,7 @@ index 65c0edc6..a9ea7a15 100644
  
  @riverpod
  TrayState trayState(Ref ref) {
-@@ -261,10 +268,22 @@ VpnState vpnState(Ref ref) {
+@@ -261,10 +267,22 @@ VpnState vpnState(Ref ref) {
    return VpnState(stack: stack, vpnProps: vpnProps);
  }
  
@@ -167859,7 +167861,7 @@ index 65c0edc6..a9ea7a15 100644
    final viewMode = ref.watch(viewModeProvider);
    final locale = ref.watch(appSettingProvider).locale;
    final index = navigationItems.lastIndexWhere(
-@@ -289,8 +308,12 @@ DashboardState dashboardState(Ref ref) {
+@@ -289,8 +307,12 @@ DashboardState dashboardState(Ref ref) {
            : state.desktopDashboardWidgets,
      ),
    );
@@ -167873,7 +167875,7 @@ index 65c0edc6..a9ea7a15 100644
        ? dashboardWidgets
        : [...dashboardWidgets, DashboardWidget.startButton];
    return DashboardState(dashboardWidgets: widgets, viewWidth: viewWidth);
-@@ -335,14 +358,182 @@ ProfilesSelectorState profilesSelectorState(Ref ref) {
+@@ -335,14 +357,182 @@ ProfilesSelectorState profilesSelectorState(Ref ref) {
    );
  }
  
@@ -168059,7 +168061,7 @@ index 65c0edc6..a9ea7a15 100644
        .map((group) {
          final groupNameMatch = group.name.toLowerCase().contains(lowQuery);
          if (groupNameMatch) {
-@@ -356,28 +547,134 @@ GroupsState filterGroupsState(Ref ref, String query) {
+@@ -356,28 +546,134 @@ GroupsState filterGroupsState(Ref ref, String query) {
        })
        .where((group) => group.all.isNotEmpty)
        .toList();
@@ -168205,7 +168207,7 @@ index 65c0edc6..a9ea7a15 100644
      columns: columns,
    );
  }
-@@ -391,7 +688,7 @@ ProxiesTabState proxiesTabState(Ref ref) {
+@@ -391,7 +687,7 @@ ProxiesTabState proxiesTabState(Ref ref) {
    );
    final vm2 = ref.watch(
      proxiesStyleSettingProvider.select(
@@ -168214,7 +168216,7 @@ index 65c0edc6..a9ea7a15 100644
      ),
    );
    final sortNum = ref.watch(sortNumProvider);
-@@ -407,10 +704,10 @@ ProxiesTabState proxiesTabState(Ref ref) {
+@@ -407,10 +703,10 @@ ProxiesTabState proxiesTabState(Ref ref) {
  }
  
  @Riverpod(dependencies: [proxiesTabState])
@@ -168227,7 +168229,7 @@ index 65c0edc6..a9ea7a15 100644
          a: state.groups.map((group) => group.name).toList(),
          b: state.currentGroupName,
        ),
-@@ -505,15 +802,12 @@ bool isCurrentPage(
+@@ -505,15 +801,12 @@ bool isCurrentPage(
  
  @riverpod
  String getRealTestUrl(Ref ref, [String? testUrl]) {
@@ -168244,7 +168246,7 @@ index 65c0edc6..a9ea7a15 100644
    return testUrl;
  }
  
-@@ -575,33 +869,18 @@ int getProxiesColumns(Ref ref) {
+@@ -575,33 +868,18 @@ int getProxiesColumns(Ref ref) {
    return utils.getProxiesColumns(viewWidth, proxiesLayout);
  }
  
@@ -168286,7 +168288,7 @@ index 65c0edc6..a9ea7a15 100644
          groups,
          selectedMap,
          proxyDelayState.copyWith(proxyName: now),
-@@ -609,14 +888,13 @@ ProxyCardState _getProxyCardState(
+@@ -609,14 +887,13 @@ ProxyCardState _getProxyCardState(
      }
      return proxyDelayState;
    }
@@ -168303,7 +168305,7 @@ index 65c0edc6..a9ea7a15 100644
      groups,
      selectedMap,
      proxyDelayState.copyWith(
-@@ -626,11 +904,30 @@ ProxyCardState _getProxyCardState(
+@@ -626,11 +903,30 @@ ProxyCardState _getProxyCardState(
    );
  }
  
@@ -168335,7 +168337,7 @@ index 65c0edc6..a9ea7a15 100644
      groups,
      selectedMap,
      ProxyCardState(proxyName: proxyName),
-@@ -697,16 +994,16 @@ OverrideData? getProfileOverrideData(Ref ref, String profileId) {
+@@ -697,16 +993,16 @@ OverrideData? getProfileOverrideData(Ref ref, String profileId) {
  }
  
  @riverpod
@@ -168355,7 +168357,7 @@ index 65c0edc6..a9ea7a15 100644
    final checkIpNum = ref.watch(checkIpNumProvider);
    final containsDetection = ref.watch(
      dashboardStateProvider.select(
-@@ -714,11 +1011,11 @@ VM2<int, bool> checkIp(Ref ref) {
+@@ -714,11 +1010,11 @@ VM2<int, bool> checkIp(Ref ref) {
            state.dashboardWidgets.contains(DashboardWidget.networkDetection),
      ),
    );
@@ -168369,7 +168371,7 @@ index 65c0edc6..a9ea7a15 100644
    final checkIpNum = ref.watch(checkIpNumProvider);
    final containsMediaUnlock = ref.watch(
      dashboardStateProvider.select(
-@@ -727,10 +1024,10 @@ VM2<int, bool> checkMediaUnlock(Ref ref) {
+@@ -727,10 +1023,10 @@ VM2<int, bool> checkMediaUnlock(Ref ref) {
            state.dashboardWidgets.contains(DashboardWidget.mediaUnlockSmall),
      ),
    );
@@ -168382,7 +168384,7 @@ index 65c0edc6..a9ea7a15 100644
  ColorScheme genColorScheme(
    Ref ref,
    Brightness brightness, {
-@@ -739,41 +1036,115 @@ ColorScheme genColorScheme(
+@@ -739,41 +1035,115 @@ ColorScheme genColorScheme(
  }) {
    final vm2 = ref.watch(
      themeSettingProvider.select(
@@ -168515,7 +168517,7 @@ index 65c0edc6..a9ea7a15 100644
  }
  
  @riverpod
-@@ -790,13 +1161,13 @@ Brightness currentBrightness(Ref ref) {
+@@ -790,13 +1160,13 @@ Brightness currentBrightness(Ref ref) {
  }
  
  @riverpod
@@ -168533,7 +168535,7 @@ index 65c0edc6..a9ea7a15 100644
  }
  
  @riverpod
-@@ -804,3 +1175,141 @@ class Query extends _$Query with AutoDisposeNotifierMixin {
+@@ -804,3 +1174,141 @@ class Query extends _$Query with AutoDisposeNotifierMixin {
    @override
    String build() => '';
  }
