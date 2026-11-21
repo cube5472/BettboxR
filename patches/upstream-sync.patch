@@ -325,7 +325,7 @@ index fe3cd205..af3852e3 100644
 +    avoid_dynamic_calls: true
 
 diff --git a/android/app/build.gradle.kts b/android/app/build.gradle.kts
-index 7335babe..6f1066d7 100644
+index 7335babe..c2b555df 100644
 --- a/android/app/build.gradle.kts
 +++ b/android/app/build.gradle.kts
 @@ -2,7 +2,6 @@ import java.util.Properties
@@ -336,7 +336,7 @@ index 7335babe..6f1066d7 100644
      id("dev.flutter.flutter-gradle-plugin")
  }
  
-@@ -26,14 +25,9 @@ android {
+@@ -26,13 +25,9 @@ android {
          targetCompatibility = JavaVersion.VERSION_17
      }
  
@@ -347,13 +347,12 @@ index 7335babe..6f1066d7 100644
      defaultConfig {
 -        applicationId = "com.appshub.bettboxr"
 -        minSdk = 26
--        targetSdk = 36
 +        applicationId = "com.appshub.bettbox"
-+        minSdk = 24        targetSdk = 36
++        minSdk = 24
+         targetSdk = 36
          versionCode = flutter.versionCode
          versionName = flutter.versionName
-     }
-@@ -75,6 +69,12 @@ android {
+@@ -75,6 +70,12 @@ android {
      }
  }
  
