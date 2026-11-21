@@ -4130,6 +4130,31 @@ index d5ffc89f..e2c31ba9 100644
          <domain includeSubdomains="true">localhost</domain>
          <domain includeSubdomains="true">127.0.0.1</domain>
 
+diff --git a/android/build.gradle.kts b/android/build.gradle.kts
+index 83565edc..b7c67598 100644
+--- a/android/build.gradle.kts
++++ b/android/build.gradle.kts
+@@ -17,6 +17,18 @@ subprojects {
+     project.evaluationDependsOn(":app")
+ }
+ 
++// AGP 9 lint: PSI JavaDoc-парсер падает на JDK-несовместимости
++// (NoSuchMethodError: List.removeLast()) при lintVitalAnalyzeRelease у
++// сторонних плагинов (image_picker_android, ExifDataCopier.java). Lint vital
++// не влияет на компиляцию APK — отключаем эти задачи во всех подпроектах.
++subprojects {
++    tasks.whenTaskAdded {
++        if (name.startsWith("lintVital")) {
++            enabled = false
++        }
++    }
++}
++
+ tasks.register<Delete>("clean") {
+     delete(rootProject.layout.buildDirectory)
+ }
+\ No newline at end of file
+
 diff --git a/android/core/build.gradle.kts b/android/core/build.gradle.kts
 index c4c0b32e..1139bdbe 100644
 --- a/android/core/build.gradle.kts
