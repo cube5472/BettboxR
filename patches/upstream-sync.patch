@@ -325,7 +325,7 @@ index fe3cd205..af3852e3 100644
 +    avoid_dynamic_calls: true
 
 diff --git a/android/app/build.gradle.kts b/android/app/build.gradle.kts
-index 7335babe..c2b555df 100644
+index 7335babe..076aa617 100644
 --- a/android/app/build.gradle.kts
 +++ b/android/app/build.gradle.kts
 @@ -2,7 +2,6 @@ import java.util.Properties
@@ -345,9 +345,8 @@ index 7335babe..c2b555df 100644
 -    }
 -
      defaultConfig {
--        applicationId = "com.appshub.bettboxr"
+         applicationId = "com.appshub.bettboxr"
 -        minSdk = 26
-+        applicationId = "com.appshub.bettbox"
 +        minSdk = 24
          targetSdk = 36
          versionCode = flutter.versionCode
@@ -2921,77 +2920,6 @@ index 00000000..f147da08
 +    <solid android:color="#FFFFFFFF" />
 +    <corners android:radius="12dp" />
 +</shape>
-
-diff --git a/android/app/src/main/res/drawable/ic_launcher_background_dark.xml b/android/app/src/main/res/drawable/ic_launcher_background_dark.xml
-index 7426c12b..d23bf593 100644
---- a/android/app/src/main/res/drawable/ic_launcher_background_dark.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_background_dark.xml
-@@ -5,6 +5,6 @@
-     android:viewportWidth="108"
-     android:viewportHeight="108">
-     <path
--        android:fillColor="#161616"
-+        android:fillColor="#292C41"
-         android:pathData="M0,0h108v108h-108z"/>
- </vector>
-\ No newline at end of file
-
-diff --git a/android/app/src/main/res/drawable/ic_launcher_background_light.xml b/android/app/src/main/res/drawable/ic_launcher_background_light.xml
-index 7426c12b..e8566c65 100644
---- a/android/app/src/main/res/drawable/ic_launcher_background_light.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_background_light.xml
-@@ -5,6 +5,6 @@
-     android:viewportWidth="108"
-     android:viewportHeight="108">
-     <path
--        android:fillColor="#161616"
-+        android:fillColor="#FFFFFF"
-         android:pathData="M0,0h108v108h-108z"/>
- </vector>
-\ No newline at end of file
-
-diff --git a/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml b/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml
-index 37a5b76c..cd1e3cc3 100644
---- a/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml
-@@ -18,8 +18,5 @@
-         <path
-             android:fillColor="#FFFFFF"
-             android:pathData="M267.79,572.2h-59.68c-10.68,0-18.36-10.26-15.35-20.5l94.39-321.63c4.5-15.33,18.57-25.86,34.54-25.86h59.67c10.68,0,18.36,10.26,15.36,20.51l-94.39,321.63c-4.5,15.33-18.56,25.86-34.54,25.86Z"/>
--        <path
--            android:fillColor="#FFFFFF"
--            android:pathData="M533,564.3Q544.3,564.3,550.5,560.1Q556.7,555.8,559.5,546.2Q562.3,536.6,558.6,532.5Q554.9,528.4,543.5,528.4H528.3L517.8,564.3ZM510.5,589.2L494.9,642.2H458.8L499.9,502.2H555.1Q582.7,502.2,592.9,511.5Q603.1,520.8,597.2,540.8Q593.1,554.7,583.8,563.6Q574.5,572.5,559.7,576.8Q566.6,578.4,570.7,584.4Q574.8,590.4,577.3,602.5L585.2,642.2H546.8L539.9,607.4Q537.9,596.9,533.7,593.1Q529.5,589.2,520.7,589.2Z"/>
-     </group>
--</vector>
-+</vector>
-\ No newline at end of file
-
-diff --git a/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml b/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml
-index 37a5b76c..002e07a2 100644
---- a/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml
-@@ -10,16 +10,13 @@
-         android:scaleX="0.1"
-         android:scaleY="0.1">
-         <path
--            android:fillColor="#FFFFFF"
-+            android:fillColor="#6890BE"
-             android:pathData="M514.78,480.2h-25.35c-5.34,0-9.18-5.13-7.68-10.25l45.93-156.5c3-10.22,12.38-17.24,23.03-17.24h25.34c5.34,0,9.18,5.13,7.68,10.25l-45.93,156.51c-3,10.22-12.38,17.24-23.03,17.24Z"/>
-         <path
--            android:fillColor="#FFFFFF"
-+            android:fillColor="#334663"
-             android:pathData="M403.29,526.2h-41.01c-8.01,0-13.77-7.7-11.52-15.38l69.74-237.63c4-13.63,16.5-22.99,30.7-22.99h41.02c8.01,0,13.77,7.69,11.51,15.38l-69.74,237.64c-4,13.63-16.5,22.99-30.7,22.99Z"/>
-         <path
--            android:fillColor="#FFFFFF"
-+            android:fillColor="#292C41"
-             android:pathData="M267.79,572.2h-59.68c-10.68,0-18.36-10.26-15.35-20.5l94.39-321.63c4.5-15.33,18.57-25.86,34.54-25.86h59.67c10.68,0,18.36,10.26,15.36,20.51l-94.39,321.63c-4.5,15.33-18.56,25.86-34.54,25.86Z"/>
--        <path
--            android:fillColor="#FFFFFF"
--            android:pathData="M533,564.3Q544.3,564.3,550.5,560.1Q556.7,555.8,559.5,546.2Q562.3,536.6,558.6,532.5Q554.9,528.4,543.5,528.4H528.3L517.8,564.3ZM510.5,589.2L494.9,642.2H458.8L499.9,502.2H555.1Q582.7,502.2,592.9,511.5Q603.1,520.8,597.2,540.8Q593.1,554.7,583.8,563.6Q574.5,572.5,559.7,576.8Q566.6,578.4,570.7,584.4Q574.8,590.4,577.3,602.5L585.2,642.2H546.8L539.9,607.4Q537.9,596.9,533.7,593.1Q529.5,589.2,520.7,589.2Z"/>
-     </group>
--</vector>
-+</vector>
-\ No newline at end of file
 
 diff --git a/android/app/src/main/res/layout/home_widget_large.xml b/android/app/src/main/res/layout/home_widget_large.xml
 new file mode 100644
@@ -22030,10 +21958,10 @@ index 601dfc84..325e7239 100644
  	info := s.Base.ProxyInfo()
 
 diff --git a/core/Clash.Meta/adapter/outbound/tuic.go b/core/Clash.Meta/adapter/outbound/tuic.go
-index 525fa9e1..c3ce49f3 100644
+index 525fa9e1..6d386ad3 100644
 --- a/core/Clash.Meta/adapter/outbound/tuic.go
 +++ b/core/Clash.Meta/adapter/outbound/tuic.go
-@@ -1,312 +1,309 @@
+@@ -1,312 +1,321 @@
  package outbound
  
  import (
@@ -22061,6 +21989,7 @@ index 525fa9e1..c3ce49f3 100644
 +	"math"
 +	"net"
 +	"strconv"
++	"strings"
 +	"time"
 +
 +	"github.com/metacubex/mihomo/component/ca"
@@ -22265,7 +22194,18 @@ index 525fa9e1..c3ce49f3 100644
 -        return quicConn, nil
 +	_, quicConn, err = common.DialQuic(ctx, t.addr, t.DialOptions(), t.dialer, t.tlsConfig, t.quicConfig, common.DialQuicOption{Early: t.option.ReduceRtt})
 +	if err != nil {
-+		return nil, err
++		// Некоторые серверы (нарушая RFC 9001 §8.1) вообще не выбирают ALPN,
++		// хотя клиент его предложил. Строгая проверка клиента обрывает
++		// рукопожатие ("server did not select an ALPN protocol"). Повторяем
++		// рукопожатие без ALPN — так же ведёт себя sing-box (NekoBox).
++		if strings.Contains(err.Error(), "server did not select an ALPN protocol") {
++			noAlpnConfig := t.tlsConfig.Clone()
++			noAlpnConfig.NextProtos = nil
++			_, quicConn, err = common.DialQuic(ctx, t.addr, t.DialOptions(), t.dialer, noAlpnConfig, t.quicConfig, common.DialQuicOption{Early: t.option.ReduceRtt})
++		}
++		if err != nil {
++			return nil, err
++		}
 +	}
 +	common.SetCongestionController(quicConn, t.option.CongestionController, t.option.CWND, t.option.BBRProfile)
 +	return quicConn, nil
@@ -24435,10 +24375,10 @@ index 2ec8537d..77e9c887 100644
  
 
 diff --git a/core/Clash.Meta/common/convert/converter.go b/core/Clash.Meta/common/convert/converter.go
-index 45ddc156..3861c790 100644
+index 45ddc156..eee94c00 100644
 --- a/core/Clash.Meta/common/convert/converter.go
 +++ b/core/Clash.Meta/common/convert/converter.go
-@@ -1,736 +1,737 @@
+@@ -1,736 +1,744 @@
  package convert
  
  import (
@@ -25311,6 +25251,13 @@ index 45ddc156..3861c790 100644
 +			}
 +			if udpRelayMode := query.Get("udp_relay_mode"); udpRelayMode != "" {
 +				tuic["udp-relay-mode"] = udpRelayMode
++			}
++			// Панели отдают tuic-ссылки с self-signed сертификатами
++			// (sni-маска + pinSHA256). Без skip-cert-verify такой узел
++			// не проходит TLS, остальные протоколы это поле мапят.
++			if query.Get("insecure") == "1" || query.Get("allow_insecure") == "1" ||
++				query.Get("allowInsecure") == "1" {
++				tuic["skip-cert-verify"] = true
 +			}
 +
 +			proxies = append(proxies, tuic)
