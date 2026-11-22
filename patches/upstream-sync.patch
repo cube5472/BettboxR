@@ -32718,6 +32718,29 @@ index 00000000..8896e24e
 +	}
 +}
 
+diff --git a/core/Clash.Meta/transport/gun/gun.go b/core/Clash.Meta/transport/gun/gun.go
+index 39bf21f1..ee20623a 100644
+--- a/core/Clash.Meta/transport/gun/gun.go
++++ b/core/Clash.Meta/transport/gun/gun.go
+@@ -330,11 +330,12 @@ func ServiceNameToPath(serviceName string) string {
+ }
+ 
+ func (t *Transport) Dial() (net.Conn, error) {
+-	serviceName := "GunService"
+-	if t.cfg.ServiceName != "" {
+-		serviceName = t.cfg.ServiceName
+-	}
+-	path := ServiceNameToPath(serviceName)
++	// Как в xray/grpc-go: пустое имя сервиса даёт путь "//Tun".
++	// Дефолт "GunService" не подставляем — серверы, сконфигурированные
++	// под пустой сервис (grpc-ноды mifa без serviceName в URI), рвут
++	// соединение на неизвестном сервисе: ноды vless+grpc показывались
++	// мёртвыми в моде при живых в v2rayNG.
++	path := ServiceNameToPath(t.cfg.ServiceName)
+ 
+ 	reader, writer := io.Pipe()
+ 
+
 diff --git a/core/Clash.Meta/transport/gun/patch.go b/core/Clash.Meta/transport/gun/patch.go
 new file mode 100644
 index 00000000..c1bde1af
@@ -205909,10 +205932,65 @@ index d24ef6dc..57e3f63f 100644
  
 
 diff --git a/lib/views/proxies/dead_nodes.dart b/lib/views/proxies/dead_nodes.dart
-index 42c922fe..950dab76 100644
+index 42c922fe..7ac19ad7 100644
 --- a/lib/views/proxies/dead_nodes.dart
 +++ b/lib/views/proxies/dead_nodes.dart
-@@ -484,7 +484,7 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
+@@ -182,6 +182,39 @@ Future<void> deleteDeadNodesFlow(
+     globalState.showNotifier(appLocalizations.deleteUnavailableEmpty);
+     return;
+   }
++  await confirmAndDeleteDeadNodes(context, ref, deadNames);
++}
++
++/// Массовое удаление мёртвых нод по ВСЕМ группам — пункт «Удалить
++/// недоступные» в меню «⋮» страницы прокси. Мёртвые собираются по каждой
++/// группе (delay < 0 по её testUrl) и дедуплицируются по имени: одна и та
++/// же нода может значиться в нескольких группах, но в конфиге она одна.
++/// Выбранные ноды и группы не трогаются (см. [collectDeadNodeNames]).
++Future<void> deleteDeadNodesAllGroupsFlow(
++  BuildContext context,
++  WidgetRef ref,
++) async {
++  HapticFeedback.mediumImpact();
++  final deadNames = <String>{};
++  for (final group in ref.read(groupsProvider)) {
++    deadNames.addAll(collectDeadNodeNames(ref, group));
++  }
++  if (deadNames.isEmpty) {
++    globalState.showNotifier(appLocalizations.deleteUnavailableEmpty);
++    return;
++  }
++  await confirmAndDeleteDeadNodes(context, ref, deadNames.toList());
++}
++
++/// Диалог подтверждения + само удаление, общее для обеих точек входа
++/// (кнопка на карточке группы и пункт меню «⋮»). После подтверждения
++/// сбрасывает выбор в группах, где была выбрана удалённая нода, — иначе
++/// UI показывает выделение несуществующей карточки.
++Future<void> confirmAndDeleteDeadNodes(
++  BuildContext context,
++  WidgetRef ref,
++  List<String> deadNames,
++) async {
+   final profile = ref.read(currentProfileProvider);
+   final isSubLinked = (profile?.url.isNotEmpty ?? false);
+ 
+@@ -241,6 +274,14 @@ Future<void> deleteDeadNodesFlow(
+     if (result.misses.isNotEmpty) {
+       message += ' · ${result.misses.take(4).join(', ')}';
+     }
++    if (result.removed > 0) {
++      final removed = deadNames.toSet();
++      ref.read(selectedMapProvider).forEach((groupName, selectedName) {
++        if (removed.contains(selectedName)) {
++          globalState.appController.updateCurrentSelectedMap(groupName, '');
++        }
++      });
++    }
+     globalState.showNotifier(message);
+   } on Object catch (e) {
+     globalState.showNotifier(e.formatError);
+@@ -484,7 +525,7 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
        for (final providerName in providerNames) {
          if (providersConfig is Map && providersConfig[providerName] is Map) {
            final entry = Map<String, dynamic>.from(
@@ -206558,10 +206636,10 @@ index fc9986a5..a8050ad9 100644
                        ),
 
 diff --git a/lib/views/proxies/proxies.dart b/lib/views/proxies/proxies.dart
-index 6eabac53..09977f5b 100644
+index 6eabac53..bb2f8bb7 100644
 --- a/lib/views/proxies/proxies.dart
 +++ b/lib/views/proxies/proxies.dart
-@@ -1,16 +1,17 @@
+@@ -1,19 +1,21 @@
  import 'package:bett_box/common/common.dart';
  import 'package:bett_box/enum/enum.dart';
  import 'package:bett_box/models/common.dart';
@@ -206581,7 +206659,11 @@ index 6eabac53..09977f5b 100644
  import '../profiles/scripts.dart'
      show showGroupSwitchOptions, showScriptCustomOptions;
  import 'advanced_settings.dart';
-@@ -27,24 +28,29 @@ class ProxiesView extends ConsumerStatefulWidget {
++import 'dead_nodes.dart';
+ import 'profile_switcher.dart';
+ import 'setting.dart';
+ import 'tab.dart';
+@@ -27,27 +29,33 @@ class ProxiesView extends ConsumerStatefulWidget {
  
  class _ProxiesViewState extends ConsumerState<ProxiesView> {
    final GlobalKey<ProxiesTabViewState> _proxiesTabKey = GlobalKey();
@@ -206619,7 +206701,11 @@ index 6eabac53..09977f5b 100644
      final hasGroupCustom =
          !hasScriptCustom && ref.read(currentProfileIdProvider) != null;
      final hasCustom = hasScriptCustom || hasGroupCustom;
-@@ -55,12 +61,12 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
++    final hasGroups = ref.watch(groupsProvider.select((state) => state.isNotEmpty));
+     return [
+       if (_isTab)
+         IconButton(
+@@ -55,12 +63,12 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
              _proxiesTabKey.currentState?.scrollToGroupSelected();
            },
            tooltip: appLocalizations.locate,
@@ -206634,7 +206720,7 @@ index 6eabac53..09977f5b 100644
            tooltip: appLocalizations.custom,
          ),
        CommonPopupBox(
-@@ -70,7 +76,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -70,7 +78,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                open(offset: const Offset(0, 20));
              },
              tooltip: appLocalizations.more,
@@ -206643,7 +206729,7 @@ index 6eabac53..09977f5b 100644
            );
          },
          popup: CommonPopupMenu(
-@@ -150,6 +156,22 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -150,6 +158,34 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                      );
                },
              ),
@@ -206663,10 +206749,22 @@ index 6eabac53..09977f5b 100644
 +                globalState.appController.addSortNum();
 +              },
 +            ),
++            // Массовое удаление мёртвых нод по всем группам (dead_nodes).
++            // Пункт дублирует кнопку на карточке группы в режиме «скрыть
++            // недоступные», но доступен всегда и охватывает все группы
++            // сразу — для подписок с большим числом мёртвых нод.
++            if (hasGroups)
++              PopupMenuItemData(
++                icon: Icons.delete_sweep_outlined,
++                label: appLocalizations.deleteUnavailable,
++                onPressed: () {
++                  deleteDeadNodesAllGroupsFlow(context, ref);
++                },
++              ),
            ],
          ),
        ),
-@@ -181,21 +203,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -181,21 +217,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  
@@ -206701,7 +206799,7 @@ index 6eabac53..09977f5b 100644
      }
    }
  
-@@ -229,27 +258,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -229,27 +272,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
  
    @override
    Widget build(BuildContext context) {
@@ -206755,7 +206853,7 @@ index 6eabac53..09977f5b 100644
                },
              },
            ),
-@@ -258,4 +309,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -258,4 +323,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  }
