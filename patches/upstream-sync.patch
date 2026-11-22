@@ -6,6 +6,653 @@ index 31afeaf0..00000000
 @@ -1 +0,0 @@
 -{"info":"This is a generated file; do not edit or check into version control.","plugins":{"ios":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_ios","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+6/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"path_provider_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.6/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"sqflite_darwin","path":"/home/z/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.3+1/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_ios","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_ios-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":true,"dependencies":["package_info_plus"],"dev_dependency":false}],"android":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":true,"dependencies":["flutter_plugin_android_lifecycle"],"dev_dependency":false},{"name":"flutter_displaymode","path":"/home/z/.pub-cache/hosted/pub.dev/flutter_displaymode-0.7.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_plugin_android_lifecycle","path":"/home/z/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.35/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_android","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+19/","native_build":true,"dependencies":["flutter_plugin_android_lifecycle"],"dev_dependency":false},{"name":"jni","path":"/home/z/.pub-cache/hosted/pub.dev/jni-1.0.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"jni_flutter","path":"/home/z/.pub-cache/hosted/pub.dev/jni_flutter-1.0.2/","native_build":true,"dependencies":["jni"],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"path_provider_android","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_android-2.3.1/","native_build":false,"dependencies":["jni","jni_flutter"],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_android","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.27/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"sqflite_android","path":"/home/z/.pub-cache/hosted/pub.dev/sqflite_android-2.4.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_android","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.32/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":true,"dependencies":["package_info_plus"],"dev_dependency":false}],"macos":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_selector_macos","path":"/home/z/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"hotkey_manager_macos","path":"/home/z/.pub-cache/hosted/pub.dev/hotkey_manager_macos-0.2.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_macos","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1/","native_build":false,"dependencies":["file_selector_macos"],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"path_provider_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"screen_retriever_macos","path":"/home/z/.pub-cache/hosted/pub.dev/screen_retriever_macos-0.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.6/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"sqflite_darwin","path":"/home/z/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.3+1/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"tray_manager","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/tray_manager/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_macos","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":true,"dependencies":["package_info_plus"],"dev_dependency":false},{"name":"window_ext","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/window_ext/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"window_manager","path":"/home/z/.pub-cache/hosted/pub.dev/window_manager-0.5.2/","native_build":true,"dependencies":[],"dev_dependency":false}],"linux":[{"name":"app_links_linux","path":"/home/z/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/","native_build":false,"dependencies":["gtk"],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"file_selector_linux","path":"/home/z/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.4/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"gtk","path":"/home/z/.pub-cache/hosted/pub.dev/gtk-2.2.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"hotkey_manager_linux","path":"/home/z/.pub-cache/git/hotkey_manager-1b31e3ca4ab017ee72f54a7065b2073a88403d61/packages/hotkey_manager_linux/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_linux","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2/","native_build":false,"dependencies":["file_selector_linux"],"dev_dependency":false},{"name":"jni","path":"/home/z/.pub-cache/hosted/pub.dev/jni-1.0.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"path_provider_linux","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.2/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"screen_retriever_linux","path":"/home/z/.pub-cache/hosted/pub.dev/screen_retriever_linux-0.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_linux","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/","native_build":false,"dependencies":["path_provider_linux"],"dev_dependency":false},{"name":"tray_manager","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/tray_manager/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_linux","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":false,"dependencies":["package_info_plus"],"dev_dependency":false},{"name":"window_manager","path":"/home/z/.pub-cache/hosted/pub.dev/window_manager-0.5.2/","native_build":true,"dependencies":[],"dev_dependency":false}],"windows":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"file_selector_windows","path":"/home/z/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"hotkey_manager_windows","path":"/home/z/.pub-cache/hosted/pub.dev/hotkey_manager_windows-0.2.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_windows","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2/","native_build":false,"dependencies":["file_selector_windows"],"dev_dependency":false},{"name":"jni","path":"/home/z/.pub-cache/hosted/pub.dev/jni-1.0.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"path_provider_windows","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"proxy","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/proxy/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"screen_retriever_windows","path":"/home/z/.pub-cache/hosted/pub.dev/screen_retriever_windows-0.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_windows","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/","native_build":false,"dependencies":["path_provider_windows"],"dev_dependency":false},{"name":"tray_manager","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/tray_manager/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_windows","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"vclibs","path":"/home/z/.pub-cache/hosted/pub.dev/vclibs-0.1.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":false,"dependencies":["package_info_plus"],"dev_dependency":false},{"name":"window_ext","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/window_ext/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"window_manager","path":"/home/z/.pub-cache/hosted/pub.dev/window_manager-0.5.2/","native_build":true,"dependencies":[],"dev_dependency":false}],"web":[{"name":"app_links_web","path":"/home/z/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/","dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","dependencies":[],"dev_dependency":false},{"name":"image_picker_for_web","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.1/","dependencies":[],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","dependencies":[],"dev_dependency":false},{"name":"shared_preferences_web","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/","dependencies":[],"dev_dependency":false},{"name":"url_launcher_web","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.3/","dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","dependencies":["package_info_plus"],"dev_dependency":false}]},"dependencyGraph":[{"name":"app_links","dependencies":["app_links_linux","app_links_web"]},{"name":"app_links_linux","dependencies":["gtk"]},{"name":"app_links_web","dependencies":[]},{"name":"code_forge","dependencies":[]},{"name":"connectivity_plus","dependencies":[]},{"name":"device_info_plus","dependencies":[]},{"name":"dynamic_color","dependencies":[]},{"name":"file_picker","dependencies":["flutter_plugin_android_lifecycle"]},{"name":"file_selector_linux","dependencies":[]},{"name":"file_selector_macos","dependencies":[]},{"name":"file_selector_windows","dependencies":[]},{"name":"flutter_displaymode","dependencies":[]},{"name":"flutter_plugin_android_lifecycle","dependencies":[]},{"name":"flutter_qjs","dependencies":[]},{"name":"gtk","dependencies":[]},{"name":"hotkey_manager","dependencies":["hotkey_manager_linux","hotkey_manager_macos","hotkey_manager_windows"]},{"name":"hotkey_manager_linux","dependencies":[]},{"name":"hotkey_manager_macos","dependencies":[]},{"name":"hotkey_manager_windows","dependencies":[]},{"name":"image_picker","dependencies":["image_picker_android","image_picker_for_web","image_picker_ios","image_picker_linux","image_picker_macos","image_picker_windows"]},{"name":"image_picker_android","dependencies":["flutter_plugin_android_lifecycle"]},{"name":"image_picker_for_web","dependencies":[]},{"name":"image_picker_ios","dependencies":[]},{"name":"image_picker_linux","dependencies":["file_selector_linux"]},{"name":"image_picker_macos","dependencies":["file_selector_macos"]},{"name":"image_picker_windows","dependencies":["file_selector_windows"]},{"name":"jni","dependencies":[]},{"name":"jni_flutter","dependencies":["jni"]},{"name":"mobile_scanner","dependencies":[]},{"name":"package_info_plus","dependencies":[]},{"name":"path_provider","dependencies":["path_provider_android","path_provider_foundation","path_provider_linux","path_provider_windows"]},{"name":"path_provider_android","dependencies":["jni","jni_flutter"]},{"name":"path_provider_foundation","dependencies":[]},{"name":"path_provider_linux","dependencies":[]},{"name":"path_provider_windows","dependencies":[]},{"name":"proxy","dependencies":[]},{"name":"restart_app","dependencies":[]},{"name":"screen_retriever","dependencies":["screen_retriever_linux","screen_retriever_macos","screen_retriever_windows"]},{"name":"screen_retriever_linux","dependencies":[]},{"name":"screen_retriever_macos","dependencies":[]},{"name":"screen_retriever_windows","dependencies":[]},{"name":"shared_preferences","dependencies":["shared_preferences_android","shared_preferences_foundation","shared_preferences_linux","shared_preferences_web","shared_preferences_windows"]},{"name":"shared_preferences_android","dependencies":[]},{"name":"shared_preferences_foundation","dependencies":[]},{"name":"shared_preferences_linux","dependencies":["path_provider_linux"]},{"name":"shared_preferences_web","dependencies":[]},{"name":"shared_preferences_windows","dependencies":["path_provider_windows"]},{"name":"sqflite","dependencies":["sqflite_android","sqflite_darwin"]},{"name":"sqflite_android","dependencies":[]},{"name":"sqflite_darwin","dependencies":[]},{"name":"tray_manager","dependencies":[]},{"name":"url_launcher","dependencies":["url_launcher_android","url_launcher_ios","url_launcher_linux","url_launcher_macos","url_launcher_web","url_launcher_windows"]},{"name":"url_launcher_android","dependencies":[]},{"name":"url_launcher_ios","dependencies":[]},{"name":"url_launcher_linux","dependencies":[]},{"name":"url_launcher_macos","dependencies":[]},{"name":"url_launcher_web","dependencies":[]},{"name":"url_launcher_windows","dependencies":[]},{"name":"vclibs","dependencies":[]},{"name":"wakelock_plus","dependencies":["package_info_plus"]},{"name":"window_ext","dependencies":[]},{"name":"window_manager","dependencies":["screen_retriever"]}],"date_created":"2026-09-15 06:12:09.868207","version":"3.44.9","swift_package_manager_enabled":{"ios":false,"macos":false}}
 
+diff --git a/.github/ISSUE_TEMPLATE/config.yml b/.github/ISSUE_TEMPLATE/config.yml
+index 734244c9..054a79bd 100644
+--- a/.github/ISSUE_TEMPLATE/config.yml
++++ b/.github/ISSUE_TEMPLATE/config.yml
+@@ -1,4 +1,4 @@
+ contact_links:
+   - name: 💬 交流与讨论 / Channel & Chat
+-    url: https://t.me/appshub_chat
++    url: https://t.me/bettbox_chat
+     about: 访问我们的 Telegram 讨论组 / Join the Telegram group
+\ No newline at end of file
+
+diff --git a/.github/release_template.md b/.github/release_template.md
+index 7b18452c..0f494d62 100644
+--- a/.github/release_template.md
++++ b/.github/release_template.md
+@@ -7,22 +7,20 @@
+ 
+ <div align="left">
+ 
+-[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
++[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettbox_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+ 
+ ---
+ </div>
+ 
+-###   🛩️ 推荐服务
+-### 小众低调专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)
+-
+-### 专享68折优惠码：bettbox68
+-
+-**简评** : ❚ ❚  老牌小众专线，海外团队运营多年，BGP入口+广港&沪日线路，折后约17元/月或127元/年，解锁流媒体与AI，口碑优秀，适合对稳定性和延迟要求较高的用户，小技巧：别忘了使用68折优惠码，以及后台个人中心签到每日可再额外领取5-10GB流量
+-
++### 🛩️ 推荐服务
++#### IEPL 专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)  〢  [白月光](https://www.sibker.com/register?invite_code=YZq6L5zd)  〢  [Ytoo](https://y-too.net/aff.php?aff=10354)
++--------------------------------
++#### 低价 直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV) 
++--------------------------------
++#### 百变小樱专享68折优惠码：bettbox68 ，参见：[相关介绍](https://t.me/appshub_channel/381)
+ --------------------------------
+-### 低价直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV)
+ 
+-**简评** : ❚  大流量或资源机为主，跑路风险相对较低（也许？），888G / 1000G不限时套餐通常更有性价比，量大管饱，价格低廉，适合要求不高的用户或备用流量及大流量下载选择
++**简评** : ❚ ❚ 以上链接基本为自用或 TG 群组讨论推荐，此处仅做 AFF 展示（注：通过链接购买第三方服务，开发者可获得少量佣金支持），这并不代表对其服务作出承诺或保证。请自行甄别并合理选择。
+ 
+ ---
+ ### ⬇️ Download / 下载链接
+@@ -38,10 +36,10 @@
+ 
+ | **OS/ 系统** | **Requirements / 版本要求** | **Direct Links / 点击直链下载** |
+ |:---:|:---|:---|
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+ | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/android/android-original.svg" alt="Android" width="28"/> | Android 8.0+<br>*(Compatible with Android TV)* |<a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-arm64-v8a.apk"><img src="https://img.shields.io/badge/APK-ARMv8-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-universal.apk"><img src="https://img.shields.io/badge/APK-Universal-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" alt="Windows" width="28"/> | Windows 8.1+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-windows-amd64-setup.exe"><img src="https://img.shields.io/badge/Setup-x64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-windows-arm64-setup.exe"><img src="https://img.shields.io/badge/Setup-ARM64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-windows-amd64-compatible-setup.exe"><img src="https://img.shields.io/badge/Setup-Compatible%20x64-555555?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+<br>*(Compatible for 10.15-11.7)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-amd64-compatible.dmg"><img src="https://img.shields.io/badge/DMG-Compatible%20Intel-555555?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.rpm"><img src="https://img.shields.io/badge/RPM-x64-CC0000?logo=redhat&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ ---
+ </div>
+ 
+
+diff --git a/.github/release_template_pre.md b/.github/release_template_pre.md
+index 6eb3eace..abb37608 100644
+--- a/.github/release_template_pre.md
++++ b/.github/release_template_pre.md
+@@ -9,22 +9,20 @@
+ 
+ <div align="left">
+ 
+-[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
++[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettbox_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+ 
+ ---
+ </div>
+ 
+-###   🛩️ 推荐服务
+-### 小众低调专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)
+-
+-### 专享68折优惠码：bettbox68
+-
+-**简评** : ❚ ❚  老牌小众专线，海外团队运营多年，BGP入口+广港&沪日线路，折后约17元/月或127元/年，解锁流媒体与AI，口碑优秀，适合对稳定性和延迟要求较高的用户，小技巧：别忘了使用68折优惠码，以及后台个人中心签到每日可再额外领取5-10GB流量
+-
++### 🛩️ 推荐服务
++#### IEPL 专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)  〢  [白月光](https://www.sibker.com/register?invite_code=YZq6L5zd)  〢  [Ytoo](https://y-too.net/aff.php?aff=10354)
++--------------------------------
++#### 低价 直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV) 
++--------------------------------
++#### 百变小樱专享68折优惠码：bettbox68 ，参见：[相关介绍](https://t.me/appshub_channel/381)
+ --------------------------------
+-### 低价直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV)
+ 
+-**简评** : ❚  大流量或资源机为主，跑路风险相对较低（也许？），888G / 1000G不限时套餐通常更有性价比，量大管饱，价格低廉，适合要求不高的用户或备用流量及大流量下载选择
++**简评** : ❚ ❚ 以上链接基本为自用或 TG 群组讨论推荐，此处仅做 AFF 展示（注：通过链接购买第三方服务，开发者可获得少量佣金支持），这并不代表对其服务作出承诺或保证。请自行甄别并合理选择。
+ 
+ ---
+ ### ⬇️ Download / 下载链接
+@@ -40,10 +38,10 @@
+ 
+ | **OS/ 系统** | **Requirements / 版本要求** | **Direct Links / 点击直链下载** |
+ |:---:|:---|:---|
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+ | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/android/android-original.svg" alt="Android" width="28"/> | Android 8.0+<br>*(Compatible with Android TV)* |<a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-arm64-v8a.apk"><img src="https://img.shields.io/badge/APK-ARMv8-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-universal.apk"><img src="https://img.shields.io/badge/APK-Universal-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" alt="Windows" width="28"/> | Windows 8.1+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-windows-amd64-setup.exe"><img src="https://img.shields.io/badge/Setup-x64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-windows-arm64-setup.exe"><img src="https://img.shields.io/badge/Setup-ARM64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-windows-amd64-compatible-setup.exe"><img src="https://img.shields.io/badge/Setup-Compatible%20x64-555555?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+<br>*(Compatible for 10.15-11.7)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64-compatible.dmg"><img src="https://img.shields.io/badge/DMG-Compatible%20Intel-555555?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.rpm"><img src="https://img.shields.io/badge/RPM-x64-CC0000?logo=redhat&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ ---
+ </div>
+ 
+
+diff --git a/.github/scripts/wait-artifact.sh b/.github/scripts/wait-artifact.sh
+new file mode 100644
+index 00000000..05b86493
+--- /dev/null
++++ b/.github/scripts/wait-artifact.sh
+@@ -0,0 +1,18 @@
++#!/usr/bin/env bash
++id="$1"
++seen=0
++for _ in $(seq 1 60); do
++  if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
++    --paginate --jq '.artifacts[].id' 2>/dev/null | grep -qx "$id"; then
++    seen=$((seen + 1))
++    if [ "$seen" -ge 3 ]; then
++      echo "Artifact $id is listed"
++      exit 0
++    fi
++  else
++    seen=0
++  fi
++  sleep 2
++done
++echo "::warning::Artifact $id is still not listed, continuing"
++exit 0
+
+diff --git a/.github/workflows/build.yaml b/.github/workflows/build.yaml
+index de95b335..aa9ad2e5 100644
+--- a/.github/workflows/build.yaml
++++ b/.github/workflows/build.yaml
+@@ -12,7 +12,9 @@ env:
+   GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
+   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+   SENTRY_BACKEND: none
+-  SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
++  # Temporarily disabled SignPath due to account risk control:
++  # SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
++  SIGNPATH_API_TOKEN: ''
+   IPINFO_TOKEN: ${{ secrets.IPINFO_TOKEN || vars.IPINFO_TOKEN }}
+   
+ jobs:
+@@ -37,36 +39,85 @@ jobs:
+           - platform: android
+             os: ubuntu-24.04
+             arch: universal
++          - platform: android
++            os: ubuntu-24.04
++            arch: arm64
++            standard: true
++          - platform: android
++            os: ubuntu-24.04
++            arch: amd64
++            standard: true
++          - platform: android
++            os: ubuntu-24.04
++            arch: arm
++            standard: true
++          - platform: android
++            os: ubuntu-24.04
++            arch: universal
++            standard: true
++          - platform: windows
++            os: windows-2022
++            arch: amd64
++            sign: true
++          - platform: windows
++            os: windows-11-arm
++            arch: arm64
++            sign: true
++          - platform: windows
++            os: windows-2022
++            arch: amd64
++            compatible: true
+           - platform: windows
+             os: windows-2022
+             arch: amd64
++            standard: true
++            sign: true
+           - platform: windows
+             os: windows-11-arm
+             arch: arm64
++            standard: true
+           - platform: windows
+             os: windows-2022
+             arch: amd64
+             compatible: true
++            standard: true
+           - platform: macos
+-            os: macos-15
++            os: macos-26
+             arch: arm64
+           - platform: macos
+-            os: macos-15
++            os: macos-26
+             arch: amd64
+           - platform: macos
+-            os: macos-15
++            os: macos-26
++            arch: arm64
++            standard: true
++          - platform: macos
++            os: macos-26
++            arch: amd64
++            standard: true
++          - platform: linux
++            os: ubuntu-22.04
++            arch: amd64
++          - platform: linux
++            os: ubuntu-24.04-arm
++            arch: arm64
++          - platform: linux
++            os: ubuntu-22.04
+             arch: amd64
+             compatible: true
+           - platform: linux
+             os: ubuntu-22.04
+             arch: amd64
++            standard: true
+           - platform: linux
+             os: ubuntu-24.04-arm
+             arch: arm64
++            standard: true
+           - platform: linux
+             os: ubuntu-22.04
+             arch: amd64
+             compatible: true
++            standard: true
+ 
+     steps:
+       - name: Checkout
+@@ -114,7 +165,7 @@ jobs:
+         uses: actions/setup-java@v5
+         with:
+           distribution: temurin
+-          java-version: '17'
++          java-version: '21'
+           cache: 'gradle'
+ 
+       - name: Setup Android NDK
+@@ -144,22 +195,34 @@ jobs:
+       - name: Install Dependencies (Linux)
+         if: matrix.platform == 'linux'
+         run: |
+-          sudo apt-get update -o Acquire::Retries=3 -o Acquire::ForceIPv4=true
+-          sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::ForceIPv4=true --fix-missing libcurl4-openssl-dev ninja-build libgtk-3-dev rpm
++          sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' /etc/apt/sources.list /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/* 2>/dev/null || true
++          sudo sed -i 's/azure\.ports\.ubuntu\.com/ports.ubuntu.com/g' /etc/apt/sources.list /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/* 2>/dev/null || true
++          for i in {1..3}; do
++            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o Acquire::ForceIPv4=true && break || sleep 5
++          done
++          sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o Acquire::ForceIPv4=true --fix-missing libcurl4-openssl-dev ninja-build libgtk-3-dev rpm
+ 
+       - name: Setup Golang
+         uses: actions/setup-go@v6
+         with:
+-          go-version: ${{ matrix.compatible == true && '1.20.x' || '1.25.x' }}
++          go-version: ${{ matrix.compatible == true && '1.24.x' || '1.25.x' }}
+           cache-dependency-path: core/go.sum
+ 
++      - name: Select Xcode (macOS)
++        if: matrix.platform == 'macos'
++        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
++
+       - name: Setup Flutter
+         uses: subosito/flutter-action@v2
+         with:
+           channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
+           cache: true
+           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
+-          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.9' }}
++          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.50.1' }}
++
++      - name: Clear Pub Cache Credentials
++        shell: bash
++        run: rm -f ~/.pub-cache/credentials.json 2>/dev/null || true
+ 
+ 
+       - name: Clean Gradle (Android)
+@@ -184,6 +247,8 @@ jobs:
+           FILE="${MOD_CACHE}/github.com/metacubex/sing-tun@${SING_TUN_VERSION}/tun_windows.go"
+           echo "Patching ${FILE}"
+           chmod +w "${FILE}"
++          perl -pi -e 's/inetIf\.ForwardingEnabled = true/inetIf.ForwardingEnabled = false/g' "${FILE}"
++
+       - name: Build Bettbox (Non-Windows)
+         if: matrix.platform != 'windows'
+         shell: bash
+@@ -191,14 +256,14 @@ jobs:
+           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+         run: |
+           flutter pub get
+-          dart run build_runner build -d
+-          dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
++          dart run build_runner build
++          dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }}
+ 
+       - name: Install SignPath (Windows)
+-        if: matrix.platform == 'windows'
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         shell: pwsh
+         env:
+-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
++          SIGNPATH_API_TOKEN: ${{ env.SIGNPATH_API_TOKEN }}
+         run: |
+           if (-not $env:SIGNPATH_API_TOKEN) {
+             Write-Host "SIGNPATH_API_TOKEN is not configured. Skipping module installation."
+@@ -209,7 +274,7 @@ jobs:
+           Install-Module -Name SignPath -Force -Scope CurrentUser -Repository PSGallery
+ 
+       - name: Set Signing Policy Slug (Windows)
+-        if: matrix.platform == 'windows'
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         shell: pwsh
+         run: |
+           $isStable = '${{ env.IS_STABLE }}' -eq 'true'
+@@ -235,21 +300,28 @@ jobs:
+         shell: bash
+         run: |
+           flutter pub get
+-          dart run build_runner build -d
+-          dart setup.dart windows --arch ${{ matrix.arch }} --out core-only ${{ matrix.compatible == true && '--compatible' || '' }}
++          dart run build_runner build
++          dart setup.dart windows --arch ${{ matrix.arch }} --out core-only ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }}
+ 
+       - name: Upload Unsigned Core
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-core
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-core-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-core-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: libclash/windows/BettboxCore.exe
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned Core
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-core.outputs.artifact-id }}'
++
+       - name: Sign Core (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -268,20 +340,27 @@ jobs:
+         run: |
+           $signedCoreHash = (Get-FileHash libclash/windows/BettboxCore.exe -Algorithm SHA256).Hash.ToLower()
+           Write-Host "Signed Core SHA256 (TOKEN for Helper): $signedCoreHash"
+-          dart setup.dart windows --arch ${{ matrix.arch }} --out helper --core-hash $signedCoreHash ${{ matrix.compatible == true && '--compatible' || '' }}
++          dart setup.dart windows --arch ${{ matrix.arch }} --out helper --core-hash $signedCoreHash ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }}
+ 
+       - name: Upload Unsigned HelperService
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-helper
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-helper-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-helper-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: libclash/windows/BettboxHelperService.exe
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned HelperService
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-helper.outputs.artifact-id }}'
++
+       - name: Sign HelperService (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -303,7 +382,10 @@ jobs:
+           $coreHash = (Get-FileHash libclash/windows/BettboxCore.exe -Algorithm SHA256).Hash.ToLower()
+           Write-Host "Core SHA256: $coreHash"
+           
+-          $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
++          $descParts = @('${{ matrix.arch }}')
++          if ('${{ matrix.compatible }}' -eq 'true') { $descParts += 'compatible' }
++          if ('${{ matrix.standard }}' -eq 'true') { $descParts += 'standard' }
++          $desc = $descParts -join '-'
+           $appEnv = if ('${{ env.IS_STABLE }}' -eq 'true') { "stable" } else { "pre" }
+           
+           $flutterArgs = @(
+@@ -312,6 +394,9 @@ jobs:
+             "--dart-define=APP_ENV=$appEnv",
+             "--dart-define=APP_ASSET_SUFFIX=windows-$desc-setup.exe"
+           )
++          if ('${{ matrix.standard }}' -eq 'true') {
++            $flutterArgs += "--dart-define=APP_STANDARD=true"
++          }
+           if ($env:SENTRY_DSN) {
+             $flutterArgs += "--dart-define=SENTRY_DSN=$env:SENTRY_DSN"
+           }
+@@ -322,17 +407,24 @@ jobs:
+           flutter @flutterArgs
+ 
+       - name: Upload Unsigned Bettbox
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-bettbox
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-bettbox-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-bettbox-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Bettbox.exe
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned Bettbox
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-bettbox.outputs.artifact-id }}'
++
+       - name: Sign Bettbox (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -349,29 +441,39 @@ jobs:
+         if: matrix.platform == 'windows'
+         shell: bash
+         run: |
+-          dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
++          dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
+ 
+       - name: Find Installer Path
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         shell: pwsh
+         run: |
+-          $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
++          $descParts = @('${{ matrix.arch }}')
++          if ('${{ matrix.compatible }}' -eq 'true') { $descParts += 'compatible' }
++          if ('${{ matrix.standard }}' -eq 'true') { $descParts += 'standard' }
++          $desc = $descParts -join '-'
+           $installer = (Resolve-Path "dist/Bettbox-*-windows-$desc-setup.exe").Path
+           echo "INSTALLER_PATH=$installer" | Out-File -FilePath $env:GITHUB_ENV -Append
+           echo "INSTALLER_FILENAME=$(Split-Path -Leaf $installer)" | Out-File -FilePath $env:GITHUB_ENV -Append
+ 
+       - name: Upload Unsigned Installer
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-installer
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-installer-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: ${{ env.INSTALLER_PATH }}
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned Installer
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-installer.outputs.artifact-id }}'
++
+       - name: Sign Installer (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -385,60 +487,50 @@ jobs:
+           output-artifact-directory: 'dist'
+       
+       - name: Clean up intermediate unsigned artifacts
+-        if: always() && matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: always() && matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         continue-on-error: true
+         uses: geekyeggo/delete-artifact@v6
+         with:
+           name: |
+-            unsigned-core-${{ matrix.arch }}-${{ matrix.compatible }}
+-            unsigned-helper-${{ matrix.arch }}-${{ matrix.compatible }}
+-            unsigned-bettbox-${{ matrix.arch }}-${{ matrix.compatible }}
+-            unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
++            unsigned-core-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
++            unsigned-helper-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
++            unsigned-bettbox-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
++            unsigned-installer-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           failOnError: false
+       
+-      - name: Verify Core Permissions (Linux)
+-        if: matrix.platform == 'linux' && matrix.compatible != true
+-        shell: bash
+-        run: |
+-          echo "=== Verifying BettboxCore setuid in DEB package ==="
+-          if ls dist/Bettbox-*.deb 1>/dev/null 2>&1; then
+-            DEB_PERMS=$(dpkg-deb -c dist/Bettbox-*.deb | grep BettboxCore || true)
+-            echo "$DEB_PERMS"
+-            if echo "$DEB_PERMS" | grep -q 'rws'; then
+-              echo "OK: BettboxCore in DEB has setuid bit"
+-            else
+-              echo "WARNING: BettboxCore in DEB is missing setuid bit (will be set by postinst on install)"
+-              POSTINST=$(dpkg-deb -e dist/Bettbox-*.deb /tmp/bettbox-deb-control && cat /tmp/bettbox-deb-control/postinst || true)
+-              if ! echo "$POSTINST" | grep -q '/usr/share/Bettbox/BettboxCore'; then
+-                echo "ERROR: postinst script does not set permissions on /usr/share/Bettbox/BettboxCore"
+-                exit 1
+-              fi
+-            fi
+-          fi
+-          echo "=== Verifying BettboxCore setuid in RPM package ==="
+-          if ls dist/Bettbox-*.rpm 1>/dev/null 2>&1; then
+-            RPM_PERMS=$(rpm -qplv dist/Bettbox-*.rpm | grep BettboxCore || true)
+-            echo "$RPM_PERMS"
+-            if ! echo "$RPM_PERMS" | grep -q 'rws'; then
+-              echo "ERROR: BettboxCore in RPM is missing setuid bit"
+-              exit 1
+-            fi
+-          fi
+ 
+-      - name: Upload Artifacts (Non-Linux)
+-        if: matrix.platform != 'linux'
++      - name: Upload Artifacts (macOS & Android)
++        if: matrix.platform != 'linux' && matrix.platform != 'windows'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: ./dist/*
+           archive: false
+           overwrite: true
+ 
++      - name: Upload Windows Installer Artifact
++        if: matrix.platform == 'windows'
++        uses: actions/upload-artifact@v7
++        with:
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-installer
++          path: ./dist/*.exe
++          archive: false
++          overwrite: true
++
++      - name: Upload Windows Portable Artifact
++        if: matrix.platform == 'windows' && matrix.compatible == true && matrix.arch == 'amd64' && matrix.standard != true
++        uses: actions/upload-artifact@v7
++        with:
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-portable
++          path: ./dist/*.zip
++          archive: false
++          overwrite: true
++
+       - name: Upload DEB Artifact
+         if: matrix.platform == 'linux'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-deb
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-deb
+           path: ./dist/*.deb
+           archive: false
+           overwrite: true
+@@ -447,7 +539,7 @@ jobs:
+         if: matrix.platform == 'linux' && matrix.arch == 'amd64'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-AppImage
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-AppImage
+           path: ./dist/*.AppImage
+           archive: false
+           overwrite: true
+@@ -456,7 +548,7 @@ jobs:
+         if: matrix.platform == 'linux' && matrix.arch == 'amd64'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-rpm
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-rpm
+           path: ./dist/*.rpm
+           archive: false
+           overwrite: true
+@@ -477,6 +569,12 @@ jobs:
+           path: ./dist/
+           pattern: Bettbox-*
+           merge-multiple: true
++          skip-decompress: true
++
++      - name: Generate checksums
++        run: |
++          cd dist
++          find . -maxdepth 1 -type f -name 'Bettbox-*' -printf '%f\n' | sort | xargs -d '\n' sha256sum > sha256sums.txt
+ 
+       - name: Generate release.md
+         run: |
+@@ -492,10 +590,38 @@ jobs:
+             sed -e "s|BASE_VERSION|$base_version|g" -e "s|VERSION|$version|g" ./.github/release_template.md >> release.md
+           fi
+ 
++      - name: Detect existing release
++        id: release
++        if: ${{ env.SHOULD_RELEASE == 'true' }}
++        env:
++          GH_TOKEN: ${{ github.token }}
++        run: |
++          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" >/dev/null 2>&1; then
++            echo "exists=true" >> "$GITHUB_OUTPUT"
++          else
++            echo "exists=false" >> "$GITHUB_OUTPUT"
++          fi
++
+       - name: Release
+         if: ${{ env.SHOULD_RELEASE == 'true' }}
+         uses: softprops/action-gh-release@v3.0.0
+         with:
+           files: ./dist/*
+           body_path: './release.md'
+-          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
+\ No newline at end of file
++          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
++
++      - name: Dispatch AUR update
++        if: ${{ env.SHOULD_RELEASE == 'true' }}
++        continue-on-error: true
++        env:
++          GH_TOKEN: ${{ secrets.AUR_UPDATER_TOKEN }}
++          REPO: ${{ vars.AUR_UPDATER_REPO || 'VillagerTom/bettbox-aur-updater' }}
++          FORCE: ${{ steps.release.outputs.exists }}
++        run: |
++          if [ -z "$GH_TOKEN" ]; then
++            echo "::warning::AUR_UPDATER_TOKEN is not set, skipping AUR update"
++            exit 0
++          fi
++          gh api -X POST "repos/$REPO/dispatches" \
++            -f event_type=bettbox-release \
++            -F "client_payload[force]=$FORCE"
+
 diff --git a/.gitignore b/.gitignore
 index e867f5b4..ba69566f 100644
 --- a/.gitignore
@@ -325,7 +972,7 @@ index fe3cd205..af3852e3 100644
 +    avoid_dynamic_calls: true
 
 diff --git a/android/app/build.gradle.kts b/android/app/build.gradle.kts
-index 7335babe..c2b555df 100644
+index 7335babe..86c522b7 100644
 --- a/android/app/build.gradle.kts
 +++ b/android/app/build.gradle.kts
 @@ -2,7 +2,6 @@ import java.util.Properties
@@ -345,14 +992,31 @@ index 7335babe..c2b555df 100644
 -    }
 -
      defaultConfig {
--        applicationId = "com.appshub.bettboxr"
+         applicationId = "com.appshub.bettboxr"
 -        minSdk = 26
-+        applicationId = "com.appshub.bettbox"
 +        minSdk = 24
          targetSdk = 36
          versionCode = flutter.versionCode
          versionName = flutter.versionName
-@@ -75,6 +70,12 @@ android {
+@@ -62,6 +57,17 @@ android {
+         }
+     }
+ 
++    // lintVital в AGP 8.12.2 построен под JDK 21 (IntelliJ PSI внутри линта
++    // вызывает List.removeLast(), появившийся в Java 21) и крашит release-сборку
++    // на CI, где workflow пинит JDK 17: "Unexpected failure during lint analysis
++    // of ExifDataCopier.java ... NoSuchMethodError List.removeLast()"
++    // (image_picker_android:lintVitalAnalyzeRelease). Линтер не влияет на
++    // артефакт — vital-анализ отключён; точечная проверка остаётся доступной:
++    // ./gradlew :app:lintDebug.
++    lint {
++        checkReleaseBuilds = false
++    }
++
+     packaging {
+         jniLibs {
+             useLegacyPackaging = true
+@@ -75,6 +81,12 @@ android {
      }
  }
  
@@ -2922,77 +3586,6 @@ index 00000000..f147da08
 +    <corners android:radius="12dp" />
 +</shape>
 
-diff --git a/android/app/src/main/res/drawable/ic_launcher_background_dark.xml b/android/app/src/main/res/drawable/ic_launcher_background_dark.xml
-index 7426c12b..d23bf593 100644
---- a/android/app/src/main/res/drawable/ic_launcher_background_dark.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_background_dark.xml
-@@ -5,6 +5,6 @@
-     android:viewportWidth="108"
-     android:viewportHeight="108">
-     <path
--        android:fillColor="#161616"
-+        android:fillColor="#292C41"
-         android:pathData="M0,0h108v108h-108z"/>
- </vector>
-\ No newline at end of file
-
-diff --git a/android/app/src/main/res/drawable/ic_launcher_background_light.xml b/android/app/src/main/res/drawable/ic_launcher_background_light.xml
-index 7426c12b..e8566c65 100644
---- a/android/app/src/main/res/drawable/ic_launcher_background_light.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_background_light.xml
-@@ -5,6 +5,6 @@
-     android:viewportWidth="108"
-     android:viewportHeight="108">
-     <path
--        android:fillColor="#161616"
-+        android:fillColor="#FFFFFF"
-         android:pathData="M0,0h108v108h-108z"/>
- </vector>
-\ No newline at end of file
-
-diff --git a/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml b/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml
-index 37a5b76c..cd1e3cc3 100644
---- a/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_foreground_dark.xml
-@@ -18,8 +18,5 @@
-         <path
-             android:fillColor="#FFFFFF"
-             android:pathData="M267.79,572.2h-59.68c-10.68,0-18.36-10.26-15.35-20.5l94.39-321.63c4.5-15.33,18.57-25.86,34.54-25.86h59.67c10.68,0,18.36,10.26,15.36,20.51l-94.39,321.63c-4.5,15.33-18.56,25.86-34.54,25.86Z"/>
--        <path
--            android:fillColor="#FFFFFF"
--            android:pathData="M533,564.3Q544.3,564.3,550.5,560.1Q556.7,555.8,559.5,546.2Q562.3,536.6,558.6,532.5Q554.9,528.4,543.5,528.4H528.3L517.8,564.3ZM510.5,589.2L494.9,642.2H458.8L499.9,502.2H555.1Q582.7,502.2,592.9,511.5Q603.1,520.8,597.2,540.8Q593.1,554.7,583.8,563.6Q574.5,572.5,559.7,576.8Q566.6,578.4,570.7,584.4Q574.8,590.4,577.3,602.5L585.2,642.2H546.8L539.9,607.4Q537.9,596.9,533.7,593.1Q529.5,589.2,520.7,589.2Z"/>
-     </group>
--</vector>
-+</vector>
-\ No newline at end of file
-
-diff --git a/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml b/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml
-index 37a5b76c..002e07a2 100644
---- a/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml
-+++ b/android/app/src/main/res/drawable/ic_launcher_foreground_light.xml
-@@ -10,16 +10,13 @@
-         android:scaleX="0.1"
-         android:scaleY="0.1">
-         <path
--            android:fillColor="#FFFFFF"
-+            android:fillColor="#6890BE"
-             android:pathData="M514.78,480.2h-25.35c-5.34,0-9.18-5.13-7.68-10.25l45.93-156.5c3-10.22,12.38-17.24,23.03-17.24h25.34c5.34,0,9.18,5.13,7.68,10.25l-45.93,156.51c-3,10.22-12.38,17.24-23.03,17.24Z"/>
-         <path
--            android:fillColor="#FFFFFF"
-+            android:fillColor="#334663"
-             android:pathData="M403.29,526.2h-41.01c-8.01,0-13.77-7.7-11.52-15.38l69.74-237.63c4-13.63,16.5-22.99,30.7-22.99h41.02c8.01,0,13.77,7.69,11.51,15.38l-69.74,237.64c-4,13.63-16.5,22.99-30.7,22.99Z"/>
-         <path
--            android:fillColor="#FFFFFF"
-+            android:fillColor="#292C41"
-             android:pathData="M267.79,572.2h-59.68c-10.68,0-18.36-10.26-15.35-20.5l94.39-321.63c4.5-15.33,18.57-25.86,34.54-25.86h59.67c10.68,0,18.36,10.26,15.36,20.51l-94.39,321.63c-4.5,15.33-18.56,25.86-34.54,25.86Z"/>
--        <path
--            android:fillColor="#FFFFFF"
--            android:pathData="M533,564.3Q544.3,564.3,550.5,560.1Q556.7,555.8,559.5,546.2Q562.3,536.6,558.6,532.5Q554.9,528.4,543.5,528.4H528.3L517.8,564.3ZM510.5,589.2L494.9,642.2H458.8L499.9,502.2H555.1Q582.7,502.2,592.9,511.5Q603.1,520.8,597.2,540.8Q593.1,554.7,583.8,563.6Q574.5,572.5,559.7,576.8Q566.6,578.4,570.7,584.4Q574.8,590.4,577.3,602.5L585.2,642.2H546.8L539.9,607.4Q537.9,596.9,533.7,593.1Q529.5,589.2,520.7,589.2Z"/>
-     </group>
--</vector>
-+</vector>
-\ No newline at end of file
-
 diff --git a/android/app/src/main/res/layout/home_widget_large.xml b/android/app/src/main/res/layout/home_widget_large.xml
 new file mode 100644
 index 00000000..e823acc6
@@ -4129,6 +4722,31 @@ index d5ffc89f..e2c31ba9 100644
      <domain-config cleartextTrafficPermitted="true">
          <domain includeSubdomains="true">localhost</domain>
          <domain includeSubdomains="true">127.0.0.1</domain>
+
+diff --git a/android/build.gradle.kts b/android/build.gradle.kts
+index 83565edc..b7c67598 100644
+--- a/android/build.gradle.kts
++++ b/android/build.gradle.kts
+@@ -17,6 +17,18 @@ subprojects {
+     project.evaluationDependsOn(":app")
+ }
+ 
++// AGP 9 lint: PSI JavaDoc-парсер падает на JDK-несовместимости
++// (NoSuchMethodError: List.removeLast()) при lintVitalAnalyzeRelease у
++// сторонних плагинов (image_picker_android, ExifDataCopier.java). Lint vital
++// не влияет на компиляцию APK — отключаем эти задачи во всех подпроектах.
++subprojects {
++    tasks.whenTaskAdded {
++        if (name.startsWith("lintVital")) {
++            enabled = false
++        }
++    }
++}
++
+ tasks.register<Delete>("clean") {
+     delete(rootProject.layout.buildDirectory)
+ }
+\ No newline at end of file
 
 diff --git a/android/core/build.gradle.kts b/android/core/build.gradle.kts
 index c4c0b32e..1139bdbe 100644
@@ -22005,10 +22623,10 @@ index 601dfc84..325e7239 100644
  	info := s.Base.ProxyInfo()
 
 diff --git a/core/Clash.Meta/adapter/outbound/tuic.go b/core/Clash.Meta/adapter/outbound/tuic.go
-index 525fa9e1..c3ce49f3 100644
+index 525fa9e1..6d386ad3 100644
 --- a/core/Clash.Meta/adapter/outbound/tuic.go
 +++ b/core/Clash.Meta/adapter/outbound/tuic.go
-@@ -1,312 +1,309 @@
+@@ -1,312 +1,321 @@
  package outbound
  
  import (
@@ -22036,6 +22654,7 @@ index 525fa9e1..c3ce49f3 100644
 +	"math"
 +	"net"
 +	"strconv"
++	"strings"
 +	"time"
 +
 +	"github.com/metacubex/mihomo/component/ca"
@@ -22240,7 +22859,18 @@ index 525fa9e1..c3ce49f3 100644
 -        return quicConn, nil
 +	_, quicConn, err = common.DialQuic(ctx, t.addr, t.DialOptions(), t.dialer, t.tlsConfig, t.quicConfig, common.DialQuicOption{Early: t.option.ReduceRtt})
 +	if err != nil {
-+		return nil, err
++		// Некоторые серверы (нарушая RFC 9001 §8.1) вообще не выбирают ALPN,
++		// хотя клиент его предложил. Строгая проверка клиента обрывает
++		// рукопожатие ("server did not select an ALPN protocol"). Повторяем
++		// рукопожатие без ALPN — так же ведёт себя sing-box (NekoBox).
++		if strings.Contains(err.Error(), "server did not select an ALPN protocol") {
++			noAlpnConfig := t.tlsConfig.Clone()
++			noAlpnConfig.NextProtos = nil
++			_, quicConn, err = common.DialQuic(ctx, t.addr, t.DialOptions(), t.dialer, noAlpnConfig, t.quicConfig, common.DialQuicOption{Early: t.option.ReduceRtt})
++		}
++		if err != nil {
++			return nil, err
++		}
 +	}
 +	common.SetCongestionController(quicConn, t.option.CongestionController, t.option.CWND, t.option.BBRProfile)
 +	return quicConn, nil
@@ -24410,10 +25040,10 @@ index 2ec8537d..77e9c887 100644
  
 
 diff --git a/core/Clash.Meta/common/convert/converter.go b/core/Clash.Meta/common/convert/converter.go
-index 45ddc156..3861c790 100644
+index 45ddc156..eee94c00 100644
 --- a/core/Clash.Meta/common/convert/converter.go
 +++ b/core/Clash.Meta/common/convert/converter.go
-@@ -1,736 +1,737 @@
+@@ -1,736 +1,744 @@
  package convert
  
  import (
@@ -25287,6 +25917,13 @@ index 45ddc156..3861c790 100644
 +			if udpRelayMode := query.Get("udp_relay_mode"); udpRelayMode != "" {
 +				tuic["udp-relay-mode"] = udpRelayMode
 +			}
++			// Панели отдают tuic-ссылки с self-signed сертификатами
++			// (sni-маска + pinSHA256). Без skip-cert-verify такой узел
++			// не проходит TLS, остальные протоколы это поле мапят.
++			if query.Get("insecure") == "1" || query.Get("allow_insecure") == "1" ||
++				query.Get("allowInsecure") == "1" {
++				tuic["skip-cert-verify"] = true
++			}
 +
 +			proxies = append(proxies, tuic)
 +
@@ -26045,6 +26682,49 @@ index c29ca703..b2df735d 100644
 +	assert.NoError(t, err)
 +}
 
+diff --git a/core/Clash.Meta/common/convert/mifa_test.go b/core/Clash.Meta/common/convert/mifa_test.go
+new file mode 100644
+index 00000000..c94f2856
+--- /dev/null
++++ b/core/Clash.Meta/common/convert/mifa_test.go
+@@ -0,0 +1,36 @@
++package convert
++
++import (
++	"encoding/json"
++	"os"
++	"strings"
++	"testing"
++)
++
++// Диагностика mifa-подписки: прогоняем все share-ссылки через ядровый
++// конвертер и печатаем proxy-карты — сверка с выдачей Dart-парсера.
++func TestMifaXhttpConversion(t *testing.T) {
++	data, err := os.ReadFile("/tmp/sub/links.txt")
++	if err != nil {
++		t.Skipf("no links file: %v", err)
++	}
++	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
++	out := map[string]map[string]any{}
++	for _, l := range lines {
++		l = strings.TrimSpace(l)
++		if l == "" {
++			continue
++		}
++		proxies, err := ConvertsV2Ray([]byte(l))
++		if err != nil {
++			out[l[:60]] = map[string]any{"__error__": err.Error()}
++			continue
++		}
++		for _, p := range proxies {
++			out[l[:60]] = p
++		}
++	}
++	enc, _ := json.MarshalIndent(out, "", "  ")
++	_ = os.WriteFile("/tmp/sub/go_converted.json", enc, 0o644)
++	t.Logf("converted %d links", len(lines))
++}
+
 diff --git a/core/Clash.Meta/common/convert/patch_test.go b/core/Clash.Meta/common/convert/patch_test.go
 deleted file mode 100644
 index b648ed2a..00000000
@@ -26108,7 +26788,7 @@ index b648ed2a..00000000
 -}
 
 diff --git a/core/Clash.Meta/common/convert/v.go b/core/Clash.Meta/common/convert/v.go
-index e6d45f19..20243834 100644
+index e6d45f19..a3473caf 100644
 --- a/core/Clash.Meta/common/convert/v.go
 +++ b/core/Clash.Meta/common/convert/v.go
 @@ -44,10 +44,16 @@ func handleVShareLink(names map[string]int, url *url.URL, scheme string, proxy m
@@ -26151,6 +26831,63 @@ index e6d45f19..20243834 100644
  	if v, ok := extra["noGRPCHeader"].(bool); ok && v {
  		opts["no-grpc-header"] = true
  	}
+@@ -262,14 +276,22 @@ func parseXHTTPExtra(extra map[string]any, opts map[string]any) {
+ 
+ 	if v, ok := extra["uplinkChunkSize"].(float64); ok {
+ 		opts["uplink-chunk-size"] = int(v)
++	} else if v, ok := extra["uplinkChunkSize"].(string); ok && v != "" {
++		opts["uplink-chunk-size"] = v
+ 	}
+ 
+ 	if v, ok := extra["scMaxEachPostBytes"].(float64); ok {
+ 		opts["sc-max-each-post-bytes"] = int(v)
++	} else if v, ok := extra["scMaxEachPostBytes"].(string); ok && v != "" {
++		// Панели (v2rayN/xray) отдают диапазоны строкой «1536-6144»:
++		// ядро принимает строку (WeaklyTypedInput), не теряем её.
++		opts["sc-max-each-post-bytes"] = v
+ 	}
+ 
+ 	if v, ok := extra["scMinPostsIntervalMs"].(float64); ok {
+ 		opts["sc-min-posts-interval-ms"] = int(v)
++	} else if v, ok := extra["scMinPostsIntervalMs"].(string); ok && v != "" {
++		opts["sc-min-posts-interval-ms"] = v
+ 	}
+ 
+ 	// xmux in root extra → reuse-settings
+@@ -279,6 +301,33 @@ func parseXHTTPExtra(extra map[string]any, opts map[string]any) {
+ 		}
+ 	}
+ 
++	// Дефолты, которые Xray проставляет в infra/conf
++	// (transport_method.go Build), а mihomo — НЕТ. Симметрично
++	// Dart-генератору (lib/generator/v2ray_json.dart
++	// applyXhttpEffMapToOpts): при uplinkDataPlacement/seqPlacement != body
++	// без ключа ядро кладёт данные в заголовки «-0», «-1» — сервер их
++	// не находит и молча держит соединение до таймаута (узлы не работают).
++	if placement, ok := opts["uplink-data-placement"].(string); ok &&
++		placement != "" && placement != "body" {
++		if _, has := opts["uplink-data-key"]; !has {
++			if placement == "cookie" {
++				opts["uplink-data-key"] = "x_data"
++			} else {
++				opts["uplink-data-key"] = "X-Data"
++			}
++		}
++	}
++	if placement, ok := opts["seq-placement"].(string); ok &&
++		placement != "" && placement != "path" {
++		if _, has := opts["seq-key"]; !has {
++			if placement == "header" {
++				opts["seq-key"] = "X-Seq"
++			} else {
++				opts["seq-key"] = "x_seq"
++			}
++		}
++	}
++
+ 	if dsAny, ok := extra["downloadSettings"].(map[string]any); ok {
+ 		ds := make(map[string]any)
+ 
 
 diff --git a/core/Clash.Meta/common/net/listener.go b/core/Clash.Meta/common/net/listener.go
 index 4431ccd3..0cf6d3f3 100644
@@ -32645,6 +33382,29 @@ index 00000000..8896e24e
 +		t.Fatalf("goroutines = %d, want %d", got, before+1)
 +	}
 +}
+
+diff --git a/core/Clash.Meta/transport/gun/gun.go b/core/Clash.Meta/transport/gun/gun.go
+index 39bf21f1..ee20623a 100644
+--- a/core/Clash.Meta/transport/gun/gun.go
++++ b/core/Clash.Meta/transport/gun/gun.go
+@@ -330,11 +330,12 @@ func ServiceNameToPath(serviceName string) string {
+ }
+ 
+ func (t *Transport) Dial() (net.Conn, error) {
+-	serviceName := "GunService"
+-	if t.cfg.ServiceName != "" {
+-		serviceName = t.cfg.ServiceName
+-	}
+-	path := ServiceNameToPath(serviceName)
++	// Как в xray/grpc-go: пустое имя сервиса даёт путь "//Tun".
++	// Дефолт "GunService" не подставляем — серверы, сконфигурированные
++	// под пустой сервис (grpc-ноды mifa без serviceName в URI), рвут
++	// соединение на неизвестном сервисе: ноды vless+grpc показывались
++	// мёртвыми в моде при живых в v2rayNG.
++	path := ServiceNameToPath(t.cfg.ServiceName)
+ 
+ 	reader, writer := io.Pipe()
+ 
 
 diff --git a/core/Clash.Meta/transport/gun/patch.go b/core/Clash.Meta/transport/gun/patch.go
 new file mode 100644
@@ -62933,7 +63693,7 @@ index 00000000..13bf6de8
 +}
 
 diff --git a/lib/application.dart b/lib/application.dart
-index 367e9a9d..802674e9 100644
+index 367e9a9d..11229caa 100644
 --- a/lib/application.dart
 +++ b/lib/application.dart
 @@ -1,7 +1,7 @@
@@ -63264,13 +64024,13 @@ index 367e9a9d..802674e9 100644
              globalState.appController.addCheckIpNumDebounce();
            },
            child: child,
-@@ -231,236 +377,87 @@ class ApplicationState extends ConsumerState<Application>
+@@ -231,236 +377,91 @@ class ApplicationState extends ConsumerState<Application>
              final fontFamily = themeProps.useHarmonyFont
                  ? 'HarmonyOS_Sans'
                  : null;
 +            final lightColorScheme = ref.read(
 +              genColorSchemeProvider(Brightness.light),
-+            );
++            ).withForegroundContrast();
 +            var darkColorScheme = ref.read(
 +              genColorSchemeProvider(Brightness.dark),
 +            );
@@ -63291,6 +64051,10 @@ index 367e9a9d..802674e9 100644
 +                dynamicSchemeVariant: themeProps.schemeVariant,
 +              ).toCoalPink();
 +            }
++            // Гарантия контраста «текст на контейнере» (common/color.dart):
++            // тёмный onPrimaryContainer на тёмном primaryContainer делал
++            // FAB «Тест задержки», чип профилей и табы групп невидимыми.
++            darkColorScheme = darkColorScheme.withForegroundContrast();
  
 -            return MaterialApp(
 -              debugShowCheckedModeBanner: false,
@@ -63374,9 +64138,7 @@ index 367e9a9d..802674e9 100644
 -                  shape: RoundedRectangleBorder(
 -                    borderRadius: BorderRadius.vertical(
 -                      top: Radius.circular(28),
-+                        );
-+                      },
-                     ),
+-                    ),
 -                  ),
 -                  clipBehavior: Clip.antiAlias,
 -                ),
@@ -63496,7 +64258,9 @@ index 367e9a9d..802674e9 100644
 -                              .toPureBlack(themeProps.pureBlack)
 -                              .outlineVariant
 -                              .withValues(alpha: 0.45),
--                    ),
++                        );
++                      },
+                     ),
 -                  ),
 -                  focusedBorder: OutlineInputBorder(
 -                    borderRadius: const BorderRadius.all(Radius.circular(18)),
@@ -63567,7 +64331,7 @@ index 367e9a9d..802674e9 100644
    @override
    void dispose() {
      globalState.backgroundMode.removeListener(_syncAutoUpdateTasks);
-@@ -475,3 +472,82 @@ class ApplicationState extends ConsumerState<Application>
+@@ -475,3 +476,82 @@ class ApplicationState extends ConsumerState<Application>
      super.dispose();
    }
  }
@@ -66607,7 +67371,7 @@ index 691fc26b..8ccb267c 100644
 +}
 
 diff --git a/lib/common/color.dart b/lib/common/color.dart
-index 082efcce..4f42530e 100644
+index 082efcce..0d117365 100644
 --- a/lib/common/color.dart
 +++ b/lib/common/color.dart
 @@ -1,6 +1,7 @@
@@ -66763,6 +67527,44 @@ index 082efcce..4f42530e 100644
  }
  
  /// Цвет-акцент «угольной» темы, бирюзовый вариант: окантовка карточек
+@@ -197,3 +313,37 @@ extension CoalColorSchemeExtension on ColorScheme {
+     );
+   }
+ }
++
++/// Гарантия читаемости пар «текст на контейнере»: некоторые варианты
++/// схемы (подтверждено скриншотами: FAB «Тест задержки», чип профилей,
++/// табы групп) выдают тёмный текст на тёмном контейнере — на контрасте
++/// 1.1-1.3 текст невидим. Пары с контрастом ниже 2.0 чинятся
++/// подстановкой чёрного/белого по яркости фона; здоровые пары
++/// (контраст ≥ 2) не трогаются.
++extension ForegroundContrastExtension on ColorScheme {
++  ColorScheme withForegroundContrast() {
++    Color pick(Color fg, Color bg) {
++      final lFg = fg.computeLuminance();
++      final lBg = bg.computeLuminance();
++      final lighter = lFg > lBg ? lFg : lBg;
++      final darker = lFg > lBg ? lBg : lFg;
++      final ratio = (lighter + 0.05) / (darker + 0.05);
++      if (ratio >= 2.0) {
++        return fg;
++      }
++      return lBg > 0.5 ? Colors.black : Colors.white;
++    }
++
++    return copyWith(
++      onPrimary: pick(onPrimary, primary),
++      onPrimaryContainer: pick(onPrimaryContainer, primaryContainer),
++      onSecondary: pick(onSecondary, secondary),
++      onSecondaryContainer: pick(onSecondaryContainer, secondaryContainer),
++      onTertiary: pick(onTertiary, tertiary),
++      onTertiaryContainer: pick(onTertiaryContainer, tertiaryContainer),
++      onSurface: pick(onSurface, surface),
++      onSurfaceVariant: pick(onSurfaceVariant, surfaceContainerHighest),
++      onError: pick(onError, error),
++    );
++  }
++}
 
 diff --git a/lib/common/common.dart b/lib/common/common.dart
 index 12b04fcc..2abbd2a3 100644
@@ -107732,7 +108534,7 @@ index fea1a4b3..6c288a3d 100644
  class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {
 
 diff --git a/lib/main.dart b/lib/main.dart
-index ccc1bb13..889a9969 100644
+index ccc1bb13..64ba9577 100644
 --- a/lib/main.dart
 +++ b/lib/main.dart
 @@ -1,4 +1,5 @@
@@ -107741,19 +108543,45 @@ index ccc1bb13..889a9969 100644
  import 'dart:ffi';
  import 'dart:io';
  import 'dart:isolate';
-@@ -9,9 +10,8 @@ import 'package:bett_box/plugins/clipboard_ext.dart';
+@@ -9,9 +10,10 @@ import 'package:bett_box/plugins/clipboard_ext.dart';
  import 'package:bett_box/plugins/tile.dart';
  import 'package:bett_box/plugins/vpn.dart';
  import 'package:bett_box/state.dart';
 -import 'package:code_forge/code_forge.dart';
 -import 'package:flutter/material.dart';
 -import 'package:flutter_displaymode/flutter_displaymode.dart';
++import 'package:intl/date_symbol_data_local.dart';
 +import 'package:material_ui/material_ui.dart';
++import 'package:flutter/foundation.dart';
 +import 'package:flutter/services.dart';
  import 'package:flutter_riverpod/flutter_riverpod.dart';
  import 'package:synchronized/synchronized.dart';
  
-@@ -37,14 +37,16 @@ Future<void> main(List<String> args) async {
+@@ -30,6 +32,23 @@ Future<void> main(List<String> args) async {
+   globalState.isService = false;
+   WidgetsFlutterBinding.ensureInitialized();
+ 
++  // Диагностика release-сборок: необработанные ошибки Flutter выводятся в
++  // logcat (adb logcat -s flutter) — серые/белые экраны оставляют след.
++  FlutterError.onError = (details) {
++    commonPrint.error('flutter error: ${details.exceptionAsString()}');
++    debugPrintStack(stackTrace: details.stack, maxFrames: 40);
++  };
++  PlatformDispatcher.instance.onError = (e, st) {
++    commonPrint.error('unhandled error: $e');
++    debugPrintStack(stackTrace: st, maxFrames: 40);
++    return true;
++  };
++
++  // Данные локалей intl: без этого DateFormat при не-en локали (ru и др.)
++  // бросает LocaleDataException — экран «Стелс-проверка» падал на выводе
++  // отчёта после завершения проверки.
++  unawaited(initializeDateFormatting());
++
+   if (system.isDesktop &&
+       (args.contains('--exit') || args.contains('--restart'))) {
+     final command = args.contains('--exit') ? 'exit' : 'restart';
+@@ -37,14 +56,16 @@ Future<void> main(List<String> args) async {
      exit(0);
    }
  
@@ -107774,7 +108602,7 @@ index ccc1bb13..889a9969 100644
        exit(0);
      }
    }
-@@ -52,13 +54,11 @@ Future<void> main(List<String> args) async {
+@@ -52,13 +73,11 @@ Future<void> main(List<String> args) async {
    PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
  
    final version = await system.version;
@@ -107793,7 +108621,7 @@ index ccc1bb13..889a9969 100644
  
    await _runApp();
  }
-@@ -71,7 +71,7 @@ Future<void> _sendControlCommand(String command) async {
+@@ -71,7 +90,7 @@ Future<void> _sendControlCommand(String command) async {
        return;
      } catch (e) {
        if (i == 4) {
@@ -107802,7 +108630,7 @@ index ccc1bb13..889a9969 100644
          return;
        }
        await Future.delayed(const Duration(milliseconds: 200));
-@@ -80,18 +80,8 @@ Future<void> _sendControlCommand(String command) async {
+@@ -80,18 +99,8 @@ Future<void> _sendControlCommand(String command) async {
  }
  
  Future<void> _runApp() async {
@@ -107822,7 +108650,7 @@ index ccc1bb13..889a9969 100644
    }
    await android?.init();
  
-@@ -100,7 +90,7 @@ Future<void> _runApp() async {
+@@ -100,7 +109,7 @@ Future<void> _runApp() async {
      clipboardExt.init();
    }
    HttpOverrides.global = BettboxHttpOverrides();
@@ -107831,7 +108659,7 @@ index ccc1bb13..889a9969 100644
  }
  
  @pragma('vm:entry-point')
-@@ -114,55 +104,137 @@ Future<void> _service(List<String> flags) async {
+@@ -114,55 +123,137 @@ Future<void> _service(List<String> flags) async {
      final bootStart = flags.contains('boot');
      final clashLibHandler = ClashLibHandler();
      final smartAutoStopLock = Lock();
@@ -107996,7 +108824,7 @@ index ccc1bb13..889a9969 100644
            await vpn?.stop();
          },
          onReconnectIpc: () {
-@@ -197,68 +269,16 @@ Future<void> _service(List<String> flags) async {
+@@ -197,68 +288,16 @@ Future<void> _service(List<String> flags) async {
      }
  
      commonPrint.log('Executing ${bootStart ? "boot" : "quick"} start sequence');
@@ -108069,7 +108897,7 @@ index ccc1bb13..889a9969 100644
      return;
    }
  
-@@ -267,7 +287,7 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
+@@ -267,7 +306,7 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
  
    _serviceReceiverPort = ReceivePort();
    _serviceReceiverPort!.listen((message) async {
@@ -108078,7 +108906,7 @@ index ccc1bb13..889a9969 100644
      _safeSend(sendPort, res);
    });
    _safeSend(sendPort, _serviceReceiverPort!.sendPort);
-@@ -278,14 +298,16 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
+@@ -278,14 +317,16 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
      _safeSend(sendPort, message);
    });
  
@@ -108097,7 +108925,7 @@ index ccc1bb13..889a9969 100644
      final retryPort = IsolateNameServer.lookupPortByName(mainIsolate);
      if (retryPort != null) {
        try {
-@@ -302,12 +324,10 @@ class _TileListenerWithService with TileListener {
+@@ -302,12 +343,10 @@ class _TileListenerWithService with TileListener {
    final Function() _onReconnectIpc;
  
    const _TileListenerWithService({
@@ -108114,7 +108942,7 @@ index ccc1bb13..889a9969 100644
  
    @override
    void onStart() => _onStart();
-@@ -322,13 +342,12 @@ class _TileListenerWithService with TileListener {
+@@ -322,13 +361,12 @@ class _TileListenerWithService with TileListener {
  @immutable
  class _VpnListenerWithService with VpnListener {
    final Function(String dns) _onDnsChanged;
@@ -108132,7 +108960,7 @@ index ccc1bb13..889a9969 100644
  
    @override
    void onDnsChanged(String dns) {
-@@ -337,8 +356,8 @@ class _VpnListenerWithService with VpnListener {
+@@ -337,8 +375,8 @@ class _VpnListenerWithService with VpnListener {
    }
  
    @override
@@ -172725,7 +173553,7 @@ index 0ee61fd4..4ce3c67c 100644
 +    r'd88d6f0a3f36366a4c63fd52acdb09331ccf1aa8';
 
 diff --git a/lib/providers/state.dart b/lib/providers/state.dart
-index 65c0edc6..cd409141 100644
+index 65c0edc6..3c9d264e 100644
 --- a/lib/providers/state.dart
 +++ b/lib/providers/state.dart
 @@ -1,10 +1,15 @@
@@ -173097,7 +173925,7 @@ index 65c0edc6..cd409141 100644
        .map((group) {
          final groupNameMatch = group.name.toLowerCase().contains(lowQuery);
          if (groupNameMatch) {
-@@ -356,28 +549,134 @@ GroupsState filterGroupsState(Ref ref, String query) {
+@@ -356,28 +549,159 @@ GroupsState filterGroupsState(Ref ref, String query) {
        })
        .where((group) => group.all.isNotEmpty)
        .toList();
@@ -173150,6 +173978,31 @@ index 65c0edc6..cd409141 100644
 +      proxiesStyleSettingProvider.select((state) => state.sortType),
 +    );
 +    if (sortType == ProxiesSortType.none) return _lastSorted = proxies;
++
++    // Ручной порядок: при drag&drop нода не должна «отскакивать» на своё
++    // место — сохранённый в proxyOrders порядок применяется прямо здесь,
++    // а не только в getSortProxies (tray/меню действий).
++    if (sortType == ProxiesSortType.custom) {
++      final savedOrder = ref.watch(
++        proxiesStyleSettingProvider.select(
++          (state) => state.proxyOrders[groupName],
++        ),
++      );
++      if (savedOrder == null || savedOrder.isEmpty) {
++        return _lastSorted = proxies;
++      }
++      final orderIndex = <String, int>{
++        for (var i = 0; i < savedOrder.length; i++) savedOrder[i]: i,
++      };
++      int rank(String name) =>
++          orderIndex[name] ?? (1 << 30); // новые ноды — в конец
++      final indices = List<int>.generate(proxies.length, (i) => i);
++      indices.sort((a, b) {
++        final ra = rank(proxies[a].name), rb = rank(proxies[b].name);
++        return ra != rb ? ra - rb : a - b; // стабильность: исходный порядок
++      });
++      return _remember([for (final i in indices) proxies[i]]);
++    }
 +
 +    int? Function(String proxyName)? delayOf;
 +    if (sortType == ProxiesSortType.delay) {
@@ -173243,7 +174096,7 @@ index 65c0edc6..cd409141 100644
      columns: columns,
    );
  }
-@@ -391,7 +690,7 @@ ProxiesTabState proxiesTabState(Ref ref) {
+@@ -391,7 +715,7 @@ ProxiesTabState proxiesTabState(Ref ref) {
    );
    final vm2 = ref.watch(
      proxiesStyleSettingProvider.select(
@@ -173252,7 +174105,7 @@ index 65c0edc6..cd409141 100644
      ),
    );
    final sortNum = ref.watch(sortNumProvider);
-@@ -407,10 +706,10 @@ ProxiesTabState proxiesTabState(Ref ref) {
+@@ -407,10 +731,10 @@ ProxiesTabState proxiesTabState(Ref ref) {
  }
  
  @Riverpod(dependencies: [proxiesTabState])
@@ -173265,7 +174118,7 @@ index 65c0edc6..cd409141 100644
          a: state.groups.map((group) => group.name).toList(),
          b: state.currentGroupName,
        ),
-@@ -505,15 +804,12 @@ bool isCurrentPage(
+@@ -505,15 +829,12 @@ bool isCurrentPage(
  
  @riverpod
  String getRealTestUrl(Ref ref, [String? testUrl]) {
@@ -173282,7 +174135,7 @@ index 65c0edc6..cd409141 100644
    return testUrl;
  }
  
-@@ -575,33 +871,18 @@ int getProxiesColumns(Ref ref) {
+@@ -575,33 +896,18 @@ int getProxiesColumns(Ref ref) {
    return utils.getProxiesColumns(viewWidth, proxiesLayout);
  }
  
@@ -173324,7 +174177,7 @@ index 65c0edc6..cd409141 100644
          groups,
          selectedMap,
          proxyDelayState.copyWith(proxyName: now),
-@@ -609,14 +890,13 @@ ProxyCardState _getProxyCardState(
+@@ -609,14 +915,13 @@ ProxyCardState _getProxyCardState(
      }
      return proxyDelayState;
    }
@@ -173341,7 +174194,7 @@ index 65c0edc6..cd409141 100644
      groups,
      selectedMap,
      proxyDelayState.copyWith(
-@@ -626,11 +906,30 @@ ProxyCardState _getProxyCardState(
+@@ -626,11 +931,30 @@ ProxyCardState _getProxyCardState(
    );
  }
  
@@ -173373,7 +174226,7 @@ index 65c0edc6..cd409141 100644
      groups,
      selectedMap,
      ProxyCardState(proxyName: proxyName),
-@@ -697,16 +996,16 @@ OverrideData? getProfileOverrideData(Ref ref, String profileId) {
+@@ -697,16 +1021,16 @@ OverrideData? getProfileOverrideData(Ref ref, String profileId) {
  }
  
  @riverpod
@@ -173393,7 +174246,7 @@ index 65c0edc6..cd409141 100644
    final checkIpNum = ref.watch(checkIpNumProvider);
    final containsDetection = ref.watch(
      dashboardStateProvider.select(
-@@ -714,11 +1013,11 @@ VM2<int, bool> checkIp(Ref ref) {
+@@ -714,11 +1038,11 @@ VM2<int, bool> checkIp(Ref ref) {
            state.dashboardWidgets.contains(DashboardWidget.networkDetection),
      ),
    );
@@ -173407,7 +174260,7 @@ index 65c0edc6..cd409141 100644
    final checkIpNum = ref.watch(checkIpNumProvider);
    final containsMediaUnlock = ref.watch(
      dashboardStateProvider.select(
-@@ -727,10 +1026,10 @@ VM2<int, bool> checkMediaUnlock(Ref ref) {
+@@ -727,10 +1051,10 @@ VM2<int, bool> checkMediaUnlock(Ref ref) {
            state.dashboardWidgets.contains(DashboardWidget.mediaUnlockSmall),
      ),
    );
@@ -173420,7 +174273,7 @@ index 65c0edc6..cd409141 100644
  ColorScheme genColorScheme(
    Ref ref,
    Brightness brightness, {
-@@ -739,41 +1038,115 @@ ColorScheme genColorScheme(
+@@ -739,41 +1063,115 @@ ColorScheme genColorScheme(
  }) {
    final vm2 = ref.watch(
      themeSettingProvider.select(
@@ -173470,24 +174323,24 @@ index 65c0edc6..cd409141 100644
 +      (profile) =>
 +          profile == null || profile.isManaged ? null : profile.scriptId,
 +    ),
-+  );
+   );
 +  if (id == null) return null;
 +  return ref.watch(scriptStateProvider.select((state) => state.findScript(id)));
-+}
-+
-+@riverpod
-+bool currentProfileScriptActive(Ref ref) {
-+  final managed = ref.watch(
-+    currentProfileProvider.select((profile) => profile?.isManaged ?? false),
-   );
-+  return managed ||
-+      ref.watch(
-+        currentProfileScriptProvider.select((script) => script != null),
-+      );
  }
  
  @riverpod
 -VM3<String?, String?, Dns?> needSetup(Ref ref) {
++bool currentProfileScriptActive(Ref ref) {
++  final managed = ref.watch(
++    currentProfileProvider.select((profile) => profile?.isManaged ?? false),
++  );
++  return managed ||
++      ref.watch(
++        currentProfileScriptProvider.select((script) => script != null),
++      );
++}
++
++@riverpod
 +({String? a, String? b, String? c, bool d, String e, String f, String g})
 +needSetup(Ref ref) {
    final profileId = ref.watch(currentProfileIdProvider);
@@ -173497,10 +174350,7 @@ index 65c0edc6..cd409141 100644
 +    currentProfileProvider.select(
 +      (profile) => profile?.runsManagedScript ?? false,
 +    ),
-   );
--  final overrideDns = ref.watch(overrideDnsProvider);
--  final dns = overrideDns == true
--      ? ref.watch(patchClashConfigProvider.select((state) => state.dns))
++  );
 +  final script = ref.watch(currentProfileScriptProvider);
 +  final scriptDigest = runsManagedScript
 +      ? ref.watch(
@@ -173514,7 +174364,10 @@ index 65c0edc6..cd409141 100644
 +      : '${script.id}:${script.digest}';
 +  final managed = ref.watch(
 +    currentProfileProvider.select((profile) => profile?.isManaged ?? false),
-+  );
+   );
+-  final overrideDns = ref.watch(overrideDnsProvider);
+-  final dns = overrideDns == true
+-      ? ref.watch(patchClashConfigProvider.select((state) => state.dns))
 +  final sharedRules = managed
 +      ? ref.watch(managedSettingProvider.select((state) => state.rules))
 +      : const <Rule>[];
@@ -173553,7 +174406,7 @@ index 65c0edc6..cd409141 100644
  }
  
  @riverpod
-@@ -790,13 +1163,13 @@ Brightness currentBrightness(Ref ref) {
+@@ -790,13 +1188,13 @@ Brightness currentBrightness(Ref ref) {
  }
  
  @riverpod
@@ -173571,7 +174424,7 @@ index 65c0edc6..cd409141 100644
  }
  
  @riverpod
-@@ -804,3 +1177,141 @@ class Query extends _$Query with AutoDisposeNotifierMixin {
+@@ -804,3 +1202,141 @@ class Query extends _$Query with AutoDisposeNotifierMixin {
    @override
    String build() => '';
  }
@@ -176315,7 +177168,7 @@ index b322b926..46e96d96 100644
    static bool? _udsSupport;
 
 diff --git a/lib/views/about.dart b/lib/views/about.dart
-index d178feeb..7af76fbe 100644
+index d178feeb..a1b4133e 100644
 --- a/lib/views/about.dart
 +++ b/lib/views/about.dart
 @@ -1,10 +1,11 @@
@@ -176506,7 +177359,7 @@ index d178feeb..7af76fbe 100644
                          ),
                        ),
                        Column(
-@@ -225,39 +252,6 @@ class AboutView extends StatelessWidget {
+@@ -225,39 +252,23 @@ class AboutView extends StatelessWidget {
          ),
        ),
        const SizedBox(height: 12),
@@ -176540,13 +177393,28 @@ index d178feeb..7af76fbe 100644
 -              ),
 -            ),
 -          ],
--        ),
--      ),
++      // Секция мода: автор сборки (см. образец «О программе»).
++      ListItem(
++        leading: const CircleAvatar(
++          radius: 24,
++          foregroundImage: AssetImage('assets/images/avatars/mod.png'),
++        ),
++        title: Text(
++          '/mod - ext_point',
++          style: Theme.of(context).textTheme.titleMedium,
++        ),
++        subtitle: Text(
++          '/ для RKN-OFF-LINE',
++          style: Theme.of(context).textTheme.bodySmall?.copyWith(
++            color: Theme.of(context).colorScheme.onSurfaceVariant,
++          ),
+         ),
+       ),
 -      const SizedBox(height: 12),
        ..._buildContributorsSection(),
        ..._buildMoreSection(context),
      ];
-@@ -332,17 +326,88 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
+@@ -332,17 +343,88 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
    }
  }
  
@@ -176640,7 +177508,7 @@ index d178feeb..7af76fbe 100644
      return IntrinsicHeight(
        child: Row(
          crossAxisAlignment: CrossAxisAlignment.stretch,
-@@ -351,9 +416,11 @@ class _LinkGridRow extends StatelessWidget {
+@@ -351,9 +433,11 @@ class _LinkGridRow extends StatelessWidget {
            VerticalDivider(
              width: 1,
              thickness: 1,
@@ -176655,7 +177523,7 @@ index d178feeb..7af76fbe 100644
            ),
            Expanded(child: right),
          ],
-@@ -362,37 +429,71 @@ class _LinkGridRow extends StatelessWidget {
+@@ -362,37 +446,71 @@ class _LinkGridRow extends StatelessWidget {
    }
  }
  
@@ -179977,7 +180845,7 @@ index 44e2d48a..d6e6d728 100644
  class OverrideExperimentalItem extends ConsumerWidget {
 
 diff --git a/lib/views/config/general.dart b/lib/views/config/general.dart
-index c1497b11..aac7ab4f 100644
+index c1497b11..c3519d39 100644
 --- a/lib/views/config/general.dart
 +++ b/lib/views/config/general.dart
 @@ -3,9 +3,10 @@ import 'package:bett_box/enum/enum.dart';
@@ -180531,11 +181399,7 @@ index c1497b11..aac7ab4f 100644
                          tooltip: appLocalizations.copy,
                          onPressed: () {
                            Clipboard.setData(ClipboardData(text: secret));
-@@ -771,14 +655,13 @@ List<Widget> get generalItems => generateSection(
-   items: [
-     const LogLevelItem(),
-     const UaItem(),
--    const SubSpoofGlobalItem(),
+@@ -775,10 +659,10 @@ List<Widget> get generalItems => generateSection(
      if (system.isDesktop) const KeepAliveIntervalItem(),
      const TestUrlItem(),
      const PortItem(),
@@ -180547,7 +181411,7 @@ index c1497b11..aac7ab4f 100644
      const TcpConcurrentItem(),
      const ExternalControllerItem(),
    ],
-@@ -793,233 +676,6 @@ class GeneralListView extends StatelessWidget {
+@@ -793,327 +677,120 @@ class GeneralListView extends StatelessWidget {
    }
  }
  
@@ -180558,19 +181422,32 @@ index c1497b11..aac7ab4f 100644
 -/// при каждом применении профиля — пересборка конфига не нужна.
 -class SubSpoofGlobalItem extends ConsumerStatefulWidget {
 -  const SubSpoofGlobalItem({super.key});
--
--  @override
++class _PortDialog extends ConsumerStatefulWidget {
++  const _PortDialog();
+ 
+   @override
 -  ConsumerState<SubSpoofGlobalItem> createState() =>
 -      _SubSpoofGlobalItemState();
--}
--
++  ConsumerState<_PortDialog> createState() => _PortDialogState();
+ }
+ 
 -class _SubSpoofGlobalItemState extends ConsumerState<SubSpoofGlobalItem> {
 -  SubSpoof _spoof = const SubSpoof();
 -  bool _loaded = false;
--
--  @override
--  void initState() {
--    super.initState();
++class _PortDialogState extends ConsumerState<_PortDialog> {
++  final _formKey = GlobalKey<FormState>();
++  bool _isMore = false;
++
++  late TextEditingController _mixedPortController;
++  late TextEditingController _portController;
++  late TextEditingController _socksPortController;
++  late TextEditingController _redirPortController;
++  late TextEditingController _tProxyPortController;
++  late TextEditingController _externalControllerPortController;
+ 
+   @override
+   void initState() {
+     super.initState();
 -    SubSpoofStore.getGlobal().then((value) {
 -      if (mounted) {
 -        setState(() {
@@ -180584,7 +181461,18 @@ index c1497b11..aac7ab4f 100644
 -  Future<void> _edit() async {
 -    final result = await globalState.showCommonDialog<SubSpoof>(
 -      child: _SubSpoofGlobalDialog(spoof: _spoof),
--    );
++    final vm5 = ref.read(
++      patchClashConfigProvider.select((state) {
++        return (
++          a: state.mixedPort,
++          b: state.port,
++          c: state.socksPort,
++          d: state.redirPort,
++          e: state.tproxyPort,
++          f: state.externalControllerPort,
++        );
++      }),
+     );
 -    if (result == null || !mounted) {
 -      return;
 -    }
@@ -180613,8 +181501,15 @@ index c1497b11..aac7ab4f 100644
 -      title: const Text('Подмена клиента подписок'),
 -      subtitle: Text(stateText),
 -      onTap: _edit,
--    );
--  }
++    _mixedPortController = TextEditingController(text: vm5.a.toString());
++    _portController = TextEditingController(text: vm5.b.toString());
++    _socksPortController = TextEditingController(text: vm5.c.toString());
++    _redirPortController = TextEditingController(text: vm5.d.toString());
++    _tProxyPortController = TextEditingController(text: vm5.e.toString());
++    _externalControllerPortController = TextEditingController(
++      text: vm5.f.toString(),
+     );
+   }
 -}
 -
 -class _SubSpoofGlobalDialog extends ConsumerStatefulWidget {
@@ -180633,13 +181528,19 @@ index c1497b11..aac7ab4f 100644
 -  late final TextEditingController _hwidController =
 -      TextEditingController(text: widget.spoof.hwid);
 -  final _formKey = GlobalKey<FormState>();
--
--  @override
--  void dispose() {
+ 
+   @override
+   void dispose() {
 -    _hwidController.dispose();
--    super.dispose();
--  }
--
++    _mixedPortController.dispose();
++    _portController.dispose();
++    _socksPortController.dispose();
++    _redirPortController.dispose();
++    _tProxyPortController.dispose();
++    _externalControllerPortController.dispose();
+     super.dispose();
+   }
+ 
 -  Future<void> _selectClient(String value) async {
 -    setState(() => _client = value);
 -    if (value.isNotEmpty &&
@@ -180649,11 +181550,33 @@ index c1497b11..aac7ab4f 100644
 -      if (mounted) {
 -        setState(() => _hwidController.text = auto);
 -      }
--    }
--  }
--
++  Future<void> _handleReset() async {
++    final res = await globalState.showMessage(
++      message: TextSpan(text: appLocalizations.resetTip),
++    );
++    if (res != true || !mounted) {
++      return;
++    }
++    ref
++        .read(patchClashConfigProvider.notifier)
++        .updateState(
++          (state) => state.copyWith(
++            mixedPort: 7890,
++            port: 0,
++            socksPort: 0,
++            redirPort: 0,
++            tproxyPort: 0,
++            externalControllerPort: defaultExternalControllerPort,
++          ),
++        );
++    if (mounted) {
++      Navigator.of(context).pop();
+     }
+   }
+ 
 -  void _save() {
--    if (_formKey.currentState?.validate() == false) return;
++  void _handleUpdate() {
+     if (_formKey.currentState?.validate() == false) return;
 -    Navigator.of(context, rootNavigator: true).pop(
 -      SubSpoof(
 -        client: _client,
@@ -180661,13 +181584,35 @@ index c1497b11..aac7ab4f 100644
 -        hwid: _hwidController.text.trim(),
 -      ),
 -    );
--  }
--
--  @override
--  Widget build(BuildContext context) {
--    return CommonDialog(
++    ref
++        .read(patchClashConfigProvider.notifier)
++        .updateState(
++          (state) => state.copyWith(
++            mixedPort: int.parse(_mixedPortController.text),
++            port: int.parse(_portController.text),
++            socksPort: int.parse(_socksPortController.text),
++            redirPort: int.parse(_redirPortController.text),
++            tproxyPort: int.parse(_tProxyPortController.text),
++            externalControllerPort: int.parse(
++              _externalControllerPortController.text,
++            ),
++          ),
++        );
++    Navigator.of(context).pop();
++  }
++
++  void _handleMore() {
++    setState(() {
++      _isMore = !_isMore;
++    });
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+     return CommonDialog(
 -      title: 'Подмена клиента подписок',
--      actions: [
++      title: appLocalizations.port,
+       actions: [
 -        TextButton(
 -          onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
 -          child: const Text('Отмена'),
@@ -180679,7 +181624,9 @@ index c1497b11..aac7ab4f 100644
 -        child: Column(
 -          mainAxisSize: MainAxisSize.min,
 -          crossAxisAlignment: CrossAxisAlignment.start,
--          children: [
++        Row(
++          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+           children: [
 -            const Text(
 -              'Приложение представляется выбранным клиентом при '
 -              'скачивании подписок: действует для всех профилей, '
@@ -180778,79 +181725,107 @@ index c1497b11..aac7ab4f 100644
 -  }
 -}
 -
- class _PortDialog extends ConsumerStatefulWidget {
-   const _PortDialog();
- 
-@@ -1036,18 +692,20 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
-   late TextEditingController _socksPortController;
-   late TextEditingController _redirPortController;
-   late TextEditingController _tProxyPortController;
-+  late TextEditingController _externalControllerPortController;
- 
-   @override
-   void initState() {
-     super.initState();
-     final vm5 = ref.read(
-       patchClashConfigProvider.select((state) {
+-class _PortDialog extends ConsumerStatefulWidget {
+-  const _PortDialog();
+-
+-  @override
+-  ConsumerState<_PortDialog> createState() => _PortDialogState();
+-}
+-
+-class _PortDialogState extends ConsumerState<_PortDialog> {
+-  final _formKey = GlobalKey<FormState>();
+-  bool _isMore = false;
+-
+-  late TextEditingController _mixedPortController;
+-  late TextEditingController _portController;
+-  late TextEditingController _socksPortController;
+-  late TextEditingController _redirPortController;
+-  late TextEditingController _tProxyPortController;
+-
+-  @override
+-  void initState() {
+-    super.initState();
+-    final vm5 = ref.read(
+-      patchClashConfigProvider.select((state) {
 -        return VM5(
-+        return (
-           a: state.mixedPort,
-           b: state.port,
-           c: state.socksPort,
-           d: state.redirPort,
-           e: state.tproxyPort,
-+          f: state.externalControllerPort,
-         );
-       }),
-     );
-@@ -1056,13 +714,27 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
-     _socksPortController = TextEditingController(text: vm5.c.toString());
-     _redirPortController = TextEditingController(text: vm5.d.toString());
-     _tProxyPortController = TextEditingController(text: vm5.e.toString());
-+    _externalControllerPortController = TextEditingController(
-+      text: vm5.f.toString(),
-+    );
-+  }
-+
-+  @override
-+  void dispose() {
-+    _mixedPortController.dispose();
-+    _portController.dispose();
-+    _socksPortController.dispose();
-+    _redirPortController.dispose();
-+    _tProxyPortController.dispose();
-+    _externalControllerPortController.dispose();
-+    super.dispose();
-   }
- 
-   Future<void> _handleReset() async {
-     final res = await globalState.showMessage(
-       message: TextSpan(text: appLocalizations.resetTip),
-     );
+-          a: state.mixedPort,
+-          b: state.port,
+-          c: state.socksPort,
+-          d: state.redirPort,
+-          e: state.tproxyPort,
+-        );
+-      }),
+-    );
+-    _mixedPortController = TextEditingController(text: vm5.a.toString());
+-    _portController = TextEditingController(text: vm5.b.toString());
+-    _socksPortController = TextEditingController(text: vm5.c.toString());
+-    _redirPortController = TextEditingController(text: vm5.d.toString());
+-    _tProxyPortController = TextEditingController(text: vm5.e.toString());
+-  }
+-
+-  Future<void> _handleReset() async {
+-    final res = await globalState.showMessage(
+-      message: TextSpan(text: appLocalizations.resetTip),
+-    );
 -    if (res != true) {
-+    if (res != true || !mounted) {
-       return;
-     }
-     ref
-@@ -1074,6 +746,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
-             socksPort: 0,
-             redirPort: 0,
-             tproxyPort: 0,
-+            externalControllerPort: defaultExternalControllerPort,
-           ),
-         );
-     if (mounted) {
-@@ -1092,6 +765,9 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
-             socksPort: int.parse(_socksPortController.text),
-             redirPort: int.parse(_redirPortController.text),
-             tproxyPort: int.parse(_tProxyPortController.text),
-+            externalControllerPort: int.parse(
-+              _externalControllerPortController.text,
-+            ),
-           ),
-         );
-     Navigator.of(context).pop();
-@@ -1180,6 +856,49 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
+-      return;
+-    }
+-    ref
+-        .read(patchClashConfigProvider.notifier)
+-        .updateState(
+-          (state) => state.copyWith(
+-            mixedPort: 7890,
+-            port: 0,
+-            socksPort: 0,
+-            redirPort: 0,
+-            tproxyPort: 0,
+-          ),
+-        );
+-    if (mounted) {
+-      Navigator.of(context).pop();
+-    }
+-  }
+-
+-  void _handleUpdate() {
+-    if (_formKey.currentState?.validate() == false) return;
+-    ref
+-        .read(patchClashConfigProvider.notifier)
+-        .updateState(
+-          (state) => state.copyWith(
+-            mixedPort: int.parse(_mixedPortController.text),
+-            port: int.parse(_portController.text),
+-            socksPort: int.parse(_socksPortController.text),
+-            redirPort: int.parse(_redirPortController.text),
+-            tproxyPort: int.parse(_tProxyPortController.text),
+-          ),
+-        );
+-    Navigator.of(context).pop();
+-  }
+-
+-  void _handleMore() {
+-    setState(() {
+-      _isMore = !_isMore;
+-    });
+-  }
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return CommonDialog(
+-      title: appLocalizations.port,
+-      actions: [
+-        Row(
+-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+-          children: [
+-            IconButton.filledTonal(
+-              onPressed: _handleMore,
+-              icon: CommonExpandIcon(expand: _isMore),
++            IconButton.filledTonal(
++              onPressed: _handleMore,
++              icon: CommonExpandIcon(expand: _isMore),
+             ),
+             Row(
+               children: [
+@@ -1180,6 +857,49 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
                        _socksPortController.text,
                        _tProxyPortController.text,
                        _redirPortController.text,
@@ -180900,7 +181875,7 @@ index c1497b11..aac7ab4f 100644
                      ].map((item) => item.trim());
                      if (ports.contains(value.trim())) {
                        return appLocalizations.portConflictTip;
-@@ -1221,6 +940,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
+@@ -1221,6 +941,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
                          _socksPortController.text,
                          _tProxyPortController.text,
                          _redirPortController.text,
@@ -180908,7 +181883,7 @@ index c1497b11..aac7ab4f 100644
                        ].map((item) => item.trim());
                        if (ports.contains(value.trim())) {
                          return appLocalizations.portConflictTip;
-@@ -1265,6 +985,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
+@@ -1265,6 +986,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
                          _mixedPortController.text,
                          _tProxyPortController.text,
                          _redirPortController.text,
@@ -180916,7 +181891,7 @@ index c1497b11..aac7ab4f 100644
                        ].map((item) => item.trim());
                        if (ports.contains(value.trim())) {
                          return appLocalizations.portConflictTip;
-@@ -1309,6 +1030,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
+@@ -1309,6 +1031,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
                          _socksPortController.text,
                          _tProxyPortController.text,
                          _mixedPortController.text,
@@ -180924,7 +181899,7 @@ index c1497b11..aac7ab4f 100644
                        ].map((item) => item.trim());
                        if (ports.contains(value.trim())) {
                          return appLocalizations.portConflictTip;
-@@ -1353,6 +1075,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
+@@ -1353,6 +1076,7 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
                          _socksPortController.text,
                          _mixedPortController.text,
                          _redirPortController.text,
@@ -180932,6 +181907,232 @@ index c1497b11..aac7ab4f 100644
                        ].map((item) => item.trim());
                        if (ports.contains(value.trim())) {
                          return appLocalizations.portConflictTip;
+@@ -1370,3 +1094,225 @@ class _PortDialogState extends ConsumerState<_PortDialog> {
+     );
+   }
+ }
++class SubSpoofGlobalItem extends ConsumerStatefulWidget {
++  const SubSpoofGlobalItem({super.key});
++
++  @override
++  ConsumerState<SubSpoofGlobalItem> createState() =>
++      _SubSpoofGlobalItemState();
++}
++
++class _SubSpoofGlobalItemState extends ConsumerState<SubSpoofGlobalItem> {
++  SubSpoof _spoof = const SubSpoof();
++  bool _loaded = false;
++
++  @override
++  void initState() {
++    super.initState();
++    SubSpoofStore.getGlobal().then((value) {
++      if (mounted) {
++        setState(() {
++          _spoof = value;
++          _loaded = true;
++        });
++      }
++    });
++  }
++
++  Future<void> _edit() async {
++    final result = await globalState.showCommonDialog<SubSpoof>(
++      child: _SubSpoofGlobalDialog(spoof: _spoof),
++    );
++    if (result == null || !mounted) {
++      return;
++    }
++    await SubSpoofStore.saveGlobal(result);
++    setState(() => _spoof = result);
++    // Активный профиль переприменяется: инъекция заголовков в
++    // провайдеры выполняется при каждом применении конфига, поэтому
++    // новая подмена действует сразу, без пересборки.
++    try {
++      await globalState.appController.applyProfile(silence: true);
++    } catch (_) {}
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final hwidNote = _spoof.needsHwid
++        ? ' + HWID'
++        : '';
++    final stateText = !_loaded
++        ? '…'
++        : _spoof.isEnabled
++            ? 'Вкл: ${kSubSpoofClientLabels[_spoof.client] ?? _spoof.client}$hwidNote'
++            : 'Выкл';
++    return ListItem(
++      leading: const Icon(Icons.fingerprint),
++      title: const Text('Подмена клиента подписок'),
++      subtitle: Text(stateText),
++      onTap: _edit,
++    );
++  }
++}
++
++class _SubSpoofGlobalDialog extends ConsumerStatefulWidget {
++  final SubSpoof spoof;
++
++  const _SubSpoofGlobalDialog({required this.spoof});
++
++  @override
++  ConsumerState<_SubSpoofGlobalDialog> createState() =>
++      _SubSpoofGlobalDialogState();
++}
++
++class _SubSpoofGlobalDialogState
++    extends ConsumerState<_SubSpoofGlobalDialog> {
++  late String _client = widget.spoof.client;
++  late final TextEditingController _hwidController =
++      TextEditingController(text: widget.spoof.hwid);
++  final _formKey = GlobalKey<FormState>();
++
++  @override
++  void dispose() {
++    _hwidController.dispose();
++    super.dispose();
++  }
++
++  Future<void> _selectClient(String value) async {
++    setState(() => _client = value);
++    if (value.isNotEmpty &&
++        _hwidController.text.trim().isEmpty &&
++        kSubSpoofHwidClients.contains(value)) {
++      final auto = formatSubSpoofHwid(value, await generateSubSpoofHwid());
++      if (mounted) {
++        setState(() => _hwidController.text = auto);
++      }
++    }
++  }
++
++  void _save() {
++    if (_formKey.currentState?.validate() == false) return;
++    Navigator.of(context, rootNavigator: true).pop(
++      SubSpoof(
++        client: _client,
++        customUa: '',
++        hwid: _hwidController.text.trim(),
++      ),
++    );
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return CommonDialog(
++      title: 'Подмена клиента подписок',
++      actions: [
++        TextButton(
++          onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
++          child: const Text('Отмена'),
++        ),
++        TextButton(onPressed: _save, child: const Text('Сохранить')),
++      ],
++      child: Form(
++        key: _formKey,
++        child: Column(
++          mainAxisSize: MainAxisSize.min,
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            const Text(
++              'Приложение представляется выбранным клиентом при '
++              'скачивании подписок: действует для всех профилей, '
++              'включая собранные генератором.',
++            ),
++            const SizedBox(height: 12),
++            InputDecorator(
++              decoration: const InputDecoration(
++                border: OutlineInputBorder(),
++                labelText: 'Имитация приложения',
++              ),
++              child: DropdownButton<String>(
++                value: _client,
++                isExpanded: true,
++                isDense: true,
++                underline: const SizedBox.shrink(),
++                items: [
++                  const DropdownMenuItem(
++                    value: '',
++                    child: Text('Нет (не представляться)'),
++                  ),
++                  for (final client in kSubSpoofClients.keys)
++                    DropdownMenuItem(
++                      value: client,
++                      child: Text(
++                        kSubSpoofClientLabels[client] ?? client,
++                        overflow: TextOverflow.ellipsis,
++                      ),
++                    ),
++                ],
++                onChanged: (value) => _selectClient(value ?? ''),
++              ),
++            ),
++            if (kSubSpoofHwidClients.contains(_client)) ...[
++              const SizedBox(height: 12),
++              TextFormField(
++                controller: _hwidController,
++                decoration: InputDecoration(
++                  border: const OutlineInputBorder(),
++                  labelText: 'X-Hwid (пусто — авто)',
++                  suffixIcon: IconButton(
++                    icon: const Icon(Icons.refresh),
++                    onPressed: () async {
++                      final value = formatSubSpoofHwid(
++                        _client,
++                        await generateSubSpoofHwid(),
++                      );
++                      if (mounted) {
++                        setState(() => _hwidController.text = value);
++                      }
++                    },
++                  ),
++                ),
++                validator: (String? value) {
++                  final v = value?.trim() ?? '';
++                  if (v.isEmpty) {
++                    return null;
++                  }
++                  if (v.length < 10 ||
++                      v.length > 64 ||
++                      !RegExp(r'^[a-zA-Z0-9=-]+$').hasMatch(v)) {
++                    return 'допустимы латиница, цифры, - и =, длина 10–64';
++                  }
++                  return null;
++                },
++              ),
++            ],
++            const SizedBox(height: 8),
++            Text(
++              'Подмена делает запрос панели неотличимым от запросов '
++              'Happ, v2RayTun или Incy — панель принимает BettboxR за '
++              'обычный одобренный клиент. X-Hwid — идентификатор '
++              'устройства: авто-режим создаёт постоянный hwid в формате '
++              'выбранного клиента. Если панель ограничивает число '
++              'устройств и слот уже занят другим клиентом (neko+, Happ '
++              'и т.п.) — впишите его X-Hwid в поле выше, панель сочтёт '
++              'BettboxR тем же устройством.',
++              style: TextStyle(
++                fontSize: 12,
++                color: Theme.of(context).hintColor,
++              ),
++            ),
++            const SizedBox(height: 8),
++            Text(
++              'Настройка в свойствах конкретного профиля имеет приоритет '
++              'над этой.',
++              style: TextStyle(
++                fontSize: 12,
++                color: Theme.of(context).hintColor,
++              ),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}
++
 
 diff --git a/lib/views/config/network.dart b/lib/views/config/network.dart
 index 0c739543..dfe65065 100644
@@ -205438,10 +206639,121 @@ index d24ef6dc..57e3f63f 100644
  
 
 diff --git a/lib/views/proxies/dead_nodes.dart b/lib/views/proxies/dead_nodes.dart
-index 42c922fe..950dab76 100644
+index 42c922fe..91d725a8 100644
 --- a/lib/views/proxies/dead_nodes.dart
 +++ b/lib/views/proxies/dead_nodes.dart
-@@ -484,7 +484,7 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
+@@ -182,6 +182,39 @@ Future<void> deleteDeadNodesFlow(
+     globalState.showNotifier(appLocalizations.deleteUnavailableEmpty);
+     return;
+   }
++  await confirmAndDeleteDeadNodes(context, ref, deadNames);
++}
++
++/// Массовое удаление мёртвых нод по ВСЕМ группам — пункт «Удалить
++/// недоступные» в меню «⋮» страницы прокси. Мёртвые собираются по каждой
++/// группе (delay < 0 по её testUrl) и дедуплицируются по имени: одна и та
++/// же нода может значиться в нескольких группах, но в конфиге она одна.
++/// Выбранные ноды и группы не трогаются (см. [collectDeadNodeNames]).
++Future<void> deleteDeadNodesAllGroupsFlow(
++  BuildContext context,
++  WidgetRef ref,
++) async {
++  HapticFeedback.mediumImpact();
++  final deadNames = <String>{};
++  for (final group in ref.read(groupsProvider)) {
++    deadNames.addAll(collectDeadNodeNames(ref, group));
++  }
++  if (deadNames.isEmpty) {
++    globalState.showNotifier(appLocalizations.deleteUnavailableEmpty);
++    return;
++  }
++  await confirmAndDeleteDeadNodes(context, ref, deadNames.toList());
++}
++
++/// Диалог подтверждения + само удаление, общее для обеих точек входа
++/// (кнопка на карточке группы и пункт меню «⋮»). После подтверждения
++/// сбрасывает выбор в группах, где была выбрана удалённая нода, — иначе
++/// UI показывает выделение несуществующей карточки.
++Future<void> confirmAndDeleteDeadNodes(
++  BuildContext context,
++  WidgetRef ref,
++  List<String> deadNames,
++) async {
+   final profile = ref.read(currentProfileProvider);
+   final isSubLinked = (profile?.url.isNotEmpty ?? false);
+ 
+@@ -213,18 +246,29 @@ Future<void> deleteDeadNodesFlow(
+               '• $name',
+               maxLines: 1,
+               overflow: TextOverflow.ellipsis,
+-              style: Theme.of(context).textTheme.labelSmall,
++              // Явный цвет: голый labelSmall без цвета на угольной теме
++              // сливается с поверхностью диалога (контраст ~1.1 по
++              // скриншотам) — «нихрена не видно».
++              style: Theme.of(context).textTheme.labelSmall?.copyWith(
++                color: Theme.of(context).colorScheme.onSurfaceVariant,
++              ),
+             ),
+           if (deadNames.length > 8)
+             Text(
+               appLocalizations.deleteUnavailableMore(deadNames.length - 8),
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           if (isSubLinked) ...[
+             const SizedBox(height: 8),
+             Text(
+               appLocalizations.deleteUnavailableAutoUpdateNote,
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           ],
+         ],
+@@ -241,6 +285,14 @@ Future<void> deleteDeadNodesFlow(
+     if (result.misses.isNotEmpty) {
+       message += ' · ${result.misses.take(4).join(', ')}';
+     }
++    if (result.removed > 0) {
++      final removed = deadNames.toSet();
++      ref.read(selectedMapProvider).forEach((groupName, selectedName) {
++        if (removed.contains(selectedName)) {
++          globalState.appController.updateCurrentSelectedMap(groupName, '');
++        }
++      });
++    }
+     globalState.showNotifier(message);
+   } on Object catch (e) {
+     globalState.showNotifier(e.formatError);
+@@ -315,14 +367,20 @@ Future<void> deleteSingleNodeFlow(
+             const SizedBox(height: 8),
+             Text(
+               appLocalizations.deleteNodeSelectedNote,
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           ],
+           if (isSubLinked) ...[
+             const SizedBox(height: 8),
+             Text(
+               appLocalizations.deleteUnavailableAutoUpdateNote,
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           ],
+         ],
+@@ -484,7 +542,7 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
        for (final providerName in providerNames) {
          if (providersConfig is Map && providersConfig[providerName] is Map) {
            final entry = Map<String, dynamic>.from(
@@ -206087,10 +207399,10 @@ index fc9986a5..a8050ad9 100644
                        ),
 
 diff --git a/lib/views/proxies/proxies.dart b/lib/views/proxies/proxies.dart
-index 6eabac53..09977f5b 100644
+index 6eabac53..bb2f8bb7 100644
 --- a/lib/views/proxies/proxies.dart
 +++ b/lib/views/proxies/proxies.dart
-@@ -1,16 +1,17 @@
+@@ -1,19 +1,21 @@
  import 'package:bett_box/common/common.dart';
  import 'package:bett_box/enum/enum.dart';
  import 'package:bett_box/models/common.dart';
@@ -206110,7 +207422,11 @@ index 6eabac53..09977f5b 100644
  import '../profiles/scripts.dart'
      show showGroupSwitchOptions, showScriptCustomOptions;
  import 'advanced_settings.dart';
-@@ -27,24 +28,29 @@ class ProxiesView extends ConsumerStatefulWidget {
++import 'dead_nodes.dart';
+ import 'profile_switcher.dart';
+ import 'setting.dart';
+ import 'tab.dart';
+@@ -27,27 +29,33 @@ class ProxiesView extends ConsumerStatefulWidget {
  
  class _ProxiesViewState extends ConsumerState<ProxiesView> {
    final GlobalKey<ProxiesTabViewState> _proxiesTabKey = GlobalKey();
@@ -206148,7 +207464,11 @@ index 6eabac53..09977f5b 100644
      final hasGroupCustom =
          !hasScriptCustom && ref.read(currentProfileIdProvider) != null;
      final hasCustom = hasScriptCustom || hasGroupCustom;
-@@ -55,12 +61,12 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
++    final hasGroups = ref.watch(groupsProvider.select((state) => state.isNotEmpty));
+     return [
+       if (_isTab)
+         IconButton(
+@@ -55,12 +63,12 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
              _proxiesTabKey.currentState?.scrollToGroupSelected();
            },
            tooltip: appLocalizations.locate,
@@ -206163,7 +207483,7 @@ index 6eabac53..09977f5b 100644
            tooltip: appLocalizations.custom,
          ),
        CommonPopupBox(
-@@ -70,7 +76,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -70,7 +78,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                open(offset: const Offset(0, 20));
              },
              tooltip: appLocalizations.more,
@@ -206172,7 +207492,7 @@ index 6eabac53..09977f5b 100644
            );
          },
          popup: CommonPopupMenu(
-@@ -150,6 +156,22 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -150,6 +158,34 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                      );
                },
              ),
@@ -206192,10 +207512,22 @@ index 6eabac53..09977f5b 100644
 +                globalState.appController.addSortNum();
 +              },
 +            ),
++            // Массовое удаление мёртвых нод по всем группам (dead_nodes).
++            // Пункт дублирует кнопку на карточке группы в режиме «скрыть
++            // недоступные», но доступен всегда и охватывает все группы
++            // сразу — для подписок с большим числом мёртвых нод.
++            if (hasGroups)
++              PopupMenuItemData(
++                icon: Icons.delete_sweep_outlined,
++                label: appLocalizations.deleteUnavailable,
++                onPressed: () {
++                  deleteDeadNodesAllGroupsFlow(context, ref);
++                },
++              ),
            ],
          ),
        ),
-@@ -181,21 +203,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -181,21 +217,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  
@@ -206230,7 +207562,7 @@ index 6eabac53..09977f5b 100644
      }
    }
  
-@@ -229,27 +258,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -229,27 +272,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
  
    @override
    Widget build(BuildContext context) {
@@ -206284,7 +207616,7 @@ index 6eabac53..09977f5b 100644
                },
              },
            ),
-@@ -258,4 +309,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -258,4 +323,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  }
@@ -207095,6 +208427,471 @@ index 89950707..a0e884dd 100644
    Future<void> _handleReset() async {
      if (widget.defaultValue == null) {
        return;
+
+diff --git a/lib/views/stealth_check.dart b/lib/views/stealth_check.dart
+index 0f718ec3..416e73aa 100644
+--- a/lib/views/stealth_check.dart
++++ b/lib/views/stealth_check.dart
+@@ -1,3 +1,4 @@
++import 'dart:async';
+ import 'dart:convert';
+ import 'dart:io';
+ 
+@@ -11,7 +12,6 @@ import 'package:flutter/material.dart';
+ import 'package:flutter/services.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import 'package:flutter_spinkit/flutter_spinkit.dart';
+-import 'package:intl/intl.dart' show DateFormat;
+ 
+ /// Экран «Стелс-проверка»: приложение смотрит на себя глазами детектора VPN —
+ /// локальные порты, tun-интерфейс, TRANSPORT_VPN, DNS, DoT (Quad9), IPv6
+@@ -90,19 +90,52 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+       _vExit = _running;
+       _vDot = _running;
+     });
+-    await _checkPorts();
+-    await _checkSystem();
+-    await _probeBaseline();
+-    await _checkDns();
+-    await _checkDot();
+-    _checkIpv6();
+-    await _checkExit();
+-    if (!mounted) return;
+-    setState(() {
+-      _isRunning = false;
+-      _hasRun = true;
+-      _lastRun = DateTime.now();
+-    });
++    // Каждая проверка в собственной страховке: падение одной не должно
++    // оставлять _isRunning=true навсегда (кнопки перестают отвечать,
++    // строки застывают на «Проверка...»).
++    Future<void> step(Future<void> Function() body) async {
++      try {
++        await body();
++      } catch (e) {
++        commonPrint.log('stealth check: step failed: $e');
++      }
++    }
++
++    try {
++      await step(_checkPorts);
++      await step(_checkSystem);
++      await step(_probeBaseline);
++      await step(_checkDns);
++      await step(_checkDot);
++      await step(() async => _checkIpv6());
++      await step(_checkExit);
++    } finally {
++      if (!mounted) return;
++      setState(() {
++        String? settle(String? verdict) => verdict == _running ? _fail : verdict;
++        _isRunning = false;
++        _hasRun = true;
++        _lastRun = DateTime.now();
++        _vPorts = settle(_vPorts);
++        _vTun = settle(_vTun);
++        _vVpnNet = settle(_vVpnNet);
++        _vDns = settle(_vDns);
++        _vDot = settle(_vDot);
++        _vIpv6 = settle(_vIpv6);
++        _vExit = settle(_vExit);
++      });
++    }
++  }
++
++  /// «HH:mm» без intl: DateFormat зависит от initializeDateFormatting(),
++  /// который в main.dart запускается без ожидания — на медленном старте
++  /// (VPN поднимается, IO занят) проверка завершается раньше загрузки
++  /// символов локали, и DateFormat бросает LocaleDataException прямо в
++  /// build — белый экран вместо результатов.
++  String _fmtTime(DateTime value) {
++    final hh = value.hour.toString().padLeft(2, '0');
++    final mm = value.minute.toString().padLeft(2, '0');
++    return '$hh:$mm';
+   }
+ 
+   /// Детекторы первым делом стучатся на типичные порты прокси на localhost.
+@@ -377,100 +410,268 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+   /// DoT-проба по Quad9: живая DNS-over-TLS-сессия — TCP 853, TLS с проверкой
+   /// сертификата и настоящий DNS-обмен в wire-формате. В отличие от DoH-пробы
+   /// выше здесь проверяется именно транспорт :853, который чаще всего душат
+-  /// операторы и сети. Как базовая TCP-проба, идёт системным маршрутом: при
+-  /// активном VPN это путь через tun и ноду — ровно то, что доступно клиентам.
++  /// операторы и сети.
++  ///
++  /// Маршрут — первый успешный решает исход: 1) через микс-порт ядра: CONNECT
++  /// dns.quad9.net:853 и TLS-апгрейд поверх туннеля — тот же путь через ноду,
++  /// что у клиентского DoT и в мониторинге подключений, без участия
++  /// системного резолвера приложения; 2) системным маршрутом по IP-литералу
++  /// (A-запись dns.quad9.net, при её недоступности — 9.9.9.9). Сертификат
++  /// всегда валидируется по имени dns.quad9.net (RawSecureSocket.secure c
++  /// host:): подключение к IP-литералу проверяет сертификат по IP, а IP-SAN
++  /// в сертификате Quad9 не гарантирован — проба падала с HandshakeException
++  /// при живом транспорте. Только IPv4-адреса: под VPN системный резолвер
++  /// может вернуть AAAA без рабочего маршрута, и проба повисла бы на v6.
+   Future<void> _checkDot() async {
++    var ok = false;
+     var info = '';
+     try {
+-      final (ms, byIp) = await _dotProbe();
+-      info = '${byIp ? '9.9.9.9' : 'dns.quad9.net'}:853 · $ms ms';
++      final (ms, route) = await _dotProbe();
++      ok = true;
++      info = '$route · $ms ms';
+     } catch (e) {
+       info = _shortError(e.toString());
+     }
+     if (!mounted) return;
+     setState(() {
+-      _vDot = info.isEmpty ? _bad : _ok;
++      // Честная раскраска: ошибка пробы — «недоступен» с текстом ошибки.
++      // Раньше при сбое info заполнялся текстом ошибки, и строка оставалась
++      // зелёной («доступен · Connection timed out»).
++      _vDot = ok ? _ok : _bad;
+       _dotInfo = info;
+     });
+   }
+ 
+-  /// TLS-соединение до Quad9: сначала по имени (SNI и проверка сертификата —
+-  /// dns.quad9.net), при «Failed host lookup» — по IP-литералу 9.9.9.9, чтобы
+-  /// проба мерила именно DoT-транспорт, а не упиралась в сломанный DNS.
+-  /// Возвращает (сокет, подключение по IP).
+-  Future<(SecureSocket, bool)> _dotConnect() async {
++  /// Одна DoT-сессия; возвращает (длительность полного обмена, мс, метка
++  /// маршрута). Ошибки всех попыток собираются в сообщение — при полном
++  /// провале видно, какой именно маршрут не прошёл.
++  Future<(int, String)> _dotProbe() async {
++    final errors = <String>[];
++    final port = ref.read(patchClashConfigProvider).mixedPort;
++    if (port > 0) {
++      try {
++        return (await _dotSessionViaProxy(port), 'tunnel · dns.quad9.net:853');
++      } catch (e) {
++        commonPrint.log('stealth check: dot via tunnel failed: $e');
++        errors.add('tunnel: ${_shortError(e.toString(), 90)}');
++      }
++    } else {
++      errors.add('tunnel off');
++    }
++    var addr = InternetAddress('9.9.9.9');
+     try {
+-      return (
+-        await SecureSocket.connect(
+-          'dns.quad9.net',
+-          853,
+-        ).timeout(const Duration(seconds: 6)),
+-        false,
++      final list = await InternetAddress.lookup(
++        'dns.quad9.net',
++        type: InternetAddressType.IPv4,
+       );
+-    } on SocketException catch (e) {
+-      if (!e.message.contains('Failed host lookup')) rethrow;
++      if (list.isNotEmpty) addr = list.first;
++    } catch (e) {
++      commonPrint.log('stealth check: dot lookup failed: $e');
+     }
+     try {
+-      return (
+-        await SecureSocket.connect(
+-          InternetAddress('9.9.9.9'),
+-          853,
+-        ).timeout(const Duration(seconds: 6)),
+-        true,
+-      );
++      return (await _dotSessionByIp(addr), 'direct · ${addr.address}:853');
+     } catch (e) {
+-      throw SocketException(
+-        'name lookup failed; 9.9.9.9:853: ${_shortError(e.toString())}',
+-      );
++      commonPrint.log('stealth check: dot direct failed: $e');
++      errors.add('direct: ${_shortError(e.toString(), 90)}');
++      throw SocketException(errors.join(' | '));
+     }
+   }
+ 
+-  /// Одна DoT-сессия; возвращает (длительность полного обмена, мс, по IP).
+-  Future<(int, bool)> _dotProbe() async {
++  /// DoT-сессия через туннель: CONNECT dns.quad9.net:853 в микс-порт ядра,
++  /// затем штатный TLS-апгрейд RawSecureSocket.secure — документированный
++  /// путь для TLS поверх CONNECT-прокси — и DNS-обмен в wire-формате.
++  Future<int> _dotSessionViaProxy(int port) async {
+     final sw = Stopwatch()..start();
+-    final (tls, byIp) = await _dotConnect();
++    final raw = await RawSocket.connect(
++      InternetAddress.loopbackIPv4,
++      port,
++      timeout: const Duration(seconds: 5),
++    );
++    RawSecureSocket? tls;
+     try {
+-      await _dotExchange(tls).timeout(const Duration(seconds: 6));
+-      return (sw.elapsedMilliseconds, byIp);
++      await _proxyConnect(raw);
++      tls = await RawSecureSocket.secure(
++        raw,
++        host: 'dns.quad9.net',
++      ).timeout(const Duration(seconds: 8));
++      await _dotExchange(tls).timeout(const Duration(seconds: 8));
++      return sw.elapsedMilliseconds;
+     } finally {
+-      tls.destroy();
++      raw.destroy();
++      tls?.destroy();
+     }
+   }
+ 
++  /// DoT-сессия системным маршрутом: TCP до IP-литерала, затем TLS-апгрейд
++  /// с SNI и проверкой сертификата по имени dns.quad9.net.
++  Future<int> _dotSessionByIp(InternetAddress addr) async {
++    final sw = Stopwatch()..start();
++    final raw = await RawSocket.connect(
++      addr,
++      853,
++      timeout: const Duration(seconds: 8),
++    );
++    RawSecureSocket? tls;
++    try {
++      tls = await RawSecureSocket.secure(
++        raw,
++        host: 'dns.quad9.net',
++      ).timeout(const Duration(seconds: 8));
++      await _dotExchange(tls).timeout(const Duration(seconds: 8));
++      return sw.elapsedMilliseconds;
++    } finally {
++      raw.destroy();
++      tls?.destroy();
++    }
++  }
++
++  /// CONNECT-рукопожатие с микс-портом на открытом RawSocket: событийное
++  /// API без потребительских стримов — после отмены подписки stream Socket
++  /// недоступен для повторного прослушивания, а сокет должен остаться
++  /// пригоден для TLS-апгрейда.
++  Future<void> _proxyConnect(RawSocket raw) {
++    final completer = Completer<void>();
++    final head = BytesBuilder();
++    raw.write(
++      ascii.encode(
++        'CONNECT dns.quad9.net:853 HTTP/1.1\r\n'
++        'Host: dns.quad9.net:853\r\n\r\n',
++      ),
++    );
++    late final StreamSubscription<RawSocketEvent> sub;
++    void fail(Object error) {
++      if (!completer.isCompleted) {
++        sub.cancel();
++        completer.completeError(error);
++      }
++    }
++
++    sub = raw.listen((event) {
++      if (completer.isCompleted) return;
++      switch (event) {
++        case RawSocketEvent.read:
++          final chunk = raw.read();
++          if (chunk == null) return;
++          head.add(chunk);
++          final text = ascii.decode(head.toBytes(), allowInvalid: true);
++          final sep = text.indexOf('\r\n\r\n');
++          if (sep >= 0) {
++            final status = text.substring(0, text.indexOf('\r\n'));
++            if (RegExp(r'^HTTP/1\.[01] 2').hasMatch(status)) {
++              sub.cancel();
++              completer.complete();
++            } else {
++              fail(SocketException('proxy: $status'));
++            }
++          } else if (text.length > 8192) {
++            fail(const SocketException('proxy: header too large'));
++          }
++          break;
++        case RawSocketEvent.closed:
++        case RawSocketEvent.destroyed:
++          fail(const SocketException('proxy: connection closed'));
++          break;
++        default:
++          break;
++      }
++    }, onError: fail, onDone: () {
++      fail(const SocketException('proxy: connection closed'));
++    });
++    return completer.future.timeout(
++      const Duration(seconds: 8),
++      onTimeout: () {
++        sub.cancel();
++        throw const SocketException('proxy: connect timeout');
++      },
++    );
++  }
++
+   /// Отправка A-запроса dns.quad9.net и разбор ответа (RFC 1035 4.2.2 —
+   /// 2 байта длины, затем сообщение): совпадение ID, QR=1, RCODE=0, есть
+-  /// ответы. Любое расхождение — ошибка пробы.
+-  Future<void> _dotExchange(SecureSocket tls) async {
++  /// ответы. Любое расхождение — ошибка пробы. Событийное API
++  /// RawSecureSocket — у Raw-классов нет потребительских стримов.
++  Future<void> _dotExchange(RawSecureSocket tls) {
++    final completer = Completer<void>();
+     final id = DateTime.now().microsecondsSinceEpoch & 0xFFFF;
+-    tls.add(_buildDotQuery(id));
+-    final buffer = <int>[];
+-    await for (final chunk in tls) {
+-      buffer.addAll(chunk);
+-      if (buffer.length < 2) continue;
+-      final len = (buffer[0] << 8) | buffer[1];
+-      if (len < 12 || len > 4096) {
+-        throw SocketException('dns: bad message length $len');
++    var pending = _buildDotQuery(id);
++    final buffer = BytesBuilder();
++    void fail(Object error) {
++      if (!completer.isCompleted) {
++        sub.cancel();
++        completer.completeError(error);
+       }
+-      if (buffer.length >= 2 + len) break;
+-    }
+-    if (buffer.length < 14) {
+-      throw const SocketException('dns: connection closed early');
+     }
+-    final len = (buffer[0] << 8) | buffer[1];
+-    if (buffer.length < 2 + len) {
++
++    late final StreamSubscription<RawSocketEvent> sub;
++    sub = tls.listen((event) {
++      if (completer.isCompleted) return;
++      switch (event) {
++        case RawSocketEvent.write:
++          if (pending.isNotEmpty) {
++            final sent = tls.write(pending);
++            if (sent > 0) {
++              pending = pending.sublist(sent);
++            }
++          }
++          break;
++        case RawSocketEvent.read:
++          final chunk = tls.read();
++          if (chunk != null) {
++            buffer.add(chunk);
++          }
++          final data = buffer.toBytes();
++          if (pending.isEmpty && data.length >= 2) {
++            final len = (data[0] << 8) | data[1];
++            if (len < 12 || len > 4096) {
++              fail(SocketException('dns: bad message length $len'));
++              break;
++            }
++            if (data.length >= 2 + len) {
++              try {
++                _validateDotResponse(data, id, 2 + len);
++                sub.cancel();
++                completer.complete();
++              } catch (e) {
++                fail(e);
++              }
++            }
++          }
++          break;
++        case RawSocketEvent.closed:
++        case RawSocketEvent.destroyed:
++          fail(const SocketException('dns: connection closed early'));
++          break;
++        default:
++          break;
++      }
++    }, onError: fail, onDone: () {
++      fail(const SocketException('dns: connection closed early'));
++    });
++    return completer.future.timeout(
++      const Duration(seconds: 8),
++      onTimeout: () {
++        sub.cancel();
++        throw const SocketException('dns: exchange timeout');
++      },
++    );
++  }
++
++  /// Разбор DNS-ответа: совпадение ID, QR=1, RCODE=0, есть ответы.
++  void _validateDotResponse(List<int> data, int id, int total) {
++    if (data.length < total) {
+       throw const SocketException('dns: connection closed early');
+     }
+-    if (((buffer[2] << 8) | buffer[3]) != id) {
++    if (((data[2] << 8) | data[3]) != id) {
+       throw const SocketException('dns: id mismatch');
+     }
+-    if ((buffer[4] & 0x80) == 0) {
++    if ((data[4] & 0x80) == 0) {
+       throw const SocketException('dns: not a response');
+     }
+-    final rcode = buffer[5] & 0x0F;
++    final rcode = data[5] & 0x0F;
+     if (rcode != 0) {
+       throw SocketException('dns: rcode $rcode');
+     }
+-    final ancount = (buffer[8] << 8) | buffer[9];
++    final ancount = (data[8] << 8) | data[9];
+     if (ancount == 0) {
+       throw const SocketException('dns: no answer records');
+     }
+@@ -698,7 +899,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+     final buffer = StringBuffer('BettboxR · ${appLocalizations.stealthCheck}');
+     if (_lastRun != null) {
+       buffer.write(
+-        '\n${appLocalizations.stealthCheckedAt(DateFormat('HH:mm').format(_lastRun!))}',
++        '\n${appLocalizations.stealthCheckedAt(_fmtTime(_lastRun!))}',
+       );
+     }
+     void addRow(String title, String subtitle, String? verdict) {
+@@ -879,6 +1080,9 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+             ),
+             const SizedBox(height: 16),
+             OutlinedButton.icon(
++              style: OutlinedButton.styleFrom(
++                foregroundColor: context.colorScheme.onSurface,
++              ),
+               onPressed: _handleEnableVpn,
+               icon: const Icon(Icons.power_settings_new),
+               label: Text(appLocalizations.stealthCheckEnableVpn),
+@@ -928,9 +1132,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+             if (_lastRun != null) ...[
+               const SizedBox(height: 8),
+               Text(
+-                appLocalizations.stealthCheckedAt(
+-                  DateFormat('HH:mm').format(_lastRun!),
+-                ),
++                appLocalizations.stealthCheckedAt(_fmtTime(_lastRun!)),
+                 style: context.textTheme.bodySmall?.copyWith(
+                   color: context.colorScheme.outline,
+                 ),
+@@ -942,6 +1144,15 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+               runSpacing: 8,
+               children: [
+                 OutlinedButton.icon(
++                  // Явные цвета: дефолтный disabled-текст M3 (onSurface с
++                  // alpha 0.38) на угольной теме сливается с карточкой —
++                  // «Запустить проверку»/«Скопировать отчёт» не видны на
++                  // тёмном фоне, пока идёт (или зависла) проверка.
++                  style: OutlinedButton.styleFrom(
++                    foregroundColor: context.colorScheme.onSurface,
++                    disabledForegroundColor: context.colorScheme.onSurface
++                        .withValues(alpha: 0.65),
++                  ),
+                   onPressed: _isRunning ? null : _run,
+                   icon: const Icon(Icons.refresh, size: 18),
+                   label: Text(
+@@ -951,6 +1162,11 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+                   ),
+                 ),
+                 OutlinedButton.icon(
++                  style: OutlinedButton.styleFrom(
++                    foregroundColor: context.colorScheme.onSurface,
++                    disabledForegroundColor: context.colorScheme.onSurface
++                        .withValues(alpha: 0.65),
++                  ),
+                   onPressed: _hasRun && !_isRunning ? _copyReport : null,
+                   icon: const Icon(Icons.copy, size: 18),
+                   label: Text(appLocalizations.stealthCheckCopyReport),
 
 diff --git a/lib/views/theme.dart b/lib/views/theme.dart
 index a8ebf857..2c969e23 100644
@@ -384777,6 +386574,27 @@ index 00000000..ff1a88be
 +  await testMain();
 +}
 
+diff --git a/test/intl_smoke_test.dart b/test/intl_smoke_test.dart
+new file mode 100644
+index 00000000..0f03e1b3
+--- /dev/null
++++ b/test/intl_smoke_test.dart
+@@ -0,0 +1,14 @@
++// Регресс-документация фикса «Стелс-проверка»: DateFormat при не-en
++// локали требует initializeDateFormatting — main.dart вызывает его при
++// старте (иначе возможен LocaleDataException на выводе отчёта проверки).
++import 'package:flutter_test/flutter_test.dart';
++import 'package:intl/date_symbol_data_local.dart';
++import 'package:intl/intl.dart';
++
++void main() {
++  test('DateFormat HH:mm works after initializeDateFormatting (fix)', () async {
++    await initializeDateFormatting('ru');
++    final s = DateFormat('HH:mm').format(DateTime(2026, 1, 2, 13, 45));
++    expect(s, '13:45');
++  });
++}
+
 diff --git a/test/models/ip_info_test.dart b/test/models/ip_info_test.dart
 new file mode 100644
 index 00000000..f9c0db0e
@@ -395433,6 +397251,79 @@ index 00000000..a7d3ce83
 +        'u': {'A': 10},
 +      });
 +    });
++  });
++}
+
+diff --git a/test/smoke_render_test.dart b/test/smoke_render_test.dart
+new file mode 100644
+index 00000000..1fe30c3c
+--- /dev/null
++++ b/test/smoke_render_test.dart
+@@ -0,0 +1,66 @@
++// Smoke-тест рендера «О программе» и «Стелс-проверки» (v2):
++// late-поля GlobalState (packageInfo/appState) мокируются как в initApp —
++// всё остальное как в release; любая ошибка build печатается со стеком.
++import 'package:package_info_plus/package_info_plus.dart';
++
++import 'package:bett_box/common/fixed.dart';
++
++import 'package:bett_box/l10n/l10n.dart';
++import 'package:bett_box/models/models.dart';
++import 'package:bett_box/state.dart';
++import 'package:bett_box/views/about.dart';
++import 'package:bett_box/views/stealth_check.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import 'package:flutter_localizations/flutter_localizations.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void _mockGlobals() {
++  globalState.packageInfo = PackageInfo(
++    appName: 'Bettbox',
++    version: '1.19.9',
++    buildNumber: '2026112201',
++    packageName: 'com.appshub.bettbox',
++  );
++  globalState.appState = AppState(
++    brightness: Brightness.dark,
++    version: 1,
++    viewSize: const Size(411, 891),
++    requests: FixedList(50),
++    logs: FixedList(50),
++    traffics: FixedList(30),
++    totalTraffic: Traffic(),
++    systemUiOverlayStyle: const SystemUiOverlayStyle(),
++  );
++}
++
++Future<void> _pump(WidgetTester tester, Widget child, Locale locale) async {
++  await tester.pumpWidget(
++    ProviderScope(
++      child: MaterialApp(
++        localizationsDelegates: const [
++          AppLocalizations.delegate,
++          ...GlobalMaterialLocalizations.delegates,
++        ],
++        supportedLocales: AppLocalizations.delegate.supportedLocales,
++        locale: locale,
++        home: Scaffold(body: child),
++      ),
++    ),
++  );
++  await tester.pump(const Duration(milliseconds: 500));
++}
++
++void main() {
++  testWidgets('AboutView renders', (tester) async {
++    _mockGlobals();
++    await _pump(tester, const AboutView(), const Locale('ru'));
++  });
++
++  testWidgets('StealthCheckView renders', (tester) async {
++    _mockGlobals();
++    await _pump(tester, const StealthCheckView(), const Locale('ru'));
++    await tester.pump(const Duration(seconds: 2));
 +  });
 +}
 
