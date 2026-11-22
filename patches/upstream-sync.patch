@@ -6,6 +6,653 @@ index 31afeaf0..00000000
 @@ -1 +0,0 @@
 -{"info":"This is a generated file; do not edit or check into version control.","plugins":{"ios":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_ios","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+6/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"path_provider_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.6/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"sqflite_darwin","path":"/home/z/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.3+1/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_ios","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_ios-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":true,"dependencies":["package_info_plus"],"dev_dependency":false}],"android":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":true,"dependencies":["flutter_plugin_android_lifecycle"],"dev_dependency":false},{"name":"flutter_displaymode","path":"/home/z/.pub-cache/hosted/pub.dev/flutter_displaymode-0.7.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_plugin_android_lifecycle","path":"/home/z/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.35/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_android","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+19/","native_build":true,"dependencies":["flutter_plugin_android_lifecycle"],"dev_dependency":false},{"name":"jni","path":"/home/z/.pub-cache/hosted/pub.dev/jni-1.0.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"jni_flutter","path":"/home/z/.pub-cache/hosted/pub.dev/jni_flutter-1.0.2/","native_build":true,"dependencies":["jni"],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"path_provider_android","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_android-2.3.1/","native_build":false,"dependencies":["jni","jni_flutter"],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_android","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.27/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"sqflite_android","path":"/home/z/.pub-cache/hosted/pub.dev/sqflite_android-2.4.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_android","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.32/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":true,"dependencies":["package_info_plus"],"dev_dependency":false}],"macos":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_selector_macos","path":"/home/z/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"hotkey_manager_macos","path":"/home/z/.pub-cache/hosted/pub.dev/hotkey_manager_macos-0.2.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_macos","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1/","native_build":false,"dependencies":["file_selector_macos"],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"path_provider_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"screen_retriever_macos","path":"/home/z/.pub-cache/hosted/pub.dev/screen_retriever_macos-0.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_foundation","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.6/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"sqflite_darwin","path":"/home/z/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.3+1/","shared_darwin_source":true,"native_build":true,"dependencies":[],"dev_dependency":false},{"name":"tray_manager","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/tray_manager/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_macos","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":true,"dependencies":["package_info_plus"],"dev_dependency":false},{"name":"window_ext","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/window_ext/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"window_manager","path":"/home/z/.pub-cache/hosted/pub.dev/window_manager-0.5.2/","native_build":true,"dependencies":[],"dev_dependency":false}],"linux":[{"name":"app_links_linux","path":"/home/z/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/","native_build":false,"dependencies":["gtk"],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"file_selector_linux","path":"/home/z/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.4/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"gtk","path":"/home/z/.pub-cache/hosted/pub.dev/gtk-2.2.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"hotkey_manager_linux","path":"/home/z/.pub-cache/git/hotkey_manager-1b31e3ca4ab017ee72f54a7065b2073a88403d61/packages/hotkey_manager_linux/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_linux","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2/","native_build":false,"dependencies":["file_selector_linux"],"dev_dependency":false},{"name":"jni","path":"/home/z/.pub-cache/hosted/pub.dev/jni-1.0.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"path_provider_linux","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.2/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"screen_retriever_linux","path":"/home/z/.pub-cache/hosted/pub.dev/screen_retriever_linux-0.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_linux","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/","native_build":false,"dependencies":["path_provider_linux"],"dev_dependency":false},{"name":"tray_manager","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/tray_manager/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_linux","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":false,"dependencies":["package_info_plus"],"dev_dependency":false},{"name":"window_manager","path":"/home/z/.pub-cache/hosted/pub.dev/window_manager-0.5.2/","native_build":true,"dependencies":[],"dev_dependency":false}],"windows":[{"name":"app_links","path":"/home/z/.pub-cache/hosted/pub.dev/app_links-6.4.1/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"code_forge","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/code_forge/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"dynamic_color","path":"/home/z/.pub-cache/hosted/pub.dev/dynamic_color-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"file_selector_windows","path":"/home/z/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"flutter_qjs","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/flutter_qjs/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"hotkey_manager_windows","path":"/home/z/.pub-cache/hosted/pub.dev/hotkey_manager_windows-0.2.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"image_picker_windows","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2/","native_build":false,"dependencies":["file_selector_windows"],"dev_dependency":false},{"name":"jni","path":"/home/z/.pub-cache/hosted/pub.dev/jni-1.0.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"path_provider_windows","path":"/home/z/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/","native_build":false,"dependencies":[],"dev_dependency":false},{"name":"proxy","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/proxy/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"screen_retriever_windows","path":"/home/z/.pub-cache/hosted/pub.dev/screen_retriever_windows-0.2.2/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"shared_preferences_windows","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/","native_build":false,"dependencies":["path_provider_windows"],"dev_dependency":false},{"name":"tray_manager","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/tray_manager/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"url_launcher_windows","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.5/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"vclibs","path":"/home/z/.pub-cache/hosted/pub.dev/vclibs-0.1.3/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","native_build":false,"dependencies":["package_info_plus"],"dev_dependency":false},{"name":"window_ext","path":"/home/z/my-project/analysis/stealthfix3/repo-head/plugins/window_ext/","native_build":true,"dependencies":[],"dev_dependency":false},{"name":"window_manager","path":"/home/z/.pub-cache/hosted/pub.dev/window_manager-0.5.2/","native_build":true,"dependencies":[],"dev_dependency":false}],"web":[{"name":"app_links_web","path":"/home/z/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/","dependencies":[],"dev_dependency":false},{"name":"connectivity_plus","path":"/home/z/.pub-cache/hosted/pub.dev/connectivity_plus-7.0.0/","dependencies":[],"dev_dependency":false},{"name":"device_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/device_info_plus-12.4.0/","dependencies":[],"dev_dependency":false},{"name":"file_picker","path":"/home/z/.pub-cache/hosted/pub.dev/file_picker-8.3.7/","dependencies":[],"dev_dependency":false},{"name":"image_picker_for_web","path":"/home/z/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.1/","dependencies":[],"dev_dependency":false},{"name":"mobile_scanner","path":"/home/z/.pub-cache/hosted/pub.dev/mobile_scanner-7.4.0/","dependencies":[],"dev_dependency":false},{"name":"package_info_plus","path":"/home/z/.pub-cache/hosted/pub.dev/package_info_plus-9.0.1/","dependencies":[],"dev_dependency":false},{"name":"restart_app","path":"/home/z/.pub-cache/hosted/pub.dev/restart_app-1.9.0/","dependencies":[],"dev_dependency":false},{"name":"shared_preferences_web","path":"/home/z/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/","dependencies":[],"dev_dependency":false},{"name":"url_launcher_web","path":"/home/z/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.3/","dependencies":[],"dev_dependency":false},{"name":"wakelock_plus","path":"/home/z/.pub-cache/hosted/pub.dev/wakelock_plus-1.5.2/","dependencies":["package_info_plus"],"dev_dependency":false}]},"dependencyGraph":[{"name":"app_links","dependencies":["app_links_linux","app_links_web"]},{"name":"app_links_linux","dependencies":["gtk"]},{"name":"app_links_web","dependencies":[]},{"name":"code_forge","dependencies":[]},{"name":"connectivity_plus","dependencies":[]},{"name":"device_info_plus","dependencies":[]},{"name":"dynamic_color","dependencies":[]},{"name":"file_picker","dependencies":["flutter_plugin_android_lifecycle"]},{"name":"file_selector_linux","dependencies":[]},{"name":"file_selector_macos","dependencies":[]},{"name":"file_selector_windows","dependencies":[]},{"name":"flutter_displaymode","dependencies":[]},{"name":"flutter_plugin_android_lifecycle","dependencies":[]},{"name":"flutter_qjs","dependencies":[]},{"name":"gtk","dependencies":[]},{"name":"hotkey_manager","dependencies":["hotkey_manager_linux","hotkey_manager_macos","hotkey_manager_windows"]},{"name":"hotkey_manager_linux","dependencies":[]},{"name":"hotkey_manager_macos","dependencies":[]},{"name":"hotkey_manager_windows","dependencies":[]},{"name":"image_picker","dependencies":["image_picker_android","image_picker_for_web","image_picker_ios","image_picker_linux","image_picker_macos","image_picker_windows"]},{"name":"image_picker_android","dependencies":["flutter_plugin_android_lifecycle"]},{"name":"image_picker_for_web","dependencies":[]},{"name":"image_picker_ios","dependencies":[]},{"name":"image_picker_linux","dependencies":["file_selector_linux"]},{"name":"image_picker_macos","dependencies":["file_selector_macos"]},{"name":"image_picker_windows","dependencies":["file_selector_windows"]},{"name":"jni","dependencies":[]},{"name":"jni_flutter","dependencies":["jni"]},{"name":"mobile_scanner","dependencies":[]},{"name":"package_info_plus","dependencies":[]},{"name":"path_provider","dependencies":["path_provider_android","path_provider_foundation","path_provider_linux","path_provider_windows"]},{"name":"path_provider_android","dependencies":["jni","jni_flutter"]},{"name":"path_provider_foundation","dependencies":[]},{"name":"path_provider_linux","dependencies":[]},{"name":"path_provider_windows","dependencies":[]},{"name":"proxy","dependencies":[]},{"name":"restart_app","dependencies":[]},{"name":"screen_retriever","dependencies":["screen_retriever_linux","screen_retriever_macos","screen_retriever_windows"]},{"name":"screen_retriever_linux","dependencies":[]},{"name":"screen_retriever_macos","dependencies":[]},{"name":"screen_retriever_windows","dependencies":[]},{"name":"shared_preferences","dependencies":["shared_preferences_android","shared_preferences_foundation","shared_preferences_linux","shared_preferences_web","shared_preferences_windows"]},{"name":"shared_preferences_android","dependencies":[]},{"name":"shared_preferences_foundation","dependencies":[]},{"name":"shared_preferences_linux","dependencies":["path_provider_linux"]},{"name":"shared_preferences_web","dependencies":[]},{"name":"shared_preferences_windows","dependencies":["path_provider_windows"]},{"name":"sqflite","dependencies":["sqflite_android","sqflite_darwin"]},{"name":"sqflite_android","dependencies":[]},{"name":"sqflite_darwin","dependencies":[]},{"name":"tray_manager","dependencies":[]},{"name":"url_launcher","dependencies":["url_launcher_android","url_launcher_ios","url_launcher_linux","url_launcher_macos","url_launcher_web","url_launcher_windows"]},{"name":"url_launcher_android","dependencies":[]},{"name":"url_launcher_ios","dependencies":[]},{"name":"url_launcher_linux","dependencies":[]},{"name":"url_launcher_macos","dependencies":[]},{"name":"url_launcher_web","dependencies":[]},{"name":"url_launcher_windows","dependencies":[]},{"name":"vclibs","dependencies":[]},{"name":"wakelock_plus","dependencies":["package_info_plus"]},{"name":"window_ext","dependencies":[]},{"name":"window_manager","dependencies":["screen_retriever"]}],"date_created":"2026-09-15 06:12:09.868207","version":"3.44.9","swift_package_manager_enabled":{"ios":false,"macos":false}}
 
+diff --git a/.github/ISSUE_TEMPLATE/config.yml b/.github/ISSUE_TEMPLATE/config.yml
+index 734244c9..054a79bd 100644
+--- a/.github/ISSUE_TEMPLATE/config.yml
++++ b/.github/ISSUE_TEMPLATE/config.yml
+@@ -1,4 +1,4 @@
+ contact_links:
+   - name: 💬 交流与讨论 / Channel & Chat
+-    url: https://t.me/appshub_chat
++    url: https://t.me/bettbox_chat
+     about: 访问我们的 Telegram 讨论组 / Join the Telegram group
+\ No newline at end of file
+
+diff --git a/.github/release_template.md b/.github/release_template.md
+index 7b18452c..0f494d62 100644
+--- a/.github/release_template.md
++++ b/.github/release_template.md
+@@ -7,22 +7,20 @@
+ 
+ <div align="left">
+ 
+-[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
++[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettbox_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+ 
+ ---
+ </div>
+ 
+-###   🛩️ 推荐服务
+-### 小众低调专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)
+-
+-### 专享68折优惠码：bettbox68
+-
+-**简评** : ❚ ❚  老牌小众专线，海外团队运营多年，BGP入口+广港&沪日线路，折后约17元/月或127元/年，解锁流媒体与AI，口碑优秀，适合对稳定性和延迟要求较高的用户，小技巧：别忘了使用68折优惠码，以及后台个人中心签到每日可再额外领取5-10GB流量
+-
++### 🛩️ 推荐服务
++#### IEPL 专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)  〢  [白月光](https://www.sibker.com/register?invite_code=YZq6L5zd)  〢  [Ytoo](https://y-too.net/aff.php?aff=10354)
++--------------------------------
++#### 低价 直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV) 
++--------------------------------
++#### 百变小樱专享68折优惠码：bettbox68 ，参见：[相关介绍](https://t.me/appshub_channel/381)
+ --------------------------------
+-### 低价直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV)
+ 
+-**简评** : ❚  大流量或资源机为主，跑路风险相对较低（也许？），888G / 1000G不限时套餐通常更有性价比，量大管饱，价格低廉，适合要求不高的用户或备用流量及大流量下载选择
++**简评** : ❚ ❚ 以上链接基本为自用或 TG 群组讨论推荐，此处仅做 AFF 展示（注：通过链接购买第三方服务，开发者可获得少量佣金支持），这并不代表对其服务作出承诺或保证。请自行甄别并合理选择。
+ 
+ ---
+ ### ⬇️ Download / 下载链接
+@@ -38,10 +36,10 @@
+ 
+ | **OS/ 系统** | **Requirements / 版本要求** | **Direct Links / 点击直链下载** |
+ |:---:|:---|:---|
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+ | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/android/android-original.svg" alt="Android" width="28"/> | Android 8.0+<br>*(Compatible with Android TV)* |<a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-arm64-v8a.apk"><img src="https://img.shields.io/badge/APK-ARMv8-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-android-universal.apk"><img src="https://img.shields.io/badge/APK-Universal-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" alt="Windows" width="28"/> | Windows 8.1+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-windows-amd64-setup.exe"><img src="https://img.shields.io/badge/Setup-x64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-windows-arm64-setup.exe"><img src="https://img.shields.io/badge/Setup-ARM64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-windows-amd64-compatible-setup.exe"><img src="https://img.shields.io/badge/Setup-Compatible%20x64-555555?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+<br>*(Compatible for 10.15-11.7)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-macos-amd64-compatible.dmg"><img src="https://img.shields.io/badge/DMG-Compatible%20Intel-555555?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.rpm"><img src="https://img.shields.io/badge/RPM-x64-CC0000?logo=redhat&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ ---
+ </div>
+ 
+
+diff --git a/.github/release_template_pre.md b/.github/release_template_pre.md
+index 6eb3eace..abb37608 100644
+--- a/.github/release_template_pre.md
++++ b/.github/release_template_pre.md
+@@ -9,22 +9,20 @@
+ 
+ <div align="left">
+ 
+-[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
++[![Telegram Group](https://img.shields.io/badge/Bettbox-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bettbox_chat) [![Telegram Channel](https://img.shields.io/badge/Bettbox-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+ 
+ ---
+ </div>
+ 
+-###   🛩️ 推荐服务
+-### 小众低调专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)
+-
+-### 专享68折优惠码：bettbox68
+-
+-**简评** : ❚ ❚  老牌小众专线，海外团队运营多年，BGP入口+广港&沪日线路，折后约17元/月或127元/年，解锁流媒体与AI，口碑优秀，适合对稳定性和延迟要求较高的用户，小技巧：别忘了使用68折优惠码，以及后台个人中心签到每日可再额外领取5-10GB流量
+-
++### 🛩️ 推荐服务
++#### IEPL 专线  〢  [百变小樱](https://www.bbxy01.com/v2/register?code=c09R)  〢  [白月光](https://www.sibker.com/register?invite_code=YZq6L5zd)  〢  [Ytoo](https://y-too.net/aff.php?aff=10354)
++--------------------------------
++#### 低价 直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV) 
++--------------------------------
++#### 百变小樱专享68折优惠码：bettbox68 ，参见：[相关介绍](https://t.me/appshub_channel/381)
+ --------------------------------
+-### 低价直连  〢  [良心云](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj)  〢  [吹雪云](https://xn--9kqs1lo79d.com/#/register?code=skKMTab7)  〢  [一分](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV)
+ 
+-**简评** : ❚  大流量或资源机为主，跑路风险相对较低（也许？），888G / 1000G不限时套餐通常更有性价比，量大管饱，价格低廉，适合要求不高的用户或备用流量及大流量下载选择
++**简评** : ❚ ❚ 以上链接基本为自用或 TG 群组讨论推荐，此处仅做 AFF 展示（注：通过链接购买第三方服务，开发者可获得少量佣金支持），这并不代表对其服务作出承诺或保证。请自行甄别并合理选择。
+ 
+ ---
+ ### ⬇️ Download / 下载链接
+@@ -40,10 +38,10 @@
+ 
+ | **OS/ 系统** | **Requirements / 版本要求** | **Direct Links / 点击直链下载** |
+ |:---:|:---|:---|
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+ | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/android/android-original.svg" alt="Android" width="28"/> | Android 8.0+<br>*(Compatible with Android TV)* |<a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-arm64-v8a.apk"><img src="https://img.shields.io/badge/APK-ARMv8-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-x86_64.apk"><img src="https://img.shields.io/badge/APK-x64-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-armeabi-v7a.apk"><img src="https://img.shields.io/badge/APK-ARMv7-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-android-universal.apk"><img src="https://img.shields.io/badge/APK-Universal-32AF6A?logo=android&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" alt="Windows" width="28"/> | Windows 8.1+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-windows-amd64-setup.exe"><img src="https://img.shields.io/badge/Setup-x64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-windows-arm64-setup.exe"><img src="https://img.shields.io/badge/Setup-ARM64-0078D7?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-windows-amd64-compatible-setup.exe"><img src="https://img.shields.io/badge/Setup-Compatible%20x64-555555?logo=windows&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="macOS" width="28"/> | macOS 12.0+<br>*(Compatible for 10.15-11.7)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-arm64.dmg"><img src="https://img.shields.io/badge/DMG-Apple%20Silicon-000000?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64.dmg"><img src="https://img.shields.io/badge/DMG-Intel%20x64-00A9E0?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-macos-amd64-compatible.dmg"><img src="https://img.shields.io/badge/DMG-Compatible%20Intel-555555?logo=apple&logoColor=white&style=flat-square&labelColor=222222"></a> |
+-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.rpm"><img src="https://img.shields.io/badge/RPM-x64-CC0000?logo=redhat&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
++| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" alt="Linux" width="28"/> | Linux Kernel 5.4+<br>*(Compatible for Older CPU)* | <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.AppImage"><img src="https://img.shields.io/badge/AppImage-x64-f84e29?logo=linux&logoColor=white&style=flat-square&labelColor=222222"></a> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64.deb"><img src="https://img.shields.io/badge/DEB-x64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a><br><a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-arm64.deb"><img src="https://img.shields.io/badge/DEB-ARM64-A81D33?logo=debian&logoColor=white&style=flat-square&labelColor=222222"> <a href="https://github.com/appshubcc/Bettbox/releases/download/vVERSION/Bettbox-BASE_VERSION-linux-amd64-compatible.deb"><img src="https://img.shields.io/badge/DEB-Compatible%20x64-555555?logo=debian&logoColor=white&style=flat-square&labelColor=222222"></a> |
+ ---
+ </div>
+ 
+
+diff --git a/.github/scripts/wait-artifact.sh b/.github/scripts/wait-artifact.sh
+new file mode 100644
+index 00000000..05b86493
+--- /dev/null
++++ b/.github/scripts/wait-artifact.sh
+@@ -0,0 +1,18 @@
++#!/usr/bin/env bash
++id="$1"
++seen=0
++for _ in $(seq 1 60); do
++  if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
++    --paginate --jq '.artifacts[].id' 2>/dev/null | grep -qx "$id"; then
++    seen=$((seen + 1))
++    if [ "$seen" -ge 3 ]; then
++      echo "Artifact $id is listed"
++      exit 0
++    fi
++  else
++    seen=0
++  fi
++  sleep 2
++done
++echo "::warning::Artifact $id is still not listed, continuing"
++exit 0
+
+diff --git a/.github/workflows/build.yaml b/.github/workflows/build.yaml
+index de95b335..aa9ad2e5 100644
+--- a/.github/workflows/build.yaml
++++ b/.github/workflows/build.yaml
+@@ -12,7 +12,9 @@ env:
+   GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
+   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+   SENTRY_BACKEND: none
+-  SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
++  # Temporarily disabled SignPath due to account risk control:
++  # SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
++  SIGNPATH_API_TOKEN: ''
+   IPINFO_TOKEN: ${{ secrets.IPINFO_TOKEN || vars.IPINFO_TOKEN }}
+   
+ jobs:
+@@ -37,36 +39,85 @@ jobs:
+           - platform: android
+             os: ubuntu-24.04
+             arch: universal
++          - platform: android
++            os: ubuntu-24.04
++            arch: arm64
++            standard: true
++          - platform: android
++            os: ubuntu-24.04
++            arch: amd64
++            standard: true
++          - platform: android
++            os: ubuntu-24.04
++            arch: arm
++            standard: true
++          - platform: android
++            os: ubuntu-24.04
++            arch: universal
++            standard: true
++          - platform: windows
++            os: windows-2022
++            arch: amd64
++            sign: true
++          - platform: windows
++            os: windows-11-arm
++            arch: arm64
++            sign: true
++          - platform: windows
++            os: windows-2022
++            arch: amd64
++            compatible: true
+           - platform: windows
+             os: windows-2022
+             arch: amd64
++            standard: true
++            sign: true
+           - platform: windows
+             os: windows-11-arm
+             arch: arm64
++            standard: true
+           - platform: windows
+             os: windows-2022
+             arch: amd64
+             compatible: true
++            standard: true
+           - platform: macos
+-            os: macos-15
++            os: macos-26
+             arch: arm64
+           - platform: macos
+-            os: macos-15
++            os: macos-26
+             arch: amd64
+           - platform: macos
+-            os: macos-15
++            os: macos-26
++            arch: arm64
++            standard: true
++          - platform: macos
++            os: macos-26
++            arch: amd64
++            standard: true
++          - platform: linux
++            os: ubuntu-22.04
++            arch: amd64
++          - platform: linux
++            os: ubuntu-24.04-arm
++            arch: arm64
++          - platform: linux
++            os: ubuntu-22.04
+             arch: amd64
+             compatible: true
+           - platform: linux
+             os: ubuntu-22.04
+             arch: amd64
++            standard: true
+           - platform: linux
+             os: ubuntu-24.04-arm
+             arch: arm64
++            standard: true
+           - platform: linux
+             os: ubuntu-22.04
+             arch: amd64
+             compatible: true
++            standard: true
+ 
+     steps:
+       - name: Checkout
+@@ -114,7 +165,7 @@ jobs:
+         uses: actions/setup-java@v5
+         with:
+           distribution: temurin
+-          java-version: '17'
++          java-version: '21'
+           cache: 'gradle'
+ 
+       - name: Setup Android NDK
+@@ -144,22 +195,34 @@ jobs:
+       - name: Install Dependencies (Linux)
+         if: matrix.platform == 'linux'
+         run: |
+-          sudo apt-get update -o Acquire::Retries=3 -o Acquire::ForceIPv4=true
+-          sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::ForceIPv4=true --fix-missing libcurl4-openssl-dev ninja-build libgtk-3-dev rpm
++          sudo sed -i 's/azure\.archive\.ubuntu\.com/archive.ubuntu.com/g' /etc/apt/sources.list /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/* 2>/dev/null || true
++          sudo sed -i 's/azure\.ports\.ubuntu\.com/ports.ubuntu.com/g' /etc/apt/sources.list /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/* 2>/dev/null || true
++          for i in {1..3}; do
++            sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o Acquire::ForceIPv4=true && break || sleep 5
++          done
++          sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o Acquire::ForceIPv4=true --fix-missing libcurl4-openssl-dev ninja-build libgtk-3-dev rpm
+ 
+       - name: Setup Golang
+         uses: actions/setup-go@v6
+         with:
+-          go-version: ${{ matrix.compatible == true && '1.20.x' || '1.25.x' }}
++          go-version: ${{ matrix.compatible == true && '1.24.x' || '1.25.x' }}
+           cache-dependency-path: core/go.sum
+ 
++      - name: Select Xcode (macOS)
++        if: matrix.platform == 'macos'
++        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
++
+       - name: Setup Flutter
+         uses: subosito/flutter-action@v2
+         with:
+           channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
+           cache: true
+           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
+-          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.9' }}
++          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.50.1' }}
++
++      - name: Clear Pub Cache Credentials
++        shell: bash
++        run: rm -f ~/.pub-cache/credentials.json 2>/dev/null || true
+ 
+ 
+       - name: Clean Gradle (Android)
+@@ -184,6 +247,8 @@ jobs:
+           FILE="${MOD_CACHE}/github.com/metacubex/sing-tun@${SING_TUN_VERSION}/tun_windows.go"
+           echo "Patching ${FILE}"
+           chmod +w "${FILE}"
++          perl -pi -e 's/inetIf\.ForwardingEnabled = true/inetIf.ForwardingEnabled = false/g' "${FILE}"
++
+       - name: Build Bettbox (Non-Windows)
+         if: matrix.platform != 'windows'
+         shell: bash
+@@ -191,14 +256,14 @@ jobs:
+           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+         run: |
+           flutter pub get
+-          dart run build_runner build -d
+-          dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
++          dart run build_runner build
++          dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }}
+ 
+       - name: Install SignPath (Windows)
+-        if: matrix.platform == 'windows'
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         shell: pwsh
+         env:
+-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
++          SIGNPATH_API_TOKEN: ${{ env.SIGNPATH_API_TOKEN }}
+         run: |
+           if (-not $env:SIGNPATH_API_TOKEN) {
+             Write-Host "SIGNPATH_API_TOKEN is not configured. Skipping module installation."
+@@ -209,7 +274,7 @@ jobs:
+           Install-Module -Name SignPath -Force -Scope CurrentUser -Repository PSGallery
+ 
+       - name: Set Signing Policy Slug (Windows)
+-        if: matrix.platform == 'windows'
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         shell: pwsh
+         run: |
+           $isStable = '${{ env.IS_STABLE }}' -eq 'true'
+@@ -235,21 +300,28 @@ jobs:
+         shell: bash
+         run: |
+           flutter pub get
+-          dart run build_runner build -d
+-          dart setup.dart windows --arch ${{ matrix.arch }} --out core-only ${{ matrix.compatible == true && '--compatible' || '' }}
++          dart run build_runner build
++          dart setup.dart windows --arch ${{ matrix.arch }} --out core-only ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }}
+ 
+       - name: Upload Unsigned Core
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-core
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-core-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-core-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: libclash/windows/BettboxCore.exe
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned Core
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-core.outputs.artifact-id }}'
++
+       - name: Sign Core (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -268,20 +340,27 @@ jobs:
+         run: |
+           $signedCoreHash = (Get-FileHash libclash/windows/BettboxCore.exe -Algorithm SHA256).Hash.ToLower()
+           Write-Host "Signed Core SHA256 (TOKEN for Helper): $signedCoreHash"
+-          dart setup.dart windows --arch ${{ matrix.arch }} --out helper --core-hash $signedCoreHash ${{ matrix.compatible == true && '--compatible' || '' }}
++          dart setup.dart windows --arch ${{ matrix.arch }} --out helper --core-hash $signedCoreHash ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }}
+ 
+       - name: Upload Unsigned HelperService
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-helper
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-helper-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-helper-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: libclash/windows/BettboxHelperService.exe
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned HelperService
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-helper.outputs.artifact-id }}'
++
+       - name: Sign HelperService (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -303,7 +382,10 @@ jobs:
+           $coreHash = (Get-FileHash libclash/windows/BettboxCore.exe -Algorithm SHA256).Hash.ToLower()
+           Write-Host "Core SHA256: $coreHash"
+           
+-          $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
++          $descParts = @('${{ matrix.arch }}')
++          if ('${{ matrix.compatible }}' -eq 'true') { $descParts += 'compatible' }
++          if ('${{ matrix.standard }}' -eq 'true') { $descParts += 'standard' }
++          $desc = $descParts -join '-'
+           $appEnv = if ('${{ env.IS_STABLE }}' -eq 'true') { "stable" } else { "pre" }
+           
+           $flutterArgs = @(
+@@ -312,6 +394,9 @@ jobs:
+             "--dart-define=APP_ENV=$appEnv",
+             "--dart-define=APP_ASSET_SUFFIX=windows-$desc-setup.exe"
+           )
++          if ('${{ matrix.standard }}' -eq 'true') {
++            $flutterArgs += "--dart-define=APP_STANDARD=true"
++          }
+           if ($env:SENTRY_DSN) {
+             $flutterArgs += "--dart-define=SENTRY_DSN=$env:SENTRY_DSN"
+           }
+@@ -322,17 +407,24 @@ jobs:
+           flutter @flutterArgs
+ 
+       - name: Upload Unsigned Bettbox
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-bettbox
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-bettbox-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-bettbox-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: build/windows/${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}/runner/Release/Bettbox.exe
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned Bettbox
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-bettbox.outputs.artifact-id }}'
++
+       - name: Sign Bettbox (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -349,29 +441,39 @@ jobs:
+         if: matrix.platform == 'windows'
+         shell: bash
+         run: |
+-          dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
++          dart windows/packaging/exe/package_windows.dart --arch ${{ matrix.arch }} ${{ matrix.compatible == true && '--compatible' || '' }} ${{ matrix.standard == true && '--standard' || '' }} --env ${{ env.IS_STABLE == 'true' && 'stable' || 'pre' }}
+ 
+       - name: Find Installer Path
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         shell: pwsh
+         run: |
+-          $desc = if ('${{ matrix.compatible }}' -eq 'true') { "${{ matrix.arch }}-compatible" } else { "${{ matrix.arch }}" }
++          $descParts = @('${{ matrix.arch }}')
++          if ('${{ matrix.compatible }}' -eq 'true') { $descParts += 'compatible' }
++          if ('${{ matrix.standard }}' -eq 'true') { $descParts += 'standard' }
++          $desc = $descParts -join '-'
+           $installer = (Resolve-Path "dist/Bettbox-*-windows-$desc-setup.exe").Path
+           echo "INSTALLER_PATH=$installer" | Out-File -FilePath $env:GITHUB_ENV -Append
+           echo "INSTALLER_FILENAME=$(Split-Path -Leaf $installer)" | Out-File -FilePath $env:GITHUB_ENV -Append
+ 
+       - name: Upload Unsigned Installer
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         id: upload-installer
+         uses: actions/upload-artifact@v7
+         with:
+-          name: unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
++          name: unsigned-installer-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: ${{ env.INSTALLER_PATH }}
+           if-no-files-found: error
+           retention-days: 1
+ 
++      - name: Wait for Unsigned Installer
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
++        shell: bash
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: bash .github/scripts/wait-artifact.sh '${{ steps.upload-installer.outputs.artifact-id }}'
++
+       - name: Sign Installer (Windows)
+-        if: matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         uses: signpath/github-action-submit-signing-request@v2
+         timeout-minutes: 60
+         with:
+@@ -385,60 +487,50 @@ jobs:
+           output-artifact-directory: 'dist'
+       
+       - name: Clean up intermediate unsigned artifacts
+-        if: always() && matrix.platform == 'windows' && env.SIGNPATH_API_TOKEN != ''
++        if: always() && matrix.platform == 'windows' && matrix.sign == true && env.SIGNPATH_API_TOKEN != ''
+         continue-on-error: true
+         uses: geekyeggo/delete-artifact@v6
+         with:
+           name: |
+-            unsigned-core-${{ matrix.arch }}-${{ matrix.compatible }}
+-            unsigned-helper-${{ matrix.arch }}-${{ matrix.compatible }}
+-            unsigned-bettbox-${{ matrix.arch }}-${{ matrix.compatible }}
+-            unsigned-installer-${{ matrix.arch }}-${{ matrix.compatible }}
++            unsigned-core-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
++            unsigned-helper-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
++            unsigned-bettbox-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
++            unsigned-installer-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           failOnError: false
+       
+-      - name: Verify Core Permissions (Linux)
+-        if: matrix.platform == 'linux' && matrix.compatible != true
+-        shell: bash
+-        run: |
+-          echo "=== Verifying BettboxCore setuid in DEB package ==="
+-          if ls dist/Bettbox-*.deb 1>/dev/null 2>&1; then
+-            DEB_PERMS=$(dpkg-deb -c dist/Bettbox-*.deb | grep BettboxCore || true)
+-            echo "$DEB_PERMS"
+-            if echo "$DEB_PERMS" | grep -q 'rws'; then
+-              echo "OK: BettboxCore in DEB has setuid bit"
+-            else
+-              echo "WARNING: BettboxCore in DEB is missing setuid bit (will be set by postinst on install)"
+-              POSTINST=$(dpkg-deb -e dist/Bettbox-*.deb /tmp/bettbox-deb-control && cat /tmp/bettbox-deb-control/postinst || true)
+-              if ! echo "$POSTINST" | grep -q '/usr/share/Bettbox/BettboxCore'; then
+-                echo "ERROR: postinst script does not set permissions on /usr/share/Bettbox/BettboxCore"
+-                exit 1
+-              fi
+-            fi
+-          fi
+-          echo "=== Verifying BettboxCore setuid in RPM package ==="
+-          if ls dist/Bettbox-*.rpm 1>/dev/null 2>&1; then
+-            RPM_PERMS=$(rpm -qplv dist/Bettbox-*.rpm | grep BettboxCore || true)
+-            echo "$RPM_PERMS"
+-            if ! echo "$RPM_PERMS" | grep -q 'rws'; then
+-              echo "ERROR: BettboxCore in RPM is missing setuid bit"
+-              exit 1
+-            fi
+-          fi
+ 
+-      - name: Upload Artifacts (Non-Linux)
+-        if: matrix.platform != 'linux'
++      - name: Upload Artifacts (macOS & Android)
++        if: matrix.platform != 'linux' && matrix.platform != 'windows'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}
+           path: ./dist/*
+           archive: false
+           overwrite: true
+ 
++      - name: Upload Windows Installer Artifact
++        if: matrix.platform == 'windows'
++        uses: actions/upload-artifact@v7
++        with:
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-installer
++          path: ./dist/*.exe
++          archive: false
++          overwrite: true
++
++      - name: Upload Windows Portable Artifact
++        if: matrix.platform == 'windows' && matrix.compatible == true && matrix.arch == 'amd64' && matrix.standard != true
++        uses: actions/upload-artifact@v7
++        with:
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-portable
++          path: ./dist/*.zip
++          archive: false
++          overwrite: true
++
+       - name: Upload DEB Artifact
+         if: matrix.platform == 'linux'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-deb
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-deb
+           path: ./dist/*.deb
+           archive: false
+           overwrite: true
+@@ -447,7 +539,7 @@ jobs:
+         if: matrix.platform == 'linux' && matrix.arch == 'amd64'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-AppImage
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-AppImage
+           path: ./dist/*.AppImage
+           archive: false
+           overwrite: true
+@@ -456,7 +548,7 @@ jobs:
+         if: matrix.platform == 'linux' && matrix.arch == 'amd64'
+         uses: actions/upload-artifact@v7
+         with:
+-          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}-rpm
++          name: Bettbox-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.compatible == true && '-compatible' || '' }}${{ matrix.standard == true && '-standard' || '' }}-rpm
+           path: ./dist/*.rpm
+           archive: false
+           overwrite: true
+@@ -477,6 +569,12 @@ jobs:
+           path: ./dist/
+           pattern: Bettbox-*
+           merge-multiple: true
++          skip-decompress: true
++
++      - name: Generate checksums
++        run: |
++          cd dist
++          find . -maxdepth 1 -type f -name 'Bettbox-*' -printf '%f\n' | sort | xargs -d '\n' sha256sum > sha256sums.txt
+ 
+       - name: Generate release.md
+         run: |
+@@ -492,10 +590,38 @@ jobs:
+             sed -e "s|BASE_VERSION|$base_version|g" -e "s|VERSION|$version|g" ./.github/release_template.md >> release.md
+           fi
+ 
++      - name: Detect existing release
++        id: release
++        if: ${{ env.SHOULD_RELEASE == 'true' }}
++        env:
++          GH_TOKEN: ${{ github.token }}
++        run: |
++          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" >/dev/null 2>&1; then
++            echo "exists=true" >> "$GITHUB_OUTPUT"
++          else
++            echo "exists=false" >> "$GITHUB_OUTPUT"
++          fi
++
+       - name: Release
+         if: ${{ env.SHOULD_RELEASE == 'true' }}
+         uses: softprops/action-gh-release@v3.0.0
+         with:
+           files: ./dist/*
+           body_path: './release.md'
+-          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
+\ No newline at end of file
++          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
++
++      - name: Dispatch AUR update
++        if: ${{ env.SHOULD_RELEASE == 'true' }}
++        continue-on-error: true
++        env:
++          GH_TOKEN: ${{ secrets.AUR_UPDATER_TOKEN }}
++          REPO: ${{ vars.AUR_UPDATER_REPO || 'VillagerTom/bettbox-aur-updater' }}
++          FORCE: ${{ steps.release.outputs.exists }}
++        run: |
++          if [ -z "$GH_TOKEN" ]; then
++            echo "::warning::AUR_UPDATER_TOKEN is not set, skipping AUR update"
++            exit 0
++          fi
++          gh api -X POST "repos/$REPO/dispatches" \
++            -f event_type=bettbox-release \
++            -F "client_payload[force]=$FORCE"
+
 diff --git a/.gitignore b/.gitignore
 index e867f5b4..ba69566f 100644
 --- a/.gitignore
@@ -63028,7 +63675,7 @@ index 00000000..13bf6de8
 +}
 
 diff --git a/lib/application.dart b/lib/application.dart
-index 367e9a9d..802674e9 100644
+index 367e9a9d..11229caa 100644
 --- a/lib/application.dart
 +++ b/lib/application.dart
 @@ -1,7 +1,7 @@
@@ -63359,13 +64006,13 @@ index 367e9a9d..802674e9 100644
              globalState.appController.addCheckIpNumDebounce();
            },
            child: child,
-@@ -231,236 +377,87 @@ class ApplicationState extends ConsumerState<Application>
+@@ -231,236 +377,91 @@ class ApplicationState extends ConsumerState<Application>
              final fontFamily = themeProps.useHarmonyFont
                  ? 'HarmonyOS_Sans'
                  : null;
 +            final lightColorScheme = ref.read(
 +              genColorSchemeProvider(Brightness.light),
-+            );
++            ).withForegroundContrast();
 +            var darkColorScheme = ref.read(
 +              genColorSchemeProvider(Brightness.dark),
 +            );
@@ -63386,6 +64033,10 @@ index 367e9a9d..802674e9 100644
 +                dynamicSchemeVariant: themeProps.schemeVariant,
 +              ).toCoalPink();
 +            }
++            // Гарантия контраста «текст на контейнере» (common/color.dart):
++            // тёмный onPrimaryContainer на тёмном primaryContainer делал
++            // FAB «Тест задержки», чип профилей и табы групп невидимыми.
++            darkColorScheme = darkColorScheme.withForegroundContrast();
  
 -            return MaterialApp(
 -              debugShowCheckedModeBanner: false,
@@ -63469,9 +64120,7 @@ index 367e9a9d..802674e9 100644
 -                  shape: RoundedRectangleBorder(
 -                    borderRadius: BorderRadius.vertical(
 -                      top: Radius.circular(28),
-+                        );
-+                      },
-                     ),
+-                    ),
 -                  ),
 -                  clipBehavior: Clip.antiAlias,
 -                ),
@@ -63591,7 +64240,9 @@ index 367e9a9d..802674e9 100644
 -                              .toPureBlack(themeProps.pureBlack)
 -                              .outlineVariant
 -                              .withValues(alpha: 0.45),
--                    ),
++                        );
++                      },
+                     ),
 -                  ),
 -                  focusedBorder: OutlineInputBorder(
 -                    borderRadius: const BorderRadius.all(Radius.circular(18)),
@@ -63662,7 +64313,7 @@ index 367e9a9d..802674e9 100644
    @override
    void dispose() {
      globalState.backgroundMode.removeListener(_syncAutoUpdateTasks);
-@@ -475,3 +472,82 @@ class ApplicationState extends ConsumerState<Application>
+@@ -475,3 +476,82 @@ class ApplicationState extends ConsumerState<Application>
      super.dispose();
    }
  }
@@ -66702,7 +67353,7 @@ index 691fc26b..8ccb267c 100644
 +}
 
 diff --git a/lib/common/color.dart b/lib/common/color.dart
-index 082efcce..4f42530e 100644
+index 082efcce..0d117365 100644
 --- a/lib/common/color.dart
 +++ b/lib/common/color.dart
 @@ -1,6 +1,7 @@
@@ -66858,6 +67509,44 @@ index 082efcce..4f42530e 100644
  }
  
  /// Цвет-акцент «угольной» темы, бирюзовый вариант: окантовка карточек
+@@ -197,3 +313,37 @@ extension CoalColorSchemeExtension on ColorScheme {
+     );
+   }
+ }
++
++/// Гарантия читаемости пар «текст на контейнере»: некоторые варианты
++/// схемы (подтверждено скриншотами: FAB «Тест задержки», чип профилей,
++/// табы групп) выдают тёмный текст на тёмном контейнере — на контрасте
++/// 1.1-1.3 текст невидим. Пары с контрастом ниже 2.0 чинятся
++/// подстановкой чёрного/белого по яркости фона; здоровые пары
++/// (контраст ≥ 2) не трогаются.
++extension ForegroundContrastExtension on ColorScheme {
++  ColorScheme withForegroundContrast() {
++    Color pick(Color fg, Color bg) {
++      final lFg = fg.computeLuminance();
++      final lBg = bg.computeLuminance();
++      final lighter = lFg > lBg ? lFg : lBg;
++      final darker = lFg > lBg ? lBg : lFg;
++      final ratio = (lighter + 0.05) / (darker + 0.05);
++      if (ratio >= 2.0) {
++        return fg;
++      }
++      return lBg > 0.5 ? Colors.black : Colors.white;
++    }
++
++    return copyWith(
++      onPrimary: pick(onPrimary, primary),
++      onPrimaryContainer: pick(onPrimaryContainer, primaryContainer),
++      onSecondary: pick(onSecondary, secondary),
++      onSecondaryContainer: pick(onSecondaryContainer, secondaryContainer),
++      onTertiary: pick(onTertiary, tertiary),
++      onTertiaryContainer: pick(onTertiaryContainer, tertiaryContainer),
++      onSurface: pick(onSurface, surface),
++      onSurfaceVariant: pick(onSurfaceVariant, surfaceContainerHighest),
++      onError: pick(onError, error),
++    );
++  }
++}
 
 diff --git a/lib/common/common.dart b/lib/common/common.dart
 index 12b04fcc..2abbd2a3 100644
@@ -205932,7 +206621,7 @@ index d24ef6dc..57e3f63f 100644
  
 
 diff --git a/lib/views/proxies/dead_nodes.dart b/lib/views/proxies/dead_nodes.dart
-index 42c922fe..7ac19ad7 100644
+index 42c922fe..91d725a8 100644
 --- a/lib/views/proxies/dead_nodes.dart
 +++ b/lib/views/proxies/dead_nodes.dart
 @@ -182,6 +182,39 @@ Future<void> deleteDeadNodesFlow(
@@ -205975,7 +206664,40 @@ index 42c922fe..7ac19ad7 100644
    final profile = ref.read(currentProfileProvider);
    final isSubLinked = (profile?.url.isNotEmpty ?? false);
  
-@@ -241,6 +274,14 @@ Future<void> deleteDeadNodesFlow(
+@@ -213,18 +246,29 @@ Future<void> deleteDeadNodesFlow(
+               '• $name',
+               maxLines: 1,
+               overflow: TextOverflow.ellipsis,
+-              style: Theme.of(context).textTheme.labelSmall,
++              // Явный цвет: голый labelSmall без цвета на угольной теме
++              // сливается с поверхностью диалога (контраст ~1.1 по
++              // скриншотам) — «нихрена не видно».
++              style: Theme.of(context).textTheme.labelSmall?.copyWith(
++                color: Theme.of(context).colorScheme.onSurfaceVariant,
++              ),
+             ),
+           if (deadNames.length > 8)
+             Text(
+               appLocalizations.deleteUnavailableMore(deadNames.length - 8),
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           if (isSubLinked) ...[
+             const SizedBox(height: 8),
+             Text(
+               appLocalizations.deleteUnavailableAutoUpdateNote,
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           ],
+         ],
+@@ -241,6 +285,14 @@ Future<void> deleteDeadNodesFlow(
      if (result.misses.isNotEmpty) {
        message += ' · ${result.misses.take(4).join(', ')}';
      }
@@ -205990,7 +206712,30 @@ index 42c922fe..7ac19ad7 100644
      globalState.showNotifier(message);
    } on Object catch (e) {
      globalState.showNotifier(e.formatError);
-@@ -484,7 +525,7 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
+@@ -315,14 +367,20 @@ Future<void> deleteSingleNodeFlow(
+             const SizedBox(height: 8),
+             Text(
+               appLocalizations.deleteNodeSelectedNote,
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           ],
+           if (isSubLinked) ...[
+             const SizedBox(height: 8),
+             Text(
+               appLocalizations.deleteUnavailableAutoUpdateNote,
+-              style: Theme.of(context).textTheme.labelSmall?.toLight,
++              style:
++                  Theme.of(context).textTheme.labelSmall?.copyWith(
++                    color: Theme.of(context).colorScheme.onSurfaceVariant,
++                  )?.toLight,
+             ),
+           ],
+         ],
+@@ -484,7 +542,7 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
        for (final providerName in providerNames) {
          if (providersConfig is Map && providersConfig[providerName] is Map) {
            final entry = Map<String, dynamic>.from(
@@ -207666,10 +208411,20 @@ index 89950707..a0e884dd 100644
        return;
 
 diff --git a/lib/views/stealth_check.dart b/lib/views/stealth_check.dart
-index 0f718ec3..2c1f38e6 100644
+old mode 100644
+new mode 100755
+index 0f718ec3..87a82166
 --- a/lib/views/stealth_check.dart
 +++ b/lib/views/stealth_check.dart
-@@ -90,19 +90,26 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
+ import 'package:flutter/services.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import 'package:flutter_spinkit/flutter_spinkit.dart';
+-import 'package:intl/intl.dart' show DateFormat;
+ 
+ /// Экран «Стелс-проверка»: приложение смотрит на себя глазами детектора VPN —
+ /// локальные порты, tun-интерфейс, TRANSPORT_VPN, DNS, DoT (Quad9), IPv6
+@@ -90,19 +89,52 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
        _vExit = _running;
        _vDot = _running;
      });
@@ -207686,29 +208441,113 @@ index 0f718ec3..2c1f38e6 100644
 -      _hasRun = true;
 -      _lastRun = DateTime.now();
 -    });
-+    // Гарантируем сброс состояния даже при падении шага (иначе экран
-+    // остаётся в состоянии «проверяем» навсегда — белый лист).
++    // Каждая проверка в собственной страховке: падение одной не должно
++    // оставлять _isRunning=true навсегда (кнопки перестают отвечать,
++    // строки застывают на «Проверка...»).
++    Future<void> step(Future<void> Function() body) async {
++      try {
++        await body();
++      } catch (e) {
++        commonPrint.log('stealth check: step failed: $e');
++      }
++    }
++
 +    try {
-+      await _checkPorts();
-+      await _checkSystem();
-+      await _probeBaseline();
-+      await _checkDns();
-+      await _checkDot();
-+      _checkIpv6();
-+      await _checkExit();
-+    } catch (e) {
-+      commonPrint.log('stealth check: step failed: $e');
++      await step(_checkPorts);
++      await step(_checkSystem);
++      await step(_probeBaseline);
++      await step(_checkDns);
++      await step(_checkDot);
++      await step(() async => _checkIpv6());
++      await step(_checkExit);
 +    } finally {
 +      if (!mounted) return;
 +      setState(() {
++        String? settle(String? verdict) => verdict == _running ? _fail : verdict;
 +        _isRunning = false;
 +        _hasRun = true;
 +        _lastRun = DateTime.now();
++        _vPorts = settle(_vPorts);
++        _vTun = settle(_vTun);
++        _vVpnNet = settle(_vVpnNet);
++        _vDns = settle(_vDns);
++        _vDot = settle(_vDot);
++        _vIpv6 = settle(_vIpv6);
++        _vExit = settle(_vExit);
 +      });
 +    }
++  }
++
++  /// «HH:mm» без intl: DateFormat зависит от initializeDateFormatting(),
++  /// который в main.dart запускается без ожидания — на медленном старте
++  /// (VPN поднимается, IO занят) проверка завершается раньше загрузки
++  /// символов локали, и DateFormat бросает LocaleDataException прямо в
++  /// build — белый экран вместо результатов.
++  String _fmtTime(DateTime value) {
++    final hh = value.hour.toString().padLeft(2, '0');
++    final mm = value.minute.toString().padLeft(2, '0');
++    return '$hh:$mm';
    }
  
    /// Детекторы первым делом стучатся на типичные порты прокси на localhost.
+@@ -698,7 +730,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+     final buffer = StringBuffer('BettboxR · ${appLocalizations.stealthCheck}');
+     if (_lastRun != null) {
+       buffer.write(
+-        '\n${appLocalizations.stealthCheckedAt(DateFormat('HH:mm').format(_lastRun!))}',
++        '\n${appLocalizations.stealthCheckedAt(_fmtTime(_lastRun!))}',
+       );
+     }
+     void addRow(String title, String subtitle, String? verdict) {
+@@ -879,6 +911,9 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+             ),
+             const SizedBox(height: 16),
+             OutlinedButton.icon(
++              style: OutlinedButton.styleFrom(
++                foregroundColor: context.colorScheme.onSurface,
++              ),
+               onPressed: _handleEnableVpn,
+               icon: const Icon(Icons.power_settings_new),
+               label: Text(appLocalizations.stealthCheckEnableVpn),
+@@ -928,9 +963,7 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+             if (_lastRun != null) ...[
+               const SizedBox(height: 8),
+               Text(
+-                appLocalizations.stealthCheckedAt(
+-                  DateFormat('HH:mm').format(_lastRun!),
+-                ),
++                appLocalizations.stealthCheckedAt(_fmtTime(_lastRun!)),
+                 style: context.textTheme.bodySmall?.copyWith(
+                   color: context.colorScheme.outline,
+                 ),
+@@ -942,6 +975,15 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+               runSpacing: 8,
+               children: [
+                 OutlinedButton.icon(
++                  // Явные цвета: дефолтный disabled-текст M3 (onSurface с
++                  // alpha 0.38) на угольной теме сливается с карточкой —
++                  // «Запустить проверку»/«Скопировать отчёт» не видны на
++                  // тёмном фоне, пока идёт (или зависла) проверка.
++                  style: OutlinedButton.styleFrom(
++                    foregroundColor: context.colorScheme.onSurface,
++                    disabledForegroundColor: context.colorScheme.onSurface
++                        .withValues(alpha: 0.65),
++                  ),
+                   onPressed: _isRunning ? null : _run,
+                   icon: const Icon(Icons.refresh, size: 18),
+                   label: Text(
+@@ -951,6 +993,11 @@ class _StealthCheckViewState extends ConsumerState<StealthCheckView> {
+                   ),
+                 ),
+                 OutlinedButton.icon(
++                  style: OutlinedButton.styleFrom(
++                    foregroundColor: context.colorScheme.onSurface,
++                    disabledForegroundColor: context.colorScheme.onSurface
++                        .withValues(alpha: 0.65),
++                  ),
+                   onPressed: _hasRun && !_isRunning ? _copyReport : null,
+                   icon: const Icon(Icons.copy, size: 18),
+                   label: Text(appLocalizations.stealthCheckCopyReport),
 
 diff --git a/lib/views/theme.dart b/lib/views/theme.dart
 index a8ebf857..2c969e23 100644
