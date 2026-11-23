@@ -15081,17 +15081,17 @@ index 0000000..81069e3
 \ No newline at end of file
 diff --git a/assets/scripts/managed.js b/assets/scripts/managed.js
 new file mode 100644
-index 0000000..c9f2276
+index 0000000..4f58ac2
 --- /dev/null
 +++ b/assets/scripts/managed.js
-@@ -0,0 +1,1793 @@
+@@ -0,0 +1,1808 @@
 +/**
 + * 覆写脚本源作者及仓库：@AIsouler https://github.com/AIsouler/MyClash 
 + * 分流管理自定义图标集：@aaANDkk https://github.com/aaANDkk/Qure_Style_SVG
 + * 自定义分流远程规则集：@appshubcc https://github.com/appshubcc/bett-rules 
 + */
 +
-+// @version 2026112003
++// @version 2026112301
 +const Compatible_With_Bettbox = { ruleOptionsEnable: true };
 +
 +const ruleOptionsEnable = {
@@ -16081,18 +16081,33 @@ index 0000000..c9f2276
 +/**
 + * 按用户保存的策略组顺序排序，未在顺序中的策略组紧随前一项之后
 + */
-+function sortByGroupOrder(services) {
-+  if (!groupOrder.length) return services;
++const groupOrderKeys = (() => {
++  if (!groupOrder.length) return null;
++
++  const names = serviceConfigs.map((svc) => svc.name);
++  const anchorIndex = names.indexOf('AdBlock');
++  names.splice(anchorIndex < 0 ? names.length : anchorIndex, 0, ...customRoutes.map((route) => route?.name));
++  names.push('直连', ...allRegionDefinitions.map((region) => region.name), '其他节点');
 +
 +  const rank = new Map(groupOrder.map((name, index) => [name, index]));
++  const keys = new Map();
 +  let last = -1;
++  names.forEach((name, index) => {
++    const order = rank.get(name);
++    if (order !== undefined) last = order;
++    if (typeof name === 'string' && !keys.has(name)) keys.set(name, [order ?? last + 0.5, index]);
++  });
++  return keys;
++})();
++
++function sortByGroupOrder(services) {
++  if (!groupOrderKeys) return services;
++
++  const keyOf = (name) =>
++    groupOrderKeys.get(name) ?? groupOrderKeys.get(name.replace(/-自动选择$/, '')) ?? [Infinity, Infinity];
 +  return services
-+    .map((svc, index) => {
-+      const order = rank.get(svc.name) ?? rank.get(svc.name.replace(/-自动选择$/, ''));
-+      if (order !== undefined) last = order;
-+      return { svc, index, key: order !== undefined ? order : last + 0.5 };
-+    })
-+    .sort((a, b) => a.key - b.key || a.index - b.index)
++    .map((svc, index) => ({ svc, index, key: keyOf(svc.name) }))
++    .sort((a, b) => a.key[0] - b.key[0] || a.key[1] - b.key[1] || a.index - b.index)
 +    .map((entry) => entry.svc);
 +}
 +
@@ -48590,7 +48605,7 @@ index 94989c0..a6d604b 100644
  
 diff --git a/core/profile_download.go b/core/profile_download.go
 new file mode 100644
-index 0000000..ee923df
+index 0000000..7e02674
 --- /dev/null
 +++ b/core/profile_download.go
 @@ -0,0 +1,83 @@
@@ -48661,7 +48676,7 @@ index 0000000..ee923df
 +}
 +
 +func writeDownloadedProfile(output string, body io.Reader) error {
-+	file, err := os.Create(output)
++	file, err := openOutputFile(output)
 +	if err != nil {
 +		return err
 +	}
@@ -75454,7 +75469,7 @@ index 0000000..7b35e13
 +
 +final appUpdater = AppUpdater();
 diff --git a/lib/common/utils.dart b/lib/common/utils.dart
-index 49cce9a..22ce095 100644
+index 49cce9a..842d383 100644
 --- a/lib/common/utils.dart
 +++ b/lib/common/utils.dart
 @@ -7,18 +7,27 @@ import 'dart:ui';
@@ -75662,7 +75677,35 @@ index 49cce9a..22ce095 100644
        if (clean.startsWith('2001:db8:')) {
          return true;
        }
-@@ -707,22 +679,24 @@ class Utils {
+@@ -644,27 +616,6 @@ class Utils {
+     return valueRaw.substring(valueRaw.length - 2);
+   }
+ 
+-  String generateRandomString({int minLength = 10, int maxLength = 100}) {
+-    const latinChars =
+-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+-    final random = Random();
+-
+-    int length = minLength + random.nextInt(maxLength - minLength + 1);
+-
+-    String result = '';
+-    for (int i = 0; i < length; i++) {
+-      if (random.nextBool()) {
+-        result += String.fromCharCode(
+-          0x4E00 + random.nextInt(0x9FA5 - 0x4E00 + 1),
+-        );
+-      } else {
+-        result += latinChars[random.nextInt(latinChars.length)];
+-      }
+-    }
+-
+-    return result;
+-  }
+-
+   String get uuidV4 {
+     final Random random = Random();
+     final bytes = List.generate(16, (_) => random.nextInt(256));
+@@ -707,22 +658,24 @@ class Utils {
    Locale getSystemLocale() {
      final platformLocale = WidgetsBinding.instance.platformDispatcher.locale;
      final supportedLocales = AppLocalizations.delegate.supportedLocales;
@@ -75696,7 +75739,7 @@ index 49cce9a..22ce095 100644
      return const Locale('zh', 'CN');
    }
  
-@@ -746,23 +720,15 @@ class Utils {
+@@ -746,23 +699,15 @@ class Utils {
    }
  
    int sortByChar(String a, String b) {
@@ -75728,7 +75771,7 @@ index 49cce9a..22ce095 100644
    }
  
    String getOverwriteLabel(String label) {
-@@ -829,10 +795,14 @@ class Utils {
+@@ -829,10 +774,14 @@ class Utils {
      return build1.compareTo(build2);
    }
  
@@ -75746,7 +75789,7 @@ index 49cce9a..22ce095 100644
    }
  
    String? getFileNameForDisposition(String? disposition) {
-@@ -861,22 +831,6 @@ class Utils {
+@@ -861,22 +810,6 @@ class Utils {
      return WidgetsBinding.instance.platformDispatcher.views.first;
    }
  
@@ -75769,7 +75812,7 @@ index 49cce9a..22ce095 100644
    ViewMode getViewMode(double viewWidth) {
      if (viewWidth <= maxMobileWidth) return ViewMode.mobile;
      if (viewWidth <= maxLaptopWidth) return ViewMode.laptop;
-@@ -999,84 +953,118 @@ class Utils {
+@@ -999,84 +932,118 @@ class Utils {
          } catch (_) {}
        }
      }
@@ -75954,7 +75997,7 @@ index 49cce9a..22ce095 100644
      if (Platform.isMacOS) {
        return await MacOS().systemDns ?? [];
      }
-@@ -1089,25 +1077,13 @@ class Utils {
+@@ -1089,25 +1056,13 @@ class Utils {
      return [];
    }
  
@@ -75985,7 +76028,7 @@ index 49cce9a..22ce095 100644
        if (result.exitCode != 0) return [];
        final lines = result.stdout.toString().split('\n');
        final servers = <String>[];
-@@ -1134,7 +1110,9 @@ class Utils {
+@@ -1134,7 +1089,9 @@ class Utils {
          final trimmed = line.trim();
          if (trimmed.startsWith('nameserver ')) {
            final server = trimmed.substring('nameserver '.length).trim();
@@ -75996,7 +76039,7 @@ index 49cce9a..22ce095 100644
              servers.add(server);
            }
          }
-@@ -1145,14 +1123,26 @@ class Utils {
+@@ -1145,14 +1102,26 @@ class Utils {
      }
    }
  
@@ -76025,7 +76068,7 @@ index 49cce9a..22ce095 100644
        // Header: Iface Destination Gateway Flags RefCnt Use Metric Mask ...
        for (final line in lines.skip(1)) {
          final parts = line.trim().split(RegExp(r'\s+'));
-@@ -1167,60 +1157,65 @@ class Utils {
+@@ -1167,60 +1136,65 @@ class Utils {
            int.parse(gwHex.substring(2, 4), radix: 16),
            int.parse(gwHex.substring(0, 2), radix: 16),
          ];
@@ -76119,7 +76162,7 @@ index 49cce9a..22ce095 100644
        return [];
      }
    }
-@@ -1230,37 +1225,40 @@ class Utils {
+@@ -1230,37 +1204,40 @@ class Utils {
      return SingleActivator(trigger, control: control, meta: !control);
    }
  
@@ -191758,7 +191801,7 @@ index 394699a..dd7cf14 100644
 +export 'tile.dart';
 +export 'toolbox_shortcut.dart';
 diff --git a/lib/views/developer.dart b/lib/views/developer.dart
-index abe557d..fa8201a 100644
+index abe557d..3c275c7 100644
 --- a/lib/views/developer.dart
 +++ b/lib/views/developer.dart
 @@ -3,7 +3,7 @@ import 'package:bett_box/models/common.dart';
@@ -191770,7 +191813,18 @@ index abe557d..fa8201a 100644
  import 'package:flutter_riverpod/flutter_riverpod.dart';
  
  class DeveloperView extends ConsumerWidget {
-@@ -58,9 +58,7 @@ class DeveloperView extends ConsumerWidget {
+@@ -46,9 +46,7 @@ class DeveloperView extends ConsumerWidget {
+             onTap: () {
+               for (int i = 0; i < 100; i++) {
+                 globalState.appController.addLog(
+-                  Log.app(
+-                    '[$i]${utils.generateRandomString(maxLength: 200, minLength: 20)}',
+-                  ),
++                  Log.app('[$i]Kicking VillagerTom\'s Ass'),
+                 );
+               }
+             },
+@@ -58,9 +56,7 @@ class DeveloperView extends ConsumerWidget {
              onTap: () async {
                final res = await globalState.showMessage(
                  title: appLocalizations.clearDataTipTitle,
@@ -223854,21 +223908,23 @@ index 5ff1c90..f74a746 100644
    window_manager
  )
  
+diff --git a/linux/main.cc b/linux/main.cc
+index 7e3980c..e14158a 100644
+--- a/linux/main.cc
++++ b/linux/main.cc
+@@ -3,6 +3,7 @@
+ 
+ int main(int argc, char** argv) {
+   XInitThreads();
++  gdk_set_allowed_backends("x11,wayland");
+ 
+   g_autoptr(MyApplication) app = my_application_new();
+   return g_application_run(G_APPLICATION(app), argc, argv);
 diff --git a/linux/my_application.cc b/linux/my_application.cc
-index 9500443..10194af 100644
+index 9500443..c1e9b25 100644
 --- a/linux/my_application.cc
 +++ b/linux/my_application.cc
-@@ -4,6 +4,9 @@
- #ifdef GDK_WINDOWING_X11
- #include <gdk/gdkx.h>
- #endif
-+#ifdef GDK_WINDOWING_WAYLAND
-+#include <gdk/gdkwayland.h>
-+#endif
- 
- #include <sys/socket.h>
- #include <sys/un.h>
-@@ -47,6 +50,19 @@ static void _send_control_command(const char* command) {
+@@ -47,6 +47,19 @@ static void _send_control_command(const char* command) {
  
  static GtkWindow* main_window = nullptr;
  
@@ -223888,7 +223944,7 @@ index 9500443..10194af 100644
  struct _MyApplication {
    GtkApplication parent_instance;
    char** dart_entrypoint_arguments;
-@@ -100,11 +116,19 @@ static void my_application_activate(GApplication* application) {
+@@ -100,11 +113,19 @@ static void my_application_activate(GApplication* application) {
    main_window = window;
  
    g_autoptr(FlDartProject) project = fl_dart_project_new();
@@ -379834,7 +379890,7 @@ index cb83fac..cda2f26 100644
 +  dart: ">=3.14.0 <4.0.0"
 +  flutter: ">=3.47.0"
 diff --git a/pubspec.yaml b/pubspec.yaml
-index ac94553..f7f24ca 100644
+index ac94553..c585686 100644
 --- a/pubspec.yaml
 +++ b/pubspec.yaml
 @@ -1,9 +1,9 @@
@@ -379842,7 +379898,7 @@ index ac94553..f7f24ca 100644
  description: A multi-platform proxy client based on Mihomo, simple and easy to use, open-source and ad-free.
  publish_to: 'none'
 -version: 1.19.4+2026100101
-+version: 1.19.9+2026112202
++version: 1.20.0+2026112302
  environment:
 -  sdk: '>=3.9.0 <4.0.0'
 +  sdk: '>=3.14.0 <4.0.0'
