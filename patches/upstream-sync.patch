@@ -171873,7 +171873,7 @@ index b322b92..46e96d9 100644
  class PlatformChecker {
    static bool? _udsSupport;
 diff --git a/lib/views/about.dart b/lib/views/about.dart
-index d178fee..6c3b0df 100644
+index d178fee..ea45882 100644
 --- a/lib/views/about.dart
 +++ b/lib/views/about.dart
 @@ -1,10 +1,11 @@
@@ -171890,7 +171890,7 @@ index d178fee..6c3b0df 100644
  import 'package:flutter_riverpod/flutter_riverpod.dart';
  
  @immutable
-@@ -18,65 +19,43 @@ class Contributor {
+@@ -18,65 +19,44 @@ class Contributor {
  class AboutView extends StatelessWidget {
    const AboutView({super.key});
  
@@ -171984,12 +171984,13 @@ index d178fee..6c3b0df 100644
 -                globalState.openUrl('https://github.com/MetaCubeX/mihomo'),
 -          ),
 -        ),
-+        for (var i = 0; i < links.length; i += 2)
++        for (var i = 0; i + 1 < links.length; i += 2)
 +          _LinkGridRow(left: links[i], right: links[i + 1]),
++        if (links.length.isOdd) links.last,
        ],
      );
    }
-@@ -145,29 +124,53 @@ class AboutView extends StatelessWidget {
+@@ -145,29 +125,53 @@ class AboutView extends StatelessWidget {
          avatar: 'assets/images/avatars/wfion.png',
          name: 'wfion',
        ),
@@ -172057,7 +172058,7 @@ index d178fee..6c3b0df 100644
      final items = [
        ListTile(
          title: Column(
-@@ -186,6 +189,8 @@ class AboutView extends StatelessWidget {
+@@ -186,6 +190,8 @@ class AboutView extends StatelessWidget {
                            'assets/images/icon.png',
                            width: 48,
                            height: 48,
@@ -172066,7 +172067,7 @@ index d178fee..6c3b0df 100644
                          ),
                        ),
                        Column(
-@@ -195,9 +200,16 @@ class AboutView extends StatelessWidget {
+@@ -195,9 +201,16 @@ class AboutView extends StatelessWidget {
                              appName,
                              style: Theme.of(context).textTheme.headlineSmall,
                            ),
@@ -172086,7 +172087,7 @@ index d178fee..6c3b0df 100644
                            ),
                          ],
                        ),
-@@ -225,39 +237,23 @@ class AboutView extends StatelessWidget {
+@@ -225,39 +238,23 @@ class AboutView extends StatelessWidget {
          ),
        ),
        const SizedBox(height: 12),
@@ -172141,7 +172142,7 @@ index d178fee..6c3b0df 100644
        ..._buildContributorsSection(),
        ..._buildMoreSection(context),
      ];
-@@ -332,17 +328,110 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
+@@ -332,17 +329,110 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
    }
  }
  
@@ -172257,7 +172258,7 @@ index d178fee..6c3b0df 100644
      return IntrinsicHeight(
        child: Row(
          crossAxisAlignment: CrossAxisAlignment.stretch,
-@@ -351,9 +440,11 @@ class _LinkGridRow extends StatelessWidget {
+@@ -351,9 +441,11 @@ class _LinkGridRow extends StatelessWidget {
            VerticalDivider(
              width: 1,
              thickness: 1,
@@ -172272,7 +172273,7 @@ index d178fee..6c3b0df 100644
            ),
            Expanded(child: right),
          ],
-@@ -362,37 +453,71 @@ class _LinkGridRow extends StatelessWidget {
+@@ -362,37 +454,71 @@ class _LinkGridRow extends StatelessWidget {
    }
  }
  
