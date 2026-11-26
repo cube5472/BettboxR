@@ -171873,7 +171873,7 @@ index b322b92..46e96d9 100644
  class PlatformChecker {
    static bool? _udsSupport;
 diff --git a/lib/views/about.dart b/lib/views/about.dart
-index d178fee..56c7566 100644
+index d178fee..6c3b0df 100644
 --- a/lib/views/about.dart
 +++ b/lib/views/about.dart
 @@ -1,10 +1,11 @@
@@ -172141,7 +172141,7 @@ index d178fee..56c7566 100644
        ..._buildContributorsSection(),
        ..._buildMoreSection(context),
      ];
-@@ -332,17 +328,109 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
+@@ -332,17 +328,110 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
    }
  }
  
@@ -172165,6 +172165,7 @@ index d178fee..56c7566 100644
 +      ),
 +    );
 +  }
++}
 +
 +class _ContributorsRow extends StatefulWidget {
 +  final List<Contributor> contributors;
@@ -172256,7 +172257,7 @@ index d178fee..56c7566 100644
      return IntrinsicHeight(
        child: Row(
          crossAxisAlignment: CrossAxisAlignment.stretch,
-@@ -351,9 +439,11 @@ class _LinkGridRow extends StatelessWidget {
+@@ -351,9 +440,11 @@ class _LinkGridRow extends StatelessWidget {
            VerticalDivider(
              width: 1,
              thickness: 1,
@@ -172271,7 +172272,7 @@ index d178fee..56c7566 100644
            ),
            Expanded(child: right),
          ],
-@@ -362,37 +452,71 @@ class _LinkGridRow extends StatelessWidget {
+@@ -362,37 +453,71 @@ class _LinkGridRow extends StatelessWidget {
    }
  }
  
