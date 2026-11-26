@@ -69247,10 +69247,10 @@ index d90d164..0b5ce8b 100644
          if (i < 14) {
 diff --git a/lib/common/managed_script.dart b/lib/common/managed_script.dart
 new file mode 100644
-index 0000000..95deb4b
+index 0000000..2f18e60
 --- /dev/null
 +++ b/lib/common/managed_script.dart
-@@ -0,0 +1,627 @@
+@@ -0,0 +1,647 @@
 +import 'dart:convert';
 +import 'dart:io';
 +import 'dart:isolate';
@@ -69370,6 +69370,26 @@ index 0000000..95deb4b
 +      ? path.substring(_routeIconCommonDir.length)
 +      : path;
 +}
++
++const managedBuiltinRuleSets = <String, List<String>>{
++  'AI': ['geosite:category-ai-!cn', 'geoip:openai'],
++  'YouTube': ['geosite:youtube'],
++  'FCM': ['geosite:googlefcm'],
++  'Google': ['geosite:google', 'geoip:google'],
++  'Telegram': ['geosite:telegram', 'geoip:telegram'],
++  'GitHub': ['geosite:github'],
++  'Microsoft': ['geosite:microsoft', 'geoip:microsoft'],
++  'Apple': ['geosite:apple', 'geoip:apple'],
++  'Steam': ['geosite:steam', 'geoip:steam'],
++  'TikTok': ['geosite:tiktok', 'geoip:tiktok'],
++  'Twitter': ['geosite:twitter', 'geoip:twitter'],
++  'Meta': ['geosite:meta', 'geoip:facebook'],
++  'Netflix': ['geosite:netflix', 'geoip:netflix'],
++  'PikPak': ['geosite:pikpak'],
++  'Spotify': ['geosite:spotify', 'geoip:spotify'],
++  'Crypto': ['geosite:category-cryptocurrency'],
++  'AdBlock': ['geosite:category-ads'],
++};
 +
 +List<String> managedRegions(
 +  RouteCatalog catalog,
@@ -72524,10 +72544,10 @@ index 8f733b0..1ead9c7 100644
 +  }
 +}
 diff --git a/lib/common/print.dart b/lib/common/print.dart
-index 168b4b9..6c17867 100644
+index 168b4b9..b4e6e9f 100644
 --- a/lib/common/print.dart
 +++ b/lib/common/print.dart
-@@ -1,6 +1,7 @@
+@@ -1,9 +1,13 @@
 +import 'package:bett_box/enum/enum.dart';
  import 'package:bett_box/models/models.dart';
  import 'package:bett_box/state.dart';
@@ -72536,28 +72556,58 @@ index 168b4b9..6c17867 100644
  
  class CommonPrint {
    static CommonPrint? _instance;
-@@ -12,13 +13,20 @@ class CommonPrint {
++  static const _maxPending = 64;
++
++  final List<Log> _pending = [];
+ 
+   CommonPrint._internal();
+ 
+@@ -12,13 +16,44 @@ class CommonPrint {
      return _instance!;
    }
  
 -  void log(String? text) {
 -    final payload = '[APP] $text';
 -    debugPrint(payload);
-+  void log(String? text) => _dispatch(text, LogLevel.info);
++  void log(String? text, {String? module}) =>
++      _dispatch(text, LogLevel.info, module);
 +
-+  void debug(String? text) => _dispatch(text, LogLevel.debug);
++  void debug(String? text, {String? module}) =>
++      _dispatch(text, LogLevel.debug, module);
 +
-+  void warn(String? text) => _dispatch(text, LogLevel.warning);
++  void warn(String? text, {String? module}) =>
++      _dispatch(text, LogLevel.warning, module);
 +
-+  void error(String? text) => _dispatch(text, LogLevel.error);
++  void error(String? text, {String? module}) =>
++      _dispatch(text, LogLevel.error, module);
 +
-+  void _dispatch(String? text, LogLevel level) {
-+    debugPrint('[APP] $text');
++  void flush() {
++    if (_pending.isEmpty) return;
++    final logs = List.of(_pending);
++    _pending.clear();
++    logs.forEach(_emit);
++  }
++
++  void _dispatch(String? text, LogLevel level, String? module) {
++    final log = Log.app('$text', level: level, module: module);
++    debugPrint('[APP] ${log.raw}');
      if (!globalState.isInit) {
++      if (globalState.isService) return;
++      if (_pending.length >= _maxPending) _pending.removeAt(0);
++      _pending.add(log);
        return;
      }
 -    globalState.appController.addLog(Log.app(payload));
-+    globalState.appController.addLog(Log.app('$text', level: level));
++    _emit(log);
++  }
++
++  void _emit(Log log) {
++    final config = globalState.config;
++    if (!config.appSetting.openLogs) return;
++    final level = config.patchClashConfig.logLevel;
++    if (level == LogLevel.silent) return;
++    if (log.logLevel == LogLevel.debug && level != LogLevel.debug) return;
++    globalState.appController.addLog(log);
    }
  }
  
@@ -107306,7 +107356,7 @@ index 578e11c..277a1fe 100644
    }
  }
 diff --git a/lib/models/common.dart b/lib/models/common.dart
-index 698b695..b02466b 100644
+index 698b695..c746ac5 100644
 --- a/lib/models/common.dart
 +++ b/lib/models/common.dart
 @@ -1,10 +1,11 @@
@@ -107348,7 +107398,7 @@ index 698b695..b02466b 100644
      DnsMode? dnsMode,
      @Default('') String process,
      @Default('') String processPath,
-@@ -106,35 +112,107 @@ extension TrackerInfoExt on TrackerInfo {
+@@ -106,35 +112,112 @@ extension TrackerInfoExt on TrackerInfo {
    }
  }
  
@@ -107396,7 +107446,11 @@ index 698b695..b02466b 100644
 +    return log.copyWith(payload: payload, module: module);
 +  }
 +
-+  factory Log.app(String payload, {LogLevel level = LogLevel.info}) {
++  factory Log.app(
++    String payload, {
++    LogLevel level = LogLevel.info,
++    String? module,
++  }) {
      return Log(
 -      logLevel: LogLevel.info,
 -      payload: payload,
@@ -107406,6 +107460,7 @@ index 698b695..b02466b 100644
 +      payload: payload.trimRight(),
 +      time: DateTime.now(),
 +      source: LogSource.app,
++      module: module,
      );
    }
  
@@ -107468,7 +107523,7 @@ index 698b695..b02466b 100644
  @freezed
  abstract class LogsState with _$LogsState {
    const factory LogsState({
-@@ -199,6 +277,7 @@ abstract class DAV with _$DAV {
+@@ -199,6 +282,7 @@ abstract class DAV with _$DAV {
      required String user,
      required String password,
      @Default(defaultDavFileName) String fileName,
@@ -107476,7 +107531,7 @@ index 698b695..b02466b 100644
    }) = _DAV;
  
    factory DAV.fromJson(Map<String, Object?> json) => _$DAVFromJson(json);
-@@ -215,6 +294,31 @@ extension FileInfoExt on FileInfo {
+@@ -215,6 +299,31 @@ extension FileInfoExt on FileInfo {
        '${TrafficValue(value: size).show}  ·  ${lastModified.lastUpdateTimeDesc}';
  }
  
@@ -107508,7 +107563,7 @@ index 698b695..b02466b 100644
  @freezed
  abstract class VersionInfo with _$VersionInfo {
    const factory VersionInfo({
-@@ -239,7 +343,7 @@ class Traffic {
+@@ -239,7 +348,7 @@ class Traffic {
    num get speed => up.value + down.value;
  
    factory Traffic.fromMap(Map<String, dynamic> map) {
@@ -107517,7 +107572,7 @@ index 698b695..b02466b 100644
    }
  
    String toSpeedText() {
-@@ -298,11 +402,38 @@ abstract class Group with _$Group {
+@@ -298,11 +407,38 @@ abstract class Group with _$Group {
    factory Group.fromJson(Map<String, Object?> json) => _$GroupFromJson(json);
  }
  
@@ -107560,7 +107615,7 @@ index 698b695..b02466b 100644
  }
  
  extension GroupExt on Group {
-@@ -415,6 +546,70 @@ extension ColorSchemesExt on ColorSchemes {
+@@ -415,6 +551,70 @@ extension ColorSchemesExt on ColorSchemes {
    }
  }
  
@@ -107631,7 +107686,7 @@ index 698b695..b02466b 100644
  class IpInfo {
    final String ip;
    final String countryCode;
-@@ -430,7 +625,7 @@ class IpInfo {
+@@ -430,7 +630,7 @@ class IpInfo {
  
    IpInfo({
      required this.ip,
@@ -107640,7 +107695,7 @@ index 698b695..b02466b 100644
      String? country,
      this.province,
      this.city,
-@@ -440,16 +635,163 @@ class IpInfo {
+@@ -440,16 +640,163 @@ class IpInfo {
      this.asDomain,
      this.continent,
      this.continentCode,
@@ -107693,9 +107748,7 @@ index 698b695..b02466b 100644
 +    }
 +    return false;
 +  }
- 
--  static String? _normalizeCountry(String? country) {
--    if (country == null) return null;
++
 +  static String normalizeCountryCode(
 +    String countryCode, [
 +    String? country,
@@ -107737,7 +107790,9 @@ index 698b695..b02466b 100644
 +    }
 +    return clean;
 +  }
-+
+ 
+-  static String? _normalizeCountry(String? country) {
+-    if (country == null) return null;
 +  static String? normalizeCountry(
 +    String? country, [
 +    String? countryCode,
@@ -107810,7 +107865,7 @@ index 698b695..b02466b 100644
      }
      return country;
    }
-@@ -461,10 +803,16 @@ class IpInfo {
+@@ -461,10 +808,16 @@ class IpInfo {
        final loc = data['location'];
        if (loc is List && ip.isNotEmpty) {
          final locList = loc.map((e) => e?.toString() ?? '').toList();
@@ -107830,7 +107885,7 @@ index 698b695..b02466b 100644
          final last = locList.length > 4 && locList[4].isNotEmpty
              ? locList[4]
              : (locList.length > 3 && locList[3].isNotEmpty ? locList[3] : null);
-@@ -496,6 +844,35 @@ class IpInfo {
+@@ -496,6 +849,35 @@ class IpInfo {
      }
  
      final ip = json['ip']?.toString() ?? '';
@@ -107866,7 +107921,7 @@ index 698b695..b02466b 100644
      if (json['location'] is Map) {
        final loc = json['location'] as Map;
        final countryCode = loc['country_code']?.toString() ?? '';
-@@ -513,16 +890,21 @@ class IpInfo {
+@@ -513,16 +895,21 @@ class IpInfo {
        }
      }
  
@@ -107891,7 +107946,7 @@ index 698b695..b02466b 100644
        final city = json['city']?.toString();
        final isp = json['isp']?.toString();
        final org = json['org']?.toString();
-@@ -531,8 +913,10 @@ class IpInfo {
+@@ -531,8 +918,10 @@ class IpInfo {
            : (json['as_name']?.toString());
  
        final rawAs = (json['as'] ?? json['asn'])?.toString() ?? '';
@@ -107904,7 +107959,7 @@ index 698b695..b02466b 100644
        final asn = asnMatch != null
            ? asnMatch.group(1)!.toUpperCase()
            : (rawAs.isNotEmpty ? rawAs.trim().split(' ').first : null);
-@@ -553,13 +937,14 @@ class IpInfo {
+@@ -553,13 +942,14 @@ class IpInfo {
  
      if (json['country_code'] != null && json['country_code3'] != null) {
        final ip = json['ip']?.toString() ?? '';
@@ -107922,7 +107977,7 @@ index 698b695..b02466b 100644
            : null;
        if (ip.isNotEmpty) {
          return IpInfo(
-@@ -631,7 +1016,8 @@ class IpInfo {
+@@ -631,7 +1021,8 @@ class IpInfo {
    }
  
    IpInfo merge(IpInfo other, {bool otherIsAuthoritative = false}) {
@@ -107932,7 +107987,7 @@ index 698b695..b02466b 100644
          ((asn == null || asn!.isEmpty) &&
              (other.asn != null && other.asn!.isNotEmpty));
  
-@@ -639,17 +1025,17 @@ class IpInfo {
+@@ -639,17 +1030,17 @@ class IpInfo {
      final secondary = isOtherPrimary ? this : other;
  
      final mergedIp = primary.ip.isNotEmpty ? primary.ip : secondary.ip;
@@ -107955,7 +108010,7 @@ index 698b695..b02466b 100644
  
      final mergedCountryCode = primaryCc.isNotEmpty ? primaryCc : secondaryCc;
  
-@@ -674,15 +1060,18 @@ class IpInfo {
+@@ -674,15 +1065,18 @@ class IpInfo {
          ? primary.city
          : (isSameCountry ? secondary.city : null);
  
@@ -107980,7 +108035,7 @@ index 698b695..b02466b 100644
      final mergedContinent = primary.continent?.isNotEmpty == true
          ? primary.continent
          : secondary.continent;
-@@ -784,12 +1173,16 @@ class PopupMenuItemData {
+@@ -784,12 +1178,16 @@ class PopupMenuItemData {
    const PopupMenuItemData({
      this.icon,
      required this.label,
@@ -107998,7 +108053,7 @@ index 698b695..b02466b 100644
  }
  
  @freezed
-@@ -819,14 +1212,18 @@ abstract class Result<T> with _$Result<T> {
+@@ -819,14 +1217,18 @@ abstract class Result<T> with _$Result<T> {
      @Default(false) bool needRestart,
    }) = _Result;
  
@@ -108020,7 +108075,7 @@ index 698b695..b02466b 100644
    bool get isError => type == ResultType.error;
  
    bool get isSuccess => type == ResultType.success;
-@@ -837,21 +1234,141 @@ abstract class Script with _$Script {
+@@ -837,21 +1239,141 @@ abstract class Script with _$Script {
    const factory Script({
      required String id,
      required String label,
@@ -128311,7 +128366,7 @@ index 0000000..db52aaf
 +  NodeRole.regular: 'regular',
 +};
 diff --git a/lib/models/generated/profile.freezed.dart b/lib/models/generated/profile.freezed.dart
-index ca6c0a7..c2c7c1b 100644
+index ca6c0a7..c7ed2a9 100644
 --- a/lib/models/generated/profile.freezed.dart
 +++ b/lib/models/generated/profile.freezed.dart
 @@ -1,6 +1,6 @@
@@ -128425,7 +128480,7 @@ index ca6c0a7..c2c7c1b 100644
  @useResult
  $Res call({
 - String id, String? label, String? currentGroupName, String url, DateTime? lastUpdateDate, Duration autoUpdateDuration, SubscriptionInfo? subscriptionInfo, bool autoUpdate, SelectedMap selectedMap, Set<String> unfoldSet, OverrideData overrideData,@JsonKey(includeToJson: false, includeFromJson: false) bool isUpdating, bool useScriptOverride, String? ageSecretKey,@JsonKey(name: 'group-switches') Map<String, bool> groupSwitches
-+ String id, String? label, String? currentGroupName, String url, DateTime? lastUpdateDate, Duration autoUpdateDuration, SubscriptionInfo? subscriptionInfo, Map<String, SubscriptionInfo> providerSubscriptions, bool autoUpdate, SelectedMap selectedMap, Set<String> unfoldSet, OverrideData overrideData,@JsonKey(includeToJson: false, includeFromJson: false) bool isUpdating, String? scriptId, bool managed, bool managedStyleApplied, String? ageSecretKey,@JsonKey(name: 'group-switches') Map<String, bool> groupSwitches, ProfileUsageStyle usageStyle, ProfileBundle? bundle
++ String id, String? label, String? currentGroupName, String url, DateTime? lastUpdateDate, Duration autoUpdateDuration, SubscriptionInfo? subscriptionInfo, Map<String, SubscriptionInfo> providerSubscriptions, bool autoUpdate, SelectedMap selectedMap, Set<String> unfoldSet, OverrideData overrideData,@JsonKey(includeToJson: false, includeFromJson: false) bool isUpdating, String? scriptId, bool managed, bool managedStyleApplied, String? ageSecretKey, bool skipCertVerify, String? userAgent,@JsonKey(name: 'group-switches') Map<String, bool> groupSwitches, ProfileUsageStyle usageStyle, ProfileBundle? bundle
  });
  
  
@@ -128440,12 +128495,12 @@ index ca6c0a7..c2c7c1b 100644
  /// with the given fields replaced by the non-null parameter values.
 -@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? label = freezed,Object? currentGroupName = freezed,Object? url = null,Object? lastUpdateDate = freezed,Object? autoUpdateDuration = null,Object? subscriptionInfo = freezed,Object? autoUpdate = null,Object? selectedMap = null,Object? unfoldSet = null,Object? overrideData = null,Object? isUpdating = null,Object? useScriptOverride = null,Object? ageSecretKey = freezed,Object? groupSwitches = null,}) {
 -  return _then(_self.copyWith(
-+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? label = freezed,Object? currentGroupName = freezed,Object? url = null,Object? lastUpdateDate = freezed,Object? autoUpdateDuration = null,Object? subscriptionInfo = freezed,Object? providerSubscriptions = null,Object? autoUpdate = null,Object? selectedMap = null,Object? unfoldSet = null,Object? overrideData = null,Object? isUpdating = null,Object? scriptId = freezed,Object? managed = null,Object? managedStyleApplied = null,Object? ageSecretKey = freezed,Object? groupSwitches = null,Object? usageStyle = null,Object? bundle = freezed,}) {
++@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? label = freezed,Object? currentGroupName = freezed,Object? url = null,Object? lastUpdateDate = freezed,Object? autoUpdateDuration = null,Object? subscriptionInfo = freezed,Object? providerSubscriptions = null,Object? autoUpdate = null,Object? selectedMap = null,Object? unfoldSet = null,Object? overrideData = null,Object? isUpdating = null,Object? scriptId = freezed,Object? managed = null,Object? managedStyleApplied = null,Object? ageSecretKey = freezed,Object? skipCertVerify = null,Object? userAgent = freezed,Object? groupSwitches = null,Object? usageStyle = null,Object? bundle = freezed,}) {
 +  return _then(Profile(
  id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
  as String,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
  as String?,currentGroupName: freezed == currentGroupName ? _self.currentGroupName : currentGroupName // ignore: cast_nullable_to_non_nullable
-@@ -346,15 +359,20 @@ as String?,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nu
+@@ -346,15 +359,24 @@ as String?,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nu
  as String,lastUpdateDate: freezed == lastUpdateDate ? _self.lastUpdateDate : lastUpdateDate // ignore: cast_nullable_to_non_nullable
  as DateTime?,autoUpdateDuration: null == autoUpdateDuration ? _self.autoUpdateDuration : autoUpdateDuration // ignore: cast_nullable_to_non_nullable
  as Duration,subscriptionInfo: freezed == subscriptionInfo ? _self.subscriptionInfo : subscriptionInfo // ignore: cast_nullable_to_non_nullable
@@ -128461,6 +128516,10 @@ index ca6c0a7..c2c7c1b 100644
 +as String?,managed: null == managed ? _self.managed : managed // ignore: cast_nullable_to_non_nullable
 +as bool,managedStyleApplied: null == managedStyleApplied ? _self.managedStyleApplied : managedStyleApplied // ignore: cast_nullable_to_non_nullable
  as bool,ageSecretKey: freezed == ageSecretKey ? _self.ageSecretKey : ageSecretKey // ignore: cast_nullable_to_non_nullable
++as String?,skipCertVerify: null == skipCertVerify ? _self.skipCertVerify : skipCertVerify // ignore: cast_nullable_to_non_nullable
++as bool,userAgent: freezed == userAgent ? _self.userAgent : userAgent // ignore: cast_nullable_to_non_nullable
++as String?,skipCertVerify: null == skipCertVerify ? _self.skipCertVerify : skipCertVerify // ignore: cast_nullable_to_non_nullable
++as bool,userAgent: freezed == userAgent ? _self.userAgent : userAgent // ignore: cast_nullable_to_non_nullable
  as String?,groupSwitches: null == groupSwitches ? _self.groupSwitches : groupSwitches // ignore: cast_nullable_to_non_nullable
 -as Map<String, bool>,
 +as Map<String, bool>,usageStyle: null == usageStyle ? _self.usageStyle : usageStyle // ignore: cast_nullable_to_non_nullable
@@ -128469,7 +128528,7 @@ index ca6c0a7..c2c7c1b 100644
    ));
  }
  /// Create a copy of Profile
-@@ -378,6 +396,18 @@ $OverrideDataCopyWith<$Res> get overrideData {
+@@ -378,6 +400,18 @@ $OverrideDataCopyWith<$Res> get overrideData {
    return $OverrideDataCopyWith<$Res>(_self.overrideData, (value) {
      return _then(_self.copyWith(overrideData: value));
    });
@@ -128488,7 +128547,7 @@ index ca6c0a7..c2c7c1b 100644
  }
  }
  
-@@ -460,10 +490,10 @@ return $default(_that);case _:
+@@ -460,10 +494,10 @@ return $default(_that);case _:
  /// }
  /// ```
  
@@ -128501,7 +128560,7 @@ index ca6c0a7..c2c7c1b 100644
    return orElse();
  
  }
-@@ -481,10 +511,10 @@ return $default(_that.id,_that.label,_that.currentGroupName,_that.url,_that.last
+@@ -481,10 +515,10 @@ return $default(_that.id,_that.label,_that.currentGroupName,_that.url,_that.last
  /// }
  /// ```
  
@@ -128514,7 +128573,7 @@ index ca6c0a7..c2c7c1b 100644
    throw StateError('Unexpected subclass');
  
  }
-@@ -501,10 +531,10 @@ return $default(_that.id,_that.label,_that.currentGroupName,_that.url,_that.last
+@@ -501,10 +535,10 @@ return $default(_that.id,_that.label,_that.currentGroupName,_that.url,_that.last
  /// }
  /// ```
  
@@ -128527,16 +128586,16 @@ index ca6c0a7..c2c7c1b 100644
    return null;
  
  }
-@@ -516,7 +546,7 @@ return $default(_that.id,_that.label,_that.currentGroupName,_that.url,_that.last
+@@ -516,7 +550,7 @@ return $default(_that.id,_that.label,_that.currentGroupName,_that.url,_that.last
  @JsonSerializable()
  
  class _Profile implements Profile {
 -  const _Profile({required this.id, this.label, this.currentGroupName, this.url = '', this.lastUpdateDate, required this.autoUpdateDuration, this.subscriptionInfo, this.autoUpdate = true, final  SelectedMap selectedMap = const {}, final  Set<String> unfoldSet = const {}, this.overrideData = const OverrideData(), @JsonKey(includeToJson: false, includeFromJson: false) this.isUpdating = false, this.useScriptOverride = true, this.ageSecretKey, @JsonKey(name: 'group-switches') final  Map<String, bool> groupSwitches = const {}}): _selectedMap = selectedMap,_unfoldSet = unfoldSet,_groupSwitches = groupSwitches;
-+  const _Profile({required this.id, this.label, this.currentGroupName, this.url = '', this.lastUpdateDate, required this.autoUpdateDuration, this.subscriptionInfo,  Map<String, SubscriptionInfo> providerSubscriptions = const {}, this.autoUpdate = true,  SelectedMap selectedMap = const {},  Set<String> unfoldSet = const {}, this.overrideData = const OverrideData(), @JsonKey(includeToJson: false, includeFromJson: false) this.isUpdating = false, this.scriptId, this.managed = false, this.managedStyleApplied = false, this.ageSecretKey, @JsonKey(name: 'group-switches')  Map<String, bool> groupSwitches = const {}, this.usageStyle = ProfileUsageStyle.bar, this.bundle}): _providerSubscriptions = providerSubscriptions,_selectedMap = selectedMap,_unfoldSet = unfoldSet,_groupSwitches = groupSwitches;
++  const _Profile({required this.id, this.label, this.currentGroupName, this.url = '', this.lastUpdateDate, required this.autoUpdateDuration, this.subscriptionInfo,  Map<String, SubscriptionInfo> providerSubscriptions = const {}, this.autoUpdate = true,  SelectedMap selectedMap = const {},  Set<String> unfoldSet = const {}, this.overrideData = const OverrideData(), @JsonKey(includeToJson: false, includeFromJson: false) this.isUpdating = false, this.scriptId, this.managed = false, this.managedStyleApplied = false, this.ageSecretKey, this.skipCertVerify = false, this.userAgent, @JsonKey(name: 'group-switches')  Map<String, bool> groupSwitches = const {}, this.usageStyle = ProfileUsageStyle.bar, this.bundle}): _providerSubscriptions = providerSubscriptions,_selectedMap = selectedMap,_unfoldSet = unfoldSet,_groupSwitches = groupSwitches;
    factory _Profile.fromJson(Map<String, dynamic> json) => _$ProfileFromJson(json);
  
  @override final  String id;
-@@ -526,6 +556,13 @@ class _Profile implements Profile {
+@@ -526,6 +560,13 @@ class _Profile implements Profile {
  @override final  DateTime? lastUpdateDate;
  @override final  Duration autoUpdateDuration;
  @override final  SubscriptionInfo? subscriptionInfo;
@@ -128550,7 +128609,7 @@ index ca6c0a7..c2c7c1b 100644
  @override@JsonKey() final  bool autoUpdate;
   final  SelectedMap _selectedMap;
  @override@JsonKey() SelectedMap get selectedMap {
-@@ -543,7 +580,9 @@ class _Profile implements Profile {
+@@ -543,8 +584,12 @@ class _Profile implements Profile {
  
  @override@JsonKey() final  OverrideData overrideData;
  @override@JsonKey(includeToJson: false, includeFromJson: false) final  bool isUpdating;
@@ -128559,9 +128618,12 @@ index ca6c0a7..c2c7c1b 100644
 +@override@JsonKey() final  bool managed;
 +@override@JsonKey() final  bool managedStyleApplied;
  @override final  String? ageSecretKey;
++@override final  bool skipCertVerify;
++@override final  String? userAgent;
   final  Map<String, bool> _groupSwitches;
  @override@JsonKey(name: 'group-switches') Map<String, bool> get groupSwitches {
-@@ -552,6 +591,8 @@ class _Profile implements Profile {
+   if (_groupSwitches is EqualUnmodifiableMapView) return _groupSwitches;
+@@ -552,6 +597,8 @@ class _Profile implements Profile {
    return EqualUnmodifiableMapView(_groupSwitches);
  }
  
@@ -128570,34 +128632,34 @@ index ca6c0a7..c2c7c1b 100644
  
  /// Create a copy of Profile
  /// with the given fields replaced by the non-null parameter values.
-@@ -566,16 +607,18 @@ Map<String, dynamic> toJson() {
+@@ -566,16 +613,18 @@ Map<String, dynamic> toJson() {
  
  @override
  bool operator ==(Object other) {
 -  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Profile&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.currentGroupName, currentGroupName) || other.currentGroupName == currentGroupName)&&(identical(other.url, url) || other.url == url)&&(identical(other.lastUpdateDate, lastUpdateDate) || other.lastUpdateDate == lastUpdateDate)&&(identical(other.autoUpdateDuration, autoUpdateDuration) || other.autoUpdateDuration == autoUpdateDuration)&&(identical(other.subscriptionInfo, subscriptionInfo) || other.subscriptionInfo == subscriptionInfo)&&(identical(other.autoUpdate, autoUpdate) || other.autoUpdate == autoUpdate)&&const DeepCollectionEquality().equals(other._selectedMap, _selectedMap)&&const DeepCollectionEquality().equals(other._unfoldSet, _unfoldSet)&&(identical(other.overrideData, overrideData) || other.overrideData == overrideData)&&(identical(other.isUpdating, isUpdating) || other.isUpdating == isUpdating)&&(identical(other.useScriptOverride, useScriptOverride) || other.useScriptOverride == useScriptOverride)&&(identical(other.ageSecretKey, ageSecretKey) || other.ageSecretKey == ageSecretKey)&&const DeepCollectionEquality().equals(other._groupSwitches, _groupSwitches));
-+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Profile&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.currentGroupName, currentGroupName) || other.currentGroupName == currentGroupName)&&(identical(other.url, url) || other.url == url)&&(identical(other.lastUpdateDate, lastUpdateDate) || other.lastUpdateDate == lastUpdateDate)&&(identical(other.autoUpdateDuration, autoUpdateDuration) || other.autoUpdateDuration == autoUpdateDuration)&&(identical(other.subscriptionInfo, subscriptionInfo) || other.subscriptionInfo == subscriptionInfo)&&const DeepCollectionEquality().equals(other.providerSubscriptions, _providerSubscriptions)&&(identical(other.autoUpdate, autoUpdate) || other.autoUpdate == autoUpdate)&&const DeepCollectionEquality().equals(other.selectedMap, _selectedMap)&&const DeepCollectionEquality().equals(other.unfoldSet, _unfoldSet)&&(identical(other.overrideData, overrideData) || other.overrideData == overrideData)&&(identical(other.isUpdating, isUpdating) || other.isUpdating == isUpdating)&&(identical(other.scriptId, scriptId) || other.scriptId == scriptId)&&(identical(other.managed, managed) || other.managed == managed)&&(identical(other.managedStyleApplied, managedStyleApplied) || other.managedStyleApplied == managedStyleApplied)&&(identical(other.ageSecretKey, ageSecretKey) || other.ageSecretKey == ageSecretKey)&&const DeepCollectionEquality().equals(other.groupSwitches, _groupSwitches)&&(identical(other.usageStyle, usageStyle) || other.usageStyle == usageStyle)&&(identical(other.bundle, bundle) || other.bundle == bundle));
++    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Profile&&(identical(other.id, id) || other.id == id)&&(identical(other.label, label) || other.label == label)&&(identical(other.currentGroupName, currentGroupName) || other.currentGroupName == currentGroupName)&&(identical(other.url, url) || other.url == url)&&(identical(other.lastUpdateDate, lastUpdateDate) || other.lastUpdateDate == lastUpdateDate)&&(identical(other.autoUpdateDuration, autoUpdateDuration) || other.autoUpdateDuration == autoUpdateDuration)&&(identical(other.subscriptionInfo, subscriptionInfo) || other.subscriptionInfo == subscriptionInfo)&&const DeepCollectionEquality().equals(other.providerSubscriptions, _providerSubscriptions)&&(identical(other.autoUpdate, autoUpdate) || other.autoUpdate == autoUpdate)&&const DeepCollectionEquality().equals(other.selectedMap, _selectedMap)&&const DeepCollectionEquality().equals(other.unfoldSet, _unfoldSet)&&(identical(other.overrideData, overrideData) || other.overrideData == overrideData)&&(identical(other.isUpdating, isUpdating) || other.isUpdating == isUpdating)&&(identical(other.scriptId, scriptId) || other.scriptId == scriptId)&&(identical(other.managed, managed) || other.managed == managed)&&(identical(other.managedStyleApplied, managedStyleApplied) || other.managedStyleApplied == managedStyleApplied)&&(identical(other.ageSecretKey, ageSecretKey) || other.ageSecretKey == ageSecretKey)&&(identical(other.skipCertVerify, skipCertVerify) || other.skipCertVerify == skipCertVerify)&&(identical(other.userAgent, userAgent) || other.userAgent == userAgent)&&const DeepCollectionEquality().equals(other.groupSwitches, _groupSwitches)&&(identical(other.usageStyle, usageStyle) || other.usageStyle == usageStyle)&&(identical(other.bundle, bundle) || other.bundle == bundle));
  }
  
  @JsonKey(includeFromJson: false, includeToJson: false)
  @override
 -int get hashCode => Object.hash(runtimeType,id,label,currentGroupName,url,lastUpdateDate,autoUpdateDuration,subscriptionInfo,autoUpdate,const DeepCollectionEquality().hash(_selectedMap),const DeepCollectionEquality().hash(_unfoldSet),overrideData,isUpdating,useScriptOverride,ageSecretKey,const DeepCollectionEquality().hash(_groupSwitches));
 +int get hashCode {
-+    return Object.hashAll([runtimeType,id,label,currentGroupName,url,lastUpdateDate,autoUpdateDuration,subscriptionInfo,const DeepCollectionEquality().hash(_providerSubscriptions),autoUpdate,const DeepCollectionEquality().hash(_selectedMap),const DeepCollectionEquality().hash(_unfoldSet),overrideData,isUpdating,scriptId,managed,managedStyleApplied,ageSecretKey,const DeepCollectionEquality().hash(_groupSwitches),usageStyle,bundle]);
++    return Object.hashAll([runtimeType,id,label,currentGroupName,url,lastUpdateDate,autoUpdateDuration,subscriptionInfo,const DeepCollectionEquality().hash(_providerSubscriptions),autoUpdate,const DeepCollectionEquality().hash(_selectedMap),const DeepCollectionEquality().hash(_unfoldSet),overrideData,isUpdating,scriptId,managed,managedStyleApplied,ageSecretKey,skipCertVerify,userAgent,const DeepCollectionEquality().hash(_groupSwitches),usageStyle,bundle]);
 +}
  
  @override
  String toString() {
 -  return 'Profile(id: $id, label: $label, currentGroupName: $currentGroupName, url: $url, lastUpdateDate: $lastUpdateDate, autoUpdateDuration: $autoUpdateDuration, subscriptionInfo: $subscriptionInfo, autoUpdate: $autoUpdate, selectedMap: $selectedMap, unfoldSet: $unfoldSet, overrideData: $overrideData, isUpdating: $isUpdating, useScriptOverride: $useScriptOverride, ageSecretKey: $ageSecretKey, groupSwitches: $groupSwitches)';
-+    return 'Profile(id: $id, label: $label, currentGroupName: $currentGroupName, url: $url, lastUpdateDate: $lastUpdateDate, autoUpdateDuration: $autoUpdateDuration, subscriptionInfo: $subscriptionInfo, providerSubscriptions: $providerSubscriptions, autoUpdate: $autoUpdate, selectedMap: $selectedMap, unfoldSet: $unfoldSet, overrideData: $overrideData, isUpdating: $isUpdating, scriptId: $scriptId, managed: $managed, managedStyleApplied: $managedStyleApplied, ageSecretKey: $ageSecretKey, groupSwitches: $groupSwitches, usageStyle: $usageStyle, bundle: $bundle)';
++    return 'Profile(id: $id, label: $label, currentGroupName: $currentGroupName, url: $url, lastUpdateDate: $lastUpdateDate, autoUpdateDuration: $autoUpdateDuration, subscriptionInfo: $subscriptionInfo, providerSubscriptions: $providerSubscriptions, autoUpdate: $autoUpdate, selectedMap: $selectedMap, unfoldSet: $unfoldSet, overrideData: $overrideData, isUpdating: $isUpdating, scriptId: $scriptId, managed: $managed, managedStyleApplied: $managedStyleApplied, ageSecretKey: $ageSecretKey, skipCertVerify: $skipCertVerify, userAgent: $userAgent, groupSwitches: $groupSwitches, usageStyle: $usageStyle, bundle: $bundle)';
  }
  
  
-@@ -586,11 +629,11 @@ abstract mixin class _$ProfileCopyWith<$Res> implements $ProfileCopyWith<$Res> {
+@@ -586,11 +635,11 @@ abstract mixin class _$ProfileCopyWith<$Res> implements $ProfileCopyWith<$Res> {
    factory _$ProfileCopyWith(_Profile value, $Res Function(_Profile) _then) = __$ProfileCopyWithImpl;
  @override @useResult
  $Res call({
 - String id, String? label, String? currentGroupName, String url, DateTime? lastUpdateDate, Duration autoUpdateDuration, SubscriptionInfo? subscriptionInfo, bool autoUpdate, SelectedMap selectedMap, Set<String> unfoldSet, OverrideData overrideData,@JsonKey(includeToJson: false, includeFromJson: false) bool isUpdating, bool useScriptOverride, String? ageSecretKey,@JsonKey(name: 'group-switches') Map<String, bool> groupSwitches
-+ String id, String? label, String? currentGroupName, String url, DateTime? lastUpdateDate, Duration autoUpdateDuration, SubscriptionInfo? subscriptionInfo, Map<String, SubscriptionInfo> providerSubscriptions, bool autoUpdate, SelectedMap selectedMap, Set<String> unfoldSet, OverrideData overrideData,@JsonKey(includeToJson: false, includeFromJson: false) bool isUpdating, String? scriptId, bool managed, bool managedStyleApplied, String? ageSecretKey,@JsonKey(name: 'group-switches') Map<String, bool> groupSwitches, ProfileUsageStyle usageStyle, ProfileBundle? bundle
++ String id, String? label, String? currentGroupName, String url, DateTime? lastUpdateDate, Duration autoUpdateDuration, SubscriptionInfo? subscriptionInfo, Map<String, SubscriptionInfo> providerSubscriptions, bool autoUpdate, SelectedMap selectedMap, Set<String> unfoldSet, OverrideData overrideData,@JsonKey(includeToJson: false, includeFromJson: false) bool isUpdating, String? scriptId, bool managed, bool managedStyleApplied, String? ageSecretKey, bool skipCertVerify, String? userAgent,@JsonKey(name: 'group-switches') Map<String, bool> groupSwitches, ProfileUsageStyle usageStyle, ProfileBundle? bundle
  });
  
  
@@ -128606,16 +128668,16 @@ index ca6c0a7..c2c7c1b 100644
  
  }
  /// @nodoc
-@@ -603,7 +646,7 @@ class __$ProfileCopyWithImpl<$Res>
+@@ -603,7 +652,7 @@ class __$ProfileCopyWithImpl<$Res>
  
  /// Create a copy of Profile
  /// with the given fields replaced by the non-null parameter values.
 -@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? label = freezed,Object? currentGroupName = freezed,Object? url = null,Object? lastUpdateDate = freezed,Object? autoUpdateDuration = null,Object? subscriptionInfo = freezed,Object? autoUpdate = null,Object? selectedMap = null,Object? unfoldSet = null,Object? overrideData = null,Object? isUpdating = null,Object? useScriptOverride = null,Object? ageSecretKey = freezed,Object? groupSwitches = null,}) {
-+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? label = freezed,Object? currentGroupName = freezed,Object? url = null,Object? lastUpdateDate = freezed,Object? autoUpdateDuration = null,Object? subscriptionInfo = freezed,Object? providerSubscriptions = null,Object? autoUpdate = null,Object? selectedMap = null,Object? unfoldSet = null,Object? overrideData = null,Object? isUpdating = null,Object? scriptId = freezed,Object? managed = null,Object? managedStyleApplied = null,Object? ageSecretKey = freezed,Object? groupSwitches = null,Object? usageStyle = null,Object? bundle = freezed,}) {
++@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? label = freezed,Object? currentGroupName = freezed,Object? url = null,Object? lastUpdateDate = freezed,Object? autoUpdateDuration = null,Object? subscriptionInfo = freezed,Object? providerSubscriptions = null,Object? autoUpdate = null,Object? selectedMap = null,Object? unfoldSet = null,Object? overrideData = null,Object? isUpdating = null,Object? scriptId = freezed,Object? managed = null,Object? managedStyleApplied = null,Object? ageSecretKey = freezed,Object? skipCertVerify = null,Object? userAgent = freezed,Object? groupSwitches = null,Object? usageStyle = null,Object? bundle = freezed,}) {
    return _then(_Profile(
  id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
  as String,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
-@@ -612,15 +655,20 @@ as String?,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nu
+@@ -612,15 +661,20 @@ as String?,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nu
  as String,lastUpdateDate: freezed == lastUpdateDate ? _self.lastUpdateDate : lastUpdateDate // ignore: cast_nullable_to_non_nullable
  as DateTime?,autoUpdateDuration: null == autoUpdateDuration ? _self.autoUpdateDuration : autoUpdateDuration // ignore: cast_nullable_to_non_nullable
  as Duration,subscriptionInfo: freezed == subscriptionInfo ? _self.subscriptionInfo : subscriptionInfo // ignore: cast_nullable_to_non_nullable
@@ -128639,7 +128701,7 @@ index ca6c0a7..c2c7c1b 100644
    ));
  }
  
-@@ -645,85 +693,93 @@ $OverrideDataCopyWith<$Res> get overrideData {
+@@ -645,85 +699,93 @@ $OverrideDataCopyWith<$Res> get overrideData {
    return $OverrideDataCopyWith<$Res>(_self.overrideData, (value) {
      return _then(_self.copyWith(overrideData: value));
    });
@@ -128768,7 +128830,7 @@ index ca6c0a7..c2c7c1b 100644
  /// A variant of `map` that fallback to returning `orElse`.
  ///
  /// It is equivalent to doing:
-@@ -736,10 +792,10 @@ extension OverrideDataPatterns on OverrideData {
+@@ -736,10 +798,10 @@ extension OverrideDataPatterns on OverrideData {
  /// }
  /// ```
  
@@ -128781,7 +128843,7 @@ index ca6c0a7..c2c7c1b 100644
  return $default(_that);case _:
    return orElse();
  
-@@ -758,10 +814,10 @@ return $default(_that);case _:
+@@ -758,10 +820,10 @@ return $default(_that);case _:
  /// }
  /// ```
  
@@ -128794,7 +128856,7 @@ index ca6c0a7..c2c7c1b 100644
  return $default(_that);case _:
    throw StateError('Unexpected subclass');
  
-@@ -779,10 +835,10 @@ return $default(_that);case _:
+@@ -779,10 +841,10 @@ return $default(_that);case _:
  /// }
  /// ```
  
@@ -128807,7 +128869,7 @@ index ca6c0a7..c2c7c1b 100644
  return $default(_that);case _:
    return null;
  
-@@ -800,10 +856,10 @@ return $default(_that);case _:
+@@ -800,10 +862,10 @@ return $default(_that);case _:
  /// }
  /// ```
  
@@ -128821,7 +128883,7 @@ index ca6c0a7..c2c7c1b 100644
    return orElse();
  
  }
-@@ -821,10 +877,10 @@ return $default(_that.enable,_that.rule);case _:
+@@ -821,10 +883,10 @@ return $default(_that.enable,_that.rule);case _:
  /// }
  /// ```
  
@@ -128835,7 +128897,7 @@ index ca6c0a7..c2c7c1b 100644
    throw StateError('Unexpected subclass');
  
  }
-@@ -841,10 +897,10 @@ return $default(_that.enable,_that.rule);case _:
+@@ -841,10 +903,10 @@ return $default(_that.enable,_that.rule);case _:
  /// }
  /// ```
  
@@ -128849,7 +128911,7 @@ index ca6c0a7..c2c7c1b 100644
    return null;
  
  }
-@@ -855,121 +911,119 @@ return $default(_that.enable,_that.rule);case _:
+@@ -855,121 +917,119 @@ return $default(_that.enable,_that.rule);case _:
  /// @nodoc
  @JsonSerializable()
  
@@ -129016,7 +129078,7 @@ index ca6c0a7..c2c7c1b 100644
  });
  
  
-@@ -977,29 +1031,29 @@ $Res call({
+@@ -977,29 +1037,29 @@ $Res call({
  
  }
  /// @nodoc
@@ -129060,7 +129122,7 @@ index ca6c0a7..c2c7c1b 100644
  /// A variant of `map` that fallback to returning `orElse`.
  ///
  /// It is equivalent to doing:
-@@ -1012,10 +1066,10 @@ extension OverrideRulePatterns on OverrideRule {
+@@ -1012,10 +1072,10 @@ extension OverrideRulePatterns on OverrideRule {
  /// }
  /// ```
  
@@ -129073,7 +129135,7 @@ index ca6c0a7..c2c7c1b 100644
  return $default(_that);case _:
    return orElse();
  
-@@ -1034,10 +1088,10 @@ return $default(_that);case _:
+@@ -1034,10 +1094,10 @@ return $default(_that);case _:
  /// }
  /// ```
  
@@ -129086,7 +129148,7 @@ index ca6c0a7..c2c7c1b 100644
  return $default(_that);case _:
    throw StateError('Unexpected subclass');
  
-@@ -1055,10 +1109,10 @@ return $default(_that);case _:
+@@ -1055,10 +1115,10 @@ return $default(_that);case _:
  /// }
  /// ```
  
@@ -129099,7 +129161,7 @@ index ca6c0a7..c2c7c1b 100644
  return $default(_that);case _:
    return null;
  
-@@ -1076,10 +1130,10 @@ return $default(_that);case _:
+@@ -1076,10 +1136,10 @@ return $default(_that);case _:
  /// }
  /// ```
  
@@ -129113,7 +129175,7 @@ index ca6c0a7..c2c7c1b 100644
    return orElse();
  
  }
-@@ -1097,10 +1151,10 @@ return $default(_that.type,_that.overrideRules,_that.addedRules);case _:
+@@ -1097,10 +1157,10 @@ return $default(_that.type,_that.overrideRules,_that.addedRules);case _:
  /// }
  /// ```
  
@@ -129127,7 +129189,7 @@ index ca6c0a7..c2c7c1b 100644
    throw StateError('Unexpected subclass');
  
  }
-@@ -1117,10 +1171,10 @@ return $default(_that.type,_that.overrideRules,_that.addedRules);case _:
+@@ -1117,10 +1177,10 @@ return $default(_that.type,_that.overrideRules,_that.addedRules);case _:
  /// }
  /// ```
  
@@ -129141,7 +129203,7 @@ index ca6c0a7..c2c7c1b 100644
    return null;
  
  }
-@@ -1131,49 +1185,919 @@ return $default(_that.type,_that.overrideRules,_that.addedRules);case _:
+@@ -1131,49 +1191,919 @@ return $default(_that.type,_that.overrideRules,_that.addedRules);case _:
  /// @nodoc
  @JsonSerializable()
  
@@ -130085,7 +130147,7 @@ index ca6c0a7..c2c7c1b 100644
  }
  
  
-@@ -1184,7 +2108,7 @@ abstract mixin class _$OverrideRuleCopyWith<$Res> implements $OverrideRuleCopyWi
+@@ -1184,7 +2114,7 @@ abstract mixin class _$OverrideRuleCopyWith<$Res> implements $OverrideRuleCopyWi
    factory _$OverrideRuleCopyWith(_OverrideRule value, $Res Function(_OverrideRule) _then) = __$OverrideRuleCopyWithImpl;
  @override @useResult
  $Res call({
@@ -130094,7 +130156,7 @@ index ca6c0a7..c2c7c1b 100644
  });
  
  
-@@ -1201,11 +2125,10 @@ class __$OverrideRuleCopyWithImpl<$Res>
+@@ -1201,11 +2131,10 @@ class __$OverrideRuleCopyWithImpl<$Res>
  
  /// Create a copy of OverrideRule
  /// with the given fields replaced by the non-null parameter values.
@@ -130109,7 +130171,7 @@ index ca6c0a7..c2c7c1b 100644
    ));
  }
 diff --git a/lib/models/generated/profile.g.dart b/lib/models/generated/profile.g.dart
-index 7029a2a..b923339 100644
+index 7029a2a..6e83cb2 100644
 --- a/lib/models/generated/profile.g.dart
 +++ b/lib/models/generated/profile.g.dart
 @@ -38,6 +38,12 @@ _Profile _$ProfileFromJson(Map<String, dynamic> json) => _Profile(
@@ -130125,7 +130187,7 @@ index 7029a2a..b923339 100644
    autoUpdate: json['autoUpdate'] as bool? ?? true,
    selectedMap:
        (json['selectedMap'] as Map<String, dynamic>?)?.map(
-@@ -50,13 +56,21 @@ _Profile _$ProfileFromJson(Map<String, dynamic> json) => _Profile(
+@@ -50,13 +56,23 @@ _Profile _$ProfileFromJson(Map<String, dynamic> json) => _Profile(
    overrideData: json['overrideData'] == null
        ? const OverrideData()
        : OverrideData.fromJson(json['overrideData'] as Map<String, dynamic>),
@@ -130134,6 +130196,8 @@ index 7029a2a..b923339 100644
 +  managed: json['managed'] as bool? ?? false,
 +  managedStyleApplied: json['managedStyleApplied'] as bool? ?? false,
    ageSecretKey: json['ageSecretKey'] as String?,
++  skipCertVerify: json['skipCertVerify'] as bool? ?? false,
++  userAgent: json['userAgent'] as String?,
    groupSwitches:
        (json['group-switches'] as Map<String, dynamic>?)?.map(
          (k, e) => MapEntry(k, e as bool),
@@ -130148,7 +130212,7 @@ index 7029a2a..b923339 100644
  );
  
  Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
-@@ -67,15 +81,72 @@ Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
+@@ -67,15 +83,74 @@ Map<String, dynamic> _$ProfileToJson(_Profile instance) => <String, dynamic>{
    'lastUpdateDate': instance.lastUpdateDate?.toIso8601String(),
    'autoUpdateDuration': instance.autoUpdateDuration.inMicroseconds,
    'subscriptionInfo': instance.subscriptionInfo,
@@ -130162,6 +130226,8 @@ index 7029a2a..b923339 100644
 +  'managed': instance.managed,
 +  'managedStyleApplied': instance.managedStyleApplied,
    'ageSecretKey': instance.ageSecretKey,
++  'skipCertVerify': instance.skipCertVerify,
++  'userAgent': instance.userAgent,
    'group-switches': instance.groupSwitches,
 +  'usageStyle': _$ProfileUsageStyleEnumMap[instance.usageStyle]!,
 +  'bundle': instance.bundle,
@@ -130222,7 +130288,7 @@ index 7029a2a..b923339 100644
  _OverrideData _$OverrideDataFromJson(Map<String, dynamic> json) =>
      _OverrideData(
        enable: json['enable'] as bool? ?? false,
-@@ -92,11 +163,6 @@ _OverrideRule _$OverrideRuleFromJson(Map<String, dynamic> json) =>
+@@ -92,11 +167,6 @@ _OverrideRule _$OverrideRuleFromJson(Map<String, dynamic> json) =>
        type:
            $enumDecodeNullable(_$OverrideRuleTypeEnumMap, json['type']) ??
            OverrideRuleType.override,
@@ -130234,7 +130300,7 @@ index 7029a2a..b923339 100644
        addedRules:
            (json['addedRules'] as List<dynamic>?)
                ?.map((e) => Rule.fromJson(e as Map<String, dynamic>))
-@@ -107,7 +173,6 @@ _OverrideRule _$OverrideRuleFromJson(Map<String, dynamic> json) =>
+@@ -107,7 +177,6 @@ _OverrideRule _$OverrideRuleFromJson(Map<String, dynamic> json) =>
  Map<String, dynamic> _$OverrideRuleToJson(_OverrideRule instance) =>
      <String, dynamic>{
        'type': _$OverrideRuleTypeEnumMap[instance.type]!,
@@ -141786,7 +141852,7 @@ index 0000000..442c7e6
 +  ];
 +}
 diff --git a/lib/models/profile.dart b/lib/models/profile.dart
-index 8310ce1..be7f133 100644
+index 8310ce1..d18277c 100644
 --- a/lib/models/profile.dart
 +++ b/lib/models/profile.dart
 @@ -6,6 +6,7 @@ import 'dart:typed_data';
@@ -141823,7 +141889,7 @@ index 8310ce1..be7f133 100644
      @Default(true) bool autoUpdate,
      @Default({}) SelectedMap selectedMap,
      @Default({}) Set<String> unfoldSet,
-@@ -85,15 +88,25 @@ abstract class Profile with _$Profile {
+@@ -85,15 +88,27 @@ abstract class Profile with _$Profile {
      @JsonKey(includeToJson: false, includeFromJson: false)
      @Default(false)
      bool isUpdating,
@@ -141833,6 +141899,8 @@ index 8310ce1..be7f133 100644
 +    @Default(false) bool managedStyleApplied,
      String? ageSecretKey,
 -    @JsonKey(name: 'group-switches') @Default({}) Map<String, bool> groupSwitches,
++    @Default(false) bool skipCertVerify,
++    String? userAgent,
 +    @JsonKey(name: 'group-switches')
 +    @Default({})
 +    Map<String, bool> groupSwitches,
@@ -141852,7 +141920,7 @@ index 8310ce1..be7f133 100644
      return Profile(
        label: label,
        url: url,
-@@ -104,6 +117,40 @@ abstract class Profile with _$Profile {
+@@ -104,6 +119,40 @@ abstract class Profile with _$Profile {
    }
  }
  
@@ -141893,7 +141961,7 @@ index 8310ce1..be7f133 100644
  @freezed
  abstract class OverrideData with _$OverrideData {
    const factory OverrideData({
-@@ -128,7 +175,6 @@ extension OverrideDataExt on OverrideData {
+@@ -128,7 +177,6 @@ extension OverrideDataExt on OverrideData {
  abstract class OverrideRule with _$OverrideRule {
    const factory OverrideRule({
      @Default(OverrideRuleType.override) OverrideRuleType type,
@@ -141901,7 +141969,7 @@ index 8310ce1..be7f133 100644
      @Default([]) List<Rule> addedRules,
    }) = _OverrideRule;
  
-@@ -137,16 +183,10 @@ abstract class OverrideRule with _$OverrideRule {
+@@ -137,16 +185,10 @@ abstract class OverrideRule with _$OverrideRule {
  }
  
  extension OverrideRuleExt on OverrideRule {
@@ -141920,7 +141988,7 @@ index 8310ce1..be7f133 100644
    }
  }
  
-@@ -155,14 +195,74 @@ extension ProfilesExt on List<Profile> {
+@@ -155,14 +197,74 @@ extension ProfilesExt on List<Profile> {
      final index = indexWhere((profile) => profile.id == profileId);
      return index == -1 ? null : this[index];
    }
@@ -141997,7 +142065,7 @@ index 8310ce1..be7f133 100644
    Future<void> checkAndUpdate() async {
      final isExists = await check();
      if (!isExists) {
-@@ -189,7 +289,53 @@ extension ProfileExtension on Profile {
+@@ -189,7 +291,53 @@ extension ProfileExtension on Profile {
  
    Future<int> get profileLastModified async {
      final file = await getFile();
@@ -142052,7 +142120,7 @@ index 8310ce1..be7f133 100644
    }
  
    Future<Profile> update({bool validate = true}) async {
-@@ -219,136 +365,147 @@ extension ProfileExtension on Profile {
+@@ -219,136 +367,147 @@ extension ProfileExtension on Profile {
      } else {
        await SpoofReport.write('  заголовки подмены не применены');
      }
@@ -142319,7 +142387,7 @@ index 8310ce1..be7f133 100644
    }
  }
  
-@@ -398,7 +555,7 @@ String? _firstShareLinkLine(String body) {
+@@ -398,7 +557,7 @@ String? _firstShareLinkLine(String body) {
    return null;
  }
  
@@ -142328,7 +142396,7 @@ index 8310ce1..be7f133 100644
  /// маркеры отказа x-hwid-* и начало тела. По этому блоку в
  /// экспортированном логе видно, приняла панель подмену и ЧТО отдала
  /// (подписка/HTML-страница/отказ), — без этого разбор «не работает»
-@@ -406,12 +563,12 @@ String? _firstShareLinkLine(String body) {
+@@ -406,12 +565,12 @@ String? _firstShareLinkLine(String body) {
  /// и потоки лога ядра вытесняют строки [APP] из выгрузки.
  Future<void> _reportSubResponse(
    String id,
@@ -142345,7 +142413,7 @@ index 8310ce1..be7f133 100644
      final markers = <String>[];
      for (final name in [
        'x-hwid-not-supported',
-@@ -421,39 +578,27 @@ Future<void> _reportSubResponse(
+@@ -421,39 +580,27 @@ Future<void> _reportSubResponse(
        'profile-title',
        'content-disposition',
      ]) {
@@ -142390,7 +142458,7 @@ index 8310ce1..be7f133 100644
      );
    } catch (_) {}
  }
-@@ -554,6 +699,31 @@ Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
+@@ -554,6 +701,31 @@ Future<String> _convertSubBodyIfNeeded(Profile profile, String content) async {
    return _buildSubProviderWrapper(profile);
  }
  
@@ -171805,7 +171873,7 @@ index b322b92..46e96d9 100644
  class PlatformChecker {
    static bool? _udsSupport;
 diff --git a/lib/views/about.dart b/lib/views/about.dart
-index d178fee..c65eab8 100644
+index d178fee..56c7566 100644
 --- a/lib/views/about.dart
 +++ b/lib/views/about.dart
 @@ -1,10 +1,11 @@
@@ -172073,10 +172141,31 @@ index d178fee..c65eab8 100644
        ..._buildContributorsSection(),
        ..._buildMoreSection(context),
      ];
-@@ -332,17 +328,88 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
+@@ -332,17 +328,109 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
    }
  }
  
++class _BuildTagsHint extends StatelessWidget {
++  const _BuildTagsHint();
++
++  @override
++  Widget build(BuildContext context) {
++    return GestureDetector(
++      behavior: HitTestBehavior.opaque,
++      onTap: () => context.showNotifier(
++        'Built with no_tailscale, no_easytier, no_zerotier, no_fake_tcp, no_gvisor',
++      ),
++      child: Padding(
++        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
++        child: Icon(
++          Icons.error_outline,
++          size: 16,
++          color: context.colorScheme.onSurfaceVariant,
++        ),
++      ),
++    );
++  }
++
 +class _ContributorsRow extends StatefulWidget {
 +  final List<Contributor> contributors;
 +
@@ -172167,7 +172256,7 @@ index d178fee..c65eab8 100644
      return IntrinsicHeight(
        child: Row(
          crossAxisAlignment: CrossAxisAlignment.stretch,
-@@ -351,9 +418,11 @@ class _LinkGridRow extends StatelessWidget {
+@@ -351,9 +439,11 @@ class _LinkGridRow extends StatelessWidget {
            VerticalDivider(
              width: 1,
              thickness: 1,
@@ -172182,7 +172271,7 @@ index d178fee..c65eab8 100644
            ),
            Expanded(child: right),
          ],
-@@ -362,37 +431,71 @@ class _LinkGridRow extends StatelessWidget {
+@@ -362,37 +452,71 @@ class _LinkGridRow extends StatelessWidget {
    }
  }
  
