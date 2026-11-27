@@ -44186,7 +44186,7 @@ index 0000000..8ca0084
 +	}
 +}
 diff --git a/core/common.go b/core/common.go
-index c443406..807841d 100644
+index c443406..82dfc13 100644
 --- a/core/common.go
 +++ b/core/common.go
 @@ -3,14 +3,27 @@ package main
@@ -44371,7 +44371,7 @@ index c443406..807841d 100644
  		general.Tun.DNSHijack = *params.Tun.DNSHijack
  		general.Tun.Stack = *params.Tun.Stack
  		general.Tun.DisableICMPForwarding = *params.Tun.DisableICMPForwarding
-@@ -279,38 +276,262 @@ func updateConfig(params *UpdateParams) {
+@@ -279,38 +276,263 @@ func updateConfig(params *UpdateParams) {
  	updateListeners()
  }
  
@@ -44622,6 +44622,7 @@ index c443406..807841d 100644
 +	currentConfig = prepared.cfg
 +	geoDataLock.Lock()
 +	currentRawConfig = residentRawConfig(prepared.rawCfg)
++	geoDataLock.Unlock()
  	hub.ApplyConfig(currentConfig)
 -	patchSelectGroup(params.SelectedMap)
 +	closeIdleOutbounds(oldProxies, oldProviders)
