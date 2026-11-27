@@ -78787,7 +78787,7 @@ index 2748183..dea5b50 100644
 \ No newline at end of file
 +final window = system.isDesktop ? Window() : null;
 diff --git a/lib/controller.dart b/lib/controller.dart
-index 8f8d37f..1d2b644 100644
+index 8f8d37f..5799c3e 100644
 --- a/lib/controller.dart
 +++ b/lib/controller.dart
 @@ -2,6 +2,7 @@ import 'dart:async';
@@ -79403,7 +79403,7 @@ index 8f8d37f..1d2b644 100644
      } finally {
        _updatingProfileIds.remove(profile.id);
      }
-@@ -605,8 +831,362 @@ class AppController {
+@@ -605,8 +831,365 @@ class AppController {
      _ref.read(profilesProvider.notifier).value = profiles;
    }
  
@@ -79669,6 +79669,9 @@ index 8f8d37f..1d2b644 100644
 +    scheduleBundles(regenerate);
 +  }
 +
++  String _bundleScriptKey(Script script) =>
++      '${script.id}:${script.digest}:${json.encode(script.customOptions ?? const <String, bool>{})}';
++
 +  Future<Profile> _generateBundle(
 +    Profile profile, {
 +    required bool refresh,
@@ -79767,7 +79770,7 @@ index 8f8d37f..1d2b644 100644
    }
  
    void updateOrAddHotKeyAction(HotKeyAction hotKeyAction) {
-@@ -638,6 +1218,7 @@ class AppController {
+@@ -638,6 +1221,7 @@ class AppController {
    }
  
    dynamic addSortNum() {
@@ -79775,7 +79778,7 @@ index 8f8d37f..1d2b644 100644
      return _ref.read(sortNumProvider.notifier).add();
    }
  
-@@ -649,7 +1230,11 @@ class AppController {
+@@ -649,7 +1233,11 @@ class AppController {
    }
  
    ProxyCardState getProxyCardState(String proxyName) {
@@ -79788,7 +79791,7 @@ index 8f8d37f..1d2b644 100644
    }
  
    String? getSelectedProxyName(String groupName) {
-@@ -684,6 +1269,9 @@ class AppController {
+@@ -684,6 +1272,9 @@ class AppController {
  
    Future<void> _updateClashConfig() async {
      await _initCore();
@@ -79798,7 +79801,7 @@ index 8f8d37f..1d2b644 100644
      final updateParams = _ref.read(updateParamsProvider);
      final tunResult = await _requestAdmin(updateParams.tun.enable);
      if (tunResult.isError) return;
-@@ -699,6 +1287,14 @@ class AppController {
+@@ -699,6 +1290,14 @@ class AppController {
        updateParams.copyWith.tun(enable: realTunEnable),
      );
      if (message.isNotEmpty) throw message;
@@ -79813,7 +79816,7 @@ index 8f8d37f..1d2b644 100644
  
      if (system.isDesktop) {
        final prefs = await preferences.sharedPreferencesCompleter.future;
-@@ -709,7 +1305,8 @@ class AppController {
+@@ -709,7 +1308,8 @@ class AppController {
  
    Future<Result<bool>> _requestAdmin(bool enableTun) async {
      final realTunEnable = _ref.read(realTunEnableProvider);
@@ -79823,7 +79826,7 @@ index 8f8d37f..1d2b644 100644
        final code = await system.authorizeCore();
        switch (code) {
          case AuthorizeCode.success:
-@@ -719,7 +1316,9 @@ class AppController {
+@@ -719,7 +1319,9 @@ class AppController {
            break;
          case AuthorizeCode.error:
            globalState.showNotifier(
@@ -79834,7 +79837,7 @@ index 8f8d37f..1d2b644 100644
            );
            enableTun = false;
            break;
-@@ -742,18 +1341,11 @@ class AppController {
+@@ -742,18 +1344,11 @@ class AppController {
  
    Future<void> _applyProfile() async {
      _invalidateCoreReads();
@@ -79856,7 +79859,7 @@ index 8f8d37f..1d2b644 100644
      scheduleIdleGc();
    }
  
-@@ -777,21 +1369,17 @@ class AppController {
+@@ -777,21 +1372,17 @@ class AppController {
    Future<void> handleChangeProfile({bool hardRestart = false}) {
      return _coreLifecycleLock.synchronized(() async {
        if (hardRestart) {
@@ -79881,7 +79884,7 @@ index 8f8d37f..1d2b644 100644
          final prevProfileId = _ref.read(currentProfileIdProvider);
          try {
            await _applyProfile();
-@@ -802,6 +1390,9 @@ class AppController {
+@@ -802,6 +1393,9 @@ class AppController {
            } catch (_) {}
            globalState.showNotifier(err.toString());
          }
@@ -79891,7 +79894,7 @@ index 8f8d37f..1d2b644 100644
        }
        _ref.read(logsProvider.notifier).value = FixedList(maxLogLength);
        _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
-@@ -812,7 +1403,7 @@ class AppController {
+@@ -812,7 +1406,7 @@ class AppController {
  
    void _reportCoreRestartFailure(Object error) {
      final message = error.formatError;
@@ -79900,7 +79903,7 @@ index 8f8d37f..1d2b644 100644
      globalState.showNotifier('${appLocalizations.restartCoreTitle}: $message');
    }
  
-@@ -823,7 +1414,7 @@ class AppController {
+@@ -823,7 +1417,7 @@ class AppController {
  
    bool _isProfileUpdateNeeded(Profile profile) {
      if (!profile.autoUpdate) return false;
@@ -79909,7 +79912,7 @@ index 8f8d37f..1d2b644 100644
      if (profile.isUpdating) return false;
      final lastUpdate = profile.lastUpdateDate;
      if (lastUpdate == null) return true;
-@@ -836,9 +1427,9 @@ class AppController {
+@@ -836,9 +1430,9 @@ class AppController {
      for (final profile in _ref.read(profilesProvider)) {
        if (!_isProfileUpdateNeeded(profile)) continue;
        try {
@@ -79921,7 +79924,7 @@ index 8f8d37f..1d2b644 100644
            '[AutoUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
          );
        }
-@@ -855,10 +1446,10 @@ class AppController {
+@@ -855,10 +1449,10 @@ class AppController {
        var updated = false;
        for (final profile in profilesToUpdate) {
          try {
@@ -79934,7 +79937,7 @@ index 8f8d37f..1d2b644 100644
              '[MissedUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
            );
          }
-@@ -876,18 +1467,16 @@ class AppController {
+@@ -876,18 +1470,16 @@ class AppController {
  
    Future<void> _syncExternalProviders() async {
      try {
@@ -79958,7 +79961,7 @@ index 8f8d37f..1d2b644 100644
    }
  
    static const List<Duration> _kGroupRetryDelays = [
-@@ -897,16 +1486,12 @@ class AppController {
+@@ -897,16 +1489,12 @@ class AppController {
      Duration(milliseconds: 400),
    ];
  
@@ -79977,7 +79980,7 @@ index 8f8d37f..1d2b644 100644
        if (groups.isNotEmpty) return groups;
      }
      return [];
-@@ -923,7 +1508,7 @@ class AppController {
+@@ -923,7 +1511,7 @@ class AppController {
          ? const Duration(seconds: 2)
          : const Duration(seconds: 3);
      if (currentGroups.isNotEmpty) {
@@ -79986,7 +79989,7 @@ index 8f8d37f..1d2b644 100644
        return;
      }
  
-@@ -941,11 +1526,9 @@ class AppController {
+@@ -941,11 +1529,9 @@ class AppController {
      });
    }
  
@@ -80000,7 +80003,7 @@ index 8f8d37f..1d2b644 100644
        return;
      }
      _isUpdatingGroups = true;
-@@ -954,7 +1537,7 @@ class AppController {
+@@ -954,7 +1540,7 @@ class AppController {
      try {
        final currentGroups = _ref.read(groupsProvider);
  
@@ -80009,7 +80012,7 @@ index 8f8d37f..1d2b644 100644
  
        if (newGroups.isEmpty) {
          _handleUpdateGroupsError(
-@@ -980,7 +1563,7 @@ class AppController {
+@@ -980,7 +1566,7 @@ class AppController {
            }
          }
        } catch (e) {
@@ -80018,7 +80021,7 @@ index 8f8d37f..1d2b644 100644
        }
  
        final currentProfile = _ref.read(currentProfileProvider);
-@@ -1027,25 +1610,15 @@ class AppController {
+@@ -1027,25 +1613,15 @@ class AppController {
          }
        }
  
@@ -80052,7 +80055,7 @@ index 8f8d37f..1d2b644 100644
        _updateGroupsRetryCount = 0;
        _updateGroupsRetryTimer?.cancel();
        _updateGroupsRetryTimer = null;
-@@ -1057,15 +1630,48 @@ class AppController {
+@@ -1057,15 +1633,48 @@ class AppController {
      }
    }
  
@@ -80103,7 +80106,7 @@ index 8f8d37f..1d2b644 100644
            '[UpdateProfiles] Failed to update ${profile.label ?? profile.id}: ${e.formatErrorLog}',
          );
        }
-@@ -1073,6 +1679,7 @@ class AppController {
+@@ -1073,6 +1682,7 @@ class AppController {
    }
  
    Future<void> savePreferences() async {
@@ -80111,7 +80114,7 @@ index 8f8d37f..1d2b644 100644
      await preferences.saveConfig(globalState.config);
    }
  
-@@ -1083,10 +1690,27 @@ class AppController {
+@@ -1083,10 +1693,27 @@ class AppController {
      await clashCore.changeProxy(
        ChangeProxyParams(groupName: groupName, proxyName: proxyName),
      );
@@ -80141,7 +80144,7 @@ index 8f8d37f..1d2b644 100644
    }
  
    Future<void> handleBackOrExit() async {
-@@ -1115,12 +1739,13 @@ class AppController {
+@@ -1115,12 +1742,13 @@ class AppController {
          '${AppIdentity.mainExecutableName}.exe',
          enable,
        );
@@ -80156,7 +80159,7 @@ index 8f8d37f..1d2b644 100644
        rethrow;
      }
    }
-@@ -1139,7 +1764,7 @@ class AppController {
+@@ -1139,7 +1767,7 @@ class AppController {
          try {
            await trayManager.destroy();
          } catch (e) {
@@ -80165,7 +80168,7 @@ index 8f8d37f..1d2b644 100644
          }
        }
        stopWakelockAutoRecovery();
-@@ -1157,23 +1782,21 @@ class AppController {
+@@ -1157,23 +1785,21 @@ class AppController {
          await clashService!.destroy();
        }
      } catch (e) {
@@ -80196,7 +80199,7 @@ index 8f8d37f..1d2b644 100644
      await preferences.clearPreferences();
      commonPrint.log('clear preferences');
      globalState.config = Config(
-@@ -1182,76 +1805,14 @@ class AppController {
+@@ -1182,76 +1808,14 @@ class AppController {
      );
    }
  
@@ -80208,9 +80211,10 @@ index 8f8d37f..1d2b644 100644
 -
 -    final forceCheck =
 -        (now - lastCheckTime) > const Duration(days: 28).inMilliseconds;
--
--    if (!isAutoCheck && !forceCheck) return;
 +  static const _managedScriptBackupKey = 'managedScript';
+ 
+-    if (!isAutoCheck && !forceCheck) return;
++  bool _resumeAfterInstall = false;
  
 -    final res = await request.checkForUpdate();
 -    if (res != null) {
@@ -80219,8 +80223,7 @@ index 8f8d37f..1d2b644 100644
 -
 -    await prefs?.setInt('last_check_update_time', now);
 -  }
-+  bool _resumeAfterInstall = false;
- 
+-
 -  Future<void> checkUpdateResultHandle({
 -    Map<String, dynamic>? data,
 -    bool handleError = false,
@@ -80279,7 +80282,7 @@ index 8f8d37f..1d2b644 100644
    }
  
    Future<void> _handlePreference() async {
-@@ -1281,7 +1842,7 @@ class AppController {
+@@ -1281,7 +1845,7 @@ class AppController {
      return _initCoreFuture ??= () async {
        try {
          if (!await _waitForCoreConnection()) {
@@ -80288,7 +80291,7 @@ index 8f8d37f..1d2b644 100644
            return;
          }
          final isInit = await clashCore.isInit;
-@@ -1329,6 +1890,18 @@ class AppController {
+@@ -1329,6 +1893,18 @@ class AppController {
      _wakelockSyncTimer = null;
    }
  
@@ -80307,7 +80310,7 @@ index 8f8d37f..1d2b644 100644
    Future<void> syncWakelockIfNeeded() async {
      final userEnabled = _ref.read(wakelockStateProvider);
      if (!userEnabled) {
-@@ -1342,28 +1915,6 @@ class AppController {
+@@ -1342,28 +1918,6 @@ class AppController {
      await WakelockPlus.enable();
    }
  
@@ -80336,7 +80339,7 @@ index 8f8d37f..1d2b644 100644
    Future<void> init() async {
      FlutterError.onError = (details) {
        if (kDebugMode) {
-@@ -1380,22 +1931,20 @@ class AppController {
+@@ -1380,22 +1934,20 @@ class AppController {
          if (state == 'STOP' && globalState.isStart) {
            await updateStatus(false);
          }
@@ -80363,7 +80366,7 @@ index 8f8d37f..1d2b644 100644
      }
  
      await updateTray(true);
-@@ -1404,30 +1953,32 @@ class AppController {
+@@ -1404,30 +1956,32 @@ class AppController {
      try {
        await _initStatus();
      } catch (e) {
@@ -80403,7 +80406,7 @@ index 8f8d37f..1d2b644 100644
        }
      }
      await syncDesktopRuntimeState(preferCurrentState: true);
-@@ -1437,17 +1988,58 @@ class AppController {
+@@ -1437,17 +1991,58 @@ class AppController {
      await _handlerDisclaimer();
      if (system.isWindows) {
        unawaited(
@@ -80467,7 +80470,7 @@ index 8f8d37f..1d2b644 100644
      if (system.isAndroid) {
        await globalState.updateStartTime();
        if (globalState.isStart && _ref.read(runTimeProvider) == null) {
-@@ -1460,28 +2052,36 @@ class AppController {
+@@ -1460,28 +2055,36 @@ class AppController {
      final needRecovery = await _detectAbnormalExit();
  
      if (needRecovery) {
@@ -80515,7 +80518,7 @@ index 8f8d37f..1d2b644 100644
          await applyProfile();
          addCheckIpNumDebounce();
        }
-@@ -1540,20 +2140,53 @@ class AppController {
+@@ -1540,20 +2143,53 @@ class AppController {
    void toPage(PageLabel pageLabel) {
      final context = globalState.navigatorKey.currentState?.context;
      if (context != null && context.mounted) {
@@ -80573,7 +80576,7 @@ index 8f8d37f..1d2b644 100644
        final res = await globalState.showMessage(
          title: appLocalizations.add,
          message: TextSpan(
-@@ -1575,7 +2208,7 @@ class AppController {
+@@ -1575,7 +2211,7 @@ class AppController {
        if (res != true) {
          return;
        }
@@ -80582,7 +80585,7 @@ index 8f8d37f..1d2b644 100644
      });
    }
  
-@@ -1670,13 +2303,11 @@ class AppController {
+@@ -1670,13 +2306,11 @@ class AppController {
      int successCount = 0;
      try {
        for (final platformFile in validFiles) {
@@ -80600,7 +80603,7 @@ index 8f8d37f..1d2b644 100644
            await addProfile(profile);
            successCount++;
          } on Object catch (e) {
-@@ -1703,39 +2334,20 @@ class AppController {
+@@ -1703,39 +2337,20 @@ class AppController {
    Future<void> addProfileFormQrCode() async {
      final url = await safeRun(picker.pickerConfigQRCode);
      if (url == null) return;
@@ -80644,7 +80647,7 @@ index 8f8d37f..1d2b644 100644
    }
  
    /// Ручной порядок: ноды из сохранённого списка идут в заданном порядке,
-@@ -1774,15 +2386,23 @@ class AppController {
+@@ -1774,15 +2389,23 @@ class AppController {
      String? testUrl,
      String? groupName,
    }) {
@@ -80677,7 +80680,7 @@ index 8f8d37f..1d2b644 100644
    }
  
    /// Сохраняет ручной порядок нод группы (список имён в новом порядке).
-@@ -1810,12 +2430,21 @@ class AppController {
+@@ -1810,12 +2433,21 @@ class AppController {
    Future<void> clearEffect(String profileId) async {
      final profilePath = await appPath.getProfilePath(profileId);
      final providersDirPath = await appPath.getProvidersDirPath(profileId);
@@ -80699,7 +80702,7 @@ index 8f8d37f..1d2b644 100644
        final providersFileDir = Directory(providersDirPath);
        final providersFileIsExists = await providersFileDir.exists();
        if (providersFileIsExists) {
-@@ -1835,6 +2464,33 @@ class AppController {
+@@ -1835,6 +2467,33 @@ class AppController {
      }
    }
  
@@ -80733,7 +80736,7 @@ index 8f8d37f..1d2b644 100644
    void updateSystemProxy() {
      _ref
          .read(networkSettingProvider.notifier)
-@@ -1904,9 +2560,9 @@ class AppController {
+@@ -1904,9 +2563,9 @@ class AppController {
    Future<void> updateVisible() async {
      final visible = await window?.isVisible;
      if (visible != null && !visible) {
@@ -80745,7 +80748,7 @@ index 8f8d37f..1d2b644 100644
      }
    }
  
-@@ -1923,17 +2579,28 @@ class AppController {
+@@ -1923,17 +2582,28 @@ class AppController {
    }
  
    Future<void> handleAddOrUpdate(WidgetRef ref, [Rule? rule]) async {
@@ -80780,7 +80783,7 @@ index 8f8d37f..1d2b644 100644
      ref.read(profileOverrideStateProvider.notifier).updateState((state) {
        final model = state.copyWith.overrideData!(
          rule: state.overrideData!.rule.updateRules((rules) {
-@@ -1944,12 +2611,23 @@ class AppController {
+@@ -1944,12 +2614,23 @@ class AppController {
            return List.from(rules)..[index] = res;
          }),
        );
@@ -80806,7 +80809,7 @@ index 8f8d37f..1d2b644 100644
      // Отчёт подмены (файл): в основной журнал попадают только последние
      // 256 записей — потоки debug-лога ядра вытесняют строки [APP],
      // и причины отказов панели теряются из выгрузки. Отчёт досыпается
-@@ -1971,10 +2649,17 @@ class AppController {
+@@ -1971,10 +2652,17 @@ class AppController {
          null;
    }
  
@@ -80826,7 +80829,7 @@ index 8f8d37f..1d2b644 100644
      if (configJson['dav'] is Map) {
        final davMap = Map<String, dynamic>.from(configJson['dav'] as Map);
        if (davMap['user'] is String) {
-@@ -1985,6 +2670,15 @@ class AppController {
+@@ -1985,6 +2673,15 @@ class AppController {
        }
        configJson['dav'] = davMap;
      }
@@ -80842,7 +80845,7 @@ index 8f8d37f..1d2b644 100644
  
      // Get valid profile IDs
      final validProfileIds = globalState.config.profiles
-@@ -2003,7 +2697,9 @@ class AppController {
+@@ -2003,7 +2700,9 @@ class AppController {
          tempDir.path,
          'bettbox_backup_${DateTime.now().millisecondsSinceEpoch}.zip',
        );
@@ -80853,7 +80856,7 @@ index 8f8d37f..1d2b644 100644
        encoder.create(tempZipPath);
  
        // Add marker file
-@@ -2084,7 +2780,7 @@ class AppController {
+@@ -2084,7 +2783,7 @@ class AppController {
          }
        }
  
@@ -80862,7 +80865,7 @@ index 8f8d37f..1d2b644 100644
  
        // Read the zip file and return bytes
        final zipFile = File(tempZipPath);
-@@ -2094,12 +2790,109 @@ class AppController {
+@@ -2094,12 +2793,109 @@ class AppController {
      });
    }
  
@@ -80973,7 +80976,7 @@ index 8f8d37f..1d2b644 100644
      await tray.update(
        trayState: trayState,
        focus: focus,
-@@ -2108,58 +2901,122 @@ class AppController {
+@@ -2108,58 +2904,122 @@ class AppController {
      );
    }
  
@@ -81119,7 +81122,7 @@ index 8f8d37f..1d2b644 100644
        }),
        recoveryOption,
      );
-@@ -2203,7 +3060,7 @@ class AppController {
+@@ -2203,7 +3063,7 @@ class AppController {
                item.name.endsWith('.json') && item.name != '.bettbox_marker',
          )
          .toList();
@@ -81128,7 +81131,7 @@ index 8f8d37f..1d2b644 100644
        (item) => !item.name.endsWith('.json') && item.name != '.bettbox_marker',
      );
  
-@@ -2219,9 +3076,9 @@ class AppController {
+@@ -2219,9 +3079,9 @@ class AppController {
      if (configContent.isEmpty) {
        throw 'Config file is empty or corrupted';
      }
@@ -81141,7 +81144,7 @@ index 8f8d37f..1d2b644 100644
      if (tempConfig.dav != null) {
        tempConfig = tempConfig.copyWith(
          dav: tempConfig.dav!.copyWith(
-@@ -2234,16 +3091,97 @@ class AppController {
+@@ -2234,16 +3094,97 @@ class AppController {
      final recoveryStrategy = _ref.read(
        appSettingProvider.select((state) => state.recoveryStrategy),
      );
@@ -81241,7 +81244,7 @@ index 8f8d37f..1d2b644 100644
      }
    }
  
-@@ -2256,12 +3194,12 @@ class AppController {
+@@ -2256,12 +3197,12 @@ class AppController {
            try {
              await entity.delete(recursive: true);
            } catch (e) {
@@ -81256,7 +81259,7 @@ index 8f8d37f..1d2b644 100644
      }
    }
  
-@@ -2295,7 +3233,7 @@ class AppController {
+@@ -2295,7 +3236,7 @@ class AppController {
        throw 'Config file is empty or corrupted';
      }
      final backupConfig = Config.compatibleFromJson(
@@ -81265,7 +81268,7 @@ index 8f8d37f..1d2b644 100644
      );
  
      final recoveryStrategy = _ref.read(
-@@ -2305,8 +3243,6 @@ class AppController {
+@@ -2305,8 +3246,6 @@ class AppController {
        await _cleanProfilesDirForOverride();
      }
  
@@ -81274,7 +81277,7 @@ index 8f8d37f..1d2b644 100644
      List<Profile> profiles = [];
  
      if (backupConfig.profiles.isNotEmpty) {
-@@ -2330,6 +3266,17 @@ class AppController {
+@@ -2330,6 +3269,17 @@ class AppController {
        }
      }
  
@@ -81292,7 +81295,7 @@ index 8f8d37f..1d2b644 100644
      Config limitedConfig = globalState.config.copyWith(profiles: profiles);
  
      if (system.isAndroid) {
-@@ -2340,7 +3287,9 @@ class AppController {
+@@ -2340,7 +3290,9 @@ class AppController {
          accessControl = vpnProps.accessControl;
        } catch (_) {
          try {
@@ -81303,7 +81306,7 @@ index 8f8d37f..1d2b644 100644
            final vpnPropsJson = configJson['vpnProps'];
            if (vpnPropsJson != null && vpnPropsJson is Map) {
              final accessControlPropsJson = vpnPropsJson['accessControlProps'];
-@@ -2363,9 +3312,7 @@ class AppController {
+@@ -2363,9 +3315,7 @@ class AppController {
  
      _recoveryLimited(limitedConfig, recoveryOption);
      await savePreferences();
@@ -81314,7 +81317,7 @@ index 8f8d37f..1d2b644 100644
  
      _showRecoveryResultMessage(profiles);
    }
-@@ -2401,7 +3348,7 @@ class AppController {
+@@ -2401,7 +3351,7 @@ class AppController {
          }
        }
      } catch (e) {
@@ -81323,7 +81326,7 @@ index 8f8d37f..1d2b644 100644
      }
      return null;
    }
-@@ -2498,8 +3445,11 @@ class AppController {
+@@ -2498,8 +3448,11 @@ class AppController {
  
        // 2. App settings
        final backupAppSetting = config.appSetting;
@@ -81335,7 +81338,7 @@ index 8f8d37f..1d2b644 100644
          mobileDashboardWidgets: backupAppSetting.mobileDashboardWidgets,
          desktopDashboardWidgets: backupAppSetting.desktopDashboardWidgets,
          dashboardWidgets: system.isAndroid
-@@ -2512,7 +3462,9 @@ class AppController {
+@@ -2512,7 +3465,9 @@ class AppController {
            config.currentProfileId;
  
        // 4. Restore WebDAV settings
@@ -81346,7 +81349,7 @@ index 8f8d37f..1d2b644 100644
  
        // 5. Restore theme settings
        _ref.read(themeSettingProvider.notifier).value = config.themeProps;
-@@ -2549,16 +3501,29 @@ class AppController {
+@@ -2549,16 +3504,29 @@ class AppController {
        _ref.read(proxiesStyleSettingProvider.notifier).value =
            config.proxiesStyle;
  
@@ -81382,7 +81385,7 @@ index 8f8d37f..1d2b644 100644
      }
  
      // Ensure current profile exists
-@@ -2578,7 +3543,7 @@ class AppController {
+@@ -2578,7 +3546,7 @@ class AppController {
        final res = await futureFunction();
        return res;
      } on Object catch (e) {
