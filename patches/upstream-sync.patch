@@ -28360,7 +28360,7 @@ index 6a9426d..0000000
 -	})
 -}
 diff --git a/core/Clash.Meta/component/tls/utls.go b/core/Clash.Meta/component/tls/utls.go
-index d48a1ba..aac199a 100644
+index d48a1ba..54be8ca 100644
 --- a/core/Clash.Meta/component/tls/utls.go
 +++ b/core/Clash.Meta/component/tls/utls.go
 @@ -63,7 +63,6 @@ var randomFingerprint = once.OnceValue(func() UClientHelloID {
@@ -28371,7 +28371,16 @@ index d48a1ba..aac199a 100644
  		weightedrand.NewChoice("firefox", 1),
  	)
  	initClient := chooser.Pick()
-@@ -104,6 +103,8 @@ func init() {
+@@ -85,6 +84,8 @@ var fingerprints = map[string]UClientHelloID{
+ 	"360":     utls.Hello360_Auto,
+ 	"qq":      utls.HelloQQ_Auto,
+ 	"random":  {},
++	// "unsafe" в Xray = обычный Go crypto/tls ClientHello без uTLS-спуфа.
++	"unsafe":  utls.HelloGolang,
+ 
+ 	// classical fingerprints without X25519MLKEM768
+ 	"chrome120":  utls.HelloChrome_120,
+@@ -104,6 +105,8 @@ func init() {
  	weights := utls.DefaultWeights
  	weights.TLSVersMax_Set_VersionTLS13 = 1
  	weights.FirstKeyShare_Set_CurveP256 = 0
@@ -81840,6 +81849,54 @@ index 3281e5e..a853d2f 100644
 +
 +/// Тип правил переопределения: скрипт или добавленные правила (импорт FlClash).
 +enum OverrideRuleType { override, added }
+diff --git a/lib/generator/generator_core.dart b/lib/generator/generator_core.dart
+index 29b4db5..ee08ae2 100644
+--- a/lib/generator/generator_core.dart
++++ b/lib/generator/generator_core.dart
+@@ -209,7 +209,12 @@ Map<String, dynamic> parseVless(String url) {
+     'server': host,
+     'port': port,
+     'uuid': uuid,
+-    'encryption': 'none',
++    // VLESS Encryption (Xray 25.9+): mlkem768x25519plus.* — ядро умеет
++    // (transport/vless/encryption), хардкод 'none' рвал PQ-узлы на этапе
++    // хендшейка. Пустой/none остаётся 'none'.
++    'encryption': (params.get('encryption')?.isNotEmpty ?? false)
++        ? params.get('encryption')!
++        : 'none',
+     'flow': params.get('flow') ?? '',
+     'client-fingerprint': params.get('fp') ?? 'chrome',
+     'network': params.get('type') ?? 'tcp',
+diff --git a/lib/generator/v2ray_json.dart b/lib/generator/v2ray_json.dart
+index bd3f732..bdd04ed 100644
+--- a/lib/generator/v2ray_json.dart
++++ b/lib/generator/v2ray_json.dart
+@@ -527,9 +527,25 @@ void applyXhttpEffMapToOpts(
+   putStr('sessionIDKey', 'session-key');
+   putStr('sessionIDPlacement', 'session-placement');
+   putStr('sessionIDLength', 'session-length');
++  // Таблица символов session-id (Xray 25.10+, напр. Base62) — ядро умеет
++  // (transport/xhttp/config.go SessionTable, client only).
++  putStr('sessionIDTable', 'session-table');
+   putStr('scMaxEachPostBytes', 'sc-max-each-post-bytes');
+   putStr('scMinPostsIntervalMs', 'sc-min-posts-interval-ms');
+   if (eff['noGRPCHeader'] == true) xhttpOpts['no-grpc-header'] = true;
++  // Кастомные заголовки из extra (Accept/Pragma/Cache-Control...) — ядро
++  // умеет (XHTTPOptions.headers). Сервер с проверкой заголовков отбивал
++  // узлы, у которых клиент шёл без Accept из extra.
++  final xheaders = eff['headers'];
++  if (xheaders is Map && xheaders.isNotEmpty) {
++    final hh = <String, dynamic>{};
++    xheaders.forEach((k, v) {
++      if (k is String && k.isNotEmpty && v is String && v.isNotEmpty) {
++        hh[k] = v;
++      }
++    });
++    if (hh.isNotEmpty) xhttpOpts['headers'] = hh;
++  }
+   final xmux = eff['xmux'];
+   if (xmux is Map && xmux.isNotEmpty) {
+     final reuse = <String, dynamic>{};
 diff --git a/lib/helper/helper.dart b/lib/helper/helper.dart
 index 8015693..4c22f6b 100644
 --- a/lib/helper/helper.dart
