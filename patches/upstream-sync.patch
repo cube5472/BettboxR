@@ -4185,17 +4185,10 @@ index 83565ed..b7c6759 100644
  }
 \ No newline at end of file
 diff --git a/android/core/build.gradle.kts b/android/core/build.gradle.kts
-index c4c0b32..1139bdb 100644
+index c4c0b32..0eac943 100644
 --- a/android/core/build.gradle.kts
 +++ b/android/core/build.gradle.kts
-@@ -1,6 +1,5 @@
- plugins {
-     id("com.android.library")
--    id("org.jetbrains.kotlin.android")
- }
- 
- android {
-@@ -9,7 +8,7 @@ android {
+@@ -9,7 +9,7 @@ android {
      ndkVersion = "28.2.13676358"
  
      defaultConfig {
@@ -4204,7 +4197,7 @@ index c4c0b32..1139bdb 100644
      }
  
      buildTypes {
-@@ -35,15 +34,18 @@ android {
+@@ -35,15 +35,18 @@ android {
          }
      }
  
@@ -4370,40 +4363,6 @@ index c5ae5a1..a508a80 100644
      fun dozeSuspend(value: Boolean) {
          runCatching {
              Log.d("Core", "dozeSuspend called with value: $value")
-diff --git a/android/gradle.properties b/android/gradle.properties
-index c5ac7f0..194d96d 100644
---- a/android/gradle.properties
-+++ b/android/gradle.properties
-@@ -5,10 +5,10 @@ org.gradle.caching=true
- org.gradle.configureondemand=true
- android.useAndroidX=true
- android.enableJetifier=true
--kotlin_version=2.2.20
--agp_version=8.12.2
-+kotlin_version=2.4.0
-+agp_version=9.1.1
- android.enableCcache=true
--# This builtInKotlin flag was added automatically by Flutter migrator
--android.builtInKotlin=false
-+android.builtInKotlin=true
-+kotlin.incremental=false
- # This newDsl flag was added automatically by Flutter migrator
- android.newDsl=false
-diff --git a/android/settings.gradle.kts b/android/settings.gradle.kts
-index b454890..de4b8d2 100644
---- a/android/settings.gradle.kts
-+++ b/android/settings.gradle.kts
-@@ -18,8 +18,8 @@ pluginManagement {
- 
- plugins {
-     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
--    id("com.android.application") version "8.12.2" apply false
--    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
-+    id("com.android.application") version "9.1.1" apply false
-+    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
- }
- 
- include(":app")
 diff --git a/arb/intl_en.arb b/arb/intl_en.arb
 index 45cd506..2f39754 100644
 --- a/arb/intl_en.arb
