@@ -4363,6 +4363,19 @@ index c5ae5a1..a508a80 100644
      fun dozeSuspend(value: Boolean) {
          runCatching {
              Log.d("Core", "dozeSuspend called with value: $value")
+diff --git a/android/settings.gradle.kts b/android/settings.gradle.kts
+index b454890..de8b82b 100644
+--- a/android/settings.gradle.kts
++++ b/android/settings.gradle.kts
+@@ -19,7 +19,7 @@ pluginManagement {
+ plugins {
+     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+     id("com.android.application") version "8.12.2" apply false
+-    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
++    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+ }
+ 
+ include(":app")
 diff --git a/arb/intl_en.arb b/arb/intl_en.arb
 index 45cd506..2f39754 100644
 --- a/arb/intl_en.arb
