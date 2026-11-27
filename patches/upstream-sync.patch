@@ -81850,7 +81850,7 @@ index 3281e5e..a853d2f 100644
 +/// Тип правил переопределения: скрипт или добавленные правила (импорт FlClash).
 +enum OverrideRuleType { override, added }
 diff --git a/lib/generator/generator_core.dart b/lib/generator/generator_core.dart
-index 29b4db5..ee08ae2 100644
+index 29b4db5..adf142d 100644
 --- a/lib/generator/generator_core.dart
 +++ b/lib/generator/generator_core.dart
 @@ -209,7 +209,12 @@ Map<String, dynamic> parseVless(String url) {
@@ -81867,6 +81867,74 @@ index 29b4db5..ee08ae2 100644
      'flow': params.get('flow') ?? '',
      'client-fingerprint': params.get('fp') ?? 'chrome',
      'network': params.get('type') ?? 'tcp',
+@@ -1990,15 +1995,6 @@ class GeneratorParams {
+   final String nameserver;
+   final String proxyServerNameserver;
+   final String? mtu;
+-  /// TUN-стек в собранном конфиге: mips / gvisor / system / mixed.
+-  /// mips — стек mihomo IP stack (mipstack): в текущем ядре он заведён
+-  /// только внутри WireGuard/OpenVPN/Masque/ZeroTier-нод, поэтому на
+-  /// выгрузке в ядро его заменяет gvisor (getRealTun в clash_config.dart
+-  /// и state.dart), а при сохранении профиля mips → gvisor делает
+-  /// normalizeMipsStackConfig (utils.dart): парсер ядра (config.Parse /
+-  /// UnmarshalRawConfig) отбивает литеральный mips как
+-  /// «invalid tun stack».
+-  final String? tunStack;
+   final bool providerMode;
+   final String providerUrl;
+   /// Режим provider: exclude-filter основного провайдера 'subscription'.
+@@ -2038,7 +2034,6 @@ class GeneratorParams {
+     required this.nameserver,
+     required this.proxyServerNameserver,
+     this.mtu,
+-    this.tunStack,
+     this.providerMode = false,
+     this.providerUrl = '',
+     this.providerExclude = '',
+@@ -2088,7 +2083,6 @@ Map<String, dynamic> generatorParamsToJson(GeneratorParams p) => {
+   'nameserver': p.nameserver,
+   'proxyServerNameserver': p.proxyServerNameserver,
+   'mtu': p.mtu,
+-  'tunStack': p.tunStack,
+   'providerMode': p.providerMode,
+   'providerExclude': p.providerExclude,
+   'providerUrl': p.providerUrl,
+@@ -2139,7 +2133,6 @@ GeneratorParams generatorParamsFromJson(Map<String, dynamic> json) {
+     nameserver: json['nameserver'] as String? ?? '',
+     proxyServerNameserver: json['proxyServerNameserver'] as String? ?? '',
+     mtu: json['mtu'] as String?,
+-    tunStack: json['tunStack'] as String?,
+     providerMode: json['providerMode'] as bool? ?? false,
+     providerExclude: json['providerExclude'] as String? ?? '',
+     providerUrl: json['providerUrl'] as String? ?? '',
+@@ -2643,20 +2636,15 @@ String buildConfig(GeneratorParams p) {
+     'ff00::/8',
+   ];
+ 
+-  // Выбор стека TUN: mips/gvisor/system/mixed — совпадает с дропдауном
+-  // генератора. mips пишется в YAML как есть; при применении профиля
+-  // getRealTun (clash_config.dart) отдаст ядру gvisor — в текущем ядре
+-  // mipstack в основном TUN не заведён, литеральный mips был бы отклонён
+-  // («invalid tun stack»). Всё прочее — fallback на gvisor.
+-  const validStacks = {'mips', 'gvisor', 'system', 'mixed'};
+-  final tunStack = (p.tunStack != null &&
+-          validStacks.contains(p.tunStack!.toLowerCase()))
+-      ? p.tunStack!.toLowerCase()
+-      : 'gvisor';
+-
++  // Стек TUN в YAML не пишется: выбор стека удалён (апстрим 1.20.2
++  // сделал mips нативным стеком основного TUN и дефолтом — выбор
++  // потерял смысл). Фактический стек на выгрузке в ядро определяет
++  // app-уровень: tun-модель (дефолт mips) через getRealTun
++  // (clash_config.dart) — обе линии применения (YAML-setup и
++  // updateConfig) идут через него, YAML-значение перекрывалось бы всё
++  // равно.
+   final tun = <String, dynamic>{
+     'enable': true,
+-    'stack': tunStack,
+     'auto-route': true,
+     'auto-detect-interface': true,
+     'strict-route': true,
 diff --git a/lib/generator/v2ray_json.dart b/lib/generator/v2ray_json.dart
 index bd3f732..bdd04ed 100644
 --- a/lib/generator/v2ray_json.dart
@@ -108467,7 +108535,7 @@ index f4aef27..f68b6c6 100644
      required int version,
      required FixedList<Log> logs,
 diff --git a/lib/models/clash_config.dart b/lib/models/clash_config.dart
-index 578e11c..277a1fe 100644
+index 578e11c..fcf390a 100644
 --- a/lib/models/clash_config.dart
 +++ b/lib/models/clash_config.dart
 @@ -12,7 +12,6 @@ typedef HostsMap = Map<String, String>;
@@ -108522,7 +108590,7 @@ index 578e11c..277a1fe 100644
      @JsonKey(name: 'dns-hijack') @Default(['any:53']) List<String> dnsHijack,
      @JsonKey(name: 'route-address') @Default([]) List<String> routeAddress,
      @JsonKey(name: 'route-exclude-address')
-@@ -323,8 +305,6 @@ abstract class Tun with _$Tun {
+@@ -323,28 +305,29 @@ abstract class Tun with _$Tun {
  extension TunExt on Tun {
    Tun getRealTun(
      bool bypassPrivateRoute, {
@@ -108531,7 +108599,23 @@ index 578e11c..277a1fe 100644
      List<String>? bypassPrivateRouteAddress,
    }) {
      // Выгрузка стека в ядро: через getRealTun проходят ОБЕ линии —
-@@ -341,10 +321,14 @@ extension TunExt on Tun {
+     // YAML-setup (patchRawConfig в state.dart) и JSON-updateConfig
+-    // (updateParamsProvider в providers/state.dart). Стек mips (mihomo
+-    // IP stack) в текущем ядре заведён только внутри WireGuard/OpenVPN/
+-    // Masque/ZeroTier-нод; в валидации основного TUN (constant/tun.go →
+-    // StackTypeMapping) его нет — литеральный «stack: mips» даёт
+-    // «invalid tun stack» и «Setup config failed». Поэтому на выгрузке
+-    // mips заменяем на gvisor — ближайший программный стек. В настройках
+-    // и в YAML профиля значение mips сохраняется и заработает нативно,
+-    // когда mipstack появится в основном TUN.
++    // (updateParamsProvider в providers/state.dart). С ядра 1.20.2
++    // mipstack принят в основном TUN (constant/tun.go → StackTypeMapping
++    // содержит TunMips), апстрим сделал его дефолтом и убрал выбор
++    // стека из UI. Шим mips→gvisor оставлен НАМЕРЕННО: сведение v7.7
++    // удаляло только выбор стека в генераторе, смена фактического стека
++    // у всех пользователей gvisor→mips — отдельное решение; включить
++    // нативный mips (паритет с апстримом) = удалить copyWith ниже.
+     final realTun = copyWith(
        stack: stack == TunStack.mips ? TunStack.gvisor : stack,
      );
      if (system.isDesktop) {
@@ -108546,7 +108630,7 @@ index 578e11c..277a1fe 100644
            routeAddress: [],
            routeExcludeAddress:
                bypassPrivateRouteAddress ??
-@@ -354,6 +338,7 @@ extension TunExt on Tun {
+@@ -354,6 +337,7 @@ extension TunExt on Tun {
        return realTun.copyWith(
          autoRoute: true,
          autoRedirect: system.isLinux,
@@ -108554,7 +108638,7 @@ index 578e11c..277a1fe 100644
          routeAddress: [],
          routeExcludeAddress: [],
        );
-@@ -372,106 +357,12 @@ extension TunExt on Tun {
+@@ -372,106 +356,12 @@ extension TunExt on Tun {
    }
  }
  
@@ -108662,7 +108746,7 @@ index 578e11c..277a1fe 100644
      @Default(123) int port,
      @Default(60) int interval,
    }) = _Ntp;
-@@ -684,15 +575,19 @@ List<Rule> _genRule(List<dynamic>? rules) {
+@@ -684,15 +574,19 @@ List<Rule> _genRule(List<dynamic>? rules) {
    if (rules == null) {
      return [];
    }
@@ -108687,7 +108771,7 @@ index 578e11c..277a1fe 100644
  }
  
  @freezed
-@@ -712,6 +607,21 @@ abstract class ClashConfigSnippet with _$ClashConfigSnippet {
+@@ -712,6 +606,21 @@ abstract class ClashConfigSnippet with _$ClashConfigSnippet {
        _$ClashConfigSnippetFromJson(json);
  }
  
@@ -108709,7 +108793,7 @@ index 578e11c..277a1fe 100644
  @freezed
  abstract class ClashConfig with _$ClashConfig {
    const factory ClashConfig({
-@@ -727,8 +637,8 @@ abstract class ClashConfig with _$ClashConfig {
+@@ -727,8 +636,8 @@ abstract class ClashConfig with _$ClashConfig {
      @JsonKey(name: 'skip-auth-prefixes')
      List<String> skipAuthPrefixes,
      @Default(LogLevel.silent) @JsonKey(name: 'log-level') LogLevel logLevel,
@@ -108720,7 +108804,7 @@ index 578e11c..277a1fe 100644
      @JsonKey(
        name: 'find-process-mode',
        unknownEnumValue: FindProcessMode.always,
-@@ -739,8 +649,8 @@ abstract class ClashConfig with _$ClashConfig {
+@@ -739,8 +648,8 @@ abstract class ClashConfig with _$ClashConfig {
      int keepAliveInterval,
      @Default(true) @JsonKey(name: 'unified-delay') bool unifiedDelay,
      @Default(true) @JsonKey(name: 'tcp-concurrent') bool tcpConcurrent,
@@ -108730,7 +108814,7 @@ index 578e11c..277a1fe 100644
      @Default(defaultNtp) @JsonKey(fromJson: Ntp.safeNtpFromJson) Ntp ntp,
      @Default(defaultSniffer)
      @JsonKey(fromJson: Sniffer.safeSnifferFromJson)
-@@ -761,6 +671,9 @@ abstract class ClashConfig with _$ClashConfig {
+@@ -761,6 +670,9 @@ abstract class ClashConfig with _$ClashConfig {
      @Default(ExternalControllerStatus.close)
      @JsonKey(name: 'external-controller')
      ExternalControllerStatus externalController,
@@ -108740,7 +108824,7 @@ index 578e11c..277a1fe 100644
      String? secret,
      @JsonKey(name: 'external-ui-name') String? externalUiName,
      @JsonKey(name: 'external-ui-url') String? externalUiUrl,
-@@ -772,16 +685,12 @@ abstract class ClashConfig with _$ClashConfig {
+@@ -772,16 +684,12 @@ abstract class ClashConfig with _$ClashConfig {
  
    factory ClashConfig.safeFormJson(Map<String, Object?>? json) {
      if (json == null) {
@@ -189384,6 +189468,95 @@ index abe557d..3c275c7 100644
                );
                if (res != true) return;
                await globalState.appController.handleClear();
+diff --git a/lib/views/generator_view.dart b/lib/views/generator_view.dart
+index ee18c96..4d9b90b 100644
+--- a/lib/views/generator_view.dart
++++ b/lib/views/generator_view.dart
+@@ -121,9 +121,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
+     text: 'https://www.gstatic.com/generate_204',
+   );
+   final _mtuController = TextEditingController();
+-  /// Выбор TUN-стека в генераторе (mips/gvisor/system/mixed; mips при
+-  /// применении конфига отдаётся ядру как gvisor — см. getRealTun).
+-  String _tunStack = 'gvisor';
+   // DNS (раздел «7. DNS»): пустое поле = дефолт веб-генератора
+   // (kDefaultDnsValues в buildConfig).
+   final _defaultNsController = TextEditingController();
+@@ -856,7 +853,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
+       nameserver: _nameserverController.text,
+       proxyServerNameserver: _proxyNsController.text,
+       mtu: _mtuController.text.trim(),
+-      tunStack: _tunStack,
+       providerMode: _providerMode,
+       providerExclude: _providerExclude,
+       providerUrl: _providerUrlController.text,
+@@ -944,7 +940,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
+       'nameserver': _nameserverController.text,
+       'proxyServerNameserver': _proxyNsController.text,
+       'mtu': _mtuController.text,
+-      'tunStack': _tunStack,
+       'providerMode': _providerMode,
+       'providerUrl': _providerUrlController.text,
+       'providerInterval': _providerIntervalController.text,
+@@ -975,10 +970,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
+       _proxyNsController.text =
+           data['proxyServerNameserver']?.toString() ?? '';
+       _mtuController.text = data['mtu']?.toString() ?? '';
+-      _tunStack = const ['mips', 'gvisor', 'system', 'mixed']
+-              .contains(data['tunStack'])
+-          ? data['tunStack'] as String
+-          : 'gvisor';
+       _providerMode = data['providerMode'] == true;
+       _providerUrlController.text = data['providerUrl']?.toString() ?? '';
+       _providerIntervalController.text =
+@@ -1835,47 +1826,6 @@ class _GeneratorViewState extends ConsumerState<GeneratorView> {
+                 helperText: 'Пусто — по умолчанию ядра',
+               ),
+             ),
+-            const SizedBox(height: 8),
+-            // Выбор TUN-стека: попадает в tun.stack собранного конфига.
+-            // mips (mihomo IP stack) в текущем ядре работает как gvisor:
+-            // при сохранении профиля normalizeMipsStackConfig (utils.dart)
+-            // пишет в файл gvisor, на выгрузке в ядро страхует getRealTun.
+-            InputDecorator(
+-              decoration: const InputDecoration(
+-                labelText: 'Стек TUN',
+-                border: OutlineInputBorder(),
+-                helperText:
+-                    'Как ядро обрабатывает трафик внутри TUN-интерфейса',
+-              ),
+-              child: DropdownButton<String>(
+-                value: _tunStack,
+-                isExpanded: true,
+-                isDense: true,
+-                underline: const SizedBox.shrink(),
+-                items: const [
+-                  DropdownMenuItem(
+-                    value: 'mips',
+-                    child: Text('MIPS — mihomo IP stack (работает как gVisor)'),
+-                  ),
+-                  DropdownMenuItem(
+-                    value: 'gvisor',
+-                    child: Text('gVisor — программный стек (надёжный)'),
+-                  ),
+-                  DropdownMenuItem(
+-                    value: 'system',
+-                    child: Text('System — системный стек (быстрее)'),
+-                  ),
+-                  DropdownMenuItem(
+-                    value: 'mixed',
+-                    child: Text('Mixed — гибридный (системный TCP + gVisor UDP)'),
+-                  ),
+-                ],
+-                onChanged: (v) {
+-                  if (v == null) return;
+-                  setState(() => _tunStack = v);
+-                },
+-              ),
+-            ),
+           ]),
+           _section('10. Шаблон', [
+             Text(
 diff --git a/lib/views/hotkey.dart b/lib/views/hotkey.dart
 index 5a4134b..88f7e17 100644
 --- a/lib/views/hotkey.dart
