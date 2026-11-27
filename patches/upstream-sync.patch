@@ -1290,7 +1290,7 @@ index f1ab5fb..eb95747 100644
              }
              "setHighPriorityNotification" -> {
 diff --git a/android/app/src/main/kotlin/com/appshub/bettbox/plugins/VpnPlugin.kt b/android/app/src/main/kotlin/com/appshub/bettbox/plugins/VpnPlugin.kt
-index 1c4f04b..b687efe 100644
+index 1c4f04b..f317e61 100644
 --- a/android/app/src/main/kotlin/com/appshub/bettbox/plugins/VpnPlugin.kt
 +++ b/android/app/src/main/kotlin/com/appshub/bettbox/plugins/VpnPlugin.kt
 @@ -10,7 +10,10 @@ import android.net.Network
@@ -1492,24 +1492,27 @@ index 1c4f04b..b687efe 100644
      fun handleStart(options: VpnOptions): Boolean {
          cancelPauseSilently()
          onUpdateNetwork()
-@@ -430,7 +502,17 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+@@ -430,10 +502,20 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
      }
  
      fun notifyScreenStateChanged(isOn: Boolean) {
 +        Core.screenStateChanged(isOn)
          invokeDart("screenStateChanged", isOn)
 +        ServicePlugin.notifyScreenStateChanged(isOn)
-+    }
-+
+         leakWatchdog?.onScreenStateChanged(isOn)
+     }
+ 
 +    fun updateSpeedTicker(isScreenOn: Boolean) {
 +        if (isScreenOn) {
 +            ensureSpeedTicker()
 +        } else {
 +            stopSpeedTicker()
 +        }
-         leakWatchdog?.onScreenStateChanged(isOn)
-     }
- 
++    }
++
+     fun getCurrentDns(): String {
+         val dnsSet = when {
+             networkDnsMap.isNotEmpty() -> networkDnsMap.values.flatMap { it }
 @@ -462,7 +544,6 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
      private val callback = object : ConnectivityManager.NetworkCallback() {
          override fun onAvailable(network: Network) {
