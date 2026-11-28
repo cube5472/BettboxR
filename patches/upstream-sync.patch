@@ -203803,10 +203803,12 @@ index fc9986a..a8050ad 100644
                          onPressed: _handleUpdateProvider,
                        ),
 diff --git a/lib/views/proxies/proxies.dart b/lib/views/proxies/proxies.dart
-index 6eabac5..bb2f8bb 100644
+index 6eabac5..9a31d7d 100644
 --- a/lib/views/proxies/proxies.dart
 +++ b/lib/views/proxies/proxies.dart
-@@ -1,19 +1,21 @@
+@@ -1,19 +1,23 @@
++import 'dart:async';
++
  import 'package:bett_box/common/common.dart';
  import 'package:bett_box/enum/enum.dart';
  import 'package:bett_box/models/common.dart';
@@ -203830,7 +203832,7 @@ index 6eabac5..bb2f8bb 100644
  import 'profile_switcher.dart';
  import 'setting.dart';
  import 'tab.dart';
-@@ -27,27 +29,33 @@ class ProxiesView extends ConsumerStatefulWidget {
+@@ -27,27 +31,83 @@ class ProxiesView extends ConsumerStatefulWidget {
  
  class _ProxiesViewState extends ConsumerState<ProxiesView> {
    final GlobalKey<ProxiesTabViewState> _proxiesTabKey = GlobalKey();
@@ -203838,6 +203840,52 @@ index 6eabac5..bb2f8bb 100644
    bool _hasProviders = false;
    bool _isTab = false;
  
++  // Принудительное обновление подписки текущего профиля (кнопка в
++  // верхней панели экрана «Прокси»). Логика повторяет ручное обновление
++  // с экрана «Профили» (profiles.dart updateProfile): URL-профиль качается
++  // безусловно, bundle пересобирается с refresh, локальный файл —
++  // сообщение. Интервал авто-обновления здесь не проверяется вовсе:
++  // profile.update()/updateProfile() его не гейтит (гейтится только
++  // планировщик realAutoUpdate), т.е. обновление именно принудительное.
++  Future<void> _forceUpdateProfile(Profile profile) async {
++    final appController = globalState.appController;
++    if (profile.type == ProfileType.file) {
++      unawaited(
++        globalState.showMessage(
++          title: appLocalizations.tip,
++          message: TextSpan(
++            text: '${profile.label ?? profile.id}: локальный профиль, '
++                'обновлять нечего',
++          ),
++          cancelable: false,
++        ),
++      );
++      return;
++    }
++    if (profile.type == ProfileType.bundle) {
++      await appController.safeRun(
++        () => appController.generateBundle(profile.id, refresh: true),
++        silence: false,
++      );
++      return;
++    }
++    try {
++      appController.setProfile(profile.copyWith(isUpdating: true));
++      await appController.updateProfile(profile);
++    } on Object catch (e) {
++      appController.setProfile(profile.copyWith(isUpdating: false));
++      unawaited(
++        globalState.showMessage(
++          title: appLocalizations.tip,
++          message: TextSpan(
++            text: '${profile.label ?? profile.id}: ${e.formatError}',
++          ),
++          cancelable: false,
++        ),
++      );
++    }
++  }
++
    List<Widget> _buildActions() {
 -    final (autoStickyHeader, showHiddenItems) = ref.watch(
 +    final (autoStickyHeader, showHiddenItems, hideTimeoutProxies) = ref.watch(
@@ -203869,10 +203917,14 @@ index 6eabac5..bb2f8bb 100644
          !hasScriptCustom && ref.read(currentProfileIdProvider) != null;
      final hasCustom = hasScriptCustom || hasGroupCustom;
 +    final hasGroups = ref.watch(groupsProvider.select((state) => state.isNotEmpty));
++    final curProfile = ref.watch(currentProfileProvider);
++    final curIsUpdating = ref.watch(
++      currentProfileProvider.select((p) => p?.isUpdating ?? false),
++    );
      return [
        if (_isTab)
          IconButton(
-@@ -55,12 +63,12 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -55,14 +115,31 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
              _proxiesTabKey.currentState?.scrollToGroupSelected();
            },
            tooltip: appLocalizations.locate,
@@ -203886,8 +203938,27 @@ index 6eabac5..bb2f8bb 100644
 +          icon: const AppIcon(Icons.tune),
            tooltip: appLocalizations.custom,
          ),
++      // Принудительное обновление подписки текущего профиля. Спиннер по
++      // isUpdating, кнопка глохнет на время обновления (плюс guard
++      // _updatingProfileIds в контроллере).
++      if (curProfile != null)
++        IconButton(
++          onPressed: curIsUpdating
++              ? null
++              : () => unawaited(_forceUpdateProfile(curProfile)),
++          tooltip: appLocalizations.update,
++          icon: curIsUpdating
++              ? const SizedBox(
++                  width: 18,
++                  height: 18,
++                  child: CircularProgressIndicator(strokeWidth: 2),
++                )
++              : const AppIcon(Icons.sync),
++        ),
        CommonPopupBox(
-@@ -70,7 +78,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+         targetBuilder: (open) {
+           return IconButton(
+@@ -70,7 +147,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                open(offset: const Offset(0, 20));
              },
              tooltip: appLocalizations.more,
@@ -203896,7 +203967,7 @@ index 6eabac5..bb2f8bb 100644
            );
          },
          popup: CommonPopupMenu(
-@@ -150,6 +158,34 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -150,6 +227,34 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                      );
                },
              ),
@@ -203931,7 +204002,7 @@ index 6eabac5..bb2f8bb 100644
            ],
          ),
        ),
-@@ -181,21 +217,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -181,21 +286,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  
@@ -203966,7 +204037,7 @@ index 6eabac5..bb2f8bb 100644
      }
    }
  
-@@ -229,27 +272,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -229,27 +341,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
  
    @override
    Widget build(BuildContext context) {
@@ -204020,7 +204091,7 @@ index 6eabac5..bb2f8bb 100644
                },
              },
            ),
-@@ -258,4 +323,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -258,4 +392,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  }
