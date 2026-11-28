@@ -406325,3 +406325,133 @@ index 93221da..419011a 100644
        return;
      }
      if (profile.type == ProfileType.bundle) {
+diff --git a/lib/views/proxies/dead_nodes.dart b/lib/views/proxies/dead_nodes.dart
+index 91d725a..5c53dc1 100644
+--- a/lib/views/proxies/dead_nodes.dart
++++ b/lib/views/proxies/dead_nodes.dart
+@@ -608,3 +608,64 @@ Future<_DeleteResult> _deleteDeadNodesFromProfile(
+   globalState.appController.setProfileAndAutoApply(newProfile);
+   return _DeleteResult(removed, misses);
+ }
++
++/// Сброс скрытия нод подписок — обратное dead_nodes-удалению (v7.11).
++/// «Обновление подписки» на генераторном профиле обязано вернуть полный
++/// список узлов источника: снимаем `exclude-filter` со всех
++/// proxy-providers конфига и чистим exclude в параметрах маркера
++/// (providerExclude + exclude резервных подписок) — иначе свежескачанный
++/// список каждый раз режется прошлыми удалениями до выживших. Конфиг
++/// валидируется ядром и переприменяется тем же путём, что и удаление
++/// (saveFileWithString + setProfile + applyProfile; apply awaited, чтобы
++/// феч после сброса шёл уже по новому конфигу). Возвращает новый профиль
++/// и число возвращённых узлов либо null, если скрывать нечего.
++Future<(Profile, int)?> resetProviderNodeFilters(
++  Profile profile,
++  GeneratorParams params,
++  String raw,
++) async {
++  int countParts(String value) =>
++      value.split('|').where((part) => part.isNotEmpty).length;
++  final paramsHidden = countParts(params.providerExclude) +
++      params.reserveSubscriptions.fold<int>(
++        0,
++        (sum, sub) => sum + countParts(sub['exclude'] ?? ''),
++      );
++  final config = _plainifyNode(loadYaml(raw));
++  var yamlHidden = 0;
++  var touched = false;
++  final providers = config['proxy-providers'];
++  if (providers is Map) {
++    for (final key in providers.keys.toList()) {
++      final entry = providers[key];
++      if (entry is Map && entry['exclude-filter'] is String) {
++        final value = entry['exclude-filter'] as String;
++        if (value.isNotEmpty) {
++          yamlHidden += countParts(value);
++        }
++        entry.remove('exclude-filter');
++        touched = true;
++      }
++    }
++  }
++  if (!touched && paramsHidden == 0) {
++    return null;
++  }
++  final json = generatorParamsToJson(params);
++  json['providerExclude'] = '';
++  for (final sub in (json['reserveSubscriptions'] as List? ?? const [])) {
++    if (sub is Map) {
++      sub['exclude'] = '';
++    }
++  }
++  final dumped = yamlDump(config);
++  final newYaml =
++      '$kGeneratorMarkerLine\n'
++      '$kGeneratorParamsPrefix${jsonEncode(json)}\n'
++      '$dumped';
++  final newProfile = await profile.saveFileWithString(newYaml);
++  final appController = globalState.appController;
++  appController.setProfile(newProfile);
++  await appController.applyProfile(silence: true);
++  return (newProfile, touched ? yamlHidden : paramsHidden);
++}
+diff --git a/lib/views/proxies/proxies.dart b/lib/views/proxies/proxies.dart
+index 419011a..9198e12 100644
+--- a/lib/views/proxies/proxies.dart
++++ b/lib/views/proxies/proxies.dart
+@@ -105,9 +105,35 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+         '(${params!.providerUrl}), провайдеры: '
+         '${httpProviders.map((p) => p.name).join(', ')}',
+       );
+-      appController.setProfile(profile.copyWith(isUpdating: true));
+       final messages = <String>[];
+       final updatedLines = <String>[];
++      // v7.11: сброс скрытия нод подписок (обратное dead_nodes-удалению).
++      // Обновление подписки обязано вернуть ПОЛНЫЙ список источника, а не
++      // применить exclude-filter прошлых удалений к свежескачанному списку:
++      // снимаем exclude-filter со всех proxy-providers, чистим
++      // providerExclude/exclude резервных подписок в маркере, конфиг
++      // валидируется и переприменяется. Число возвращённых узлов — в лог
++      // и в итоговое окно (сброс всегда объявляется, не делается тихо).
++      var currentProfile = profile;
++      var unhidden = 0;
++      try {
++        final reset = await resetProviderNodeFilters(profile, params!, raw);
++        if (reset != null) {
++          currentProfile = reset.$1;
++          unhidden = reset.$2;
++          commonPrint.log(
++            'ForceUpdate[${profile.label ?? profile.id}]: фильтр удалённых '
++            'узлов сброшен (скрыто было: $unhidden)',
++          );
++        }
++      } on Object catch (e) {
++        commonPrint.warn(
++          'ForceUpdate[${profile.label ?? profile.id}]: сброс фильтра '
++          'не удался — $e',
++        );
++        messages.add('сброс фильтра удалённых узлов: $e \n');
++      }
++      appController.setProfile(currentProfile.copyWith(isUpdating: true));
+       try {
+         for (final provider in httpProviders) {
+           appController.setProvider(provider.copyWith(isUpdating: true));
+@@ -150,7 +176,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+           updatedLines.add('${provider.name} — ${updated?.count ?? 0} узлов');
+         }
+       } finally {
+-        appController.setProfile(profile.copyWith(isUpdating: false));
++        appController.setProfile(currentProfile.copyWith(isUpdating: false));
+       }
+       appController.updateGroupsDebounce();
+       commonPrint.log(
+@@ -164,6 +190,10 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+           title: appLocalizations.tip,
+           message: TextSpan(
+             children: [
++              if (unhidden > 0)
++                TextSpan(
++                  text: 'Скрытые узлы возвращены в список: $unhidden\n',
++                ),
+               if (updatedLines.isNotEmpty)
+                 TextSpan(
+                   text: 'Обновлено (${updatedLines.length}): '
