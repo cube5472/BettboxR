@@ -406455,3 +406455,23 @@ index 419011a..9198e12 100644
                if (updatedLines.isNotEmpty)
                  TextSpan(
                    text: 'Обновлено (${updatedLines.length}): '
+diff --git a/lib/views/proxies/proxies.dart b/lib/views/proxies/proxies.dart
+index 9198e12..37a2592 100644
+--- a/lib/views/proxies/proxies.dart
++++ b/lib/views/proxies/proxies.dart
+@@ -507,6 +507,15 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+       floatingActionButton: _buildFAB(),
+       actions: _buildActions(),
+       title: appLocalizations.proxies,
++      // v7.12: слово «Прокси» в узкой панели обрезалось до «Прок» — вместо
++      // текста компас-пиктограмма (та же, что у таба «Прокси» внизу).
++      // titleWidget перебивает title в обычном режиме (scaffold.dart),
++      // title остаётся фолбэком для поискового состояния.
++      titleWidget: AppIcon(
++        Icons.explore,
++        size: 22,
++        semanticLabel: appLocalizations.proxies,
++      ),
+       scrollEdgeFade: proxiesType == ProxiesType.list && !autoStickyHeader,
+       onAppBarDoubleTap: proxiesType == ProxiesType.list
+           ? _collapseAllGroups
