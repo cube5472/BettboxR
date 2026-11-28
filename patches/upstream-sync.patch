@@ -203803,14 +203803,16 @@ index fc9986a..a8050ad 100644
                          onPressed: _handleUpdateProvider,
                        ),
 diff --git a/lib/views/proxies/proxies.dart b/lib/views/proxies/proxies.dart
-index 6eabac5..9a31d7d 100644
+index 6eabac5..93221da 100644
 --- a/lib/views/proxies/proxies.dart
 +++ b/lib/views/proxies/proxies.dart
-@@ -1,19 +1,23 @@
+@@ -1,19 +1,25 @@
 +import 'dart:async';
 +
++import 'package:bett_box/clash/clash.dart';
  import 'package:bett_box/common/common.dart';
  import 'package:bett_box/enum/enum.dart';
++import 'package:bett_box/generator/generator_core.dart';
  import 'package:bett_box/models/common.dart';
 -import 'package:bett_box/models/config.dart';
 +import 'package:bett_box/models/profile.dart';
@@ -203832,7 +203834,7 @@ index 6eabac5..9a31d7d 100644
  import 'profile_switcher.dart';
  import 'setting.dart';
  import 'tab.dart';
-@@ -27,27 +31,83 @@ class ProxiesView extends ConsumerStatefulWidget {
+@@ -27,27 +33,153 @@ class ProxiesView extends ConsumerStatefulWidget {
  
  class _ProxiesViewState extends ConsumerState<ProxiesView> {
    final GlobalKey<ProxiesTabViewState> _proxiesTabKey = GlobalKey();
@@ -203850,16 +203852,86 @@ index 6eabac5..9a31d7d 100644
 +  Future<void> _forceUpdateProfile(Profile profile) async {
 +    final appController = globalState.appController;
 +    if (profile.type == ProfileType.file) {
-+      unawaited(
-+        globalState.showMessage(
-+          title: appLocalizations.tip,
-+          message: TextSpan(
-+            text: '${profile.label ?? profile.id}: локальный профиль, '
-+                'обновлять нечего',
++      // Генераторный профиль: маркер `# bettboxr-params` в шапке YAML,
++      // в режиме provider подписку качает ЯДРО (proxy-providers по
++      // providerUrl) — принудительное обновление = принудительный апдейт
++      // всех HTTP proxy-провайдеров активного конфига, как на вкладке
++      // «Провайдеры» экрана «Прокси» (providers.dart). Статические
++      // генераторные и обычные локальные файлы — сообщение.
++      String raw = '';
++      try {
++        raw = await (await profile.getFile()).readAsString();
++      } on Object catch (_) {
++        raw = '';
++      }
++      final params = raw.isEmpty ? null : extractGeneratorParams(raw);
++      final hasProvider =
++          params != null &&
++          params.providerMode &&
++          params.providerUrl.isNotEmpty;
++      if (!hasProvider) {
++        final reason = params != null
++            ? 'генераторный конфиг без режима provider, обновлять нечего'
++            : 'локальный профиль, обновлять нечего';
++        unawaited(
++          globalState.showMessage(
++            title: appLocalizations.tip,
++            message: TextSpan(
++              text: '${profile.label ?? profile.id}: $reason',
++            ),
++            cancelable: false,
 +          ),
-+          cancelable: false,
-+        ),
-+      );
++        );
++        return;
++      }
++      final httpProviders = ref
++          .read(providersProvider)
++          .where((p) => p.type != 'Rule' && p.vehicleType == 'HTTP')
++          .toList();
++      if (httpProviders.isEmpty) {
++        unawaited(
++          globalState.showMessage(
++            title: appLocalizations.tip,
++            message: TextSpan(
++              text: '${profile.label ?? profile.id}: HTTP-провайдеры не '
++                  'найдены в загруженном конфиге',
++            ),
++            cancelable: false,
++          ),
++        );
++        return;
++      }
++      appController.setProfile(profile.copyWith(isUpdating: true));
++      final messages = <String>[];
++      try {
++        for (final provider in httpProviders) {
++          appController.setProvider(provider.copyWith(isUpdating: true));
++          final message = await clashCore.updateExternalProvider(
++            providerName: provider.name,
++          );
++          if (message.isNotEmpty) {
++            messages.add('${provider.name}: $message \n');
++          }
++          final updated = await clashCore.getExternalProvider(provider.name);
++          appController.setProvider(updated);
++        }
++      } finally {
++        appController.setProfile(profile.copyWith(isUpdating: false));
++      }
++      appController.updateGroupsDebounce();
++      if (messages.isNotEmpty) {
++        unawaited(
++          globalState.showMessage(
++            title: appLocalizations.tip,
++            message: TextSpan(
++              children: [
++                for (final message in messages) TextSpan(text: message),
++              ],
++            ),
++            cancelable: false,
++          ),
++        );
++      }
 +      return;
 +    }
 +    if (profile.type == ProfileType.bundle) {
@@ -203924,7 +203996,7 @@ index 6eabac5..9a31d7d 100644
      return [
        if (_isTab)
          IconButton(
-@@ -55,14 +115,31 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -55,14 +187,31 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
              _proxiesTabKey.currentState?.scrollToGroupSelected();
            },
            tooltip: appLocalizations.locate,
@@ -203958,7 +204030,7 @@ index 6eabac5..9a31d7d 100644
        CommonPopupBox(
          targetBuilder: (open) {
            return IconButton(
-@@ -70,7 +147,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -70,7 +219,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                open(offset: const Offset(0, 20));
              },
              tooltip: appLocalizations.more,
@@ -203967,7 +204039,7 @@ index 6eabac5..9a31d7d 100644
            );
          },
          popup: CommonPopupMenu(
-@@ -150,6 +227,34 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -150,6 +299,34 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                      );
                },
              ),
@@ -204002,7 +204074,7 @@ index 6eabac5..9a31d7d 100644
            ],
          ),
        ),
-@@ -181,21 +286,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -181,21 +358,28 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  
@@ -204037,7 +204109,7 @@ index 6eabac5..9a31d7d 100644
      }
    }
  
-@@ -229,27 +341,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -229,27 +413,49 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
  
    @override
    Widget build(BuildContext context) {
@@ -204091,7 +204163,7 @@ index 6eabac5..9a31d7d 100644
                },
              },
            ),
-@@ -258,4 +392,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+@@ -258,4 +464,3 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
      );
    }
  }
