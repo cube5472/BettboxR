@@ -406175,3 +406175,153 @@ index 033d253..90c33ca 100644
  
    std::vector<std::string> command_line_arguments =
        GetCommandLineArguments();
+diff --git a/core/hub.go b/core/hub.go
+index b661dfb..90d35b6 100644
+--- a/core/hub.go
++++ b/core/hub.go
+@@ -735,12 +735,27 @@ func handleUpdateExternalProvider(providerName string, fn func(value string)) {
+ 			fn("external provider is not exist")
+ 			return
+ 		}
+-		err := externalProvider.Update()
+-		if err != nil {
+-			fn(err.Error())
+-			return
++		log.Infoln("[APP] manual provider update started: %s", providerName)
++		done := make(chan error, 1)
++		go func() {
++			done <- externalProvider.Update()
++		}()
++		// Watchdog: Update() ограничен 20с контекстом феча, но если
++		// что-то ниже всё же зависнет — ответ обязан дойти до Dart,
++		// иначе invoke молча отдаст '' на своём 60с таймауте.
++		select {
++		case err := <-done:
++			if err != nil {
++				log.Warnln("[APP] manual provider update failed: %s: %v", providerName, err)
++				fn(err.Error())
++				return
++			}
++			log.Infoln("[APP] manual provider update finished: %s", providerName)
++			fn("")
++		case <-time.After(45 * time.Second):
++			log.Warnln("[APP] manual provider update timed out: %s (45s)", providerName)
++			fn("update timeout (45s)")
+ 		}
+-		fn("")
+ 	}()
+ }
+ 
+diff --git a/lib/views/proxies/proxies.dart b/lib/views/proxies/proxies.dart
+index 93221da..419011a 100644
+--- a/lib/views/proxies/proxies.dart
++++ b/lib/views/proxies/proxies.dart
+@@ -5,6 +5,7 @@ import 'package:bett_box/common/common.dart';
+ import 'package:bett_box/enum/enum.dart';
+ import 'package:bett_box/generator/generator_core.dart';
+ import 'package:bett_box/models/common.dart';
++import 'package:bett_box/models/core.dart';
+ import 'package:bett_box/models/profile.dart';
+ import 'package:bett_box/models/widget.dart';
+ import 'package:bett_box/providers/providers.dart';
+@@ -96,37 +97,84 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
+         );
+         return;
+       }
++      // Логи каждого шага: без них «стрелочки крутятся, ничего не
++      // происходит» не диагностируется (v7.9 был слеп — ни логов,
++      // ни сообщений при тихом успехе или потерянном ответе invoke).
++      commonPrint.log(
++        'ForceUpdate[${profile.label ?? profile.id}]: provider-режим '
++        '(${params!.providerUrl}), провайдеры: '
++        '${httpProviders.map((p) => p.name).join(', ')}',
++      );
+       appController.setProfile(profile.copyWith(isUpdating: true));
+       final messages = <String>[];
++      final updatedLines = <String>[];
+       try {
+         for (final provider in httpProviders) {
+           appController.setProvider(provider.copyWith(isUpdating: true));
+-          final message = await clashCore.updateExternalProvider(
+-            providerName: provider.name,
++          String message = '';
++          try {
++            // 45с: феч ядра ограничен 20с контекстом (DefaultHttpTimeout),
++            // а invoke на своём 60с таймауте молча возвращает '' — свой
++            // 45с бьёт раньше и делает провал видимым.
++            message = await clashCore
++                .updateExternalProvider(providerName: provider.name)
++                .timeout(
++                  const Duration(seconds: 45),
++                  onTimeout: () => throw TimeoutException(
++                    'ядро не ответило за 45с (action потерян?)',
++                  ),
++                );
++          } on Object catch (e) {
++            message = e.toString();
++          }
++          ExternalProvider? updated;
++          try {
++            updated = await clashCore.getExternalProvider(provider.name);
++          } on Object catch (_) {
++            updated = null;
++          }
++          appController.setProvider(
++            updated ?? provider.copyWith(isUpdating: false),
+           );
+           if (message.isNotEmpty) {
++            commonPrint.warn(
++              'ForceUpdate[${provider.name}]: ошибка — $message',
++            );
+             messages.add('${provider.name}: $message \n');
++            continue;
+           }
+-          final updated = await clashCore.getExternalProvider(provider.name);
+-          appController.setProvider(updated);
++          commonPrint.log(
++            'ForceUpdate[${provider.name}]: готово, узлов '
++            '${updated?.count ?? 0}',
++          );
++          updatedLines.add('${provider.name} — ${updated?.count ?? 0} узлов');
+         }
+       } finally {
+         appController.setProfile(profile.copyWith(isUpdating: false));
+       }
+       appController.updateGroupsDebounce();
+-      if (messages.isNotEmpty) {
+-        unawaited(
+-          globalState.showMessage(
+-            title: appLocalizations.tip,
+-            message: TextSpan(
+-              children: [
+-                for (final message in messages) TextSpan(text: message),
+-              ],
+-            ),
+-            cancelable: false,
++      commonPrint.log(
++        'ForceUpdate[${profile.label ?? profile.id}]: завершено '
++        '(успех: ${updatedLines.length}, ошибок: ${messages.length})',
++      );
++      // Итог ВСЕГДА показываем окном: тихий «ничего не произошло»
++      // неотличим от потерянного ответа.
++      unawaited(
++        globalState.showMessage(
++          title: appLocalizations.tip,
++          message: TextSpan(
++            children: [
++              if (updatedLines.isNotEmpty)
++                TextSpan(
++                  text: 'Обновлено (${updatedLines.length}): '
++                      '${updatedLines.join('; ')}\n',
++                ),
++              for (final message in messages) TextSpan(text: message),
++            ],
+           ),
+-        );
+-      }
++          cancelable: false,
++        ),
++      );
+       return;
+     }
+     if (profile.type == ProfileType.bundle) {
